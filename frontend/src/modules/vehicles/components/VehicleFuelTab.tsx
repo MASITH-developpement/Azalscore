@@ -10,13 +10,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Vehicule, FuelLog } from '../types';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   formatKilometers,
   calculateAverageConsumption, FUEL_TYPE_ICONS
 } from '../types';
+import type { Vehicule, FuelLog } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * VehicleFuelTab - Suivi carburant et consommation
@@ -190,7 +190,7 @@ export const VehicleFuelTab: React.FC<TabContentProps<Vehicule>> = ({ data: vehi
           <div className="mt-4">
             <h4 className="text-sm font-medium mb-2">Evolution du prix au litre</h4>
             <div className="azals-price-evolution">
-              {recentLogs.slice(0, 6).reverse().map((log, index) => (
+              {recentLogs.slice(0, 6).reverse().map((log, _index) => (
                 <div key={log.id} className="azals-price-evolution__bar">
                   <div
                     className="azals-price-evolution__fill"

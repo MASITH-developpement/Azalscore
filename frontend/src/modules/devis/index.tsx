@@ -8,19 +8,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  FileText, Plus, Edit, Trash2, Search, Send, Check, X,
+  FileText, Plus, Edit, Trash2, Search, Send, Check,
   Euro, Calendar, Clock, AlertTriangle, CheckCircle2,
   ChevronRight, Download, Printer, Package, History,
   FileArchive, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
+import { Button } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
-import { SmartSelector } from '@/components/SmartSelector';
-import { RiskDisplay } from '@/modules/enrichment';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -30,11 +27,11 @@ import {
   type StatusDefinition,
   type SemanticColor,
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import { SmartSelector } from '@/components/SmartSelector';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Import types et composants tabs
-import type { Devis, DevisFormData, Customer, DocumentStatus, DocumentLine } from './types';
-import { STATUS_CONFIG } from './types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   DevisInfoTab,
@@ -44,6 +41,8 @@ import {
   DevisHistoryTab,
   DevisIATab,
 } from './components';
+import { STATUS_CONFIG } from './types';
+import type { Devis, DevisFormData, Customer, DocumentStatus, DocumentLine } from './types';
 
 // ============================================================
 // API HOOKS
@@ -715,7 +714,7 @@ const DevisFormView: React.FC<{
             <SmartSelector
               items={customers || []}
               value={form.customer_id}
-              onChange={(id, item) => setForm({ ...form, customer_id: id })}
+              onChange={(id, _item) => setForm({ ...form, customer_id: id })}
               label="Client"
               placeholder="Rechercher un client..."
               entityName="client"

@@ -18,32 +18,28 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Shield, Clock, Key, ArrowLeft, Check, X } from 'lucide-react';
-import { api } from '@core/api-client';
-import { useCanBreakGlass } from '@core/capabilities';
+import { useNavigate } from 'react-router-dom';
 import { trackBreakGlassEvent } from '@core/audit-ui';
-import { PageWrapper, Card } from '@ui/layout';
+import { useCanBreakGlass } from '@core/capabilities';
 import { Button } from '@ui/actions';
+import { PageWrapper } from '@ui/layout';
 import { ErrorState } from '../../ui-engine/components/StateViews';
-import type { BreakGlassScope, BreakGlassChallenge, BreakGlassRequest } from '@/types';
+import {
+  breakGlassApi,
+  type BreakGlassScope,
+  type BreakGlassChallenge,
+  type BreakGlassRequest,
+  type TenantOption,
+  type ModuleOption,
+} from './api';
 
 // ============================================================
 // TYPES
 // ============================================================
 
 type BreakGlassStep = 'intention' | 'confirmation' | 'authentication' | 'executing' | 'complete';
-
-interface TenantOption {
-  id: string;
-  name: string;
-}
-
-interface ModuleOption {
-  id: string;
-  name: string;
-}
 
 // ============================================================
 // API HOOKS
@@ -52,7 +48,7 @@ interface ModuleOption {
 const useBreakGlassChallenge = () => {
   return useMutation({
     mutationFn: async (scope: BreakGlassScope) => {
-      const response = await api.post<BreakGlassChallenge>('/admin/break-glass/challenge', scope);
+      const response = await breakGlassApi.requestChallenge(scope);
       return response.data;
     },
   });
@@ -61,7 +57,7 @@ const useBreakGlassChallenge = () => {
 const useExecuteBreakGlass = () => {
   return useMutation({
     mutationFn: async (request: BreakGlassRequest) => {
-      await api.post('/admin/break-glass/execute', request);
+      await breakGlassApi.execute(request);
     },
   });
 };
@@ -70,7 +66,7 @@ const useTenantsList = () => {
   return useQuery({
     queryKey: ['break-glass', 'tenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: TenantOption[] }>('/admin/tenants?page_size=1000');
+      const response = await breakGlassApi.listTenants();
       return response.data.items;
     },
   });
@@ -80,7 +76,7 @@ const useModulesList = () => {
   return useQuery({
     queryKey: ['break-glass', 'modules'],
     queryFn: async () => {
-      const response = await api.get<{ items: ModuleOption[] }>('/admin/modules');
+      const response = await breakGlassApi.listModules();
       return response.data.items;
     },
   });

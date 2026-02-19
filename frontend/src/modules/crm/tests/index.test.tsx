@@ -8,10 +8,10 @@
  * - Onglets du détail client
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock API
 vi.mock('@core/api-client', () => ({
@@ -51,7 +51,7 @@ const createTestQueryClient = () =>
     },
   });
 
-const renderWithProviders = (ui: React.ReactElement) => {
+const _renderWithProviders = (ui: React.ReactElement) => {
   const queryClient = createTestQueryClient();
   return render(
     <QueryClientProvider client={queryClient}>

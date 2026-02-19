@@ -456,8 +456,8 @@ export const wrapApiCall = async <T>(
  * Remplace les catch vides/silencieux.
  * Usage: catch (error) { logError(error, 'MonComposant.action'); }
  */
-export function logError(error: unknown, context: string): void {
-  const message = error instanceof Error ? error.message : String(error);
+export function logError(error: unknown, _context: string): void {
+  const _message = error instanceof Error ? error.message : String(error);
 }
 
 // ============================================================

@@ -7,10 +7,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { X, AlertTriangle, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import { trackAction } from '@core/audit-ui';
-import { useFocusTrap } from '../hooks/useFocusTrap';
+import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import type { ActionButton } from '@/types';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // ============================================================
 // TYPES
@@ -375,7 +375,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Collect only the enabled, visible items for keyboard navigation
-  const enabledItems = items.filter((item) => !item.disabled);
+  const _enabledItems = items.filter((item) => !item.disabled);
 
   // Focus the correct menu item when focusedIndex changes
   useEffect(() => {

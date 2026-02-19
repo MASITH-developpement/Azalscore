@@ -6,10 +6,9 @@
 import React from 'react';
 import { ShoppingCart, Package, Percent, Calculator } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Document, DocumentLine } from '../types';
-import { calculateLineTotal } from '../types';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
+import type { Document, DocumentLine } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoicingLinesTab - Lignes du document
@@ -127,7 +126,7 @@ export const InvoicingLinesTab: React.FC<TabContentProps<Document>> = ({ data: d
           <Grid cols={3} gap="md">
             {doc.stats.cost_total !== undefined && (
               <div className="azals-field">
-                <label className="azals-field__label">Cout total</label>
+                <span className="azals-field__label">Cout total</span>
                 <div className="azals-field__value">
                   {formatCurrency(doc.stats.cost_total, doc.currency)}
                 </div>
@@ -135,7 +134,7 @@ export const InvoicingLinesTab: React.FC<TabContentProps<Document>> = ({ data: d
             )}
             {doc.stats.margin_amount !== undefined && (
               <div className="azals-field">
-                <label className="azals-field__label">Marge</label>
+                <span className="azals-field__label">Marge</span>
                 <div className={`azals-field__value ${(doc.stats.margin_amount || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
                   {formatCurrency(doc.stats.margin_amount, doc.currency)}
                 </div>
@@ -143,7 +142,7 @@ export const InvoicingLinesTab: React.FC<TabContentProps<Document>> = ({ data: d
             )}
             {doc.stats.margin_percent !== undefined && (
               <div className="azals-field">
-                <label className="azals-field__label">Taux de marge</label>
+                <span className="azals-field__label">Taux de marge</span>
                 <div className={`azals-field__value ${(doc.stats.margin_percent || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
                   {formatPercent(doc.stats.margin_percent)}
                 </div>

@@ -1,33 +1,32 @@
 import React, { useState } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
-import { StatCard, ProgressBar } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   ClipboardCheck, AlertTriangle, FileText, Clock, Sparkles,
   Play, CheckCircle2, ArrowLeft, Edit, Printer
 } from 'lucide-react';
-import type {
-  Audit as AuditType, AuditFinding, AuditDocument, AuditHistoryEntry
-} from './types';
-import {
-  AUDIT_TYPE_CONFIG, AUDIT_STATUS_CONFIG,
-  isAuditCompleted, isAuditInProgress, hasCriticalFindings,
-  hasOpenFindings, getAuditScoreColor
-} from './types';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button } from '@ui/actions';
+import { StatCard, ProgressBar } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn } from '@/types';
 import { formatDate, formatPercent } from '@/utils/formatters';
 import {
   AuditInfoTab, AuditFindingsTab, AuditDocumentsTab,
   AuditHistoryTab, AuditIATab
 } from './components';
+import {
+  AUDIT_TYPE_CONFIG, AUDIT_STATUS_CONFIG,
+  getAuditScoreColor
+} from './types';
+import type {
+  Audit as AuditType
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -477,14 +476,14 @@ const GDPRView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" filterable />
+      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
 
 const ConsentsView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
-  const { data: consents = [], isLoading } = useConsents({
+  const { data: consents = [], isLoading, error, refetch } = useConsents({
     consent_type: filterType || undefined
   });
 
@@ -518,7 +517,7 @@ const ConsentsView: React.FC = () => {
           className="w-40"
         />
       </div>
-      <DataTable columns={columns} data={consents} isLoading={isLoading} keyField="id" filterable />
+      <DataTable columns={columns} data={consents} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };

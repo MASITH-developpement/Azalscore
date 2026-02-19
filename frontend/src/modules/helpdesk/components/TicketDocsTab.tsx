@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
+import { formatDate } from '@/utils/formatters';
 import type { Ticket, TicketAttachment } from '../types';
-import { formatDate, formatDateTime } from '@/utils/formatters';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * TicketDocsTab - Documents du ticket

@@ -5,7 +5,6 @@
  */
 
 import React, { useMemo } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard,
@@ -40,6 +39,7 @@ import {
   Download,
   type LucideIcon,
 } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
 import type { MenuItem, MenuSection } from '@/types';
 
@@ -660,7 +660,7 @@ interface DynamicMenuProps {
 }
 
 export const DynamicMenu: React.FC<DynamicMenuProps> = ({ onItemClick }) => {
-  const { capabilities, isLoading } = useCapabilities();
+  const { capabilities: _capabilities, isLoading } = useCapabilities();
 
   if (isLoading) {
     return (

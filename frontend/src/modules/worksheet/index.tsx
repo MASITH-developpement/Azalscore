@@ -12,13 +12,14 @@
  * - NO-CODE côté utilisateur
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Plus, Trash2, ChevronDown, Loader2, X, UserPlus, Package } from 'lucide-react';
+import { Check, Plus, Trash2, ChevronDown, Loader2, UserPlus, Package } from 'lucide-react';
 import { api } from '@core/api-client';
 import { unwrapApiResponse } from '@/types';
-import { useTranslation } from '../i18n';
+import type { ApiMutationError } from '@/types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
+import { useTranslation } from '../i18n';
 
 // ============================================================
 // TYPES
@@ -209,8 +210,9 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({
       setShowCreate(false);
       setIsOpen(false);
       setNewClient({ name: '', email: '', phone: '', city: '' });
-    } catch (err: any) {
-      setCreateError(err.message || 'Erreur lors de la création');
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      setCreateError(error.message || 'Erreur lors de la création');
     }
   };
 
@@ -397,8 +399,9 @@ const ProductSelectorInline: React.FC<ProductSelectorInlineProps> = ({
       setShowCreate(false);
       setIsOpen(false);
       setNewProduct({ code: '', name: '', sale_price: '' });
-    } catch (err: any) {
-      setCreateError(err.message || 'Erreur lors de la création');
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      setCreateError(error.message || 'Erreur lors de la création');
     }
   };
 
@@ -524,7 +527,7 @@ const LinesEditor: React.FC<LinesEditorProps> = ({ lines, products, onChange, t 
     ]);
   }, [lines, onChange]);
 
-  const updateLine = useCallback((index: number, field: keyof LineData, value: any) => {
+  const updateLine = useCallback((index: number, field: keyof LineData, value: LineData[keyof LineData]) => {
     const updated = [...lines];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);

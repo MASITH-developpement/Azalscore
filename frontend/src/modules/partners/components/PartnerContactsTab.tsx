@@ -7,17 +7,17 @@ import React, { useState } from 'react';
 import {
   Users, Mail, Phone, Briefcase, Plus, Star, User
 } from 'lucide-react';
-import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner, Contact } from '../types';
+import { Card } from '@ui/layout';
 import { getFullName } from '../types';
+import type { Partner, Contact } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PartnerContactsTab - Contacts
  */
 export const PartnerContactsTab: React.FC<TabContentProps<Partner>> = ({ data: partner }) => {
-  const [showAddContact, setShowAddContact] = useState(false);
+  const [_showAddContact, setShowAddContact] = useState(false);
   const contacts = partner.contacts || [];
 
   return (

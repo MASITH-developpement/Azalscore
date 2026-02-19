@@ -5,22 +5,20 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
-import { StatCard, ProgressBar } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   BookOpen, FileText, Euro, Users, Shield, AlertTriangle, CheckCircle,
-  Clock, Download, Upload, Play, RefreshCw, FileSearch, Sparkles, ArrowLeft
+  Clock, Download, Upload, Play, FileSearch
 } from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
-import { formatDate, formatDateTime, formatCurrency, formatPercent } from '@/utils/formatters';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button, Modal } from '@ui/actions';
+import { LoadingState } from '@ui/components/StateViews';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { DataTable } from '@ui/tables';
+import type { TableColumn } from '@/types';
+import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters';
 
 // ============================================================================
 // LOCAL COMPONENTS

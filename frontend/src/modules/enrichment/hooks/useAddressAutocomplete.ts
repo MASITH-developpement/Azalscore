@@ -34,7 +34,7 @@ export function useAddressAutocomplete(
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [selectedSuggestion, setSelectedSuggestion] = useState<AddressSuggestion | null>(null);
+  const [_selectedSuggestion, setSelectedSuggestion] = useState<AddressSuggestion | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);

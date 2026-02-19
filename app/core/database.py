@@ -33,13 +33,22 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-engine = create_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_size=settings.db_pool_size,
-    max_overflow=settings.db_max_overflow,
-    echo=False  # PRODUCTION: pas de log SQL verbeux
-)
+# Configuration engine avec paramètres adaptés au type de base
+# SQLite ne supporte pas pool_size/max_overflow
+if settings.database_url.startswith('sqlite://'):
+    engine = create_engine(
+        settings.database_url,
+        connect_args={"check_same_thread": False},
+        echo=False
+    )
+else:
+    engine = create_engine(
+        settings.database_url,
+        pool_pre_ping=True,
+        pool_size=settings.db_pool_size,
+        max_overflow=settings.db_max_overflow,
+        echo=False  # PRODUCTION: pas de log SQL verbeux
+    )
 
 logger.info(
     "[DB] Engine SQLAlchemy créé",

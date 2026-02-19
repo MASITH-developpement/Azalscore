@@ -7,16 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, Package, ShoppingCart, Truck, BarChart3, AlertTriangle } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product } from '../types';
-import { formatCurrency } from '@/utils/formatters';
-import {
-  formatQuantity, isLowStock, isOutOfStock,
-  isOverstock, getStockLevel, getStockLevelLabel, isLotExpiringSoon
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -25,6 +15,16 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  formatQuantity, isLowStock, isOutOfStock,
+  isOverstock, getStockLevel, getStockLevelLabel, isLotExpiringSoon
+} from '../types';
+import type { Product } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * ProductIATab - Assistant IA pour l'article

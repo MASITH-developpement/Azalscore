@@ -99,6 +99,12 @@ from app.modules.tenants.api_trial import router as trial_router
 
 # France Country Pack (sous-module, reste en v1)
 from app.modules.country_packs.france.router import router as france_pack_router
+from app.modules.country_packs.france.einvoicing_router import router as france_einvoicing_router
+from app.modules.country_packs.france.fec.router import router as france_fec_router
+from app.modules.country_packs.france.pcg.router import router as france_pcg_router
+
+# Module Settings - Paramètres dynamiques par module
+from app.api.module_settings_router import router as module_settings_router
 
 # ===========================================================================
 # MODULES LEGACY (v1 seulement - pas de router_unified)
@@ -633,6 +639,10 @@ api_v1.include_router(audit_api_router)        # Audit UI Events
 # Monter directement sur app avec /api prefix pour cohérence avec tests
 app.include_router(audit_v2_router, prefix="/api")  # Audit v2 Full API -> /api/v2/audit/*
 api_v1.include_router(france_pack_router)      # France Country Pack
+api_v1.include_router(france_einvoicing_router)# France E-Invoicing 2026
+api_v1.include_router(france_fec_router)       # France FEC Export (DGFiP)
+api_v1.include_router(france_pcg_router)       # France PCG 2025 (Plan Comptable Général)
+api_v1.include_router(module_settings_router)  # Paramètres dynamiques par module
 api_v1.include_router(ai_orchestration_router) # IA Orchestration
 api_v1.include_router(guardian_ai_router)      # Guardian AI
 api_v1.include_router(incidents_router)        # Incidents
@@ -667,6 +677,7 @@ def get_active_modules(
         {"code": "interventions", "name": "Interventions", "icon": "build", "active": True},
         {"code": "purchases", "name": "Achats", "icon": "shopping_cart", "active": True},
         {"code": "payments", "name": "Paiements", "icon": "payment", "active": True},
+        {"code": "einvoicing", "name": "E-Factures", "icon": "receipt_long", "active": True},
     ]
     role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     if role in ["DIRIGEANT", "ADMIN"]:

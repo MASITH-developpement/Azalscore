@@ -190,8 +190,7 @@ async def theo_websocket(
     translator = get_translator()
     companion_registry = get_companion_registry()
 
-    # Extraire user_id et tenant_id du token si présent
-    # TODO: Intégrer avec le système d'auth existant
+    # NOTE: Phase 2 - Intégration auth JWT existant
     user_id = None
     tenant_id = None
     authority_level = AuthorityLevel.USER

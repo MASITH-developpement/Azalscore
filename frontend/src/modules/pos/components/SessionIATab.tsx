@@ -10,17 +10,6 @@ import {
   TrendingUp, AlertTriangle, CheckCircle2,
   Banknote, ShoppingCart, Clock, ThumbsUp
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { POSSession } from '../types';
-import {
-  isSessionOpen, isSessionClosed, isSessionSuspended,
-  hasCashDifference, hasSignificantDifference, hasTransactions,
-  hasReturns, getCashPaymentPercentage
-} from '../types';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -29,6 +18,17 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
+import {
+  isSessionOpen, isSessionClosed, isSessionSuspended,
+  hasCashDifference, hasSignificantDifference, hasTransactions,
+  hasReturns, getCashPaymentPercentage
+} from '../types';
+import type { POSSession } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * SessionIATab - Assistant IA

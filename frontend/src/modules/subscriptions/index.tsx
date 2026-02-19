@@ -5,31 +5,22 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button } from '@ui/actions';
-import { Select } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   List, Users, DollarSign, TrendingDown, Gift, PlusCircle,
   ArrowLeft, Info, Package, Receipt, FileText, History, Sparkles,
   AlertCircle
 } from 'lucide-react';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn } from '@/types';
 
 // Import types
-import type {
-  Plan, Subscription, SubscriptionInvoice, SubscriptionStats,
-  SubscriptionStatus
-} from './types';
-import {
-  INTERVALS, SUBSCRIPTION_STATUS, INVOICE_STATUS,
-  SUBSCRIPTION_STATUS_CONFIG, INTERVAL_CONFIG,
-  getDaysUntilRenewal, willCancel, getPaidInvoicesCount
-} from './types';
 import { formatCurrency, formatDate, formatPercent } from '@/utils/formatters';
 
 // Import tab components
@@ -41,6 +32,15 @@ import {
   SubscriptionHistoryTab,
   SubscriptionIATab
 } from './components';
+import {
+  INTERVALS, SUBSCRIPTION_STATUS, INVOICE_STATUS,
+  SUBSCRIPTION_STATUS_CONFIG, INTERVAL_CONFIG,
+  getDaysUntilRenewal, willCancel, getPaidInvoicesCount
+} from './types';
+import type {
+  Plan, Subscription, SubscriptionInvoice, SubscriptionStats,
+  SubscriptionStatus
+} from './types';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -88,7 +88,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 // Navigation inter-modules
-const navigateTo = (view: string, params?: Record<string, any>) => {
+const _navigateTo = (view: string, params?: Record<string, any>) => {
   window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
 };
 

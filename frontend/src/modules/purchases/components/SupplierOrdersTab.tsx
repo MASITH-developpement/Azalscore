@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { ShoppingCart, ExternalLink } from 'lucide-react';
-import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Supplier, PurchaseOrder } from '../types';
-import { ORDER_STATUS_CONFIG } from '../types';
+import { Card } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { ORDER_STATUS_CONFIG } from '../types';
+import type { Supplier, PurchaseOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SupplierOrdersTab - Commandes du fournisseur

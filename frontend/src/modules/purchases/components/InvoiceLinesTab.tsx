@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { List, Plus, AlertCircle } from 'lucide-react';
-import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseInvoice } from '../types';
-import { calculateLineTotal, canEditInvoice } from '../types';
+import { Card } from '@ui/layout';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
+import { calculateLineTotal, canEditInvoice } from '../types';
+import type { PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoiceLinesTab - Lignes de facture
@@ -124,7 +124,7 @@ export const InvoiceLinesTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ da
 /**
  * Calcul ventilation TVA
  */
-function getVATBreakdown(lines: PurchaseInvoice['lines'], currency: string) {
+function getVATBreakdown(lines: PurchaseInvoice['lines'], _currency: string) {
   const breakdown: Record<number, { base: number; amount: number }> = {};
 
   lines.forEach((line) => {

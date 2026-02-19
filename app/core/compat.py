@@ -44,11 +44,16 @@ ROLE_MAPPING = {
 }
 
 
-def _map_role(user_role: str | None) -> UserRole:
+def _map_role(user_role: str | UserRole | None) -> UserRole:
     """Convertit le rôle utilisateur en UserRole enum."""
     if user_role is None:
         return UserRole.EMPLOYE
 
+    # Si c'est déjà un UserRole enum, le retourner directement
+    if isinstance(user_role, UserRole):
+        return user_role
+
+    # Sinon, mapper depuis la string
     role_str = str(user_role).upper()
     return ROLE_MAPPING.get(role_str, UserRole.EMPLOYE)
 

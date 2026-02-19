@@ -21,8 +21,8 @@ import {
   Check,
 } from 'lucide-react';
 import { CapabilityGuard } from '@core/capabilities';
+import type { TableColumn, TableAction } from '@/types';
 import { ErrorState, LoadingState } from '../components/StateViews';
-import type { TableColumn, TableAction, TableState, PaginatedResponse } from '@/types';
 
 // ============================================================
 // COLUMN FILTER TYPES
@@ -99,7 +99,7 @@ interface ColumnFilterPopoverProps {
 }
 
 const ColumnFilterPopover: React.FC<ColumnFilterPopoverProps> = ({
-  columnId,
+  columnId: _columnId,
   config,
   value,
   onApply,

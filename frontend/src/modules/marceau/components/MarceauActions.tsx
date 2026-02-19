@@ -5,16 +5,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Check, X, AlertCircle, Filter, ChevronDown, ChevronUp, Bot } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Check, X, Clock, AlertCircle, Filter, ChevronDown, ChevronUp, Eye, Bot } from 'lucide-react';
+import type { ApiMutationError } from '@/types';
 
 interface MarceauAction {
   id: string;
   module: string;
   action_type: string;
   status: string;
-  input_data: Record<string, any>;
-  output_data: Record<string, any>;
+  input_data: Record<string, unknown>;
+  output_data: Record<string, unknown>;
   confidence_score: number;
   required_human_validation: boolean;
   validated_by: string | null;
@@ -70,8 +71,8 @@ export function MarceauActions() {
       setActions(response.data.items || []);
       setTotal(response.data.total || 0);
       setError(null);
-    } catch (e: any) {
-      setError(e.message || 'Erreur chargement');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur chargement');
     } finally {
       setLoading(false);
     }
@@ -85,8 +86,8 @@ export function MarceauActions() {
         notes,
       });
       loadActions();
-    } catch (e: any) {
-      setError(e.message || 'Erreur validation');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur validation');
     } finally {
       setValidating(null);
     }

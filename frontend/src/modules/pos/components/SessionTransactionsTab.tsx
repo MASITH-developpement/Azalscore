@@ -6,18 +6,17 @@
 import React, { useState } from 'react';
 import {
   Receipt, ShoppingCart, ArrowDownCircle, ArrowUpCircle,
-  XCircle, CreditCard, Banknote, CheckCircle2
+  XCircle, CreditCard
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Select } from '@ui/forms';
-import type { TabContentProps } from '@ui/standards';
-import type { POSSession, POSTransaction } from '../types';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatTime } from '@/utils/formatters';
 import {
-  formatNumber,
   TRANSACTION_TYPE_CONFIG, TRANSACTION_STATUS_CONFIG, PAYMENT_METHOD_CONFIG,
   isSaleTransaction, isReturnTransaction, isVoidedTransaction
 } from '../types';
-import { formatCurrency, formatDateTime, formatTime } from '@/utils/formatters';
+import type { POSSession, POSTransaction } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SessionTransactionsTab - Transactions de la session
@@ -37,7 +36,7 @@ export const SessionTransactionsTab: React.FC<TabContentProps<POSSession>> = ({ 
   const salesCount = transactions.filter(isSaleTransaction).length;
   const returnsCount = transactions.filter(isReturnTransaction).length;
   const voidedCount = transactions.filter(isVoidedTransaction).length;
-  const completedCount = transactions.filter(t => t.status === 'COMPLETED').length;
+  const _completedCount = transactions.filter(t => t.status === 'COMPLETED').length;
 
   return (
     <div className="azals-std-tab-content">

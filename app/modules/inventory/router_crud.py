@@ -95,7 +95,8 @@ async def list_categories(
 ):
     """Lister les catégories."""
     service = get_inventory_service(db, context.tenant_id, context.user_id)
-    return service.list_categories(parent_id=parent_id, is_active=is_active)
+    categories, total = service.list_categories(parent_id=parent_id, active_only=is_active)
+    return categories
 
 @router.get("/categories/{category_id}", response_model=CategoryResponse)
 async def get_category(
@@ -243,14 +244,15 @@ async def list_products(
 ):
     """Lister les produits."""
     service = get_inventory_service(db, context.tenant_id, context.user_id)
+    skip = (page - 1) * page_size
     products, total = service.list_products(
         category_id=category_id,
         status=product_status,
         search=search,
-        page=page,
-        page_size=page_size
+        skip=skip,
+        limit=page_size
     )
-    return ProductList(products=products, total=total, page=page, page_size=page_size)
+    return ProductList(items=products, total=total)
 
 @router.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(
@@ -609,4 +611,4 @@ async def get_inventory_dashboard(
 ):
     """Récupérer le dashboard inventaire."""
     service = get_inventory_service(db, context.tenant_id, context.user_id)
-    return service.get_inventory_dashboard()
+    return service.get_dashboard()

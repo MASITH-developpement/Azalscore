@@ -5,9 +5,9 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useBarcodeLookup, formatBarcode, detectBarcodeType } from '../hooks';
 import { acceptEnrichment } from '../api';
-import type { EnrichedProductFields, BarcodeLookupProps } from '../types';
+import { useBarcodeLookup, formatBarcode, detectBarcodeType } from '../hooks';
+import type { BarcodeLookupProps } from '../types';
 
 // ============================================================================
 // COMPONENT

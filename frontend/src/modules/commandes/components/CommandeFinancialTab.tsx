@@ -5,13 +5,13 @@
 
 import React from 'react';
 import {
-  Euro, Percent, Calculator, TrendingUp,
+  Percent, Calculator, TrendingUp,
   CreditCard, Truck, Receipt
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Commande } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import type { Commande } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CommandeFinancialTab - Récapitulatif financier

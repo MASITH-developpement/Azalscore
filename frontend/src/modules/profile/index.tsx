@@ -4,8 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { MainLayout } from '@/ui-engine/layouts/MainLayout';
 import { Key, ShieldCheck, Smartphone, User, Save, Edit, X } from 'lucide-react';
+import { MainLayout } from '@/ui-engine/layouts/MainLayout';
 
 export default function ProfileModule() {
   const [user, setUser] = useState({

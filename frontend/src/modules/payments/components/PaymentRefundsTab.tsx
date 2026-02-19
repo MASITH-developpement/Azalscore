@@ -4,20 +4,20 @@
  */
 
 import React, { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   RotateCcw, Plus, Clock, CheckCircle, XCircle, AlertCircle, Loader2
 } from 'lucide-react';
-import { Card } from '@ui/layout';
-import { Button, Modal } from '@ui/actions';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
-import type { TabContentProps } from '@ui/standards';
-import type { Payment, Refund } from '../types';
+import { Button, Modal } from '@ui/actions';
+import { Card } from '@ui/layout';
 import { formatCurrency, formatDateTime } from '@/utils/formatters';
 import {
   getRefundTotal, canRefund,
   REFUND_STATUS_CONFIG
 } from '../types';
+import type { Payment, Refund } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PaymentRefundsTab - Remboursements
@@ -112,8 +112,9 @@ export const PaymentRefundsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
           }}>
             <div className="space-y-4">
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Montant a rembourser</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="refund-amount">Montant a rembourser</label>
                 <input
+                  id="refund-amount"
                   type="number"
                   name="amount"
                   defaultValue={remainingAmount}
@@ -127,8 +128,9 @@ export const PaymentRefundsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
                 </div>
               </div>
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Raison du remboursement</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="refund-reason">Raison du remboursement</label>
                 <textarea
+                  id="refund-reason"
                   name="reason"
                   placeholder="Expliquez la raison du remboursement..."
                   className="azals-input"

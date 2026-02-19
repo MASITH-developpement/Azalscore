@@ -762,7 +762,7 @@ class CashForecastService:
         return {
             "total_balance": str(current),
             "date": date.today().isoformat(),
-            "accounts": [],  # TODO: Détail par compte
+            "accounts": [],  # NOTE: Phase 2 - Détail par compte bancaire
         }
 
     async def simulate_transaction(

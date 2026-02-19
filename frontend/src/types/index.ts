@@ -17,6 +17,7 @@ export interface User {
   roles: string[];
   role?: string; // Alias pour compatibilité - premier rôle
   capabilities: string[];
+  default_view?: string; // Vue par défaut après connexion (configurable par admin)
   is_active: boolean;
   requires_2fa: boolean;
   last_login?: string;
@@ -72,6 +73,66 @@ export interface ApiError {
   message: string;
   field?: string;
   details?: Record<string, unknown>;
+}
+
+/**
+ * Type pour les erreurs de mutation API (utilisé dans onError)
+ */
+export interface ApiMutationError {
+  message?: string;
+  response?: {
+    data?: {
+      detail?: string;
+      message?: string;
+    };
+  };
+}
+
+// ============================================================
+// TYPES RECHERCHE GLOBALE
+// ============================================================
+
+export interface SearchClientResult {
+  id: string;
+  name: string;
+  code?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface SearchDocumentResult {
+  id: string;
+  number?: string;
+  document_type?: string;
+  customer_name?: string;
+  total_ttc?: number;
+}
+
+export interface SearchProductResult {
+  id: string;
+  name: string;
+  code?: string;
+  sku?: string;
+}
+
+// ============================================================
+// TYPES ENTITES PARTAGEES
+// ============================================================
+
+export interface Intervenant {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+}
+
+/**
+ * Type générique pour les éléments de sélecteur d'entité
+ */
+export interface EntityItem {
+  id: string;
+  [key: string]: unknown;
 }
 
 export interface PaginatedResponse<T> {

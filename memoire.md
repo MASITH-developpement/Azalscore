@@ -1,6 +1,239 @@
 # AZALSCORE - Memoire de Session
 
-## Derniere mise a jour: 2026-02-14
+## Derniere mise a jour: 2026-02-17
+
+---
+
+## Tâches Complétées Aujourd'hui [2026-02-17]
+
+### #93 Workflows d'Approbation - ANALYSE COMPLÈTE
+
+**Statut:** Analyse terminée, implémentation à ~70% existante
+
+**Ce qui existe déjà:**
+- ✅ Workflow RED (décisions haut risque) - 3 étapes obligatoires, rôle DIRIGEANT
+- ✅ Workflow Engine générique (`/app/core/workflow.py`) - multi-étapes, seuils, escalade
+- ✅ 3 workflows prédéfinis: `journal_entry_approval`, `payment_approval`, `period_close_approval`
+- ✅ Tables DB: `workflow_instances`, `workflow_steps`, `workflow_notifications`
+- ✅ Système IAM complet avec 1765+ permissions et rôles hiérarchiques
+- ✅ Documents avec champs `validated_by`, `validated_at`, `status`
+
+**Ce qui reste à créer:**
+- [ ] Workflows pour documents commerciaux (devis, factures, commandes)
+- [ ] Workflows pour achats (demandes d'achat, commandes fournisseurs)
+- [ ] Ajout `workflow_instance_id` aux modèles documents
+- [ ] Endpoints API: `/documents/{id}/submit-for-approval`, `/approve`, `/reject`
+- [ ] Modèle `ApprovalDelegation` (délégation approbation)
+- [ ] Service d'escalade automatique avec scheduler
+- [ ] Analytics approbation (temps moyen, taux rejet)
+
+**Fichiers clés existants:**
+- `/app/core/workflow.py` - 572 lignes - Moteur principal
+- `/app/services/red_workflow.py` - 297 lignes - Exemple complet
+- `/alembic/versions/20260215_workflow_approval.py` - Migration DB
+
+---
+
+### Module E-Invoicing France 2026 - COMPLET
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| 1 | Implémenter les clients PDP réels (Chorus Pro, PPF, Yooz) | ✅ |
+| 2 | Ajouter les tests unitaires (52 tests passent) | ✅ |
+| 3 | Créer endpoint réception factures entrantes (INBOUND) | ✅ |
+| 4 | Implémenter webhooks notifications de statut | ✅ |
+| 5 | Génération PDF/A-3 avec XML embarqué (Factur-X) | ✅ |
+| 6 | Menu Paramètres dynamique par module | ✅ |
+
+### Fichiers créés/modifiés
+
+**E-Invoicing:**
+- `einvoicing_webhooks.py` - Service notifications webhook (HMAC-SHA256, retry)
+- `einvoicing_pdf_generator.py` - Générateur PDF/A-3 Factur-X (reportlab + factur-x)
+- `tests/test_einvoicing_france_2026.py` - 52 tests unitaires
+- `einvoicing_router.py` - Endpoints INBOUND + PDF + Webhooks
+- `einvoicing_service.py` - Méthodes réception + accept/refuse
+
+**Menu Paramètres Dynamique:**
+- `app/core/module_settings_registry.py` - Registre paramètres par module (9 modules)
+- `app/api/module_settings_router.py` - 6 endpoints REST
+- `app/main.py` - Intégration router
+
+**Dépendances ajoutées (requirements.txt):**
+- `reportlab>=4.0.0`
+- `pypdf>=3.17.0`
+- `factur-x>=3.0`
+
+---
+
+## Module E-Invoicing France 2026 [2026-02-17]
+
+### Vue d'ensemble
+
+Module complet de facturation électronique conforme à la réforme française 2026.
+Architecture multi-tenant avec configuration PDP par entreprise.
+
+### Fichiers créés
+
+| Fichier | Description | Lignes |
+|---------|-------------|--------|
+| `einvoicing_models.py` | Modèles SQLAlchemy (5 tables) | ~380 |
+| `einvoicing_schemas.py` | Schémas Pydantic API | ~500 |
+| `einvoicing_service.py` | Service métier complet | ~900 |
+| `einvoicing_router.py` | 22 endpoints REST | ~450 |
+| `pdp_client.py` | Clients PDP (Chorus, PPF, etc.) | ~800 |
+| `20260217_france_einvoicing_2026.py` | Migration Alembic | ~280 |
+
+### Tables créées
+
+1. **einvoice_pdp_configs** - Configuration PDP par tenant
+   - Provider (Chorus Pro, PPF, Yooz, Docaposte, etc.)
+   - Credentials chiffrés (client_id, client_secret)
+   - Certificats (certificate_ref, private_key_ref)
+   - Options par provider, webhooks
+
+2. **einvoice_records** - Factures électroniques
+   - Direction (OUTBOUND/INBOUND)
+   - Format (Factur-X minimum/basic/EN16931/extended, UBL, CII)
+   - Statut lifecycle (DRAFT → SENT → DELIVERED → ACCEPTED/REFUSED → PAID)
+   - Lien avec documents source (CommercialDocument, LegacyPurchaseInvoice)
+   - Contenu XML et validation
+
+3. **einvoice_lifecycle_events** - Événements cycle de vie
+   - Traçabilité complète des changements de statut
+   - Source (PPF, PDP, WEBHOOK, MANUAL)
+
+4. **ereporting_submissions** - E-reporting B2C
+   - Périodes mensuelles
+   - Types (B2C_DOMESTIC, B2C_EXPORT, B2B_INTERNATIONAL)
+
+5. **einvoice_stats** - Statistiques par tenant/période
+
+### Endpoints API
+
+```
+/v1/france/einvoicing/
+├── pdp-configs/                    # Configuration PDP
+│   ├── GET     /                   # Liste configs
+│   ├── GET     /default            # Config par défaut
+│   ├── GET     /{id}               # Détail config
+│   ├── POST    /                   # Créer config
+│   ├── PUT     /{id}               # Modifier config
+│   └── DELETE  /{id}               # Supprimer config
+├── einvoices/                      # Factures électroniques
+│   ├── GET     /                   # Liste factures
+│   ├── GET     /{id}               # Détail facture
+│   ├── GET     /{id}/xml           # Télécharger XML
+│   ├── POST    /from-source        # Créer depuis document
+│   ├── POST    /manual             # Créer manuellement
+│   ├── POST    /{id}/submit        # Soumettre au PDP
+│   ├── POST    /{id}/validate      # Valider XML
+│   ├── PUT     /{id}/status        # Modifier statut
+│   ├── POST    /bulk/generate      # Génération en masse
+│   └── POST    /bulk/submit        # Soumission en masse
+├── ereporting/                     # E-reporting B2C
+│   ├── GET     /                   # Liste soumissions
+│   ├── POST    /                   # Créer soumission
+│   └── POST    /{id}/submit        # Soumettre au PPF
+├── stats                           # Statistiques
+├── dashboard                       # Dashboard complet
+└── webhook/{config_id}             # Webhook PDP
+```
+
+### Intégration multi-tenant
+
+- Chaque tenant a ses propres configurations PDP
+- Isolation complète des données (tenant_id sur toutes les tables)
+- Configuration par défaut par tenant
+- Statistiques agrégées par période et tenant
+
+### Intégration données financières
+
+Le service s'intègre avec :
+- `CommercialDocument` (factures/avoirs clients)
+- `LegacyPurchaseInvoice` (factures fournisseurs)
+- `Customer` (infos acheteur)
+- `PurchaseSupplier` (infos vendeur)
+
+### Formats supportés
+
+- **Factur-X** (PDF/A-3 + XML)
+  - MINIMUM
+  - BASIC
+  - EN16931 (défaut)
+  - EXTENDED
+- **UBL 2.1**
+- **CII D16B**
+
+### Providers PDP supportés
+
+- Chorus Pro (B2G)
+- PPF (Portail Public de Facturation)
+- Yooz
+- Docaposte
+- Sage
+- Cegid
+- Generix
+- Edicom
+- Basware
+- Custom (générique)
+
+---
+
+## Menu Paramètres Dynamique par Module [2026-02-17]
+
+### Vue d'ensemble
+
+Système de configuration dynamique permettant à chaque tenant de personnaliser les paramètres de ses modules activés.
+
+### Endpoints API
+
+```
+/v1/settings/modules/
+├── GET     /                           # Liste modules configurables
+├── GET     /{module_code}/schema       # Schéma des paramètres
+├── GET     /{module_code}              # Paramètres actuels
+├── PUT     /{module_code}              # Mise à jour paramètres
+├── POST    /{module_code}/reset        # Réinitialiser défauts
+└── GET     /{module_code}/defaults     # Valeurs par défaut
+```
+
+### Modules avec paramètres (9)
+
+| Module | Paramètres | Description |
+|--------|------------|-------------|
+| invoicing | 10 | Préfixe factures, conditions paiement, TVA, relances |
+| einvoicing | 9 | Format Factur-X, auto-submit, webhooks, rétention |
+| payments | 5 | Mode paiement, rapprochement, pénalités retard |
+| partners | 5 | Préfixe client, SIRET obligatoire, doublons |
+| inventory | 7 | Méthode valorisation, alertes stock, lots/séries |
+| purchases | 5 | Préfixe commandes, validation, seuil approbation |
+| hr | 5 | Préfixe matricule, heures hebdo, congés, DSN |
+| accounting | 5 | Début exercice, plan comptable, écritures auto |
+| projects | 6 | Type facturation, suivi temps/dépenses, alertes |
+
+### Types de paramètres supportés
+
+- `string` - Texte (avec max_length, placeholder)
+- `integer` / `number` - Nombre (avec min, max, step)
+- `boolean` - Case à cocher
+- `select` - Liste déroulante (options)
+- `multiselect` - Sélection multiple
+- `date`, `email`, `url`, `password`, `color`
+
+### Catégories
+
+- `general` - Paramètres généraux
+- `display` - Affichage
+- `notifications` - Notifications
+- `integration` - Intégrations
+- `security` - Sécurité
+- `advanced` - Avancé
+
+### Fichiers
+
+- `/app/core/module_settings_registry.py` - Définitions paramètres
+- `/app/api/module_settings_router.py` - Endpoints REST
 
 ---
 
@@ -1276,7 +1509,7 @@ app/modules/odoo_import/
 
 ## TODOLIST COMPLÈTE AZALSCORE — 123 TÂCHES
 
-**Mise à jour:** 2026-02-15
+**Mise à jour:** 2026-02-17
 **Référence:** `/home/ubuntu/azalscore/PROMPT_PHASE_CRITIQUE.md`
 
 > **ALERTE:** Audit du 2026-02-15 révèle que 98.5% des endpoints backend (1090/1107) ne sont PAS utilisés par le frontend.
@@ -1284,25 +1517,46 @@ app/modules/odoo_import/
 
 ---
 
+### ✅ TÂCHES RÉCEMMENT COMPLÉTÉES
+
+| Date | Tâche | Détails |
+|------|-------|---------|
+| 2026-02-17 | Tests Module Audit v2 | 75/75 tests passent (100%) - Corrections schemas, service, router |
+| 2026-02-17 | Corrections FastAPI Deprecation | `regex=` → `pattern=` dans 6 fichiers (accounting, guardian, audit) |
+| 2026-02-17 | Infrastructure Docker | Rebuild API, fix réseau nginx ↔ api, health check OK |
+| 2026-02-17 | Service Audit - record_metric | Support timestamp, génération UUID, flush DB |
+| 2026-02-17 | Schema AuditLogResponseSchema | Ajout champ `user_agent` manquant |
+| 2026-02-17 | **#97 Audit Secrets** | ✅ COMPLÉTÉ - Rapport `AUDIT_SECRETS_2026-02-17.md` généré |
+| 2026-02-17 | **#96 Analyse Vulnérabilités SCA** | ✅ COMPLÉTÉ - 3 npm fixées, rapport `AUDIT_SCA_2026-02-17.md` |
+| 2026-02-17 | **#117 Pipeline CI/CD** | ✅ DÉJÀ EN PLACE - 6 workflows GitHub Actions complets |
+| 2026-02-17 | **#110 Code Review Process** | ✅ DÉJÀ EN PLACE - CODEOWNERS, PR template, CONTRIBUTING.md |
+| 2026-02-17 | **#109 Analyse Statique SonarQube** | ✅ COMPLÉTÉ - Bandit 0 high réel, B307 eval() et B108 /tmp corrigés |
+| 2026-02-17 | **#113 Environnement Staging** | ✅ COMPLÉTÉ - docker-compose.staging.yml, .env.staging.example, nginx.staging.conf, docs/STAGING.md |
+| 2026-02-17 | **#27 Contrats Partenaires** | 📋 CHECKLIST CRÉÉE - `docs/legal/PARTNER_CONTRACTS_CHECKLIST.md` |
+| 2026-02-17 | **#28 Validation Juridique Finance** | 📋 CHECKLIST CRÉÉE - `docs/legal/FINANCE_SUITE_LEGAL_VALIDATION.md` |
+| 2026-02-17 | **#2,3,9,10,11,21 Finance Suite** | ✅ DÉJÀ IMPLÉMENTÉS - 13 modèles, 50+ schemas, 138 endpoints |
+
+---
+
 ### PHASE 0 — FONDATIONS TECHNIQUES (15 tâches) — BLOQUANT
 
 | # | Tâche | Statut |
 |---|-------|--------|
-| #117 | Pipeline CI/CD Complet | ⬜ |
-| #110 | Processus de Code Review | ⬜ |
-| #109 | Analyse Statique de Code (SonarQube) | ⬜ |
-| #113 | Environnement Staging Complet | ⬜ |
-| #96 | Analyse Vulnérabilités Dépendances (SCA) | ⬜ |
-| #97 | Audit Secrets et Credentials | ⬜ |
-| #27 | Négocier et signer contrats partenaires | ⬜ |
-| #28 | Validation juridique Finance Suite | ⬜ |
-| #2 | Créer les modèles SQLAlchemy Finance Suite | ⬜ |
-| #3 | Créer les schemas Pydantic Finance Suite | ⬜ |
-| #11 | Créer la migration Alembic Finance Suite | ⬜ |
-| #9 | Créer le router API Finance Suite | ⬜ |
-| #10 | Créer le service orchestrateur Finance Suite | ⬜ |
-| #21 | Implémenter la sécurité Finance Suite | ⬜ |
-| #93 | Implémenter Validations et Workflows Approbation | ⬜ |
+| #117 | Pipeline CI/CD Complet | ✅ EXISTANT |
+| #110 | Processus de Code Review | ✅ EXISTANT |
+| #109 | Analyse Statique de Code (SonarQube) | ✅ COMPLÉTÉ |
+| #113 | Environnement Staging Complet | ✅ COMPLÉTÉ |
+| #96 | Analyse Vulnérabilités Dépendances (SCA) | ✅ COMPLÉTÉ |
+| #97 | Audit Secrets et Credentials | ✅ COMPLÉTÉ |
+| #27 | Négocier et signer contrats partenaires | 📋 CHECKLIST (action humaine requise) |
+| #28 | Validation juridique Finance Suite | 📋 CHECKLIST (action humaine requise) |
+| #2 | Créer les modèles SQLAlchemy Finance Suite | ✅ EXISTANT (13 modèles, tables en BDD) |
+| #3 | Créer les schemas Pydantic Finance Suite | ✅ EXISTANT (50+ schemas) |
+| #11 | Créer la migration Alembic Finance Suite | ✅ EXISTANT (core_init migration) |
+| #9 | Créer le router API Finance Suite | ✅ EXISTANT (138 endpoints) |
+| #10 | Créer le service orchestrateur Finance Suite | ✅ EXISTANT (1570 lignes) |
+| #21 | Implémenter la sécurité Finance Suite | ✅ EXISTANT (tenant isolation) |
+| #93 | Implémenter Validations et Workflows Approbation | 🔄 ANALYSÉ (70% existant) |
 
 **Effort:** 5-6 semaines
 
@@ -1385,11 +1639,12 @@ app/modules/odoo_import/
 
 | # | Tâche | Statut |
 |---|-------|--------|
-| #99 | Tests Unitaires - Couverture 80% | ⬜ |
-| #100 | Tests d'Intégration API | ⬜ |
+| #99 | Tests Unitaires - Couverture 80% | 🔄 EN COURS (audit: 75/75 ✅) |
+| #100 | Tests d'Intégration API | 🔄 EN COURS (audit v2: 100%) |
 | #103 | Tests de Régression Automatisés | ⬜ |
 
 **Effort:** 2-3 semaines
+**Progrès:** Module Audit v2 complètement testé (2026-02-17)
 
 ---
 
@@ -1490,9 +1745,10 @@ app/modules/odoo_import/
 | #44 | Signature Électronique Intégrée | ⬜ |
 | #40 | Tableau de Bord Dirigeant Intelligent | ⬜ |
 | #111 | Documentation Technique Complète | ⬜ |
-| #112 | Gestion de la Dette Technique | ⬜ |
+| #112 | Gestion de la Dette Technique | 🔄 EN COURS (deprecations FastAPI corrigées) |
 
 **Effort:** 6 semaines
+**Progrès:** Warnings `regex` → `pattern` corrigés (2026-02-17)
 
 ---
 

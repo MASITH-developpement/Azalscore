@@ -8,11 +8,11 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
+from app.core.types import JSON, UniversalUUID
 
 
 class EmailStatus(str, Enum):
@@ -52,7 +52,7 @@ class EmailTemplate(Base):
     """Modèle de template d'email."""
     __tablename__ = "email_templates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=True, index=True)  # NULL = template global
     code = Column(String(100), nullable=False, index=True)
     name = Column(String(255), nullable=False)
@@ -75,9 +75,9 @@ class EmailLog(Base):
     """Log des emails envoyés."""
     __tablename__ = "email_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    template_id = Column(UUID(as_uuid=True), ForeignKey("email_templates.id"), nullable=True)
+    template_id = Column(UniversalUUID(), ForeignKey("email_templates.id"), nullable=True)
     email_type = Column(SQLEnum(EmailType), nullable=False, index=True)
     status = Column(SQLEnum(EmailStatus), default=EmailStatus.PENDING, index=True)
 
@@ -129,7 +129,7 @@ class EmailConfig(Base):
     """Configuration email par tenant."""
     __tablename__ = "email_configs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, unique=True, index=True)
 
     # Provider SMTP
@@ -174,8 +174,8 @@ class EmailQueue(Base):
     """File d'attente des emails à envoyer."""
     __tablename__ = "email_queue"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email_log_id = Column(UUID(as_uuid=True), ForeignKey("email_logs.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    email_log_id = Column(UniversalUUID(), ForeignKey("email_logs.id"), nullable=False)
     tenant_id = Column(String(50), nullable=False, index=True)
     priority = Column(Integer, default=5, index=True)
     scheduled_at = Column(DateTime, default=datetime.utcnow, index=True)

@@ -202,6 +202,108 @@ MODULE_REGISTRY: List[ModuleDefinition] = [
         description="Journaux, écritures comptables"
     ),
     ModuleDefinition(
+        name="finance_providers",
+        import_path="app.modules.finance.router_providers",
+        priority=ModulePriority.IMPORTANT,
+        description="Providers finance: Swan, NMI, Defacto, Solaris"
+    ),
+    ModuleDefinition(
+        name="finance_webhooks",
+        import_path="app.modules.finance.webhooks.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Webhooks finance unifiés"
+    ),
+    ModuleDefinition(
+        name="finance_reconciliation",
+        import_path="app.modules.finance.reconciliation.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Rapprochement bancaire IA"
+    ),
+    ModuleDefinition(
+        name="finance_invoice_ocr",
+        import_path="app.modules.finance.invoice_ocr.router",
+        priority=ModulePriority.IMPORTANT,
+        description="OCR factures fournisseurs"
+    ),
+    ModuleDefinition(
+        name="finance_cash_forecast",
+        import_path="app.modules.finance.cash_forecast.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Prévisionnel de trésorerie"
+    ),
+    ModuleDefinition(
+        name="finance_auto_categorization",
+        import_path="app.modules.finance.auto_categorization.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Catégorisation automatique des opérations"
+    ),
+    ModuleDefinition(
+        name="finance_currency",
+        import_path="app.modules.finance.currency.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Gestion des devises et taux de change"
+    ),
+    ModuleDefinition(
+        name="finance_virtual_cards",
+        import_path="app.modules.finance.virtual_cards.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Cartes bancaires virtuelles"
+    ),
+    ModuleDefinition(
+        name="finance_integration",
+        import_path="app.modules.finance.integration.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Intégration Finance-Comptabilité-Facturation"
+    ),
+    ModuleDefinition(
+        name="finance_suite",
+        import_path="app.modules.finance.suite.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Orchestrateur Finance Suite"
+    ),
+    ModuleDefinition(
+        name="finance_approval",
+        import_path="app.modules.finance.approval.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Workflows d'approbation"
+    ),
+    ModuleDefinition(
+        name="production_gpao",
+        import_path="app.modules.production.gpao.router",
+        priority=ModulePriority.IMPORTANT,
+        description="GPAO/MRP - Gestion de Production Assistée"
+    ),
+    ModuleDefinition(
+        name="production_gantt",
+        import_path="app.modules.production.gantt.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Gantt Production - Visualisation et planification"
+    ),
+    ModuleDefinition(
+        name="production_traceability",
+        import_path="app.modules.production.traceability.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Traçabilité - Lots et numéros de série"
+    ),
+    ModuleDefinition(
+        name="production_delivery",
+        import_path="app.modules.production.delivery.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Bons de livraison et expéditions"
+    ),
+    ModuleDefinition(
+        name="production_wms",
+        import_path="app.modules.production.wms.router",
+        priority=ModulePriority.IMPORTANT,
+        description="WMS - Gestion d'entrepôt"
+    ),
+    ModuleDefinition(
+        name="production_mes",
+        import_path="app.modules.production.mes.router",
+        priority=ModulePriority.IMPORTANT,
+        description="MES - Suivi production temps réel"
+    ),
+    ModuleDefinition(
         name="helpdesk",
         import_path="app.modules.helpdesk.router_crud",
         priority=ModulePriority.IMPORTANT,

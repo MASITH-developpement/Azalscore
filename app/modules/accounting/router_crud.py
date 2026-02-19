@@ -104,7 +104,7 @@ async def get_accounting_summary(
     - Charges
     - Resultat net
     """
-    service = AccountingService(db, context)
+    service = AccountingService(db, context.tenant_id)
     return service.get_summary(fiscal_year_id)
 
 
@@ -319,7 +319,7 @@ async def list_journal_entries(
     fiscal_year_id: Optional[UUID] = Query(None),
     journal_code: Optional[str] = Query(None),
     status_filter: Optional[EntryStatus] = Query(None, alias="status"),
-    period: Optional[str] = Query(None, regex=r"^\d{4}-\d{2}$"),
+    period: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$"),
     search: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
@@ -407,7 +407,7 @@ async def get_ledger(
 @router.get("/balance", response_model=PaginatedResponse[BalanceEntry])
 async def get_balance(
     fiscal_year_id: Optional[UUID] = Query(None),
-    period: Optional[str] = Query(None, regex=r"^\d{4}-\d{2}$"),
+    period: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     context: SaaSContext = Depends(get_context),

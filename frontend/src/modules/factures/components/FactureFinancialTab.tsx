@@ -5,15 +5,14 @@
 
 import React from 'react';
 import {
-  Euro, Percent, Calculator, TrendingUp,
+  Percent, Calculator, TrendingUp,
   CreditCard, Receipt, CheckCircle2, Clock, AlertTriangle
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Facture, Payment } from '../types';
-import { PAYMENT_METHODS, isOverdue } from '../types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { PAYMENT_METHODS, isOverdue } from '../types';
+import type { Facture, Payment } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * FactureFinancialTab - Récapitulatif financier et paiements

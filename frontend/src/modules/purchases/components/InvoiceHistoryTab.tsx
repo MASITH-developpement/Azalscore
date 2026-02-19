@@ -6,9 +6,9 @@
 import React from 'react';
 import { Clock, User, Edit, Plus, CheckCircle2, XCircle, CreditCard, ArrowRight } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseInvoice, PurchaseHistoryEntry } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { PurchaseInvoice, PurchaseHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoiceHistoryTab - Historique

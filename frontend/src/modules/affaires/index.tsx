@@ -11,17 +11,17 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Briefcase, Euro, Calendar, Target, Edit, Eye, Plus, ArrowLeft, Sparkles } from 'lucide-react';
+import { Briefcase, Euro, Calendar, Target, Edit, Plus, Sparkles } from 'lucide-react';
 import { api } from '@core/api-client';
-import { unwrapApiResponse } from '@/types';
 import {
-  Page, PageHeader, Section, Grid, Stats, SearchBar, SimpleTable,
-  Badge, Progress, Totals, Footer, Button, Loading,
+  Page, PageHeader, Section, Stats, SearchBar, SimpleTable,
+  Badge, Progress, Totals, Button, Loading,
   formatCurrency, formatDate,
   SmartField, SmartForm, useModulePermissions,
 } from '@ui/simple';
-import type { FieldMode, ContextMode, EntityConfig } from '@ui/simple';
+import { unwrapApiResponse } from '@/types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
+import type { FieldMode, ContextMode, EntityConfig } from '@ui/simple';
 
 // ============================================================
 // TYPES & CONFIG
@@ -217,7 +217,7 @@ const FormView: React.FC<FormViewProps> = ({ id, onBack, onSaved, contextMode })
   const permissions = useModulePermissions('projects');
 
   // Déterminer le mode effectif selon les permissions
-  const mode: FieldMode = permissions.getMode(contextMode);
+  const _mode: FieldMode = permissions.getMode(contextMode);
 
   const [editing, setEditing] = useState(contextMode !== 'view');
   const [form, setForm] = useState<Partial<Affaire>>({

@@ -4,12 +4,12 @@
  */
 
 import React from 'react';
-import { ShoppingCart, ArrowRight, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, AlertTriangle } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Seller, MarketplaceOrder } from '../types';
-import { ORDER_STATUS_CONFIG } from '../types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { ORDER_STATUS_CONFIG } from '../types';
+import type { Seller, MarketplaceOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SellerOrdersTab - Commandes du vendeur

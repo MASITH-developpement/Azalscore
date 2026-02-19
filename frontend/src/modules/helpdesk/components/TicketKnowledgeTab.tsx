@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
 import type { Ticket } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * TicketKnowledgeTab - Articles de base de connaissances

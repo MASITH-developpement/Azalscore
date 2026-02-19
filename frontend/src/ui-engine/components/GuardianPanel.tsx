@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { clsx } from 'clsx';
 import {
   AlertCircle,
   AlertTriangle,
@@ -36,7 +37,6 @@ import {
   Activity,
   type LucideIcon,
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import '@/styles/guardian-panel.css';
 
 // ============================================================

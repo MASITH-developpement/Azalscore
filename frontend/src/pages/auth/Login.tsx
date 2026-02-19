@@ -4,12 +4,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { z } from 'zod';
+import { setTenantId } from '@core/api-client';
+import { trackAuthEvent } from '@core/audit-ui';
 import { useAuth } from '@core/auth';
 import { useCapabilitiesStore } from '@core/capabilities';
-import { trackAuthEvent } from '@core/audit-ui';
-import { setTenantId } from '@core/api-client';
 import { Button } from '@ui/actions';
-import { z } from 'zod';
 
 const loginSchema = z.object({
   tenant: z.string().min(1, 'Société requise'),

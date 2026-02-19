@@ -58,7 +58,7 @@ if ('serviceWorker' in navigator) {
         // Check for updates every 60 seconds
         setInterval(() => registration.update(), 60 * 1000);
       })
-      .catch((error) => {
+      .catch((_error) => {
       });
   });
 

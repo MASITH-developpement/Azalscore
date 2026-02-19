@@ -6,10 +6,10 @@
 import React from 'react';
 import { Wallet, CheckCircle2, Clock, AlertTriangle, XCircle, ArrowRight } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Seller, Payout } from '../types';
-import { PAYOUT_STATUS_CONFIG } from '../types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { PAYOUT_STATUS_CONFIG } from '../types';
+import type { Seller, Payout } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SellerPayoutsTab - Paiements du vendeur
@@ -97,7 +97,7 @@ export const SellerPayoutsTab: React.FC<TabContentProps<Seller>> = ({ data: sell
       <Card title="Coordonnees de versement" icon={<Wallet size={18} />} className="mt-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="azals-field">
-            <label className="azals-field__label">IBAN</label>
+            <span className="azals-field__label">IBAN</span>
             <div className="azals-field__value font-mono text-sm">
               {seller.bank_iban || (
                 <span className="text-orange-600 flex items-center gap-1">
@@ -107,7 +107,7 @@ export const SellerPayoutsTab: React.FC<TabContentProps<Seller>> = ({ data: sell
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">BIC</label>
+            <span className="azals-field__label">BIC</span>
             <div className="azals-field__value font-mono">
               {seller.bank_bic || '-'}
             </div>

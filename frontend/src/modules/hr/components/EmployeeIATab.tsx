@@ -9,18 +9,6 @@ import React, { useState } from 'react';
 import {
   TrendingUp, Calendar, FileText, GraduationCap, Euro
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Employee } from '../types';
-import {
-  getSeniority, getSeniorityFormatted,
-  EMPLOYEE_STATUS_CONFIG, CONTRACT_TYPE_CONFIG,
-  isActive, isOnLeave, isContractExpiringSoon, isOnProbation,
-  getRemainingLeave, getTotalRemainingLeave, getPendingLeaveRequests
-} from '../types';
-import { formatDate } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -29,6 +17,18 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatDate } from '@/utils/formatters';
+import {
+  getSeniority, getSeniorityFormatted,
+  EMPLOYEE_STATUS_CONFIG, CONTRACT_TYPE_CONFIG,
+  isActive, isOnLeave, isContractExpiringSoon, isOnProbation,
+  getRemainingLeave, getTotalRemainingLeave, getPendingLeaveRequests
+} from '../types';
+import type { Employee } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * EmployeeIATab - Assistant IA pour l'employe

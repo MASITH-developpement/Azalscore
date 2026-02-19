@@ -73,6 +73,7 @@ class AuditLogResponseSchema(BaseModel):
     session_id: str | None = None
     request_id: str | None = None
     ip_address: str | None = None
+    user_agent: str | None = None
 
     description: str | None = None
     old_value: dict[str, Any] | None = None
@@ -234,6 +235,7 @@ class MetricValueSchema(BaseModel):
     metric_code: str
     value: float
     dimensions: dict[str, Any] | None = None
+    timestamp: datetime | None = None
 
 
 class MetricValueResponseSchema(BaseModel):

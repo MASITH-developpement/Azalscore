@@ -9,9 +9,9 @@ import {
   Calculator, PieChart, ArrowUpRight, BarChart3
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Customer } from '../types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Customer } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CustomerFinancialTab - Données financières du client
@@ -71,21 +71,21 @@ export const CustomerFinancialTab: React.FC<TabContentProps<Customer>> = ({ data
         <Card title="Synthèse financière" icon={<PieChart size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Chiffre d'affaires total</label>
+              <span className="azals-std-field__label">Chiffre d'affaires total</span>
               <div className="azals-std-field__value text-lg font-semibold text-success">
                 {formatCurrency(totalRevenue)}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Nombre de commandes</label>
+              <span className="azals-std-field__label">Nombre de commandes</span>
               <div className="azals-std-field__value">{orderCount}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Valeur moyenne commande</label>
+              <span className="azals-std-field__label">Valeur moyenne commande</span>
               <div className="azals-std-field__value">{formatCurrency(avgOrderValue)}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Dernière commande</label>
+              <span className="azals-std-field__label">Dernière commande</span>
               <div className="azals-std-field__value">
                 {customer.last_order_date ? formatDate(customer.last_order_date) : '-'}
               </div>
@@ -148,27 +148,27 @@ export const CustomerFinancialTab: React.FC<TabContentProps<Customer>> = ({ data
       >
         <Grid cols={3} gap="md">
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Encours autorisé</label>
+            <span className="azals-std-field__label">Encours autorisé</span>
             <div className="azals-std-field__value">-</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Encours actuel</label>
+            <span className="azals-std-field__label">Encours actuel</span>
             <div className="azals-std-field__value">-</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Disponible</label>
+            <span className="azals-std-field__label">Disponible</span>
             <div className="azals-std-field__value">-</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Mode de règlement</label>
+            <span className="azals-std-field__label">Mode de règlement</span>
             <div className="azals-std-field__value">-</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Délai de paiement</label>
+            <span className="azals-std-field__label">Délai de paiement</span>
             <div className="azals-std-field__value">-</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Retard moyen</label>
+            <span className="azals-std-field__label">Retard moyen</span>
             <div className="azals-std-field__value">-</div>
           </div>
         </Grid>

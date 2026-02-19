@@ -10,7 +10,7 @@ import {
   Phone, Mail, Calendar, CheckSquare, MessageSquare,
   Clock, User, Video, FileText, AlertCircle
 } from 'lucide-react';
-import { formatDate, formatDateTime } from '@/utils/formatters';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * Types d'activité supportés

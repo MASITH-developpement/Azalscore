@@ -9,13 +9,13 @@ import {
   FileText, ArrowRight, CheckSquare, MessageSquare
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Customer, CustomerHistoryEntry, Activity } from '../types';
+import { formatDateTime, formatDate } from '@/utils/formatters';
 import {
   CUSTOMER_TYPE_CONFIG,
   ACTIVITY_TYPE_CONFIG, ACTIVITY_STATUS_CONFIG
 } from '../types';
-import { formatDateTime, formatDate } from '@/utils/formatters';
+import type { Customer, CustomerHistoryEntry, Activity } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CustomerHistoryTab - Historique et activités du client

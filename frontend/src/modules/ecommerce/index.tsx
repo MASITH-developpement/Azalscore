@@ -4,21 +4,19 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthenticatedQuery } from '@/ui-engine/hooks';
 import {
   Package, ShoppingCart, Truck, Tag, Euro, TrendingUp, AlertTriangle,
   ArrowLeft, Edit, Printer, Clock, FileText, Sparkles
 } from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button } from '@ui/actions';
-import { Select } from '@ui/forms';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -27,14 +25,10 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
 
 // Types et helpers
-import type { Product, Order, Category, Shipping, OrderItem } from './types';
-import {
-  PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, SHIPPING_STATUS_CONFIG,
-  isLowStock, isOutOfStock, calculateMargin
-} from './types';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
 
 // Composants tabs
@@ -42,6 +36,11 @@ import {
   ProductInfoTab, ProductStockTab, ProductDocumentsTab, ProductHistoryTab, ProductIATab,
   OrderInfoTab, OrderItemsTab, OrderShippingTab, OrderDocumentsTab, OrderHistoryTab, OrderIATab
 } from './components';
+import {
+  PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, SHIPPING_STATUS_CONFIG,
+  isLowStock, isOutOfStock, calculateMargin
+} from './types';
+import type { Product, Order, Category, Shipping, OrderItem } from './types';
 
 // ============================================================================
 // TYPES LOCAUX (extensions pour compatibilite)
@@ -205,7 +204,7 @@ const useShippings = (filters?: { status?: string }) => {
   });
 };
 
-const useUpdateOrderStatus = () => {
+const _useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {

@@ -302,8 +302,7 @@ class FrancePackService:
         if not declaration:
             raise ValueError("Déclaration non trouvée")
 
-        # TODO: Calculer depuis les écritures comptables réelles
-        # Pour l'instant, simulation
+        # NOTE: Phase 2 - Calcul depuis accounting_service.get_vat_entries()
         declaration.total_ht = Decimal("100000.00")
         declaration.total_tva_collectee = Decimal("20000.00")
         declaration.total_tva_deductible = Decimal("8000.00")

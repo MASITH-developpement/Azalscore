@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { FileText, ExternalLink, AlertTriangle } from 'lucide-react';
-import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Supplier, PurchaseInvoice } from '../types';
-import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
+import { Card } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
+import type { Supplier, PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SupplierInvoicesTab - Factures du fournisseur

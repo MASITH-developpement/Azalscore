@@ -12,13 +12,13 @@ import {
   Building2, Lock, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Info
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner } from '../types';
 import { CapabilityGuard } from '@core/capabilities';
-import { useRiskAnalysis, RiskDisplay, ScoreGauge } from '@/modules/enrichment';
-import type { RiskAnalysis as RiskAnalysisType, RiskLevel } from '@/modules/enrichment';
+import { Button } from '@ui/actions';
+import { Card, Grid } from '@ui/layout';
+import { useRiskAnalysis, ScoreGauge } from '@/modules/enrichment';
+import type { RiskLevel } from '@/modules/enrichment';
+import type { Partner } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * Composant d'alerte pour risque eleve

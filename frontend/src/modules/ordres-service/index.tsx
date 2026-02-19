@@ -13,25 +13,13 @@ import {
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-import type {
-  Intervention, DonneurOrdre, InterventionStats,
-  InterventionStatut, InterventionPriorite, TypeIntervention, CorpsEtat, CanalDemande
-} from './types';
-import {
-  STATUT_CONFIG, PRIORITE_CONFIG, STATUTS, PRIORITES,
-  TYPES_INTERVENTION, CORPS_ETATS, CANAUX_DEMANDE,
-  TYPE_INTERVENTION_CONFIG,
-  canEditIntervention, canStartIntervention, canCompleteIntervention, canInvoiceIntervention,
-  getInterventionAge, getActualDuration, getPhotoCount, getFullAddress
-} from './types';
-import { formatDate, formatDateTime, formatCurrency, formatDuration } from '@/utils/formatters';
+import { formatDateTime, formatCurrency, formatDuration } from '@/utils/formatters';
 import {
   InterventionInfoTab,
   InterventionPlanningTab,
@@ -40,6 +28,18 @@ import {
   InterventionHistoryTab,
   InterventionIATab
 } from './components';
+import {
+  STATUT_CONFIG, PRIORITE_CONFIG, STATUTS, PRIORITES,
+  TYPES_INTERVENTION, CORPS_ETATS, CANAUX_DEMANDE,
+  TYPE_INTERVENTION_CONFIG,
+  canEditIntervention, canStartIntervention, canCompleteIntervention, canInvoiceIntervention,
+  getInterventionAge, getActualDuration, getPhotoCount, getFullAddress
+} from './types';
+import type {
+  Intervention, DonneurOrdre, InterventionStats,
+  InterventionStatut, InterventionPriorite, TypeIntervention, CorpsEtat, CanalDemande
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================
 // API HOOKS
@@ -298,7 +298,7 @@ const ODSListView: React.FC<{
   const [filters, setFilters] = useState<{ statut?: string; search?: string }>({});
   const deleteIntervention = useDeleteIntervention();
 
-  const { data, isLoading, error, refetch } = useInterventionsList(page, pageSize, filters);
+  const { data, isLoading, error: _error, refetch } = useInterventionsList(page, pageSize, filters);
 
   const columns: TableColumn<Intervention>[] = [
     {
@@ -351,7 +351,7 @@ const ODSListView: React.FC<{
       id: 'date_prevue',
       header: 'Date prevue',
       accessor: 'date_prevue_debut',
-      render: (value, row) => {
+      render: (value, _row) => {
         if (!value) return <span className="text-muted">-</span>;
         return formatDateTime(value as string);
       },

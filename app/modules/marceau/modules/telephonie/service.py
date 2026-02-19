@@ -375,7 +375,7 @@ class TelephonyService:
                 conversation.ended_at = datetime.utcnow()
                 self.db.commit()
 
-        # TODO: Appeler Asterisk pour transferer
+        # NOTE: Phase 2 - Intégration Asterisk AMI
 
         return {
             "success": True,

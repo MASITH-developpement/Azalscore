@@ -6,17 +6,16 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { Button, Modal } from '@ui/actions';
-import { Input, Select, TextArea } from '@ui/forms';
+import { formatDistanceToNow, format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import {
   Plus, Settings, Play, Pause, Trash2,
   CheckCircle, AlertCircle, Clock, Calendar, History,
   Link2, Link2Off, Save, Loader2, ExternalLink
 } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-
+import { Button, Modal } from '@ui/actions';
+import { Input, Select, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { odooApi } from './api';
 import {
   OdooConnectionConfig, ImportHistory, ScheduleMode,

@@ -8,18 +8,17 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  FileText, Plus, Edit, Trash2, Search, Check, X, Send,
-  Euro, Calendar, Building2, CreditCard, ChevronRight,
+  FileText, Plus, Edit, Search, Check, Send,
+  Euro, Calendar, CreditCard, ChevronRight,
   Download, Printer, Clock, CheckCircle2, AlertTriangle,
-  ArrowLeftRight, Ban, Package, History, FileArchive, Sparkles,
+  ArrowLeftRight, Package, History, FileArchive, Sparkles,
   Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -29,17 +28,10 @@ import {
   type StatusDefinition,
   type SemanticColor,
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Import types et composants tabs
-import type {
-  Facture, FactureFormData, Customer, FactureType, FactureStatus,
-  PaymentMethod, Payment, PaymentFormData, DocumentLine
-} from './types';
-import {
-  STATUS_CONFIG, TYPE_CONFIG, PAYMENT_METHODS,
-  isOverdue, getDaysUntilDue
-} from './types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   FactureInfoTab,
@@ -50,6 +42,14 @@ import {
   FactureIATab,
   FactureRiskTab,
 } from './components';
+import {
+  STATUS_CONFIG, TYPE_CONFIG, PAYMENT_METHODS,
+  isOverdue, getDaysUntilDue
+} from './types';
+import type {
+  Facture, FactureFormData, Customer, FactureType, FactureStatus,
+  PaymentMethod, Payment, PaymentFormData
+} from './types';
 
 // ============================================================
 // API HOOKS
@@ -98,7 +98,7 @@ const useFacturePayments = (documentId: string) => {
   });
 };
 
-const useCustomers = (search?: string) => {
+const _useCustomers = (search?: string) => {
   return useQuery({
     queryKey: ['commercial', 'customers', 'search', search],
     queryFn: async () => {
@@ -110,7 +110,7 @@ const useCustomers = (search?: string) => {
   });
 };
 
-const useCreateFacture = () => {
+const _useCreateFacture = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: FactureFormData) => {

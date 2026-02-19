@@ -6,10 +6,10 @@
 import React from 'react';
 import { Building2, Mail, Phone, MapPin, CreditCard, FileText } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Supplier } from '../types';
-import { SUPPLIER_STATUS_CONFIG, getPaymentTermsLabel } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { SUPPLIER_STATUS_CONFIG, getPaymentTermsLabel } from '../types';
+import type { Supplier } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SupplierInfoTab - Informations generales
@@ -23,15 +23,15 @@ export const SupplierInfoTab: React.FC<TabContentProps<Supplier>> = ({ data: sup
       <Card title="Identification" icon={<Building2 size={18} />}>
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Code</label>
+            <span className="azals-field__label">Code</span>
             <div className="azals-field__value font-mono">{supplier.code}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value font-medium">{supplier.name}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                 {statusConfig.label}
@@ -39,7 +39,7 @@ export const SupplierInfoTab: React.FC<TabContentProps<Supplier>> = ({ data: sup
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Contact principal</label>
+            <span className="azals-field__label">Contact principal</span>
             <div className="azals-field__value">{supplier.contact_name || '-'}</div>
           </div>
         </Grid>
@@ -49,10 +49,10 @@ export const SupplierInfoTab: React.FC<TabContentProps<Supplier>> = ({ data: sup
       <Card title="Contact" icon={<Mail size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">
+            <span className="azals-field__label">
               <Mail size={14} className="inline mr-1" />
               Email
-            </label>
+            </span>
             <div className="azals-field__value">
               {supplier.email ? (
                 <a href={`mailto:${supplier.email}`} className="text-primary hover:underline">
@@ -64,10 +64,10 @@ export const SupplierInfoTab: React.FC<TabContentProps<Supplier>> = ({ data: sup
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">
+            <span className="azals-field__label">
               <Phone size={14} className="inline mr-1" />
               Telephone
-            </label>
+            </span>
             <div className="azals-field__value">
               {supplier.phone ? (
                 <a href={`tel:${supplier.phone}`} className="text-primary hover:underline">
@@ -85,19 +85,19 @@ export const SupplierInfoTab: React.FC<TabContentProps<Supplier>> = ({ data: sup
       <Card title="Adresse" icon={<MapPin size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field" style={{ gridColumn: 'span 2' }}>
-            <label className="azals-field__label">Adresse</label>
+            <span className="azals-field__label">Adresse</span>
             <div className="azals-field__value">{supplier.address || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Code postal</label>
+            <span className="azals-field__label">Code postal</span>
             <div className="azals-field__value">{supplier.postal_code || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Ville</label>
+            <span className="azals-field__label">Ville</span>
             <div className="azals-field__value">{supplier.city || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Pays</label>
+            <span className="azals-field__label">Pays</span>
             <div className="azals-field__value">{supplier.country || '-'}</div>
           </div>
         </Grid>
@@ -107,11 +107,11 @@ export const SupplierInfoTab: React.FC<TabContentProps<Supplier>> = ({ data: sup
       <Card title="Informations fiscales" icon={<CreditCard size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">N° TVA / SIRET</label>
+            <span className="azals-field__label">N° TVA / SIRET</span>
             <div className="azals-field__value font-mono">{supplier.tax_id || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Conditions de paiement</label>
+            <span className="azals-field__label">Conditions de paiement</span>
             <div className="azals-field__value">{getPaymentTermsLabel(supplier.payment_terms)}</div>
           </div>
         </Grid>
@@ -128,11 +128,11 @@ export const SupplierInfoTab: React.FC<TabContentProps<Supplier>> = ({ data: sup
       <Card title="Metadata" className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDate(supplier.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDate(supplier.updated_at)}</div>
           </div>
         </Grid>

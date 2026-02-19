@@ -4,11 +4,11 @@
  */
 
 import React, { useMemo } from 'react';
-import { Euro, TrendingUp, TrendingDown, Percent, Calculator } from 'lucide-react';
+import { TrendingUp, TrendingDown, Percent, Calculator } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Devis } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import type { Devis } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * DevisFinancialTab - Récapitulatif financier du devis

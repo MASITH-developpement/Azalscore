@@ -35,6 +35,7 @@ from collections import defaultdict
 import threading
 import gzip
 import io
+import tempfile
 
 logger = logging.getLogger(__name__)
 
@@ -956,68 +957,71 @@ class DisasterRecoveryService:
         # Calculer checksum
         checksum = hashlib.sha256(compressed).hexdigest()
 
-        # Sauvegarder localement d'abord
-        local_path = f"/tmp/dr_{point_id}.gz"
-        with open(local_path, "wb") as f:
+        # Sauvegarder localement d'abord (B108 fix: utilise tempfile)
+        fd, local_path = tempfile.mkstemp(suffix=".gz", prefix=f"dr_{point_id}_")
+        with os.fdopen(fd, "wb") as f:
             f.write(compressed)
 
-        # Upload vers stockage primaire
-        remote_path = f"dr/{tenant_id}/{timestamp.strftime('%Y/%m/%d')}/{point_id}"
-        await self._primary_storage.upload(
-            local_path,
-            remote_path,
-            metadata={
-                "point_id": point_id,
-                "tenant_id": tenant_id,
-                "timestamp": timestamp.isoformat(),
-                "checksum": checksum,
-                "type": point_type.value,
-                **(metadata or {}),
-            }
-        )
-
-        # Créer le point de récupération
-        point = RecoveryPoint(
-            point_id=point_id,
-            tenant_id=tenant_id,
-            point_type=point_type,
-            timestamp=timestamp,
-            size_bytes=len(compressed),
-            checksum=checksum,
-            storage_location=remote_path,
-            storage_provider=StorageProvider.S3,  # ou autre selon config
-            region="eu-west-3",
-            metadata=metadata or {},
-        )
-
-        # Calculer rétention selon NF525 si applicable
-        objectives = self._recovery_objectives.get(tenant_id)
-        if objectives:
-            # Rétention standard: 30 jours pour daily, 7 jours pour hourly
-            if point_type == RecoveryPointType.FULL_BACKUP:
-                point.retention_until = timestamp + timedelta(days=30)
-            else:
-                point.retention_until = timestamp + timedelta(days=7)
-
-        # Répliquer vers cibles secondaires
-        replication_results = await self._replication.replicate_recovery_point(
-            point,
-            local_path,
-        )
-
-        # Vérifier le nombre de réplicas
-        successful_replicas = sum(1 for success in replication_results.values() if success)
-        if objectives and successful_replicas < objectives.min_replicas:
-            logger.warning(
-                f"Replication below target: {successful_replicas}/{objectives.min_replicas}"
+        try:
+            # Upload vers stockage primaire
+            remote_path = f"dr/{tenant_id}/{timestamp.strftime('%Y/%m/%d')}/{point_id}"
+            await self._primary_storage.upload(
+                local_path,
+                remote_path,
+                metadata={
+                    "point_id": point_id,
+                    "tenant_id": tenant_id,
+                    "timestamp": timestamp.isoformat(),
+                    "checksum": checksum,
+                    "type": point_type.value,
+                    **(metadata or {}),
+                }
             )
 
-        # Enregistrer pour PITR
-        if self._pitr:
-            self._pitr.register_recovery_point(point)
+            # Créer le point de récupération
+            point = RecoveryPoint(
+                point_id=point_id,
+                tenant_id=tenant_id,
+                point_type=point_type,
+                timestamp=timestamp,
+                size_bytes=len(compressed),
+                checksum=checksum,
+                storage_location=remote_path,
+                storage_provider=StorageProvider.S3,  # ou autre selon config
+                region="eu-west-3",
+                metadata=metadata or {},
+            )
 
-        # Nettoyer fichier temporaire
-        os.remove(local_path)
+            # Calculer rétention selon NF525 si applicable
+            objectives = self._recovery_objectives.get(tenant_id)
+            if objectives:
+                # Rétention standard: 30 jours pour daily, 7 jours pour hourly
+                if point_type == RecoveryPointType.FULL_BACKUP:
+                    point.retention_until = timestamp + timedelta(days=30)
+                else:
+                    point.retention_until = timestamp + timedelta(days=7)
+
+            # Répliquer vers cibles secondaires
+            replication_results = await self._replication.replicate_recovery_point(
+                point,
+                local_path,
+            )
+
+            # Vérifier le nombre de réplicas
+            successful_replicas = sum(1 for success in replication_results.values() if success)
+            if objectives and successful_replicas < objectives.min_replicas:
+                logger.warning(
+                    f"Replication below target: {successful_replicas}/{objectives.min_replicas}"
+                )
+
+            # Enregistrer pour PITR
+            if self._pitr:
+                self._pitr.register_recovery_point(point)
+
+        finally:
+            # Nettoyer fichier temporaire (toujours, même en cas d'erreur)
+            if os.path.exists(local_path):
+                os.remove(local_path)
 
         logger.info(
             f"Recovery point created: {point_id}",
@@ -1069,8 +1073,9 @@ class DisasterRecoveryService:
             operation.current_step = "downloading"
             operation.steps_completed.append("initialized")
 
-            # Télécharger le backup
-            local_path = f"/tmp/restore_{operation_id}.gz"
+            # Télécharger le backup (B108 fix: utilise tempfile)
+            fd, local_path = tempfile.mkstemp(suffix=".gz", prefix=f"restore_{operation_id}_")
+            os.close(fd)  # Fermer le fd car download va écrire le fichier
             success = await self._primary_storage.download(
                 point.storage_location,
                 local_path
@@ -1135,9 +1140,6 @@ class DisasterRecoveryService:
             operation.duration_seconds = int((operation.completed_at - now).total_seconds())
             operation.progress_percent = 100
 
-            # Nettoyer
-            os.remove(local_path)
-
             logger.info(
                 f"Restore completed: {operation_id}",
                 extra={
@@ -1153,6 +1155,11 @@ class DisasterRecoveryService:
             operation.error_message = str(e)
             operation.completed_at = datetime.utcnow()
             logger.error(f"Restore failed: {operation_id} - {e}")
+
+        finally:
+            # Nettoyer fichier temporaire (toujours, même en cas d'erreur)
+            if 'local_path' in locals() and os.path.exists(local_path):
+                os.remove(local_path)
 
         return operation
 
@@ -1594,6 +1601,9 @@ def get_dr_service() -> DisasterRecoveryService:
     """Retourne le service DR."""
     global _dr_service
     if _dr_service is None:
-        # Initialisation par défaut pour dev
-        _dr_service = initialize_dr_service({"provider": "local", "path": "/tmp/azals-dr"})
+        # Initialisation par défaut pour dev (B108 fix: utilise tempfile)
+        _dr_service = initialize_dr_service({
+            "provider": "local",
+            "path": os.path.join(tempfile.gettempdir(), "azals-dr")
+        })
     return _dr_service

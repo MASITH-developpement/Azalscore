@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Calendar, Clock, CheckCircle2, AlertCircle, Play, FileEdit, Lock } from 'lucide-react';
+import { Calendar, CheckCircle2, AlertCircle, Play, FileEdit, Lock } from 'lucide-react';
 
 // ============================================================
 // TYPES PRINCIPAUX
@@ -164,6 +164,20 @@ export interface DonneurOrdre {
   type?: string;
   email?: string;
   telephone?: string;
+  adresse?: string;
+  adresse_facturation?: string;
+  delai_paiement?: number;
+  email_rapport?: string;
+  contact_commercial_nom?: string;
+  contact_commercial_email?: string;
+  contact_commercial_telephone?: string;
+  contact_comptabilite_nom?: string;
+  contact_comptabilite_email?: string;
+  contact_comptabilite_telephone?: string;
+  contact_technique_nom?: string;
+  contact_technique_email?: string;
+  contact_technique_telephone?: string;
+  client_id?: string;
   is_active: boolean;
 }
 

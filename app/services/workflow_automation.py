@@ -3,10 +3,12 @@ Service de Workflow Automation - AZALSCORE
 Automatisation des processus métier avec workflows configurables
 """
 
+import ast
 import asyncio
 import hashlib
 import json
 import logging
+import operator
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -402,8 +404,9 @@ class HttpRequestHandler(ActionHandler):
     """Handler pour les requêtes HTTP avec protection SSRF"""
 
     # Liste des hôtes/réseaux interdits (SSRF protection)
+    # nosec B104 - Ce sont des hôtes BLOQUÉS, pas des bindings
     BLOCKED_HOSTS = {
-        "localhost", "127.0.0.1", "0.0.0.0", "::1",
+        "localhost", "127.0.0.1", "0.0.0.0", "::1",  # nosec B104
         "metadata.google.internal", "169.254.169.254",  # Cloud metadata
     }
 
@@ -518,9 +521,21 @@ class HttpRequestHandler(ActionHandler):
 
 
 class ExecuteScriptHandler(ActionHandler):
-    """Handler pour l'exécution de scripts Python sécurisés"""
+    """
+    Handler pour l'exécution de scripts Python sécurisés.
 
-    # Builtins sûrs autorisés
+    SÉCURITÉ (bandit B102 - exec):
+    L'utilisation de exec() est intentionnelle pour les workflows.
+    Mesures de sécurité appliquées:
+    1. SAFE_BUILTINS: Seules les fonctions sûres sont disponibles
+    2. FORBIDDEN_KEYWORDS: Mots-clés dangereux bloqués
+    3. Validation AST: Analyse syntaxique pour bloquer les patterns dangereux
+    4. Double-underscore bloqué: Pas d'accès aux attributs spéciaux
+    5. Taille limitée: MAX_SCRIPT_SIZE caractères maximum
+    6. Isolation: Variables copiées, pas d'accès au contexte global
+    """
+
+    # Builtins sûrs autorisés - Liste blanche stricte
     SAFE_BUILTINS = {
         "abs": abs,
         "all": all,
@@ -546,25 +561,47 @@ class ExecuteScriptHandler(ActionHandler):
         "None": None,
     }
 
-    # Mots-clés dangereux interdits
+    # Mots-clés dangereux interdits - Liste noire extensive
     FORBIDDEN_KEYWORDS = {
+        # Exécution de code
         "import", "exec", "eval", "compile", "open", "file",
+        # Introspection dangereuse
         "__import__", "__builtins__", "__class__", "__bases__",
         "__subclasses__", "__mro__", "__globals__", "__code__",
-        "getattr", "setattr", "delattr", "globals", "locals",
-        "vars", "dir", "type", "object", "os", "sys", "subprocess",
+        "__dict__", "__module__", "__name__", "__qualname__",
+        # Accès aux attributs
+        "getattr", "setattr", "delattr", "hasattr",
+        "globals", "locals", "vars", "dir",
+        # Types dangereux
+        "type", "object", "super", "classmethod", "staticmethod",
+        # Modules système
+        "os", "sys", "subprocess", "shutil", "socket", "pickle",
+        "marshal", "ctypes", "multiprocessing", "threading",
+        # Fichiers et I/O
+        "input", "print", "breakpoint", "exit", "quit",
     }
 
     # Taille maximale du script (caractères)
     MAX_SCRIPT_SIZE = 10000
 
     def _validate_script(self, script: str) -> tuple[bool, str]:
-        """Valide le script avant exécution"""
+        """
+        Valide le script avant exécution avec validation AST.
+
+        Returns:
+            tuple[bool, str]: (is_valid, error_message)
+        """
+        import ast
+
         if not script or not script.strip():
             return False, "Script vide"
 
         if len(script) > self.MAX_SCRIPT_SIZE:
             return False, f"Script trop long (max {self.MAX_SCRIPT_SIZE} caractères)"
+
+        # Vérifier les caractères nuls et encoding tricks
+        if "\x00" in script or "\\" + "x" in script:
+            return False, "Caractères invalides détectés"
 
         # Vérifier les mots-clés interdits
         script_lower = script.lower()
@@ -575,6 +612,27 @@ class ExecuteScriptHandler(ActionHandler):
         # Vérifier les tentatives d'accès aux attributs sensibles
         if "__" in script:
             return False, "Accès aux attributs spéciaux interdit"
+
+        # Validation AST - Parse et vérifie la syntaxe
+        try:
+            tree = ast.parse(script, mode='exec')
+        except SyntaxError as e:
+            return False, f"Erreur de syntaxe: {e}"
+
+        # Vérifier les nodes AST dangereux
+        for node in ast.walk(tree):
+            # Bloquer les imports
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                return False, "Import interdit"
+            # Bloquer les appels à des fonctions interdites
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    if node.func.id in self.FORBIDDEN_KEYWORDS:
+                        return False, f"Appel interdit: {node.func.id}"
+            # Bloquer l'accès aux attributs avec __
+            if isinstance(node, ast.Attribute):
+                if node.attr.startswith("_"):
+                    return False, f"Accès attribut privé interdit: {node.attr}"
 
         return True, ""
 
@@ -600,8 +658,8 @@ class ExecuteScriptHandler(ActionHandler):
                 "result": None
             }
 
-            # Exécution avec timeout implicite via asyncio
-            exec(
+            # Exécution sandbox - voir docstring classe pour mesures sécurité
+            exec(  # nosec B102 - Sandbox: SAFE_BUILTINS + FORBIDDEN_KEYWORDS + AST validation
                 script,
                 {"__builtins__": self.SAFE_BUILTINS},
                 local_vars
@@ -638,6 +696,161 @@ class DelayHandler(ActionHandler):
         return {"delayed_seconds": delay_seconds}, None
 
 
+class SafeExpressionEvaluator:
+    """
+    Évaluateur d'expressions sécurisé.
+    Remplace eval() avec une approche whitelist stricte.
+    Supporte: opérations arithmétiques, comparaisons, accès dict/list.
+    """
+
+    SAFE_OPERATORS = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+        ast.Eq: operator.eq,
+        ast.NotEq: operator.ne,
+        ast.Lt: operator.lt,
+        ast.LtE: operator.le,
+        ast.Gt: operator.gt,
+        ast.GtE: operator.ge,
+        ast.And: lambda a, b: a and b,
+        ast.Or: lambda a, b: a or b,
+        ast.Not: operator.not_,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+
+    SAFE_FUNCTIONS = {
+        "len": len,
+        "str": str,
+        "int": int,
+        "float": float,
+        "bool": bool,
+        "abs": abs,
+        "min": min,
+        "max": max,
+        "sum": sum,
+        "round": round,
+        "lower": lambda s: s.lower() if isinstance(s, str) else s,
+        "upper": lambda s: s.upper() if isinstance(s, str) else s,
+    }
+
+    def __init__(self, variables: dict, context: dict):
+        self.variables = variables
+        self.context = context
+
+    def evaluate(self, expression: str) -> Any:
+        """Évalue une expression de manière sécurisée."""
+        try:
+            tree = ast.parse(expression, mode='eval')
+            return self._eval_node(tree.body)
+        except (SyntaxError, ValueError, TypeError, KeyError) as e:
+            raise ValueError(f"Expression invalide: {e}")
+
+    def _eval_node(self, node: ast.AST) -> Any:
+        if isinstance(node, ast.Constant):
+            return node.value
+
+        if isinstance(node, ast.Num):  # Python 3.7 compat
+            return node.n
+
+        if isinstance(node, ast.Str):  # Python 3.7 compat
+            return node.s
+
+        if isinstance(node, ast.Name):
+            name = node.id
+            if name == "variables":
+                return self.variables
+            if name == "context":
+                return self.context
+            if name in self.variables:
+                return self.variables[name]
+            if name in self.context:
+                return self.context[name]
+            if name in self.SAFE_FUNCTIONS:
+                return self.SAFE_FUNCTIONS[name]
+            raise ValueError(f"Variable non définie: {name}")
+
+        if isinstance(node, ast.BinOp):
+            op_type = type(node.op)
+            if op_type not in self.SAFE_OPERATORS:
+                raise ValueError(f"Opérateur non autorisé: {op_type.__name__}")
+            left = self._eval_node(node.left)
+            right = self._eval_node(node.right)
+            return self.SAFE_OPERATORS[op_type](left, right)
+
+        if isinstance(node, ast.UnaryOp):
+            op_type = type(node.op)
+            if op_type not in self.SAFE_OPERATORS:
+                raise ValueError(f"Opérateur non autorisé: {op_type.__name__}")
+            operand = self._eval_node(node.operand)
+            return self.SAFE_OPERATORS[op_type](operand)
+
+        if isinstance(node, ast.Compare):
+            left = self._eval_node(node.left)
+            for op, comparator in zip(node.ops, node.comparators):
+                op_type = type(op)
+                if op_type not in self.SAFE_OPERATORS:
+                    raise ValueError(f"Opérateur non autorisé: {op_type.__name__}")
+                right = self._eval_node(comparator)
+                if not self.SAFE_OPERATORS[op_type](left, right):
+                    return False
+                left = right
+            return True
+
+        if isinstance(node, ast.BoolOp):
+            op_type = type(node.op)
+            if op_type not in self.SAFE_OPERATORS:
+                raise ValueError(f"Opérateur non autorisé: {op_type.__name__}")
+            values = [self._eval_node(v) for v in node.values]
+            if op_type == ast.And:
+                return all(values)
+            return any(values)
+
+        if isinstance(node, ast.IfExp):
+            test = self._eval_node(node.test)
+            return self._eval_node(node.body) if test else self._eval_node(node.orelse)
+
+        if isinstance(node, ast.Subscript):
+            value = self._eval_node(node.value)
+            if isinstance(node.slice, ast.Index):  # Python 3.8 compat
+                index = self._eval_node(node.slice.value)
+            else:
+                index = self._eval_node(node.slice)
+            return value[index]
+
+        if isinstance(node, ast.Attribute):
+            value = self._eval_node(node.value)
+            attr = node.attr
+            if isinstance(value, dict) and attr in value:
+                return value[attr]
+            if hasattr(value, attr) and not attr.startswith('_'):
+                return getattr(value, attr)
+            raise ValueError(f"Attribut non autorisé: {attr}")
+
+        if isinstance(node, ast.Call):
+            func = self._eval_node(node.func)
+            if func not in self.SAFE_FUNCTIONS.values():
+                raise ValueError("Appel de fonction non autorisé")
+            args = [self._eval_node(arg) for arg in node.args]
+            return func(*args)
+
+        if isinstance(node, ast.List):
+            return [self._eval_node(elt) for elt in node.elts]
+
+        if isinstance(node, ast.Dict):
+            return {
+                self._eval_node(k): self._eval_node(v)
+                for k, v in zip(node.keys, node.values)
+            }
+
+        raise ValueError(f"Expression non supportée: {type(node).__name__}")
+
+
 class SetVariableHandler(ActionHandler):
     """Handler pour définir des variables"""
 
@@ -654,8 +867,9 @@ class SetVariableHandler(ActionHandler):
 
         if expression:
             try:
-                local_vars = {"variables": variables, "context": context}
-                var_value = eval(expression, {"__builtins__": {}}, local_vars)
+                # Utilise SafeExpressionEvaluator au lieu de eval() (B307 fix)
+                evaluator = SafeExpressionEvaluator(variables, context)
+                var_value = evaluator.evaluate(expression)
             except Exception as e:
                 return None, f"Erreur expression: {str(e)}"
 

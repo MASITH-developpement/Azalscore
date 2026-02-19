@@ -4,19 +4,19 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Menu, X, Bell, User, LogOut, Settings, LayoutList, Monitor, Database, AlertTriangle } from 'lucide-react';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
-import { DynamicMenu } from '@ui/menu-dynamic';
-import { TopMenu } from '@ui/top-menu';
+import { MarceauChat } from '@modules/marceau/components/MarceauChat';
 import { CommandPalette } from '@ui/command-palette';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
 import { useUIMode } from '@ui/hooks/useUIMode';
+import { DynamicMenu } from '@ui/menu-dynamic';
+import { TopMenu } from '@ui/top-menu';
 import { isDemoMode, setDemoMode } from '../../utils/demoMode';
-import { MarceauChat } from '@modules/marceau/components/MarceauChat';
 
 // ============================================================
 // TYPES
@@ -36,7 +36,7 @@ const Header: React.FC<{
 }> = ({ onMenuToggle, isMobileMenuOpen }) => {
   const { user, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { mode, setMode, isAzalscore, isERP } = useUIMode();
+  const { mode: _mode, setMode, isAzalscore, isERP } = useUIMode();
 
   const handleLogout = useCallback(async () => {
     await logout();

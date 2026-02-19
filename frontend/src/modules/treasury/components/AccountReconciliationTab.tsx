@@ -7,12 +7,12 @@ import React from 'react';
 import {
   CheckCircle2, XCircle, AlertTriangle, Link2, FileText
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { BankAccount, Transaction } from '../types';
-import { isTransactionReconciled } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { isTransactionReconciled } from '../types';
+import type { BankAccount, Transaction } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AccountReconciliationTab - Rapprochement bancaire

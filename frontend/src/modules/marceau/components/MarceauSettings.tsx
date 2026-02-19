@@ -5,8 +5,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Save, RefreshCw, AlertCircle, Check, Settings, Phone, Share2, Brain } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Save, RefreshCw, AlertCircle, Check, Settings, Phone, Share2, Brain, History } from 'lucide-react';
+import type { ApiMutationError } from '@/types';
 
 interface MarceauConfig {
   id: string;
@@ -59,8 +60,8 @@ export function MarceauSettings() {
       const response = await api.get<MarceauConfig>('/marceau/config');
       setConfig(response.data);
       setError(null);
-    } catch (e: any) {
-      setError(e.message || 'Erreur chargement configuration');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur chargement configuration');
     } finally {
       setLoading(false);
     }
@@ -85,8 +86,8 @@ export function MarceauSettings() {
       });
       setSuccess('Configuration sauvegardee avec succes');
       setTimeout(() => setSuccess(null), 3000);
-    } catch (e: any) {
-      setError(e.message || 'Erreur sauvegarde');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur sauvegarde');
     } finally {
       setSaving(false);
     }
@@ -99,8 +100,8 @@ export function MarceauSettings() {
       const response = await api.post<MarceauConfig>('/marceau/config/reset', {});
       setConfig(response.data);
       setSuccess('Configuration reinitialisee');
-    } catch (e: any) {
-      setError(e.message || 'Erreur reinitialisation');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur reinitialisation');
     }
   };
 

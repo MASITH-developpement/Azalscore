@@ -5,7 +5,6 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -13,7 +12,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   RefreshCw,
-  TrendingUp,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -24,26 +22,18 @@ import {
   Edit,
   Link2
 } from 'lucide-react';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
+import { Button, ButtonGroup } from '@ui/actions';
+import { KPICard, MetricComparison } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { DynamicForm } from '@ui/forms';
-import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
-import { KPICard, MetricComparison, ProgressBar } from '@ui/dashboards';
 import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-import type { BankAccount as BankAccountType, Transaction as TransactionType, TreasurySummary, ForecastData } from './types';
-import {
-  ACCOUNT_TYPE_CONFIG,
-  ACCOUNT_STATUS_CONFIG
-} from './types';
 import {
   formatCurrency as formatCurrencyHelper,
   formatDate as formatDateHelper,
-  formatDateTime,
-  formatIBAN,
   maskIBAN
 } from '@/utils/formatters';
 import {
@@ -53,6 +43,8 @@ import {
   AccountHistoryTab,
   AccountIATab
 } from './components';
+import type { BankAccount as BankAccountType, Transaction as TransactionType, TreasurySummary, ForecastData } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 
 // ============================================================
 // TYPES (imported from ./types, aliased for local use)
@@ -108,7 +100,7 @@ const useForecast = (days = 30) => {
   });
 };
 
-const useReconcileTransaction = () => {
+const _useReconcileTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -594,7 +586,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({ accountId, maxItems
       id: 'reconciled',
       header: 'Rapproché',
       accessor: 'reconciled',
-      render: (value, row) =>
+      render: (value, _row) =>
         value ? (
           <CheckCircle className="azals-text--success" size={16} />
         ) : (

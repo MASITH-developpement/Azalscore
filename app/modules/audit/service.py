@@ -6,6 +6,7 @@ Logique métier pour l'audit et les benchmarks.
 """
 
 import json
+import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -420,7 +421,8 @@ class AuditService:
         self,
         metric_code: str,
         value: float,
-        dimensions: dict[str, Any] = None
+        dimensions: dict[str, Any] = None,
+        timestamp: datetime = None
     ) -> MetricValue:
         """Enregistre une valeur de métrique."""
         metric = self.db.query(MetricDefinition).filter(
@@ -432,7 +434,7 @@ class AuditService:
         if not metric:
             return None
 
-        now = datetime.utcnow()
+        now = timestamp if timestamp else datetime.utcnow()
 
         # Déterminer la période selon l'agrégation
         if metric.aggregation_period == "MINUTE":
@@ -463,6 +465,7 @@ class AuditService:
             return existing
         else:
             metric_value = MetricValue(
+                id=uuid.uuid4(),
                 tenant_id=self.tenant_id,
                 metric_id=metric.id,
                 metric_code=metric_code,
@@ -476,6 +479,7 @@ class AuditService:
                 dimensions=json.dumps(dimensions) if dimensions else None
             )
             self.db.add(metric_value)
+            self.db.flush()
             return metric_value
 
     def get_metric_values(

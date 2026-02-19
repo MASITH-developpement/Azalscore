@@ -13,21 +13,20 @@ import {
   Shield, ShieldAlert, ShieldCheck, ShieldX,
   AlertTriangle, TrendingUp, TrendingDown, Minus,
   Building2, Lock, RefreshCw, AlertCircle,
-  ChevronDown, ChevronUp, Info, CreditCard,
-  Clock, CheckCircle2, XCircle, Euro
+  ChevronDown, ChevronUp, Info, CreditCard
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Facture } from '../types';
 import { CapabilityGuard } from '@core/capabilities';
+import { Button } from '@ui/actions';
+import { Card, Grid } from '@ui/layout';
 import {
   useRiskAnalysis,
   useInternalScore,
   ScoreGauge
 } from '@/modules/enrichment';
-import type { RiskAnalysis as RiskAnalysisType, RiskLevel } from '@/modules/enrichment';
+import type { RiskLevel } from '@/modules/enrichment';
 import { formatCurrency } from '@/utils/formatters';
+import type { Facture } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * Composant d'alerte pour risque eleve

@@ -367,7 +367,7 @@ class DashboardGenerator:
                 status=status,
                 incidents_24h=incidents_24h,
                 last_incident=score.last_incident_at,
-                trend="stable"  # TODO: calculer la tendance
+                trend="stable"  # NOTE: Phase 2 - Calcul tendance via historical_scores
             ))
 
         return modules

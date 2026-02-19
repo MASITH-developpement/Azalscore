@@ -22,6 +22,7 @@ export interface AdminUser {
   role_name?: string;
   role?: Role;
   status: UserStatus;
+  default_view?: string;  // Vue par défaut après connexion
   last_login?: string;
   last_ip?: string;
   login_count: number;

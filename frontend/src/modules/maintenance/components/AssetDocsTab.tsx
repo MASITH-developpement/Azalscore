@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Asset, AssetDocument } from '../types';
-import { DOCUMENT_TYPE_CONFIG, getExpiringDocuments } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { DOCUMENT_TYPE_CONFIG, getExpiringDocuments } from '../types';
+import type { Asset, AssetDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AssetDocsTab - Documents de l'equipement

@@ -1,19 +1,67 @@
 /* TEAM */
-Developer: MASITH Developpement
+Company: MASITH Développement
+Product: Azalscore ERP
 Site: https://azalscore.com
-Location: France
+Location: France, EU
 Contact: contact@azalscore.com
+Support: support@azalscore.com
+Founded: 2024
+
+/* THANKS */
+React Team: https://react.dev
+FastAPI: https://fastapi.tiangolo.com
+TypeScript: https://typescriptlang.org
+PostgreSQL: https://postgresql.org
+Vite: https://vitejs.dev
+TanStack: https://tanstack.com
+Lucide Icons: https://lucide.dev
 
 /* SITE */
-Standards: HTML5, CSS3, ES2015+, OpenAPI 3.1, REST, JSON Schema
-Components: React, TypeScript, Vite, TanStack Query
-Backend: Python 3.11+, FastAPI, SQLAlchemy, Alembic
-Database: PostgreSQL 15+
+Last update: 2026-02-17
+Language: French (primary), English
+Standards: HTML5, CSS3, ES2022, OpenAPI 3.1, REST, JSON-LD
+Components: React 18, TypeScript 5, Vite 7, TanStack Query 5
+Backend: Python 3.11+, FastAPI, SQLAlchemy 2.0, Alembic
+Database: PostgreSQL 15+ with Row-Level Security
+Cache: Redis 7
 Infrastructure: Docker, Docker Compose, Nginx
-Deployment: CI/CD with GitHub Actions
+Deployment: Render.com, CI/CD automated
 Testing: Pytest, Playwright, Vitest
+Monitoring: Prometheus, Grafana, Loki
 
 /* SOFTWARE */
+Name: Azalscore ERP
 Type: Proprietary SaaS ERP
-Compliance: RGPD, Facturation electronique 2026
-Hosting: France (OVHcloud)
+Version: 2.0+
+API Version: v3
+License: Proprietary
+Target: French SMEs (PME)
+
+/* COMPLIANCE */
+RGPD: Compliant
+Data Hosting: France (EU)
+E-Invoicing 2026: Ready (Factur-X, PPF/PDP)
+FEC Export: Supported
+Encryption: AES-256 at rest, TLS 1.3 in transit
+Auth: JWT, OAuth2, 2FA TOTP
+
+/* MODULES */
+- CRM (Customer Relationship Management)
+- Invoicing (Factur-X e-invoicing)
+- Accounting (French chart of accounts, FEC)
+- Inventory (Multi-warehouse)
+- HR (Human Resources)
+- POS (Point of Sale)
+- Treasury (Cash flow management)
+- Field Service (Interventions)
+- Projects
+- Purchases
+- Production
+
+/* CONTACT */
+General: contact@azalscore.com
+Support: support@azalscore.com
+Sales: commercial@azalscore.com
+Website: https://azalscore.com
+Demo: https://azalscore.com/demo
+Free Trial: https://azalscore.com/essai-gratuit

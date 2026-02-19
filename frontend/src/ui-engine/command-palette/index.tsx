@@ -5,7 +5,6 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   Search,
@@ -22,6 +21,7 @@ import {
   Globe,
   type LucideIcon,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useCapabilities } from '@core/capabilities';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
@@ -357,7 +357,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
               {commandsByCategory.action.length > 0 && (
                 <div className="azals-command-palette__group">
                   <h4 className="azals-command-palette__group-title">Actions rapides</h4>
-                  {commandsByCategory.action.map((cmd, idx) => {
+                  {commandsByCategory.action.map((cmd, _idx) => {
                     const Icon = cmd.icon;
                     const globalIndex = filteredCommands.indexOf(cmd);
                     return (

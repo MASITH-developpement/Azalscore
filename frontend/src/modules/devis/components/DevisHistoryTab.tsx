@@ -9,10 +9,10 @@ import {
   FileText, ArrowRight, RefreshCw
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Devis, DevisHistoryEntry } from '../types';
-import { STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { STATUS_CONFIG } from '../types';
+import type { Devis, DevisHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * DevisHistoryTab - Historique et audit trail du devis

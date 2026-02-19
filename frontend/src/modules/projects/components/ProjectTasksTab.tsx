@@ -6,17 +6,17 @@
 import React, { useState } from 'react';
 import {
   CheckSquare, User, Calendar, Clock, AlertTriangle,
-  Play, CheckCircle, XCircle, Flag
+  Play, CheckCircle, Flag
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Project, Task, TaskStatus } from '../types';
 import { formatDate, formatHours } from '@/utils/formatters';
 import {
   TASK_STATUS_CONFIG, PRIORITY_CONFIG,
   getTaskCountByStatus, getOverdueTasks
 } from '../types';
+import type { Project, Task, TaskStatus } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProjectTasksTab - Taches du projet

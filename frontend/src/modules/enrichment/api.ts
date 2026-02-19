@@ -15,7 +15,6 @@ import type {
   CompanySuggestion,
   LookupType,
   EntityType,
-  EnrichedRiskFields,
 } from './types';
 
 // Re-export CompanySuggestion for convenience
@@ -108,7 +107,7 @@ export async function getInternalScore(
  */
 export async function searchCompanyByName(
   query: string,
-  limit: number = 10
+  _limit: number = 10
 ): Promise<CompanySuggestion[]> {
   if (query.length < 2) return [];
 

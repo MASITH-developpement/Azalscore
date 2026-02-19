@@ -5,36 +5,33 @@
 
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   Users, Calendar, Clock, AlertTriangle, Plus, Minus, Building, BarChart3,
-  User, FileText, Euro, History, Sparkles, ArrowLeft, Edit, Eye, Briefcase, Trash2
+  User, FileText, History, Sparkles, ArrowLeft, Edit, Eye, Briefcase, Trash2
 } from 'lucide-react';
-
-import type {
-  Department, Position, Employee, LeaveRequest, Timesheet, TimeEntry, HRDashboard
-} from './types';
-import {
-  getFullName, getSeniorityFormatted, getSeniority,
-  CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG, LEAVE_TYPE_CONFIG, LEAVE_STATUS_CONFIG,
-  TIMESHEET_STATUS_CONFIG,
-  isActive, isOnLeave, isContractExpiringSoon, isOnProbation,
-  getRemainingLeave, getTotalRemainingLeave
-} from './types';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn, ApiMutationError } from '@/types';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   EmployeeInfoTab, EmployeeContractTab, EmployeeLeavesTab,
   EmployeeDocsTab, EmployeeHistoryTab, EmployeeIATab
 } from './components';
+import {
+  getFullName, getSeniorityFormatted,
+  CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG,
+  getRemainingLeave, getTotalRemainingLeave
+} from './types';
+import type {
+  Department, Position, Employee, LeaveRequest, TimeEntry, HRDashboard
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -104,7 +101,7 @@ const LEAVE_STATUSES = [
   { value: 'CANCELLED', label: 'Annule', color: 'gray' }
 ];
 
-const TIMESHEET_STATUSES = [
+const _TIMESHEET_STATUSES = [
   { value: 'DRAFT', label: 'Brouillon', color: 'gray' },
   { value: 'SUBMITTED', label: 'Soumis', color: 'blue' },
   { value: 'APPROVED', label: 'Approuve', color: 'green' },
@@ -135,15 +132,16 @@ const useHRDashboard = () => {
   return useQuery<HRDashboard | null, Error>({
     queryKey: ['hr', 'dashboard'],
     queryFn: async (): Promise<HRDashboard | null> => {
-      const response: any = await api.get('/hr/dashboard');
+      const response = await api.get<HRDashboard | { data: HRDashboard }>('/hr/dashboard');
       // Handle both direct response and wrapped { data: {...} }
-      if (response?.pending_leave_requests !== undefined) {
-        return response as HRDashboard;
+      const res = response as HRDashboard | { data?: HRDashboard; pending_leave_requests?: number };
+      if ('pending_leave_requests' in res && res.pending_leave_requests !== undefined) {
+        return res as HRDashboard;
       }
-      if (response?.data?.pending_leave_requests !== undefined) {
-        return response.data as HRDashboard;
+      if ('data' in res && res.data?.pending_leave_requests !== undefined) {
+        return res.data as HRDashboard;
       }
-      return response || null;
+      return res as HRDashboard || null;
     }
   });
 };
@@ -187,13 +185,14 @@ const useEmployees = (filters?: { department_id?: string; status?: string; contr
     queryKey: ['hr', 'employees', serializeFilters(filters)],
     queryFn: async (): Promise<Employee[]> => {
       const url = buildUrlWithParams('/hr/employees', filters);
-      const response: any = await api.get(url);
+      const response = await api.get<{ items?: Employee[]; data?: { items?: Employee[] } }>(url);
+      const res = response as { items?: Employee[]; data?: { items?: Employee[] } };
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
-      if (response?.items) {
-        return response.items as Employee[];
+      if (res?.items) {
+        return res.items;
       }
-      if (response?.data?.items) {
-        return response.data.items as Employee[];
+      if (res?.data?.items) {
+        return res.data.items;
       }
       return [];
     }
@@ -204,12 +203,13 @@ const useEmployee = (id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ['hr', 'employee', id],
     queryFn: async (): Promise<Employee | null> => {
-      const response: any = await api.get(`/hr/employees/${id}`);
-      if (response?.data) {
-        return response.data as Employee;
+      const response = await api.get<Employee | { data: Employee }>(`/hr/employees/${id}`);
+      const res = response as Employee | { data?: Employee; id?: string };
+      if ('data' in res && res.data) {
+        return res.data;
       }
-      if (response?.id) {
-        return response as Employee;
+      if ('id' in res && res.id) {
+        return res as Employee;
       }
       return null;
     },
@@ -222,13 +222,14 @@ const useLeaveRequests = (filters?: { status?: string; type?: string }) => {
     queryKey: ['hr', 'leave-requests', serializeFilters(filters)],
     queryFn: async (): Promise<LeaveRequest[]> => {
       const url = buildUrlWithParams('/hr/leave-requests', filters);
-      const response: any = await api.get(url);
+      const response = await api.get<{ items?: LeaveRequest[]; data?: { items?: LeaveRequest[] } }>(url);
+      const res = response as { items?: LeaveRequest[]; data?: { items?: LeaveRequest[] } };
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
-      if (response?.items) {
-        return response.items as LeaveRequest[];
+      if (res?.items) {
+        return res.items;
       }
-      if (response?.data?.items) {
-        return response.data.items as LeaveRequest[];
+      if (res?.data?.items) {
+        return res.data.items;
       }
       return [];
     }
@@ -247,7 +248,7 @@ const useTimeEntries = (filters?: { employee_id?: string; from_date?: string; to
 };
 
 // Alias pour compatibilite
-const useTimesheets = useTimeEntries;
+const _useTimesheets = useTimeEntries;
 
 interface TimeEntryCreateData {
   date: string;
@@ -304,8 +305,9 @@ const useApproveLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response: any = await api.post(`/hr/leave-requests/${id}/approve`);
-      return response?.data || response;
+      const response = await api.post<LeaveRequest | { data: LeaveRequest }>(`/hr/leave-requests/${id}/approve`);
+      const res = response as LeaveRequest | { data?: LeaveRequest };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -315,8 +317,9 @@ const useRejectLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response: any = await api.post(`/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
-      return response?.data || response;
+      const response = await api.post<LeaveRequest | { data: LeaveRequest }>(`/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
+      const res = response as LeaveRequest | { data?: LeaveRequest };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -336,8 +339,9 @@ const useUpdateLeaveRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: LeaveRequestUpdateData }) => {
-      const response: any = await api.put(`/hr/leave-requests/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<LeaveRequest | { data: LeaveRequest }>(`/hr/leave-requests/${id}`, data);
+      const res = response as LeaveRequest | { data?: LeaveRequest };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -533,8 +537,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
     setDeleteError('');
     try {
       await deleteEmployee.mutateAsync(emp.id);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la suppression';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la suppression';
       setDeleteError(msg);
     }
   };
@@ -601,8 +606,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
       await updateEmployee.mutateAsync({ id: editingEmployee.id, data: dataToSubmit as Partial<Employee> });
       setShowEditModal(false);
       setEditingEmployee(null);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la modification';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la modification';
       alert(`Erreur: ${msg}`);
     }
   };
@@ -654,12 +660,13 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
         const select = formRef.current.querySelector<HTMLSelectElement>('select[name="department_id"]');
         if (select) select.value = created.id;
       }
-    } catch (err: any) {
-      const status = err?.response?.status;
+    } catch (err: unknown) {
+      const error = err as ApiMutationError & { response?: { status?: number } };
+      const status = error?.response?.status;
       if (status === 409) {
         setDeptError(`Le code "${newDeptData.code}" existe deja. Choisissez un autre code.`);
       } else {
-        const msg = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Erreur lors de la creation';
+        const msg = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Erreur lors de la creation';
         setDeptError(msg);
       }
     }
@@ -682,12 +689,13 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
         const select = formRef.current.querySelector<HTMLSelectElement>('select[name="position_id"]');
         if (select) select.value = created.id;
       }
-    } catch (err: any) {
-      const status = err?.response?.status;
+    } catch (err: unknown) {
+      const error = err as ApiMutationError & { response?: { status?: number } };
+      const status = error?.response?.status;
       if (status === 409) {
         setPosError(`Le code "${newPosData.code}" existe deja. Choisissez un autre code.`);
       } else {
-        const msg = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Erreur lors de la creation';
+        const msg = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Erreur lors de la creation';
         setPosError(msg);
       }
     }
@@ -1498,8 +1506,9 @@ const useUpdateDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Department> }) => {
-      const response: any = await api.put(`/hr/departments/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<Department | { data: Department }>(`/hr/departments/${id}`, data);
+      const res = response as Department | { data?: Department };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1510,8 +1519,9 @@ const useUpdatePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Position> }) => {
-      const response: any = await api.put(`/hr/positions/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<Position | { data: Position }>(`/hr/positions/${id}`, data);
+      const res = response as Position | { data?: Position };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1522,8 +1532,9 @@ const useUpdateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Employee> }) => {
-      const response: any = await api.put(`/hr/employees/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<Employee | { data: Employee }>(`/hr/employees/${id}`, data);
+      const res = response as Employee | { data?: Employee };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -1715,8 +1726,9 @@ const DepartmentsView: React.FC = () => {
     setDeleteError('');
     try {
       await deleteDepartment.mutateAsync(dept.id);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la suppression';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la suppression';
       setDeleteError(msg);
     }
   };
@@ -1983,8 +1995,9 @@ const PositionsView: React.FC = () => {
     setDeleteError('');
     try {
       await deletePosition.mutateAsync(pos.id);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la suppression';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la suppression';
       setDeleteError(msg);
     }
   };

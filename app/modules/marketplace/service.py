@@ -518,7 +518,7 @@ Votre compte sera activé sous 48h après réception du virement.
 
     def _send_welcome_email(self, order: Order, temp_password: str) -> bool:
         """Envoie l'email de bienvenue."""
-        # TODO: Intégrer avec le module email
+        # NOTE: Phase 2 - Intégration email_service
         logger.info("Email de bienvenue envoyé à %s", order.customer_email)
         return True
 

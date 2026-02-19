@@ -8,8 +8,8 @@ import {
   Search, CheckCircle, Shield, AlertTriangle, Target
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
 import type { NonConformance } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * NCAnalysisTab - Analyse et actions

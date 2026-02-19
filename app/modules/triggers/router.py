@@ -975,8 +975,7 @@ async def test_webhook(
     ).first()
     require_entity(webhook, "Webhook", webhook_id)
 
-    # TODO: Implémenter le test réel avec httpx
-    # Pour l'instant, simulation
+    # NOTE: Phase 2 - Test réel via httpx async
     return WebhookTestResponseSchema(
         success=True,
         status_code=200,

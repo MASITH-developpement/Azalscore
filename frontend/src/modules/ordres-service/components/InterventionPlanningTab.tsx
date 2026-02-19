@@ -8,12 +8,12 @@ import {
   Calendar, Clock, User, Play, CheckCircle, AlertTriangle, Timer
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import { formatDateTime, formatDuration } from '@/utils/formatters';
 import {
-  getActualDuration, getDurationVariance, isInterventionLate, isInterventionToday, formatDuration as formatDur
+  getActualDuration, getDurationVariance, isInterventionLate, isInterventionToday
 } from '../types';
-import { formatDate, formatDateTime, formatDuration } from '@/utils/formatters';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionPlanningTab - Planification

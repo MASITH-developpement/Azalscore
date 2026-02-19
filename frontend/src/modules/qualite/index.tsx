@@ -7,28 +7,17 @@ import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, AlertCircle, Search, CheckCircle,
-  Plus, Edit, FileText, Clock, Shield, Sparkles
+  Edit, FileText, Clock, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import type {
-  NonConformance, QCRule, QCInspection, QCParameter, QualityDashboard,
-  NCType, NCOrigin, NCSeverity, NCStatus, QCType, InspectionStatus
-} from './types';
-import {
-  getNCAge, getNCAgeDays, isNCOverdue, canEditNC, canCloseNC, getDocumentCount,
-  NC_TYPE_CONFIG, NC_ORIGIN_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG,
-  QC_TYPE_CONFIG, INSPECTION_STATUS_CONFIG,
-  NC_TYPES, NC_ORIGINS, SEVERITIES, NC_STATUSES, QC_TYPES, INSPECTION_STATUSES
-} from './types';
 import { formatDate } from '@/utils/formatters';
 import {
   NCInfoTab,
@@ -38,7 +27,17 @@ import {
   NCStatsTab,
   NCIATab
 } from './components';
+import {
+  getNCAge, getNCAgeDays, isNCOverdue, canEditNC, canCloseNC, getDocumentCount,
+  NC_TYPE_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG,
+  NC_TYPES, NC_ORIGINS, SEVERITIES, NC_STATUSES, QC_TYPES, INSPECTION_STATUSES
+} from './types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
+import type {
+  NonConformance, QCRule, QCInspection, QCParameter, QualityDashboard,
+  NCType, NCOrigin, NCSeverity
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -176,7 +175,7 @@ const NCDetailView: React.FC<{
   onEdit: (id: string) => void;
 }> = ({ ncId, onBack, onEdit }) => {
   const { data: nc, isLoading, error, refetch } = useNonConformance(ncId);
-  const updateStatus = useUpdateNCStatus();
+  const _updateStatus = useUpdateNCStatus();
   const closeNC = useCloseNC();
 
   if (isLoading) {
@@ -365,7 +364,7 @@ const NonConformancesView: React.FC<{ onSelectNC: (id: string) => void }> = ({ o
     severity: filterSeverity || undefined
   });
   const createNC = useCreateNonConformance();
-  const updateStatus = useUpdateNCStatus();
+  const _updateStatus = useUpdateNCStatus();
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<NonConformance>>({});
 

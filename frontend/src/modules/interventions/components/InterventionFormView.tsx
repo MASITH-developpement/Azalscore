@@ -5,19 +5,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { unwrapApiResponse } from '@/types';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
-import { SmartSelector } from '@/components/SmartSelector';
-import type { FieldConfig } from '@/components/SmartSelector';
 import {
   Building2, Wrench, FileText, MapPin,
   ChevronLeft, Users
 } from 'lucide-react';
-
+import { api } from '@core/api-client';
+import { Button } from '@ui/actions';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { SmartSelector } from '@/components/SmartSelector';
+import type { FieldConfig } from '@/components/SmartSelector';
+import { unwrapApiResponse } from '@/types';
+import type { Intervenant } from '@/types';
 import type { Intervention, InterventionFormData, DonneurOrdre } from '../types';
+
+// Type for client in search results
+interface ClientResult {
+  id: string;
+  name: string;
+  code?: string;
+}
 
 // ============================================================================
 // CONSTANTES
@@ -273,17 +280,19 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
     };
 
     try {
-      let result: any;
+      let resultId: string | undefined;
       if (isEdit && interventionId) {
-        result = await api.put(`/interventions/${interventionId}`, apiData);
+        const response = await api.put(`/interventions/${interventionId}`, apiData);
+        resultId = (response as { id?: string })?.id;
       } else {
-        result = await api.post('/interventions', apiData);
+        const response = await api.post('/interventions', apiData);
+        resultId = (response as { id?: string })?.id;
       }
 
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
 
       if (onSaved) {
-        onSaved(result?.id || interventionId || '');
+        onSaved(resultId || interventionId || '');
       } else {
         onBack();
       }
@@ -296,7 +305,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
 
   // Date/Time helpers
   const now = new Date();
-  const defaultDate = now.toISOString().slice(0, 16);
+  const _defaultDate = now.toISOString().slice(0, 16);
 
   return (
     <PageWrapper
@@ -347,7 +356,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
 
               <div className="azals-field">
                 <SmartSelector
-                  items={(clients || []).map((c: any) => ({ id: c.id, name: c.name, code: c.code }))}
+                  items={(clients || []).map((c: ClientResult) => ({ id: c.id, name: c.name, code: c.code }))}
                   value={formData.client_id}
                   onChange={(value) => updateField('client_id', value)}
                   label="Client final *"
@@ -480,7 +489,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
                   onChange={(v) => updateField('intervenant_id', v)}
                   options={[
                     { value: '', label: 'Non assigné' },
-                    ...intervenants.map((i: any) => ({ value: i.id, label: `${i.first_name} ${i.last_name}` }))
+                    ...intervenants.map((i: Intervenant) => ({ value: i.id, label: `${i.first_name} ${i.last_name}` }))
                   ]}
                 />
               </div>

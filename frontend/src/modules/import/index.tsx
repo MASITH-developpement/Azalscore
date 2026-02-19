@@ -6,15 +6,28 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import { Input } from '@ui/forms';
 import { Download, Settings, Play, CheckCircle, AlertCircle, Clock, Save, Trash2 } from 'lucide-react';
 import { api } from '@core/api-client';
+import type { ApiMutationError } from '@/types';
+import { Button } from '@ui/actions';
+import { Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 
 // ============================================================
 // TYPES
 // ============================================================
+
+interface ImportHistoryItem {
+  id: string;
+  import_type: string;
+  status: string;
+  started_at: string;
+  records_processed: number;
+  records_created: number;
+  records_updated: number;
+  error_count: number;
+  records_failed?: number;
+}
 
 // Direction de synchronisation
 interface SyncDirection {
@@ -60,7 +73,7 @@ interface OdooConfig {
 // Direction par defaut
 const DEFAULT_DIRECTION: SyncDirection = { import: true, export: false };
 
-interface ImportResult {
+interface _ImportResult {
   id: string;
   status: string;
   records_processed: number;
@@ -72,7 +85,7 @@ interface ImportResult {
 
 type ImportSource = 'odoo' | 'axonaut' | 'pennylane' | 'sage' | 'chorus';
 
-interface ImportModuleProps {
+interface _ImportModuleProps {
   source: ImportSource;
 }
 
@@ -244,11 +257,11 @@ export const OdooImportModule: React.FC = () => {
         });
       }
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: { success?: boolean; message?: string }) => {
       setTestStatus(data?.success ? 'success' : 'error');
       setTestMessage(data?.message || (data?.success ? 'Connexion reussie' : 'Echec de connexion'));
     },
-    onError: (error: any) => {
+    onError: (error: ApiMutationError) => {
       setTestStatus('error');
       setTestMessage(error?.message || 'Erreur de connexion');
     },
@@ -597,7 +610,7 @@ export const OdooImportModule: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {history.slice(0, 10).map((item: any) => (
+                  {history.slice(0, 10).map((item: ImportHistoryItem) => (
                     <tr key={item.id} className="border-b">
                       <td className="p-2">{new Date(item.started_at).toLocaleString('fr-FR')}</td>
                       <td className="p-2">{item.import_type}</td>

@@ -7,15 +7,15 @@ import React from 'react';
 import {
   Receipt, CreditCard, Download, CheckCircle, Clock, XCircle, AlertCircle
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Subscription, SubscriptionInvoice } from '../types';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   getTotalPaid, getPaidInvoicesCount,
   INVOICE_STATUS_CONFIG
 } from '../types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Subscription, SubscriptionInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SubscriptionBillingTab - Facturation
@@ -55,7 +55,7 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
             {subscription.payment_method_last_four ? (
               <>
                 <div className="azals-std-field">
-                  <label>Carte enregistree</label>
+                  <span>Carte enregistree</span>
                   <div className="flex items-center gap-2">
                     <CreditCard size={16} className="text-muted" />
                     <span className="font-mono">**** **** **** {subscription.payment_method_last_four}</span>
@@ -81,11 +81,11 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
         <Card title="Prochaine facture" icon={<Receipt size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Date d'emission</label>
+              <span>Date d'emission</span>
               <div>{formatDate(subscription.current_period_end)}</div>
             </div>
             <div className="azals-std-field">
-              <label>Montant prevu</label>
+              <span>Montant prevu</span>
               <div className="text-lg font-bold">
                 {formatCurrency(subscription.amount, subscription.currency)}
               </div>

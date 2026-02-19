@@ -810,7 +810,7 @@ async def get_dashboard(
 async def export_audit(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
-    format: str = Query("csv", regex="^(csv|json)$"),
+    format: str = Query("csv", pattern="^(csv|json)$"),
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):

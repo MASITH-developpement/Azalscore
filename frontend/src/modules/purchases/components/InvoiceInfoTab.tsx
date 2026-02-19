@@ -6,10 +6,10 @@
 import React from 'react';
 import { FileText, Building2, Calendar, Tag, AlertTriangle } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseInvoice } from '../types';
-import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
 import { formatDate, formatDateTime } from '@/utils/formatters';
+import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
+import type { PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoiceInfoTab - Informations generales
@@ -33,11 +33,11 @@ export const InvoiceInfoTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ dat
       <Card title="Identification" icon={<FileText size={18} />}>
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Numero</label>
+            <span className="azals-field__label">Numero</span>
             <div className="azals-field__value font-mono font-medium">{invoice.number}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                 {statusConfig.label}
@@ -45,12 +45,12 @@ export const InvoiceInfoTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ dat
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Reference fournisseur</label>
+            <span className="azals-field__label">Reference fournisseur</span>
             <div className="azals-field__value">{invoice.supplier_reference || '-'}</div>
           </div>
           {invoice.order_number && (
             <div className="azals-field">
-              <label className="azals-field__label">Commande liee</label>
+              <span className="azals-field__label">Commande liee</span>
               <div className="azals-field__value font-mono text-primary">{invoice.order_number}</div>
             </div>
           )}
@@ -61,11 +61,11 @@ export const InvoiceInfoTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ dat
       <Card title="Fournisseur" icon={<Building2 size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Code</label>
+            <span className="azals-field__label">Code</span>
             <div className="azals-field__value font-mono">{invoice.supplier_code}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value font-medium">{invoice.supplier_name}</div>
           </div>
         </Grid>
@@ -75,11 +75,11 @@ export const InvoiceInfoTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ dat
       <Card title="Dates" icon={<Calendar size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Date de facture</label>
+            <span className="azals-field__label">Date de facture</span>
             <div className="azals-field__value">{formatDate(invoice.date)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Date d'echeance</label>
+            <span className="azals-field__label">Date d'echeance</span>
             <div className="azals-field__value">
               {invoice.due_date ? (
                 <span className={overdue ? 'text-danger font-medium' : ''}>
@@ -96,13 +96,13 @@ export const InvoiceInfoTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ dat
           </div>
           {invoice.validated_at && (
             <div className="azals-field">
-              <label className="azals-field__label">Validee le</label>
+              <span className="azals-field__label">Validee le</span>
               <div className="azals-field__value">{formatDateTime(invoice.validated_at)}</div>
             </div>
           )}
           {invoice.paid_at && (
             <div className="azals-field">
-              <label className="azals-field__label">Payee le</label>
+              <span className="azals-field__label">Payee le</span>
               <div className="azals-field__value">{formatDateTime(invoice.paid_at)}</div>
             </div>
           )}
@@ -120,20 +120,20 @@ export const InvoiceInfoTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ dat
       <Card title="Metadata" className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDateTime(invoice.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{invoice.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDateTime(invoice.updated_at)}</div>
           </div>
           {invoice.validated_by_name && (
             <div className="azals-field">
-              <label className="azals-field__label">Valide par</label>
+              <span className="azals-field__label">Valide par</span>
               <div className="azals-field__value">{invoice.validated_by_name}</div>
             </div>
           )}

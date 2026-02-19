@@ -788,8 +788,7 @@ class ProductionService:
             )
             self.db.add(consumption)
 
-        # Mettre à jour le coût matière de l'OF
-        # TODO: récupérer le coût unitaire du produit
+        # NOTE: Phase 2 - Calcul coût via InventoryService.get_unit_cost()
 
         self.db.commit()
         self.db.refresh(consumption)

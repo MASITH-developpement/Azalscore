@@ -5,18 +5,18 @@
 
 import React from 'react';
 import {
-  Calendar, Clock, CheckCircle, XCircle, AlertCircle,
+  Calendar, Clock, CheckCircle,
   Sun, Thermometer, Baby, CalendarDays
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Employee, LeaveRequest, LeaveBalance, LeaveType } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   LEAVE_TYPE_CONFIG, LEAVE_STATUS_CONFIG,
   getRemainingLeave, getTotalRemainingLeave, getPendingLeaveRequests
 } from '../types';
-import { formatDate } from '@/utils/formatters';
+import type { Employee, LeaveRequest, LeaveBalance } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EmployeeLeavesTab - Conges et absences

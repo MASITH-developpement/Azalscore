@@ -4,11 +4,11 @@
  */
 
 import React from 'react';
-import { Package, Hash, Percent, Info } from 'lucide-react';
+import { Package, Hash, Percent } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Commande, DocumentLine } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import type { Commande, DocumentLine } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CommandeLinesTab - Affichage des lignes de commande

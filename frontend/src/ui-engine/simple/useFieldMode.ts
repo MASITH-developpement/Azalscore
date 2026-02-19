@@ -26,7 +26,7 @@ export type ContextMode = 'view' | 'edit' | 'create';
  */
 export const useFieldMode = (module: string, context: ContextMode): FieldMode => {
   // Vérifier les capabilities du module
-  const canView = useHasCapability(`${module}.view`);
+  const _canView = useHasCapability(`${module}.view`);
   const canEdit = useHasCapability(`${module}.edit`);
   const canCreate = useHasCapability(`${module}.create`);
 

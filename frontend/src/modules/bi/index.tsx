@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { BarChart3, FileText, Play, Users } from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
+import { Button } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button } from '@ui/actions';
-import { Select } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
 import type { TableColumn } from '@/types';
 
 // ============================================================================
@@ -152,7 +152,7 @@ const REPORT_CATEGORIES = [
 // HELPERS
 // ============================================================================
 
-const formatDate = (date: string): string => {
+const _formatDate = (date: string): string => {
   return new Date(date).toLocaleDateString('fr-FR');
 };
 

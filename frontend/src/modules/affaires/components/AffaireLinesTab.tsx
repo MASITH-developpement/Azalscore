@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Affaire, TeamMember, AffaireIntervention } from '../types';
-import { formatDuration } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { formatDuration } from '../types';
+import type { Affaire, TeamMember, AffaireIntervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AffaireLinesTab - Interventions et ressources de l'affaire

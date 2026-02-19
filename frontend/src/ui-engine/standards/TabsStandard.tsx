@@ -88,7 +88,7 @@ export function TabsStandard<T>({
 
   // Trouver l'onglet actif (ou le premier visible si l'actif n'existe pas)
   const activeTabDef = tabs.find((t) => t.id === activeTab) || tabs.find((t) => !t.hidden);
-  const ActiveComponent = activeTabDef?.component;
+  const _ActiveComponent = activeTabDef?.component;
 
   return (
     <div className={clsx('azals-std-tabs', className)}>

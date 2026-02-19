@@ -33,7 +33,7 @@ export const API_CONFIG = {
   async fetch<T>(
     module: string,
     path: string,
-    options?: RequestInit
+    _options?: RequestInit
   ): Promise<T> {
     const url = this.getUrl(module, path);
     return await api.get<T>(url) as T;
@@ -46,7 +46,7 @@ export const API_CONFIG = {
     module: string,
     path: string,
     data: unknown,
-    options?: RequestInit
+    _options?: RequestInit
   ): Promise<T> {
     const url = this.getUrl(module, path);
     return await api.post<T>(url, data) as T;

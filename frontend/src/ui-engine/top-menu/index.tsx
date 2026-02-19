@@ -4,8 +4,7 @@
  * Cockpit visible uniquement pour dirigeant + admin
  */
 
-import React, { useState, useCallback } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard,
@@ -14,6 +13,7 @@ import {
   Settings,
   ChevronDown,
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
 
@@ -183,7 +183,7 @@ const OverviewDropdown: React.FC = () => {
 // TOP MENU COMPONENT
 // ============================================================
 
-export const TopMenu: React.FC<TopMenuProps> = ({ onCommandPaletteOpen }) => {
+export const TopMenu: React.FC<TopMenuProps> = ({ onCommandPaletteOpen: _onCommandPaletteOpen }) => {
   const canViewCockpit = useCanViewCockpit();
 
   return (

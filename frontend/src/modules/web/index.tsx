@@ -4,18 +4,18 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  FileText, Palette, LayoutGrid,
+  Plus, Edit, Trash2, Eye, Menu, Layers
+} from 'lucide-react';
+import { Routes, Route } from 'react-router-dom';
 import { api } from '@core/api-client';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Input, TextArea } from '@ui/forms';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import {
-  FileText, BookOpen, Search, Settings, Palette, LayoutGrid,
-  Plus, Edit, Trash2, Eye, Menu, Star, Globe, Code, Layers
-} from 'lucide-react';
 import type { TableColumn } from '@/types';
 
 // ============================================================================

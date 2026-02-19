@@ -10,15 +10,15 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AppRouter } from '@routing/index';
+import { initAuditUI } from '@core/audit-ui';
 import { useAuthStore, type AuthStatus } from '@core/auth';
 import { useCapabilitiesStore, type CapabilitiesStatus } from '@core/capabilities';
-import { initAuditUI } from '@core/audit-ui';
-import { initializeStores, useUIStore } from '@ui/states';
 import { initGuardianErrorHandlers } from '@core/guardian/incident-store';
-import { initInterfaceMode } from './utils/interfaceMode';
-import { WebsiteTracker } from './components/WebsiteTracker';
+import { AppRouter } from '@routing/index';
+import { initializeStores, useUIStore } from '@ui/states';
 import { StructuredData } from './components/StructuredData';
+import { WebsiteTracker } from './components/WebsiteTracker';
+import { initInterfaceMode } from './utils/interfaceMode';
 import './styles/main.css';
 
 // ============================================================

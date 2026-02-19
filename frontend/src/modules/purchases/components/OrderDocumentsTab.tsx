@@ -4,12 +4,12 @@
  */
 
 import React from 'react';
-import { Paperclip, Upload, File, FileText, Download, Printer } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
+import { Paperclip, Upload, FileText, Download, Printer } from 'lucide-react';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseOrder } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate } from '@/utils/formatters';
+import type { PurchaseOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderDocumentsTab - Documents
@@ -86,21 +86,21 @@ export const OrderDocumentsTab: React.FC<TabContentProps<PurchaseOrder>> = ({ da
       <Card title="Tracabilite" icon={<FileText size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{order.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDate(order.created_at)}</div>
           </div>
           {order.validated_by_name && (
             <>
               <div className="azals-field">
-                <label className="azals-field__label">Valide par</label>
+                <span className="azals-field__label">Valide par</span>
                 <div className="azals-field__value">{order.validated_by_name}</div>
               </div>
               <div className="azals-field">
-                <label className="azals-field__label">Valide le</label>
+                <span className="azals-field__label">Valide le</span>
                 <div className="azals-field__value">{order.validated_at ? formatDate(order.validated_at) : '-'}</div>
               </div>
             </>

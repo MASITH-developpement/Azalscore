@@ -9,10 +9,9 @@ import {
   FileText, ArrowRight, Settings, AlertTriangle, XCircle
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { ProductionOrder, OrderHistoryEntry } from '../types';
-import { ORDER_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { ProductionOrder, OrderHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderHistoryTab - Historique de l'ordre de fabrication

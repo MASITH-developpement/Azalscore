@@ -6,12 +6,11 @@
 
 import React, { useState } from 'react';
 import { Bot, Activity, Phone, Brain, Settings } from 'lucide-react';
-
-import { MarceauDashboard } from './components/MarceauDashboard';
-import { MarceauSettings } from './components/MarceauSettings';
 import { MarceauActions } from './components/MarceauActions';
 import { MarceauConversations } from './components/MarceauConversations';
+import { MarceauDashboard } from './components/MarceauDashboard';
 import { MarceauMemory } from './components/MarceauMemory';
+import { MarceauSettings } from './components/MarceauSettings';
 
 interface TabConfig {
   id: string;

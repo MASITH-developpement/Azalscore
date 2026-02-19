@@ -4,14 +4,14 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, ArrowLeft, FileText, AlertCircle, Loader2 } from 'lucide-react';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
+import { useForm, Controller } from 'react-hook-form';
 import { Link } from 'react-router-dom';
+import { useCreateRegistration } from '../api';
 import { validationSchema, type ValidationValues } from '../schemas';
 import type { ValidationInfo, TrialFormData, TrialRegistrationRequest } from '../types';
-import { useCreateRegistration } from '../api';
 
 // hCaptcha site key from environment
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';

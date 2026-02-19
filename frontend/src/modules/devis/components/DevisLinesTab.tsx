@@ -6,9 +6,9 @@
 import React from 'react';
 import { Package, Plus, Trash2, Edit, Copy } from 'lucide-react';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Devis, DocumentLine } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import type { Devis, DocumentLine } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * DevisLinesTab - Affichage et gestion des lignes du devis

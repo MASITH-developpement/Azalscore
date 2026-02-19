@@ -7,12 +7,12 @@ import React from 'react';
 import {
   FileText, Download, Mail, Printer, ExternalLink, Receipt
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Subscription } from '../types';
+import { Card, Grid } from '@ui/layout';
+import { formatDate } from '@/utils/formatters';
 import { getPaidInvoicesCount } from '../types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Subscription } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SubscriptionDocumentsTab - Documents

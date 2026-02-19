@@ -9,9 +9,9 @@ import {
   Key, CheckCircle2, XCircle, ArrowRight
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { AdminUser, AuditLog, UserHistoryEntry } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { AdminUser, UserHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * UserHistoryTab - Historique utilisateur

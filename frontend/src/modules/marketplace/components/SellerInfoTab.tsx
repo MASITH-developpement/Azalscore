@@ -5,14 +5,14 @@
 
 import React from 'react';
 import {
-  User, Building2, Mail, Phone, MapPin, CreditCard,
+  User, Building2, Mail, MapPin, CreditCard,
   CheckCircle2, XCircle, Star, Calendar
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Seller } from '../types';
-import { formatRating, SELLER_STATUS_CONFIG } from '../types';
 import { formatDate, formatPercent } from '@/utils/formatters';
+import { formatRating, SELLER_STATUS_CONFIG } from '../types';
+import type { Seller } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SellerInfoTab - Informations generales
@@ -24,15 +24,15 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
       <Card title="Identification" icon={<User size={18} />}>
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Code vendeur</label>
+            <span className="azals-field__label">Code vendeur</span>
             <div className="azals-field__value font-mono">{seller.code}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom / Raison sociale</label>
+            <span className="azals-field__label">Nom / Raison sociale</span>
             <div className="azals-field__value">{seller.name}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${SELLER_STATUS_CONFIG[seller.status].color}`}>
                 {SELLER_STATUS_CONFIG[seller.status].label}
@@ -40,15 +40,15 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Entreprise</label>
+            <span className="azals-field__label">Entreprise</span>
             <div className="azals-field__value">{seller.company_name || '-'}</div>
           </div>
           <div className="azals-field azals-std-field--secondary">
-            <label className="azals-field__label">SIRET</label>
+            <span className="azals-field__label">SIRET</span>
             <div className="azals-field__value font-mono">{seller.siret || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Verifie</label>
+            <span className="azals-field__label">Verifie</span>
             <div className="azals-field__value">
               {seller.is_verified ? (
                 <span className="flex items-center gap-1 text-green-600">
@@ -73,7 +73,7 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
       <Card title="Contact" icon={<Mail size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Email</label>
+            <span className="azals-field__label">Email</span>
             <div className="azals-field__value">
               <a href={`mailto:${seller.email}`} className="text-primary hover:underline">
                 {seller.email}
@@ -81,7 +81,7 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Telephone</label>
+            <span className="azals-field__label">Telephone</span>
             <div className="azals-field__value">
               {seller.phone ? (
                 <a href={`tel:${seller.phone}`} className="text-primary hover:underline">
@@ -97,11 +97,11 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
       <Card title="Adresse" icon={<MapPin size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Adresse</label>
+            <span className="azals-field__label">Adresse</span>
             <div className="azals-field__value">{seller.address || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Code postal / Ville</label>
+            <span className="azals-field__label">Code postal / Ville</span>
             <div className="azals-field__value">
               {seller.postal_code || seller.city
                 ? `${seller.postal_code || ''} ${seller.city || ''}`.trim()
@@ -109,7 +109,7 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
             </div>
           </div>
           <div className="azals-field azals-std-field--secondary">
-            <label className="azals-field__label">Pays</label>
+            <span className="azals-field__label">Pays</span>
             <div className="azals-field__value">{seller.country || 'France'}</div>
           </div>
         </Grid>
@@ -119,13 +119,13 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
       <Card title="Informations commerciales" icon={<Building2 size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Taux de commission</label>
+            <span className="azals-field__label">Taux de commission</span>
             <div className="azals-field__value text-lg font-medium text-primary">
               {formatPercent(seller.commission_rate)}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Note moyenne</label>
+            <span className="azals-field__label">Note moyenne</span>
             <div className="azals-field__value">
               {seller.rating ? (
                 <span className="flex items-center gap-1">
@@ -143,7 +143,7 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Membre depuis</label>
+            <span className="azals-field__label">Membre depuis</span>
             <div className="azals-field__value flex items-center gap-1">
               <Calendar size={14} className="text-muted" />
               {formatDate(seller.joined_at)}
@@ -156,13 +156,13 @@ export const SellerInfoTab: React.FC<TabContentProps<Seller>> = ({ data: seller 
       <Card title="Coordonnees bancaires" icon={<CreditCard size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">IBAN</label>
+            <span className="azals-field__label">IBAN</span>
             <div className="azals-field__value font-mono text-sm">
               {seller.bank_iban || '-'}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">BIC</label>
+            <span className="azals-field__label">BIC</span>
             <div className="azals-field__value font-mono">
               {seller.bank_bic || '-'}
             </div>

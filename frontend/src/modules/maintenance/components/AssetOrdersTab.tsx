@@ -10,13 +10,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Asset, MaintenanceOrder, MaintenanceOrderStatus } from '../types';
 import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
 import {
   ORDER_TYPE_CONFIG, ORDER_STATUS_CONFIG, PRIORITY_CONFIG,
   getOrderCountByStatus
 } from '../types';
+import type { Asset, MaintenanceOrder, MaintenanceOrderStatus } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AssetOrdersTab - Ordres de maintenance de l'equipement

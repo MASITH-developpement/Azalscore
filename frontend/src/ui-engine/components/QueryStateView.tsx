@@ -11,9 +11,9 @@
  */
 
 import React from 'react';
-import type { UseQueryResult } from '@tanstack/react-query';
-import { useQueryState, type UseQueryStateOptions } from '../hooks/useQueryState';
 import { LoadingState, ErrorState, EmptyState } from './StateViews';
+import { useQueryState, type UseQueryStateOptions } from '../hooks/useQueryState';
+import type { UseQueryResult } from '@tanstack/react-query';
 
 export interface QueryStateViewProps<T> {
   /** The React Query result to observe */

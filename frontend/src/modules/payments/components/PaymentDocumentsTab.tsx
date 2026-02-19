@@ -7,11 +7,11 @@ import React from 'react';
 import {
   FileText, Download, ExternalLink, Receipt, Mail, Printer
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Payment } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Payment } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PaymentDocumentsTab - Documents

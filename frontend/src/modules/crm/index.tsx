@@ -6,39 +6,29 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthenticatedQuery } from '@/ui-engine/hooks';
 import {
-  Users, UserPlus, Phone, Mail, Building2, MapPin,
-  TrendingUp, Target, Calendar, Clock, Euro,
-  ChevronRight, Plus, Edit, Trash2, Search,
-  CheckCircle2, XCircle, FileText, Star, AlertTriangle,
+  UserPlus, Building2, MapPin,
+  TrendingUp, Target, Clock, Euro,
+  Plus, Edit, Search,
+  CheckCircle2, FileText, AlertTriangle,
   Sparkles, ArrowLeft, Printer, Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
+import { Button } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
-import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-import type { SemanticColor } from '@ui/standards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
   type InfoBarItem,
   type SidebarSection,
   type ActionDefinition
-} from '@ui/standards';
+, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Types et helpers
-import type {
-  Customer, Opportunity, PipelineStats, SalesDashboard,
-  CustomerType, OpportunityStatus
-} from './types';
-import {
-  CUSTOMER_TYPE_CONFIG, OPPORTUNITY_STATUS_CONFIG,
-  isProspect, isActiveCustomer, canConvert, getCustomerValue
-} from './types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
 // Composants tabs
@@ -51,6 +41,14 @@ import {
   CustomerIATab,
   CustomerRiskTab
 } from './components';
+import {
+  CUSTOMER_TYPE_CONFIG, OPPORTUNITY_STATUS_CONFIG,
+  canConvert
+} from './types';
+import type {
+  Customer, Opportunity, PipelineStats, SalesDashboard,
+  CustomerType, OpportunityStatus
+} from './types';
 
 // ============================================================
 // COMPONENTS LOCAUX
@@ -229,7 +227,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customerId, onB
     }
   };
 
-  const handleDelete = async () => {
+  const _handleDelete = async () => {
     if (window.confirm('Supprimer ce contact ?')) {
       await deleteCustomer.mutateAsync(customerId);
       onBack();

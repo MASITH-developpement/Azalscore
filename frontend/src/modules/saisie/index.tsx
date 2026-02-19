@@ -14,18 +14,18 @@
  * FLUX: Saisie rapide -> Devis brouillon -> Validation -> Envoi
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Plus, FileText, User, Package, Euro, Check, X,
-  Sparkles, Search, ArrowRight, Clock, Building,
-  Phone, Mail, Loader2, ChevronDown, Trash2, AlertCircle
+  Plus, FileText, Check, X,
+  Search, ArrowRight, Building,
+  Mail, Loader2, Trash2
 } from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import { CompanyAutocomplete } from '@/modules/enrichment';
-import type { EnrichedContactFields } from '@/modules/enrichment';
+import { PageWrapper, Card } from '@ui/layout';
+import { CompanyAutocomplete, AddressAutocomplete } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
 import type { PaginatedResponse } from '@/types';
 
 // ============================================================
@@ -90,7 +90,7 @@ const useQuickCustomers = (search: string) => {
   });
 };
 
-const useQuickProducts = (search: string) => {
+const _useQuickProducts = (search: string) => {
   return useQuery({
     queryKey: ['quick-products', search],
     queryFn: async () => {
@@ -153,7 +153,9 @@ const useCreateQuickCustomer = () => {
       name: string;
       email?: string;
       phone?: string;
+      mobile?: string;
       siret?: string;
+      tax_id?: string;
       address?: string;
       city?: string;
       postal_code?: string;
@@ -497,7 +499,9 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
     name: initialName,
     email: '',
     phone: '',
+    mobile: '',
     siret: '',
+    tax_id: '',
     address: '',
     city: '',
     postal_code: '',
@@ -513,6 +517,16 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       city: fields.city || prev.city,
       postal_code: fields.postal_code || prev.postal_code,
       siret: fields.siret || fields.siren || prev.siret,
+      tax_id: fields.vat_number || prev.tax_id,
+    }));
+  };
+
+  const handleAddressSelect = (suggestion: AddressSuggestion) => {
+    setForm(prev => ({
+      ...prev,
+      address: suggestion.address_line1 || suggestion.label.split(',')[0] || prev.address,
+      postal_code: suggestion.postal_code || prev.postal_code,
+      city: suggestion.city || prev.city,
     }));
   };
 
@@ -551,17 +565,42 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
 
           <div className="azals-field-row">
             <div className="azals-field">
-              <label>Email</label>
+              <label>SIRET</label>
               <input
-                type="email"
+                type="text"
                 className="azals-input"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="contact@exemple.fr"
+                value={form.siret}
+                onChange={(e) => setForm({ ...form, siret: e.target.value })}
+                placeholder="123 456 789 00012"
+                maxLength={17}
               />
             </div>
             <div className="azals-field">
-              <label>Telephone</label>
+              <label>N° TVA</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.tax_id}
+                onChange={(e) => setForm({ ...form, tax_id: e.target.value })}
+                placeholder="FR12345678901"
+              />
+            </div>
+          </div>
+
+          <div className="azals-field">
+            <label>Email</label>
+            <input
+              type="email"
+              className="azals-input"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="contact@exemple.fr"
+            />
+          </div>
+
+          <div className="azals-field-row">
+            <div className="azals-field">
+              <label>Telephone fixe</label>
               <input
                 type="tel"
                 className="azals-input"
@@ -570,16 +609,25 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                 placeholder="01 23 45 67 89"
               />
             </div>
+            <div className="azals-field">
+              <label>Portable</label>
+              <input
+                type="tel"
+                className="azals-input"
+                value={form.mobile}
+                onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                placeholder="06 12 34 56 78"
+              />
+            </div>
           </div>
 
           <div className="azals-field">
             <label>Adresse</label>
-            <input
-              type="text"
-              className="azals-input"
+            <AddressAutocomplete
               value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              placeholder="Adresse..."
+              onChange={(value) => setForm({ ...form, address: value })}
+              onSelect={handleAddressSelect}
+              placeholder="Rechercher une adresse..."
             />
           </div>
 
@@ -662,7 +710,7 @@ export const SaisieModule: React.FC = () => {
     try {
       const result = await createDevis.mutateAsync({
         customer_id: customer.id,
-        lines: lines.map(({ id, ...rest }) => rest),
+        lines: lines.map(({ id: _id, ...rest }) => rest),
         notes: notes || undefined,
       });
       setSuccess(result);

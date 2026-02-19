@@ -6,13 +6,13 @@
 import React from 'react';
 import { ShoppingCart, User, MapPin, CreditCard, Globe } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Order } from '../types';
-import { formatCurrency, formatDateTime } from '@/utils/formatters';
+import { formatDateTime } from '@/utils/formatters';
 import {
   ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG,
   ORDER_SOURCES, PAYMENT_METHODS
 } from '../types';
+import type { Order } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderInfoTab - Informations generales
@@ -29,15 +29,15 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
       <Card title="Commande" icon={<ShoppingCart size={18} />}>
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Numero</label>
+            <span className="azals-field__label">Numero</span>
             <div className="azals-field__value font-mono font-semibold">{order.number}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Date</label>
+            <span className="azals-field__label">Date</span>
             <div className="azals-field__value">{formatDateTime(order.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut commande</label>
+            <span className="azals-field__label">Statut commande</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                 {statusConfig.label}
@@ -45,7 +45,7 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut paiement</label>
+            <span className="azals-field__label">Statut paiement</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${paymentConfig.color}`}>
                 {paymentConfig.label}
@@ -57,22 +57,22 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
         {/* Source et methode de paiement (ERP only) */}
         <Grid cols={2} gap="md" className="mt-4 azals-std-field--secondary">
           <div className="azals-field">
-            <label className="azals-field__label">
+            <span className="azals-field__label">
               <Globe size={14} className="inline mr-1" />
               Source
-            </label>
+            </span>
             <div className="azals-field__value">{sourceInfo?.label || order.source || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">
+            <span className="azals-field__label">
               <CreditCard size={14} className="inline mr-1" />
               Mode de paiement
-            </label>
+            </span>
             <div className="azals-field__value">{paymentMethodInfo?.label || order.payment_method || '-'}</div>
           </div>
           {order.payment_reference && (
             <div className="azals-field">
-              <label className="azals-field__label">Reference paiement</label>
+              <span className="azals-field__label">Reference paiement</span>
               <div className="azals-field__value font-mono text-sm">{order.payment_reference}</div>
             </div>
           )}
@@ -83,11 +83,11 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
       <Card title="Client" icon={<User size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value font-medium">{order.customer_name}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Email</label>
+            <span className="azals-field__label">Email</span>
             <div className="azals-field__value">
               <a href={`mailto:${order.customer_email}`} className="text-primary hover:underline">
                 {order.customer_email}
@@ -96,7 +96,7 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
           </div>
           {order.customer_phone && (
             <div className="azals-field">
-              <label className="azals-field__label">Telephone</label>
+              <span className="azals-field__label">Telephone</span>
               <div className="azals-field__value">
                 <a href={`tel:${order.customer_phone}`} className="text-primary hover:underline">
                   {order.customer_phone}
@@ -147,7 +147,7 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
         <Card title="Notes" className="mt-4">
           {order.notes && (
             <div className="azals-field">
-              <label className="azals-field__label">Note client</label>
+              <span className="azals-field__label">Note client</span>
               <div className="azals-field__value text-sm bg-yellow-50 p-3 rounded">
                 {order.notes}
               </div>
@@ -155,7 +155,7 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
           )}
           {order.internal_notes && (
             <div className="azals-field mt-4 azals-std-field--secondary">
-              <label className="azals-field__label">Note interne</label>
+              <span className="azals-field__label">Note interne</span>
               <div className="azals-field__value text-sm bg-blue-50 p-3 rounded">
                 {order.internal_notes}
               </div>
@@ -168,15 +168,15 @@ export const OrderInfoTab: React.FC<TabContentProps<Order>> = ({ data: order }) 
       <Card title="Tracabilite" className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Creee par</label>
+            <span className="azals-field__label">Creee par</span>
             <div className="azals-field__value">{order.created_by_name || 'Client'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Creee le</label>
+            <span className="azals-field__label">Creee le</span>
             <div className="azals-field__value">{formatDateTime(order.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifiee le</label>
+            <span className="azals-field__label">Modifiee le</span>
             <div className="azals-field__value">{formatDateTime(order.updated_at)}</div>
           </div>
         </Grid>

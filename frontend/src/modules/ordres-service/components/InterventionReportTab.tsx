@@ -8,12 +8,12 @@ import {
   FileText, CheckCircle, Euro, Clock, AlertTriangle, Star
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import { formatCurrency, formatDuration } from '@/utils/formatters';
 import {
   getActualDuration, getAmountVariance, getDurationVariance
 } from '../types';
-import { formatCurrency, formatDuration } from '@/utils/formatters';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionReportTab - Compte-rendu

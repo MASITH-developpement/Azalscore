@@ -9,10 +9,9 @@ import {
   XCircle, Plus, BookOpen
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Entry, EntryHistoryEntry } from '../types';
-import { ENTRY_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { Entry, EntryHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EntryHistoryTab - Historique

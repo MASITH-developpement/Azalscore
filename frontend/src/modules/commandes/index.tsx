@@ -8,18 +8,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ShoppingCart, Plus, Edit, Trash2, Search, Check, X,
-  Euro, Calendar, Building2, ChevronRight, FileText,
-  Download, Printer, Clock, CheckCircle2, Truck, Package,
+  Plus, Edit, Trash2, Search, Check,
+  Euro, Calendar, FileText,
+  Download, Printer, Clock, Truck, Package,
   History, FileArchive, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
+import { Button } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
-import { SmartSelector } from '@/components/SmartSelector';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -29,11 +27,11 @@ import {
   type StatusDefinition,
   type SemanticColor,
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import { SmartSelector } from '@/components/SmartSelector';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Import types et composants tabs
-import type { Commande, CommandeFormData, Customer, DocumentStatus, DocumentLine } from './types';
-import { STATUS_CONFIG } from './types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   CommandeInfoTab,
@@ -43,6 +41,8 @@ import {
   CommandeHistoryTab,
   CommandeIATab,
 } from './components';
+import { STATUS_CONFIG } from './types';
+import type { Commande, CommandeFormData, Customer, DocumentStatus, DocumentLine } from './types';
 
 // ============================================================
 // API HOOKS

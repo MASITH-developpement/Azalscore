@@ -10,16 +10,6 @@ import {
   TrendingUp, AlertTriangle, ThumbsUp, Play, CheckCircle2,
   FileText, AlertCircle
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Audit } from '../types';
-import {
-  hasCriticalFindings, hasOpenFindings,
-  isAuditCompleted, isAuditInProgress, isAuditPlanned
-} from '../types';
-import { formatPercent } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -28,6 +18,16 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatPercent } from '@/utils/formatters';
+import {
+  hasCriticalFindings, hasOpenFindings,
+  isAuditCompleted, isAuditInProgress, isAuditPlanned
+} from '../types';
+import type { Audit } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * AuditIATab - Assistant IA

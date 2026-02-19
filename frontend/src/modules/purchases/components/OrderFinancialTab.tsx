@@ -6,10 +6,10 @@
 import React from 'react';
 import { Euro, TrendingUp, FileText, CreditCard } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseOrder } from '../types';
-import { calculateVATBreakdown, ORDER_STATUS_CONFIG } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import { calculateVATBreakdown, ORDER_STATUS_CONFIG } from '../types';
+import type { PurchaseOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderFinancialTab - Financier
@@ -110,11 +110,11 @@ export const OrderFinancialTab: React.FC<TabContentProps<PurchaseOrder>> = ({ da
       <Card title="Informations de paiement" icon={<CreditCard size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Devise</label>
+            <span className="azals-field__label">Devise</span>
             <div className="azals-field__value">{order.currency}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${ORDER_STATUS_CONFIG[order.status].color}`}>
                 {ORDER_STATUS_CONFIG[order.status].label}

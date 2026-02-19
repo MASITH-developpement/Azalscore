@@ -1011,3 +1011,129 @@ async def get_homepage(
         raise HTTPException(status_code=404, detail="Page d'accueil non trouvée")
 
     return homepage
+
+
+# ============================================================================
+# INDEXNOW API - Notification des moteurs de recherche
+# ============================================================================
+
+@router.post("/indexnow", status_code=status.HTTP_202_ACCEPTED)
+async def notify_indexnow(
+    urls: List[str] = Query(..., description="URLs à notifier"),
+    context: SaaSContext = Depends(get_saas_context),
+):
+    """
+    Notifie les moteurs de recherche (Bing, Yandex, etc.) des URLs mises à jour via IndexNow.
+
+    **Permissions requises:** website.indexnow.notify
+
+    IndexNow permet d'informer instantanément les moteurs de recherche
+    des modifications de contenu sans attendre le crawl.
+    """
+    import httpx
+    import logging
+
+    logger = logging.getLogger(__name__)
+    INDEXNOW_KEY = "azalscore-indexnow-2026-key"
+    HOST = "azalscore.com"
+
+    # Endpoints IndexNow (Bing et Yandex supportent IndexNow)
+    INDEXNOW_ENDPOINTS = [
+        "https://api.indexnow.org/indexnow",
+        "https://www.bing.com/indexnow",
+        "https://yandex.com/indexnow",
+    ]
+
+    results = {"success": [], "failed": []}
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        for endpoint in INDEXNOW_ENDPOINTS:
+            try:
+                # Format pour plusieurs URLs
+                payload = {
+                    "host": HOST,
+                    "key": INDEXNOW_KEY,
+                    "keyLocation": f"https://{HOST}/{INDEXNOW_KEY}.txt",
+                    "urlList": urls
+                }
+
+                response = await client.post(
+                    endpoint,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+
+                if response.status_code in [200, 202]:
+                    results["success"].append(endpoint)
+                    logger.info(f"IndexNow notification sent to {endpoint}")
+                else:
+                    results["failed"].append({
+                        "endpoint": endpoint,
+                        "status": response.status_code
+                    })
+                    logger.warning(f"IndexNow failed for {endpoint}: {response.status_code}")
+
+            except Exception as e:
+                results["failed"].append({
+                    "endpoint": endpoint,
+                    "error": str(e)
+                })
+                logger.error(f"IndexNow error for {endpoint}: {e}")
+
+    return {
+        "message": "IndexNow notifications sent",
+        "urls_count": len(urls),
+        "results": results
+    }
+
+
+@router.get("/seo-status")
+async def get_seo_status():
+    """
+    Retourne le statut SEO du site (fichiers de configuration, sitemap, etc.).
+
+    **Permissions requises:** Aucune (endpoint public pour audit)
+    """
+    import os
+    from datetime import datetime
+
+    frontend_public = "/home/ubuntu/azalscore/frontend/public"
+
+    files_status = {}
+    required_files = [
+        "robots.txt",
+        "sitemap.xml",
+        "manifest.webmanifest",
+        "og-image.png",
+        "twitter-image.png",
+        "ai.txt",
+        "humans.txt",
+        ".well-known/security.txt",
+        ".well-known/ai-plugin.json",
+        "azalscore-indexnow-2026-key.txt"
+    ]
+
+    for file in required_files:
+        filepath = os.path.join(frontend_public, file)
+        if os.path.exists(filepath):
+            stat = os.stat(filepath)
+            files_status[file] = {
+                "exists": True,
+                "size_bytes": stat.st_size,
+                "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
+            }
+        else:
+            files_status[file] = {"exists": False}
+
+    return {
+        "host": "azalscore.com",
+        "seo_files": files_status,
+        "sitemap_url": "https://azalscore.com/sitemap.xml",
+        "robots_url": "https://azalscore.com/robots.txt",
+        "indexnow_key": "azalscore-indexnow-2026-key",
+        "structured_data": True,
+        "open_graph": True,
+        "twitter_cards": True,
+        "canonical_urls": True,
+        "checked_at": datetime.now().isoformat()
+    }

@@ -482,6 +482,21 @@ def complete_training_completion(
 # AUDITS
 # =============================================================================
 
+@router.get("/audits", response_model=list[AuditResponse])
+def list_audits(
+    audit_type: str | None = None,
+    status: str | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_context)
+):
+    """Lister les audits."""
+    from .models import AuditStatus as AuditStatusEnum
+    audit_status = AuditStatusEnum(status) if status else None
+    service = get_compliance_service(db, context.tenant_id, context.user_id)
+    return service.get_audits(audit_type, audit_status, skip, limit)
+
 @router.post("/audits", response_model=AuditResponse, status_code=status.HTTP_201_CREATED)
 def create_audit(
     data: AuditCreate,
@@ -749,5 +764,14 @@ def get_compliance_metrics(
     context: SaaSContext = Depends(get_context)
 ):
     """Récupérer les métriques de conformité."""
+    service = get_compliance_service(db, context.tenant_id, context.user_id)
+    return service.get_compliance_metrics()
+
+@router.get("/stats", response_model=ComplianceMetrics)
+def get_compliance_stats(
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_context)
+):
+    """Alias pour /metrics - Récupérer les statistiques de conformité."""
     service = get_compliance_service(db, context.tenant_id, context.user_id)
     return service.get_compliance_metrics()

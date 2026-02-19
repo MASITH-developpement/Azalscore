@@ -928,7 +928,7 @@ class BroadcastService:
                 content["body"] = template.body_template or content["body"]
                 content["html"] = template.html_template or content["html"]
 
-        # TODO: Remplacer les variables dynamiques
+        # NOTE: Phase 2 - Template engine (Jinja2) pour variables
 
         return content
 

@@ -5,8 +5,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { Mail, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { useRegistrationStatus, useVerifyEmail, useResendVerificationEmail } from '../api';
 import { useSearchParams } from 'react-router-dom';
+import { useRegistrationStatus, useVerifyEmail, useResendVerificationEmail } from '../api';
 
 interface StepEmailVerificationProps {
   registrationId: string;

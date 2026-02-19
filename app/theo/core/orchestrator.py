@@ -287,7 +287,7 @@ class TheoOrchestrator:
 
         # Plus tard → Reporter
         if intent.action == ActionType.POSTPONE:
-            # TODO: Sauvegarder pour rappel
+            # NOTE: Phase 2 - Sauvegarder en table theo_reminders
             session.clear_pending_action()
             return OrchestratorResult(
                 type=OrchestratorResultType.ACTION_POSTPONED,

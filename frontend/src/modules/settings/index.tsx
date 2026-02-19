@@ -4,8 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { MainLayout } from '@/ui-engine/layouts/MainLayout';
 import { Palette, Globe, Bell, Settings, Save, RotateCcw, Trash2 } from 'lucide-react';
+import { MainLayout } from '@/ui-engine/layouts/MainLayout';
 
 export default function SettingsModule() {
   const [settings, setSettings] = useState({

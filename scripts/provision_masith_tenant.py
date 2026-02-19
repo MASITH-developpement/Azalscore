@@ -32,7 +32,9 @@ def get_database_url():
     """Récupère l'URL de la base de données."""
     url = os.environ.get("DATABASE_URL")
     if not url:
-        # Fallback pour développement local
+        print("[WARN] DATABASE_URL non définie - utilisation du fallback dev")
+        print("       Définir avec: export DATABASE_URL='postgresql://user:pass@host/db'")
+        # Fallback pour développement local uniquement
         url = "postgresql://azals_user:azals_password@localhost:5432/azals"
     return url
 

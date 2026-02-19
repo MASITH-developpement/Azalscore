@@ -6,15 +6,15 @@
 import React from 'react';
 import {
   FileText, Download, Eye, Upload, Trash2,
-  File, FileImage, Award, CreditCard, GraduationCap,
+  File, Award, CreditCard, GraduationCap,
   Printer, User, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Employee, EmployeeDocument } from '../types';
-import { getFullName } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { getFullName } from '../types';
+import type { Employee, EmployeeDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EmployeeDocsTab - Documents de l'employe

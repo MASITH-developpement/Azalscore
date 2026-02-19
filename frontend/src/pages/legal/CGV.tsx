@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import '../styles/legal.css';
 
 const CGV: React.FC = () => {
@@ -113,7 +113,7 @@ const CGV: React.FC = () => {
 
           <h3>4.2 Période d'essai</h3>
           <p>
-            Une période d'essai gratuite de 14 jours est proposée pour la formule
+            Une période d'essai gratuite de 30 jours est proposée pour la formule
             Business. À l'issue de cette période, le Client peut choisir de souscrire
             un abonnement ou voir son accès désactivé.
           </p>

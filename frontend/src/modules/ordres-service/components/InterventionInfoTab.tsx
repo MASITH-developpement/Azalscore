@@ -8,13 +8,13 @@ import {
   FileText, Building2, User, MapPin, Tag, Calendar
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 import {
   getFullAddress,
   STATUT_CONFIG, PRIORITE_CONFIG, TYPE_INTERVENTION_CONFIG
 } from '../types';
-import { formatDate, formatCurrency } from '@/utils/formatters';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionInfoTab - Informations generales

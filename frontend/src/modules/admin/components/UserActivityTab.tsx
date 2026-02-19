@@ -6,12 +6,12 @@
 import React from 'react';
 import {
   Activity, Monitor, Smartphone, Tablet, Globe,
-  Clock, CheckCircle2, XCircle, MapPin
+  Clock, CheckCircle2, MapPin
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { AdminUser, UserSession } from '../types';
 import { formatDateTime, formatDate, formatTime } from '@/utils/formatters';
+import type { AdminUser, UserSession } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * UserActivityTab - Activite utilisateur

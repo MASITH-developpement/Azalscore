@@ -10,9 +10,9 @@ import { X, Save, Calculator, Package } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { ProductAutocomplete } from '@/modules/inventory/components';
 import type { EnrichedDocumentLineFields } from '@/modules/inventory/types';
+import { formatCurrency } from '@/utils/formatters';
 import { calculateLineTotal, TVA_RATES } from '../types';
 import type { LineFormData } from '../types';
-import { formatCurrency } from '@/utils/formatters';
 
 // ============================================================================
 // TYPES

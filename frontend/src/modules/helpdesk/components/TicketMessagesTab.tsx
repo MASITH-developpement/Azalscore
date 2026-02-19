@@ -9,10 +9,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Ticket, TicketMessage } from '../types';
-import { getPublicMessageCount, getInternalMessageCount } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { getPublicMessageCount, getInternalMessageCount } from '../types';
+import type { Ticket, TicketMessage } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * TicketMessagesTab - Conversation du ticket
@@ -68,7 +68,7 @@ export const TicketMessagesTab: React.FC<TabContentProps<Ticket>> = ({ data: tic
         {/* Formulaire de reponse */}
         <div className="azals-message-form mt-4 pt-4 border-t">
           <div className="azals-form-field">
-            <label className="azals-field__label">Nouvelle reponse</label>
+            <span className="azals-field__label">Nouvelle reponse</span>
             <textarea
               className="azals-textarea"
               value={newMessage}

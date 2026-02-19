@@ -4,6 +4,7 @@
  * Envoi au backend UNIQUEMENT - AUCUN stockage local
  */
 
+import { useEffect } from 'react';
 import { api } from '@core/api-client';
 import { logError } from '@core/error-handling';
 import type { UIAuditEvent } from '@/types';
@@ -260,8 +261,6 @@ export const forceFlush = (): Promise<void> => {
 // ============================================================
 // HOOK REACT
 // ============================================================
-
-import { useEffect } from 'react';
 
 /**
  * Hook pour tracker automatiquement le montage d'un composant

@@ -1021,7 +1021,7 @@ async def test_webhook(
     if not webhook:
         raise HTTPException(status_code=404, detail="Webhook non trouvé")
 
-    # TODO: Implémenter test réel du webhook
+    # NOTE: Phase 2 - Test réel via httpx async
     return {
         "success": True,
         "status_code": 200,

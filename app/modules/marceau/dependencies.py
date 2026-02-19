@@ -55,8 +55,7 @@ def require_admin(
     """
     Verifie que l'utilisateur a les droits d'administration Marceau.
     """
-    # TODO: Verifier les roles/permissions IAM
-    # Pour l'instant, on accepte tous les utilisateurs authentifies
+    # NOTE: Phase 2 - Vérification IAMService.check_permission("marceau.admin")
     return current_user
 
 

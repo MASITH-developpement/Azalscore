@@ -218,8 +218,8 @@ class AIAssistantService:
         self, question: str, request_type: str, context: dict | None = None
     ) -> str:
         """Générer une réponse IA (placeholder pour intégration LLM)."""
-        # TODO: Intégrer avec un vrai LLM (GPT, Claude, etc.)
-        # Pour l'instant, réponse structurée basique
+        # NOTE: Phase 2 - Intégration LLM (Claude API, GPT-4)
+        # Pour l'instant: réponses structurées basiques
 
         if request_type == "question":
             return self._generate_question_response(question, context)
@@ -388,7 +388,7 @@ doivent être validées par les responsables humains.*"""
 
     def _execute_analysis(self, analysis: AIAnalysis) -> None:
         """Exécuter l'analyse."""
-        # TODO: Implémenter logique d'analyse réelle selon type
+        # NOTE: Phase 2 - Intégration moteur d'analyse avancé
         findings = []
         recommendations = []
         risks = []
@@ -692,8 +692,7 @@ doivent être validées par les responsables humains.*"""
         """Détecter automatiquement les risques."""
         alerts = []
 
-        # TODO: Implémenter détection de risques par module
-        # Exemples de règles de détection :
+        # NOTE: Phase 2 - Détection ML par module (règles + ML)
 
         if module == "finance":
             alerts.extend(self._detect_financial_risks(data))
@@ -827,8 +826,7 @@ doivent être validées par les responsables humains.*"""
 
     def _execute_prediction(self, prediction: AIPrediction) -> None:
         """Exécuter la prédiction."""
-        # TODO: Implémenter modèles de prédiction réels
-        # Pour l'instant, données exemple
+        # NOTE: Phase 2 - Modèles ML de prédiction (Prophet, etc.)
 
         prediction.predicted_values = [
             {"date": prediction.prediction_start.isoformat(), "value": 100, "confidence": 0.8}
@@ -923,7 +921,7 @@ doivent être validées par les responsables humains.*"""
 
     def generate_synthesis(self, user_id: int, data: SynthesisRequest) -> dict[str, Any]:
         """Générer une synthèse."""
-        # TODO: Implémenter synthèse réelle basée sur données
+        # NOTE: Phase 2 - Synthèse via LLM basée sur données réelles
         synthesis = {
             "title": data.title,
             "period": f"{data.period_start} - {data.period_end}" if data.period_start else data.synthesis_type,

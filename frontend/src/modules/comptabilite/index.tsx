@@ -1,23 +1,21 @@
 import React, { useState } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   BarChart3, TrendingDown, TrendingUp, Diamond, Landmark, DollarSign,
   FileText, List, PieChart, Paperclip, Clock, Sparkles, ArrowLeft,
   CheckCircle2, XCircle, BookOpen, Edit as EditIcon
 } from 'lucide-react';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { api } from '@core/api-client';
+import { Button, Modal } from '@ui/actions';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
-
-// Tab components
+import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn } from '@/types';
+import { formatCurrency as formatCurrencyFn, formatDate as formatDateFn } from '@/utils/formatters';
 import {
   EntryInfoTab,
   EntryLinesTab,
@@ -26,11 +24,13 @@ import {
   EntryHistoryTab,
   EntryIATab
 } from './components';
+import { ENTRY_STATUS_CONFIG, isEntryBalanced } from './types';
+import type { Entry as EntryType } from './types';
+import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
+
+// Tab components
 
 // Types from module types file
-import type { Entry as EntryType } from './types';
-import { ENTRY_STATUS_CONFIG, isEntryBalanced } from './types';
-import { formatCurrency as formatCurrencyFn, formatDate as formatDateFn } from '@/utils/formatters';
 
 // ============================================================================
 // LOCAL COMPONENTS

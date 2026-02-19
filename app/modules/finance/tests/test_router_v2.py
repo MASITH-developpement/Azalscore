@@ -1069,7 +1069,7 @@ def test_context_performance(test_client, client, auth_headers):
         headers=auth_headers
     )
     assert response.status_code == 200
-    # TODO: Vérifier nombre de requêtes SQL (devrait être minimal)
+    # NOTE: Phase 2 - Profiling SQL avec pytest-django-queries
 
 
 def test_audit_trail_automatic(test_client, client, auth_headers):

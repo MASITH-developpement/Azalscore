@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { FileText, Download, ExternalLink, Upload, Calendar } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Audit, AuditDocument } from '../types';
-import { formatFileSize } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate, formatDateTime } from '@/utils/formatters';
+import { formatFileSize } from '../types';
+import type { Audit, AuditDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AuditDocumentsTab - Documents de l'audit
@@ -98,15 +98,15 @@ export const AuditDocumentsTab: React.FC<TabContentProps<Audit>> = ({ data: audi
       <Card title="Tracabilite" icon={<Calendar size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{audit.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDateTime(audit.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDateTime(audit.updated_at)}</div>
           </div>
         </Grid>

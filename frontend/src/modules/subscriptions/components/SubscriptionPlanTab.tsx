@@ -5,17 +5,17 @@
 
 import React from 'react';
 import {
-  Package, Check, DollarSign, Calendar, Repeat, Gift
+  Package, Check, DollarSign, Repeat, Gift
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Subscription, SubscriptionInterval } from '../types';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
 import {
   getMonthlyEquivalent, getYearlyEquivalent,
   INTERVAL_CONFIG
 } from '../types';
-import { formatCurrency } from '@/utils/formatters';
+import type { Subscription, SubscriptionInterval } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SubscriptionPlanTab - Details du plan
@@ -60,25 +60,25 @@ export const SubscriptionPlanTab: React.FC<TabContentProps<Subscription>> = ({ d
         <Card title="Tarification" icon={<DollarSign size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Prix actuel</label>
+              <span>Prix actuel</span>
               <div className="text-lg font-bold">
                 {formatCurrency(subscription.amount, subscription.currency)} {intervalConfig.shortLabel}
               </div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label>Equivalent mensuel</label>
+              <span>Equivalent mensuel</span>
               <div>
                 {formatCurrency(getMonthlyEquivalent(subscription.amount, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /mois
               </div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label>Equivalent annuel</label>
+              <span>Equivalent annuel</span>
               <div>
                 {formatCurrency(getYearlyEquivalent(subscription.amount, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /an
               </div>
             </div>
             <div className="azals-std-field">
-              <label>Devise</label>
+              <span>Devise</span>
               <div>{subscription.currency}</div>
             </div>
           </div>
@@ -88,16 +88,16 @@ export const SubscriptionPlanTab: React.FC<TabContentProps<Subscription>> = ({ d
         <Card title="Cycle de facturation" icon={<Repeat size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Frequence</label>
+              <span>Frequence</span>
               <div className="font-medium">{intervalConfig.label}</div>
             </div>
             <div className="azals-std-field">
-              <label>Duree du cycle</label>
+              <span>Duree du cycle</span>
               <div>{intervalConfig.months} mois</div>
             </div>
             {subscription.trial_end && (
               <div className="azals-std-field">
-                <label>Periode d'essai</label>
+                <span>Periode d'essai</span>
                 <div className="flex items-center gap-2">
                   <Gift size={14} className="text-blue-500" />
                   Incluse

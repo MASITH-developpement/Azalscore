@@ -7,18 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, Calendar, Wrench, Package, Shield } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Asset } from '../types';
-import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
-import {
-  ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
-  isMaintenanceOverdue, isMaintenanceDueSoon, isWarrantyExpired, isWarrantyExpiringSoon,
-  getDaysUntilMaintenance, getAssetAge, getLowStockParts, getExpiringDocuments,
-  getTotalMaintenanceCost, getTotalLaborHours, calculateMTBF, calculateMTTR
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -27,6 +15,18 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
+import {
+  ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
+  isMaintenanceOverdue, isMaintenanceDueSoon, isWarrantyExpired, isWarrantyExpiringSoon,
+  getDaysUntilMaintenance, getAssetAge, getLowStockParts, getExpiringDocuments,
+  getTotalMaintenanceCost, getTotalLaborHours, calculateMTBF, calculateMTTR
+} from '../types';
+import type { Asset } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * AssetIATab - Assistant IA pour l'équipement

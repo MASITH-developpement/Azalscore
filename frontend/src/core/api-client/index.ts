@@ -5,8 +5,8 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
-import type { ApiResponse, ApiError, ApiRequestConfig } from '@/types';
 import { createHttpIncident, createNetworkIncident, createAuthIncident } from '@/core/guardian/incident-store';
+import type { ApiResponse, ApiError, ApiRequestConfig } from '@/types';
 
 // ============================================================
 // CONFIGURATION PRODUCTION

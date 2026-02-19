@@ -12,9 +12,10 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, X, Search, Check } from 'lucide-react';
+import { Plus, X, Check } from 'lucide-react';
 import { api } from '@core/api-client';
-import { useModulePermissions, type FieldMode } from './useFieldMode';
+import type { EntityItem } from '@/types';
+import type { FieldMode } from './useFieldMode';
 
 export { useModulePermissions, useFieldMode, MODULE_CAPABILITIES } from './useFieldMode';
 export type { FieldMode, ContextMode, ModuleKey } from './useFieldMode';
@@ -54,11 +55,14 @@ export interface CreateField {
   autoGenerate?: boolean;     // génère automatiquement (ex: code)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SmartFieldValue = any;
+
 export interface SmartFieldProps {
   // Core
   label: string;
-  value: any;
-  onChange?: (value: any) => void;
+  value: SmartFieldValue;
+  onChange?: (value: SmartFieldValue) => void;
 
   // Type & Mode
   type?: FieldType;
@@ -80,7 +84,7 @@ export interface SmartFieldProps {
   step?: number;
 
   // Formatters
-  formatValue?: (value: any) => string;
+  formatValue?: (value: SmartFieldValue) => string;
 }
 
 // ============================================================
@@ -105,7 +109,7 @@ const EntitySelect: React.FC<EntitySelectProps> = ({
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState<Record<string, string>>({});
-  const [search, setSearch] = useState('');
+  const [search, _setSearch] = useState('');
 
   // Charger les entités
   const { data: items = [], isLoading } = useQuery({
@@ -115,8 +119,8 @@ const EntitySelect: React.FC<EntitySelectProps> = ({
       if (search && config.searchField) {
         params.set(config.searchField, search);
       }
-      const res = await api.get(`${config.endpoint}?${params}`);
-      return (res as any).items || [];
+      const res = await api.get<{ items?: EntityItem[] }>(`${config.endpoint}?${params}`);
+      return (res as { items?: EntityItem[] }).items || [];
     },
   });
 
@@ -132,8 +136,8 @@ const EntitySelect: React.FC<EntitySelectProps> = ({
 
   // Mode lecture seule
   if (mode === 'view') {
-    const item = items.find((i: any) => i.id === value);
-    const display = item ? item[config.displayField] : '-';
+    const item = items.find((i) => i.id === value);
+    const display = item ? String(item[config.displayField] ?? '-') : '-';
     return <span className="azals-sf-value">{display}</span>;
   }
 
@@ -150,8 +154,8 @@ const EntitySelect: React.FC<EntitySelectProps> = ({
     }
 
     const res = await createMutation.mutateAsync(payload);
-    const created = res as any;
-    onChange(created.id, created[config.displayField]);
+    const created = (res as unknown) as EntityItem;
+    onChange(created.id, String(created[config.displayField] ?? ''));
     setShowCreate(false);
     setCreateForm({});
   };
@@ -202,17 +206,17 @@ const EntitySelect: React.FC<EntitySelectProps> = ({
         className="azals-sf-select"
         value={value || ''}
         onChange={(e) => {
-          const item = items.find((i: any) => i.id === e.target.value);
-          if (item) onChange(item.id, item[config.displayField]);
+          const item = items.find((i) => i.id === e.target.value);
+          if (item) onChange(item.id, String(item[config.displayField] ?? ''));
         }}
         disabled={isLoading}
       >
         <option value="">{isLoading ? 'Chargement...' : placeholder}</option>
-        {items.map((item: any) => (
+        {items.map((item) => (
           <option key={item.id} value={item.id}>
             {config.secondaryField && item[config.secondaryField]
               ? `${item[config.secondaryField]} - ${item[config.displayField]}`
-              : item[config.displayField]
+              : String(item[config.displayField] ?? '')
             }
           </option>
         ))}
@@ -283,6 +287,7 @@ export const SmartField: React.FC<SmartFieldProps> = ({
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
       if (!onChange) return;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let newValue: any = e.target.value;
       if (type === 'number') {
         newValue = e.target.value === '' ? '' : parseFloat(e.target.value);
@@ -295,7 +300,7 @@ export const SmartField: React.FC<SmartFieldProps> = ({
       return (
         <EntitySelect
           value={value}
-          onChange={(id, display) => onChange?.(id)}
+          onChange={(id, _display) => onChange?.(id)}
           config={entity}
           mode={mode}
           placeholder={placeholder}

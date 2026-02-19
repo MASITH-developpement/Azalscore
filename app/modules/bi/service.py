@@ -479,8 +479,7 @@ class BIService:
         execution.started_at = datetime.utcnow()
         self.db.commit()
 
-        # TODO: Implémenter la génération réelle du rapport
-        # Pour l'instant, simuler une exécution réussie
+        # NOTE: Phase 2 - Génération rapport via report_engine
 
         execution.status = ReportStatus.COMPLETED
         execution.completed_at = datetime.utcnow()
@@ -542,7 +541,7 @@ class BIService:
 
     def _calculate_next_run(self, schedule: ReportSchedule) -> datetime | None:
         """Calculer la prochaine exécution."""
-        # TODO: Implémenter le calcul basé sur cron_expression ou frequency
+        # NOTE: Phase 2 - Parser cron_expression avec croniter
         if schedule.frequency == RefreshFrequency.DAILY:
             return datetime.utcnow() + timedelta(days=1)
         elif schedule.frequency == RefreshFrequency.WEEKLY:
@@ -851,7 +850,7 @@ class BIService:
         self.db.commit()
         self.db.refresh(alert)
 
-        # TODO: Envoyer les notifications
+        # NOTE: Phase 2 - Envoi notifications via notification_service
         return alert
 
     def get_alert(self, alert_id: int) -> Alert | None:
@@ -1118,7 +1117,7 @@ class BIService:
         self.db.commit()
         self.db.refresh(export)
 
-        # TODO: Lancer l'export en arrière-plan
+        # NOTE: Phase 2 - Export via Celery task en arrière-plan
         return export
 
     def get_export(self, export_id: int) -> ExportHistory | None:

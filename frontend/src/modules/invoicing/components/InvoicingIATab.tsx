@@ -7,19 +7,9 @@
 
 import React, { useState } from 'react';
 import {
-  TrendingUp, AlertTriangle, ThumbsUp, ChevronRight,
+  TrendingUp, ThumbsUp, ChevronRight,
   Clock, Send, AlertCircle
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Document } from '../types';
-import {
-  getDaysUntilDue, isDocumentOverdue,
-  canValidateDocument, canTransformDocument, DOCUMENT_TYPE_CONFIG, TRANSFORM_WORKFLOW
-} from '../types';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -28,6 +18,16 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
+import {
+  getDaysUntilDue, isDocumentOverdue,
+  canValidateDocument, canTransformDocument, DOCUMENT_TYPE_CONFIG, TRANSFORM_WORKFLOW
+} from '../types';
+import type { Document } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * InvoicingIATab - Assistant IA
@@ -219,7 +219,7 @@ function generateSuggestedActions(doc: Document): SuggestedActionData[] {
  */
 function generateInsights(doc: Document): Insight[] {
   const insights: Insight[] = [];
-  const typeConfig = DOCUMENT_TYPE_CONFIG[doc.type];
+  const _typeConfig = DOCUMENT_TYPE_CONFIG[doc.type];
 
   // Statut
   if (doc.status === 'DRAFT') {

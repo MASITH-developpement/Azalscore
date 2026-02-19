@@ -5,15 +5,15 @@
 
 import React from 'react';
 import { Euro, TrendingUp, CreditCard, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseInvoice } from '../types';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
 import {
-  calculateVATBreakdown, INVOICE_STATUS_CONFIG,
+  calculateVATBreakdown,
   canPayInvoice, isOverdue, getDaysUntilDue
 } from '../types';
-import { formatCurrency } from '@/utils/formatters';
+import type { PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoiceFinancialTab - Financier

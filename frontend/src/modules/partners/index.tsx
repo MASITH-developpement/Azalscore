@@ -3,18 +3,18 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Users, Building, Contact as ContactIcon,
   User, FileText, Clock, ShoppingCart, Sparkles, Shield
-} from 'lucide-react';
+, ArrowLeft , ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, TrendingUp, TrendingDown, History } from 'lucide-react';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { z } from 'zod';
 import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { DynamicForm } from '@ui/forms';
 import { Button, Modal } from '@ui/actions';
+import { DynamicForm } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -23,15 +23,12 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
-import { z } from 'zod';
-import type { PaginatedResponse, TableColumn } from '@/types';
+import { DataTable } from '@ui/tables';
+import { CompanyAutocomplete, AddressAutocomplete, useRiskAnalysis, useInternalScore, ScoreGauge } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
+import type { PaginatedResponse, TableColumn, ApiMutationError } from '@/types';
 import { unwrapApiResponse } from '@/types';
-import type { Partner, Client } from './types';
-import {
-  PARTNER_TYPE_CONFIG, CLIENT_TYPE_CONFIG,
-  getPartnerAgeDays, hasContacts, getContactsCount
-} from './types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
 import {
   PartnerInfoTab,
   PartnerContactsTab,
@@ -41,12 +38,13 @@ import {
   PartnerIATab,
   PartnerRiskTab
 } from './components';
-import { ArrowLeft } from 'lucide-react';
+import {
+  PARTNER_TYPE_CONFIG, CLIENT_TYPE_CONFIG,
+  getPartnerAgeDays, getContactsCount
+} from './types';
+import type { Partner, Client, Contact } from './types';
 
 // Auto-enrichissement (SIRET + Adresse + Analyse de risque)
-import { CompanyAutocomplete, AddressAutocomplete, useRiskAnalysis, useInternalScore, ScoreGauge } from '@/modules/enrichment';
-import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
-import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, TrendingUp, TrendingDown, History } from 'lucide-react';
 
 // Legacy Partner interface for list views (backward compatibility)
 interface PartnerLegacy {
@@ -325,32 +323,32 @@ export const ContactsPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'contacts', page, pageSize],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<any>>(`/partners/contacts?page=${page}&page_size=${pageSize}`);
-      return response as unknown as PaginatedResponse<any>;
+      const response = await api.get<PaginatedResponse<Contact>>(`/partners/contacts?page=${page}&page_size=${pageSize}`);
+      return response as unknown as PaginatedResponse<Contact>;
     },
   });
 
   // Mutation pour créer un contact
   const createContact = useMutation({
-    mutationFn: async (contactData: any) => {
-      const response = await api.post('/partners/contacts', contactData);
+    mutationFn: async (contactData: Partial<Contact>) => {
+      const response = await api.post<Contact>('/partners/contacts', contactData);
       return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'contacts'] });
       setShowCreate(false);
     },
-    onError: (error: any) => {
+    onError: (error: ApiMutationError) => {
       console.error('Erreur création contact:', error);
       alert('Erreur lors de la création du contact: ' + (error.response?.data?.detail || error.message));
     },
   });
 
-  const columns: TableColumn<any>[] = [
+  const columns: TableColumn<Contact>[] = [
     {
       id: 'name',
       header: 'Nom',
-      accessor: (row: any) => `${row.first_name || ''} ${row.last_name || ''}`.trim() || row.name || '-',
+      accessor: (row: Contact) => `${row.first_name || ''} ${row.last_name || ''}`.trim() || '-',
       sortable: true
     },
     { id: 'email', header: 'Email', accessor: 'email' },
@@ -373,13 +371,13 @@ export const ContactsPage: React.FC = () => {
     {
       id: 'view',
       label: 'Voir',
-      onClick: (row: any) => navigate(`/partners/contacts/${row.id}`),
+      onClick: (row: Contact) => navigate(`/partners/contacts/${row.id}`),
     },
     {
       id: 'edit',
       label: 'Modifier',
       capability: 'partners.contacts.edit',
-      onClick: (row: any) => navigate(`/partners/contacts/${row.id}/edit`),
+      onClick: (row: Contact) => navigate(`/partners/contacts/${row.id}/edit`),
     },
   ];
 
@@ -892,8 +890,9 @@ export const ClientFormPage: React.FC = () => {
         <Card title="Informations générales">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Code (auto-généré)</label>
+              <label className="azals-field__label" htmlFor="partner-code">Code (auto-généré)</label>
               <input
+                id="partner-code"
                 type="text"
                 className="azals-input"
                 value={form.code}
@@ -904,8 +903,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Type</label>
+              <label className="azals-field__label" htmlFor="partner-type">Type</label>
               <select
+                id="partner-type"
                 className="azals-input"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
@@ -918,7 +918,7 @@ export const ClientFormPage: React.FC = () => {
               </select>
             </div>
             <div className="azals-field" style={{ gridColumn: 'span 2' }}>
-              <label className="azals-field__label">Nom / Raison sociale * (autocomplete entreprise)</label>
+              <span className="azals-field__label">Nom / Raison sociale * (autocomplete entreprise)</span>
               <CompanyAutocomplete
                 value={form.name}
                 onChange={(value: string) => setForm({ ...form, name: value })}
@@ -927,8 +927,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Email</label>
+              <label className="azals-field__label" htmlFor="partner-email">Email</label>
               <input
+                id="partner-email"
                 type="email"
                 className="azals-input"
                 value={form.email}
@@ -936,8 +937,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Téléphone</label>
+              <label className="azals-field__label" htmlFor="partner-phone">Téléphone</label>
               <input
+                id="partner-phone"
                 type="text"
                 className="azals-input"
                 value={form.phone}
@@ -950,7 +952,7 @@ export const ClientFormPage: React.FC = () => {
         <Card title="Adresse" className="mt-4">
           <Grid cols={2} gap="md">
             <div className="azals-field" style={{ gridColumn: 'span 2' }}>
-              <label className="azals-field__label">Adresse (autocomplete)</label>
+              <span className="azals-field__label">Adresse (autocomplete)</span>
               <AddressAutocomplete
                 value={form.address_line1}
                 onChange={(value: string) => setForm({ ...form, address_line1: value })}
@@ -959,8 +961,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Code postal</label>
+              <label className="azals-field__label" htmlFor="partner-postal">Code postal</label>
               <input
+                id="partner-postal"
                 type="text"
                 className="azals-input"
                 value={form.postal_code}
@@ -968,8 +971,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Ville</label>
+              <label className="azals-field__label" htmlFor="partner-city">Ville</label>
               <input
+                id="partner-city"
                 type="text"
                 className="azals-input"
                 value={form.city}
@@ -977,8 +981,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Pays</label>
+              <label className="azals-field__label" htmlFor="partner-country">Pays</label>
               <input
+                id="partner-country"
                 type="text"
                 className="azals-input"
                 value={form.country_code}
@@ -986,8 +991,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">N° SIRET / TVA</label>
+              <label className="azals-field__label" htmlFor="partner-tax">N° SIRET / TVA</label>
               <input
+                id="partner-tax"
                 type="text"
                 className="azals-input"
                 value={form.tax_id}

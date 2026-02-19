@@ -9,12 +9,9 @@ import {
   Wrench, CheckCircle, XCircle, AlertTriangle, Settings
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
+import { formatDateTime } from '@/utils/formatters';
 import type { Asset, AssetHistoryEntry } from '../types';
-import { formatDateTime, formatDate } from '@/utils/formatters';
-import {
-  ASSET_STATUS_CONFIG, ORDER_STATUS_CONFIG
-} from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AssetHistoryTab - Historique de l'equipement

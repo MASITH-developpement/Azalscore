@@ -4,7 +4,6 @@
  */
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Send,
@@ -17,6 +16,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import '../styles/legal.css';
 
 interface ContactForm {

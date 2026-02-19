@@ -346,7 +346,7 @@ function handleWSMessage(
       }));
       break;
 
-    case 'response':
+    case 'response': {
       const responseText = payload.text as string;
       const theoMessage: VoiceMessage = {
         type: 'theo',
@@ -362,8 +362,9 @@ function handleWSMessage(
           : 'idle',
       }));
       break;
+    }
 
-    case 'audio_response':
+    case 'audio_response': {
       // Receive audio chunk
       const audioData = payload.data as string;
       const audioBytes = base64ToArrayBuffer(audioData);
@@ -378,12 +379,13 @@ function handleWSMessage(
         playAudioQueue(set, get);
       }
       break;
+    }
 
     case 'audio_response_end':
       // Audio streaming complete
       break;
 
-    case 'visual_state':
+    case 'visual_state': {
       const visualState = payload.state as string;
       const stateMap: Record<string, VoiceState> = {
         'idle': 'idle',
@@ -399,6 +401,7 @@ function handleWSMessage(
         isSpeaking: visualState === 'speaking',
       }));
       break;
+    }
 
     case 'error':
       console.error('[TheoVoice] Error:', payload.message);

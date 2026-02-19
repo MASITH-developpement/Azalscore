@@ -6,12 +6,12 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Hash, Settings, RotateCcw, Check } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input, CheckboxInput } from '@ui/forms';
-import { Hash, Settings, RotateCcw, Eye, Check, X } from 'lucide-react';
+import { Card, Grid } from '@ui/layout';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
 import { unwrapApiResponse } from '@/types';
 
@@ -260,16 +260,18 @@ const EditModal: React.FC<EditModalProps> = ({
         {/* Formulaire */}
         <Grid cols={2}>
           <div className="azals-field">
-            <label>Prefixe</label>
+            <label htmlFor={`seq-prefix-${sequence.entity_type}`}>Prefixe</label>
             <Input
+              id={`seq-prefix-${sequence.entity_type}`}
               value={formData.prefix || ''}
               onChange={(v: string) => handleChange('prefix', v)}
               placeholder="CLI, FV, etc."
             />
           </div>
           <div className="azals-field">
-            <label>Separateur</label>
+            <label htmlFor={`seq-separator-${sequence.entity_type}`}>Separateur</label>
             <Select
+              id={`seq-separator-${sequence.entity_type}`}
               value={formData.separator || '-'}
               onChange={(v) => handleChange('separator', v)}
               options={SEPARATORS}
@@ -279,8 +281,9 @@ const EditModal: React.FC<EditModalProps> = ({
 
         <Grid cols={2}>
           <div className="azals-field">
-            <label>Nombre de chiffres</label>
+            <label htmlFor={`seq-padding-${sequence.entity_type}`}>Nombre de chiffres</label>
             <Select
+              id={`seq-padding-${sequence.entity_type}`}
               value={String(formData.padding || 4)}
               onChange={(v) => handleChange('padding', parseInt(v))}
               options={PADDING_OPTIONS}

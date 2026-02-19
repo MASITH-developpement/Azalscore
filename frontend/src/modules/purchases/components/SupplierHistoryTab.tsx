@@ -6,10 +6,9 @@
 import React from 'react';
 import { Clock, User, Edit, Plus, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Supplier, PurchaseHistoryEntry } from '../types';
-import { SUPPLIER_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { Supplier, PurchaseHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SupplierHistoryTab - Historique

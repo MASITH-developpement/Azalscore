@@ -8,11 +8,11 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
+from app.core.types import JSON, UniversalUUID
 
 
 class BackupStatus(str, Enum):
@@ -44,7 +44,7 @@ class BackupConfig(Base):
     """Configuration de sauvegarde par tenant."""
     __tablename__ = "backup_configs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, unique=True, index=True)
 
     # Clé de chiffrement (chiffrée avec la clé maître)
@@ -87,9 +87,9 @@ class Backup(Base):
     """Sauvegarde effectuée."""
     __tablename__ = "backups"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    config_id = Column(UUID(as_uuid=True), nullable=True)
+    config_id = Column(UniversalUUID(), nullable=True)
 
     # Identification
     reference = Column(String(100), nullable=False, index=True)
@@ -138,9 +138,9 @@ class RestoreLog(Base):
     """Log de restauration."""
     __tablename__ = "restore_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    backup_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    backup_id = Column(UniversalUUID(), nullable=False, index=True)
 
     status = Column(SQLEnum(BackupStatus), default=BackupStatus.PENDING)
     target_type = Column(String(50), default="same_tenant")  # same_tenant, new_tenant, test

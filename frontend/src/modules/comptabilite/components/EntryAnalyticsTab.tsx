@@ -6,10 +6,9 @@
 import React from 'react';
 import { PieChart, TrendingUp, Target, Building2 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Entry, EntryLine } from '../types';
-import { formatAccountCode } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import type { Entry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EntryAnalyticsTab - Analytique

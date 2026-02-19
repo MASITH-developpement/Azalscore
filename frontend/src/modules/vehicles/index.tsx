@@ -15,27 +15,19 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Car, Fuel, Wrench, Shield, TrendingDown, Leaf,
-  Edit, Trash2, Save, Calculator, AlertCircle,
+  Edit, Save, Calculator, AlertCircle,
   ChevronDown, X, FileText, Clock, Sparkles
 } from 'lucide-react';
-import { LoadingState } from '@ui/components/StateViews';
 import { api } from '@core/api-client';
-import { CapabilityGuard, useHasCapability } from '@core/capabilities';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
+import { useHasCapability } from '@core/capabilities';
 import { Button, ConfirmDialog } from '@ui/actions';
+import { LoadingState } from '@ui/components/StateViews';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
-import { isDemoMode } from '../../utils/demoMode';
-import type { Vehicule, FuelType, CoutKmDetail } from './types';
-import {
-  calculCoutKm, getCO2Km, formatCurrencyKm, formatKilometers,
-  FUEL_TYPE_LABELS, FUEL_TYPE_ICONS, FUEL_TYPE_CONFIG,
-  DEFAULT_CO2_KM
-} from './types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
 import {
   VehicleInfoTab,
   VehicleCostsTab,
@@ -44,6 +36,13 @@ import {
   VehicleHistoryTab,
   VehicleIATab
 } from './components';
+import {
+  calculCoutKm, getCO2Km, formatCurrencyKm, formatKilometers,
+  FUEL_TYPE_LABELS, FUEL_TYPE_ICONS, FUEL_TYPE_CONFIG
+} from './types';
+import { isDemoMode } from '../../utils/demoMode';
+import type { Vehicule, FuelType } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import './vehicles.css';
 
 // ============================================================
@@ -248,7 +247,7 @@ const useDeleteVehicule = () => {
 // ============================================================
 
 // Affichage du detail cout/km
-const CoutKmBreakdown: React.FC<{ vehicule: Partial<Vehicule> }> = ({ vehicule }) => {
+const _CoutKmBreakdown: React.FC<{ vehicule: Partial<Vehicule> }> = ({ vehicule }) => {
   const cout = calculCoutKm(vehicule);
   const total = cout.total || 0.001;
 
@@ -759,7 +758,7 @@ export const VehiculesModule: React.FC = () => {
     setNavState({ view, vehiculeId, isEdit });
   }, []);
 
-  const goToDashboard = useCallback(() => navigateTo('dashboard'), [navigateTo]);
+  const _goToDashboard = useCallback(() => navigateTo('dashboard'), [navigateTo]);
   const goToList = useCallback(() => navigateTo('list'), [navigateTo]);
   const goToDetail = useCallback((id: string) => navigateTo('detail', id), [navigateTo]);
   const goToNew = useCallback(() => navigateTo('form', undefined, false), [navigateTo]);
@@ -1024,7 +1023,7 @@ const VehiculeFormPage: React.FC<{
   isEdit: boolean;
   onBack: () => void;
   onSuccess: () => void;
-}> = ({ vehiculeId, isEdit, onBack, onSuccess }) => {
+}> = ({ vehiculeId: _vehiculeId, isEdit, onBack, onSuccess: _onSuccess }) => {
   // Pour l'instant, rediriger vers la liste
   // Le formulaire complet peut etre implemente plus tard
   return (

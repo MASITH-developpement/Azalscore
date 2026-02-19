@@ -5,29 +5,21 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import {
   Inbox, Settings, AlertTriangle, CheckCircle, Clock, Target, Star,
-  MessageSquare, FileText, BookOpen, Sparkles, User, Edit
+  MessageSquare, FileText, BookOpen, Sparkles, Edit
 } from 'lucide-react';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button, Modal } from '@ui/actions';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import type { Ticket, TicketCategory, KnowledgeArticle, HelpdeskDashboard, TicketPriority, TicketStatus, TicketSource } from './types';
-import {
-  PRIORITIES, STATUSES, SOURCES,
-  PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
-  isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
-  getTicketAge, getPublicMessageCount
-} from './types';
-import { formatDate, formatDateTime, formatDuration } from '@/utils/formatters';
+import { formatDate, formatDuration } from '@/utils/formatters';
 import {
   TicketInfoTab,
   TicketMessagesTab,
@@ -36,6 +28,14 @@ import {
   TicketKnowledgeTab,
   TicketIATab
 } from './components';
+import {
+  PRIORITIES, STATUSES, SOURCES,
+  PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
+  isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
+  getTicketAge, getPublicMessageCount
+} from './types';
+import type { Ticket, TicketCategory, KnowledgeArticle, HelpdeskDashboard, TicketPriority, TicketSource } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -408,15 +408,17 @@ const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSel
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau ticket" size="lg">
         <form onSubmit={handleSubmit}>
           <div className="azals-field">
-            <label className="azals-field__label">Sujet</label>
+            <label className="azals-field__label" htmlFor="ticket-subject">Sujet</label>
             <Input
+              id="ticket-subject"
               value={formData.subject || ''}
               onChange={(v) => setFormData({ ...formData, subject: v })}
             />
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Description</label>
+            <label className="azals-field__label" htmlFor="ticket-description">Description</label>
             <TextArea
+              id="ticket-description"
               value={formData.description || ''}
               onChange={(v) => setFormData({ ...formData, description: v })}
               rows={4}
@@ -424,16 +426,18 @@ const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSel
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label className="azals-field__label">Categorie</label>
+              <label className="azals-field__label" htmlFor="ticket-category">Categorie</label>
               <Select
+                id="ticket-category"
                 value={formData.category_id || ''}
                 onChange={(val) => setFormData({ ...formData, category_id: val })}
                 options={[{ value: '', label: 'Selectionner...' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Priorite</label>
+              <label className="azals-field__label" htmlFor="ticket-priority">Priorite</label>
               <Select
+                id="ticket-priority"
                 value={formData.priority || 'MEDIUM'}
                 onChange={(val) => setFormData({ ...formData, priority: val as TicketPriority })}
                 options={PRIORITIES}
@@ -442,16 +446,18 @@ const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSel
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label className="azals-field__label">Source</label>
+              <label className="azals-field__label" htmlFor="ticket-source">Source</label>
               <Select
+                id="ticket-source"
                 value={formData.source || 'WEB'}
                 onChange={(val) => setFormData({ ...formData, source: val as TicketSource })}
                 options={SOURCES}
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Email client</label>
+              <label className="azals-field__label" htmlFor="ticket-email">Email client</label>
               <Input
+                id="ticket-email"
                 type="email"
                 value={formData.customer_email || ''}
                 onChange={(v) => setFormData({ ...formData, customer_email: v })}

@@ -34,6 +34,23 @@ class DonneurOrdreBase(BaseModel):
     email: str | None = Field(None, max_length=255)
     telephone: str | None = Field(None, max_length=50)
     adresse: str | None = None
+    # Adresse de facturation
+    adresse_facturation: str | None = None
+    # Facturation et rapports
+    delai_paiement: int | None = Field(30, ge=0, le=365, description="Délai de paiement en jours")
+    email_rapport: str | None = Field(None, max_length=255, description="Email pour envoi des rapports")
+    # Contact commercial
+    contact_commercial_nom: str | None = Field(None, max_length=255)
+    contact_commercial_email: str | None = Field(None, max_length=255)
+    contact_commercial_telephone: str | None = Field(None, max_length=50)
+    # Contact comptabilité
+    contact_comptabilite_nom: str | None = Field(None, max_length=255)
+    contact_comptabilite_email: str | None = Field(None, max_length=255)
+    contact_comptabilite_telephone: str | None = Field(None, max_length=50)
+    # Contact technique
+    contact_technique_nom: str | None = Field(None, max_length=255)
+    contact_technique_email: str | None = Field(None, max_length=255)
+    contact_technique_telephone: str | None = Field(None, max_length=50)
 
 
 class DonneurOrdreCreate(DonneurOrdreBase):
@@ -48,6 +65,18 @@ class DonneurOrdreUpdate(BaseModel):
     email: str | None = Field(None, max_length=255)
     telephone: str | None = Field(None, max_length=50)
     adresse: str | None = None
+    adresse_facturation: str | None = None
+    delai_paiement: int | None = Field(None, ge=0, le=365)
+    email_rapport: str | None = Field(None, max_length=255)
+    contact_commercial_nom: str | None = Field(None, max_length=255)
+    contact_commercial_email: str | None = Field(None, max_length=255)
+    contact_commercial_telephone: str | None = Field(None, max_length=50)
+    contact_comptabilite_nom: str | None = Field(None, max_length=255)
+    contact_comptabilite_email: str | None = Field(None, max_length=255)
+    contact_comptabilite_telephone: str | None = Field(None, max_length=50)
+    contact_technique_nom: str | None = Field(None, max_length=255)
+    contact_technique_email: str | None = Field(None, max_length=255)
+    contact_technique_telephone: str | None = Field(None, max_length=50)
     is_active: bool | None = None
 
 

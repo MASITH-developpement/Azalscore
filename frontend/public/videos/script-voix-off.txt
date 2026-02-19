@@ -1,0 +1,93 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║              SCRIPT VOIX OFF - AZALSCORE ERP (55 secondes)                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+DURÉE TOTALE : 55 secondes
+VOIX : Française, professionnelle, dynamique
+RYTHME : Posé mais engageant
+
+════════════════════════════════════════════════════════════════════════════════
+SLIDE 1 - INTRODUCTION (0:00 - 0:08)
+════════════════════════════════════════════════════════════════════════════════
+
+[Image : Logo AZALSCORE + Tableau de bord]
+
+TEXTE :
+"Azalscore. L'ERP français conçu pour les PME qui veulent simplifier
+leur gestion au quotidien."
+
+════════════════════════════════════════════════════════════════════════════════
+SLIDE 2 - COCKPIT DIRIGEANT (0:08 - 0:16)
+════════════════════════════════════════════════════════════════════════════════
+
+[Image : Dashboard avec graphiques CA, clients, trésorerie]
+
+TEXTE :
+"Votre cockpit dirigeant centralise tous vos indicateurs clés :
+chiffre d'affaires, trésorerie, factures en attente.
+Tout en un coup d'œil."
+
+════════════════════════════════════════════════════════════════════════════════
+SLIDE 3 - FACTURATION (0:16 - 0:24)
+════════════════════════════════════════════════════════════════════════════════
+
+[Image : Création de facture, format Factur-X]
+
+TEXTE :
+"Créez vos devis et factures en quelques clics.
+Conforme facturation électronique 2026, format Factur-X inclus."
+
+════════════════════════════════════════════════════════════════════════════════
+SLIDE 4 - CRM & CLIENTS (0:24 - 0:32)
+════════════════════════════════════════════════════════════════════════════════
+
+[Image : Fiche client, historique, pipeline]
+
+TEXTE :
+"Gérez vos clients et prospects avec un CRM intégré.
+Historique complet, relances automatiques, pipeline de ventes."
+
+════════════════════════════════════════════════════════════════════════════════
+SLIDE 5 - COMPTABILITÉ (0:32 - 0:40)
+════════════════════════════════════════════════════════════════════════════════
+
+[Image : Journal comptable, export FEC]
+
+TEXTE :
+"Comptabilité française intégrée.
+Export FEC pour votre expert-comptable, rapprochement bancaire automatique."
+
+════════════════════════════════════════════════════════════════════════════════
+SLIDE 6 - MODULES ADDITIONNELS (0:40 - 0:48)
+════════════════════════════════════════════════════════════════════════════════
+
+[Image : Icônes Stock, RH, Projets, Interventions]
+
+TEXTE :
+"Et bien plus : gestion des stocks, ressources humaines,
+projets, interventions terrain. Un ERP vraiment complet."
+
+════════════════════════════════════════════════════════════════════════════════
+SLIDE 7 - CALL TO ACTION (0:48 - 0:55)
+════════════════════════════════════════════════════════════════════════════════
+
+[Image : Logo + "Essai gratuit 30 jours" + URL]
+
+TEXTE :
+"Azalscore. 100% français, hébergé en France, conforme RGPD.
+Essayez gratuitement pendant 30 jours sur azalscore.com"
+
+════════════════════════════════════════════════════════════════════════════════
+
+NOTES TECHNIQUES :
+- Enregistrer en WAV ou MP3 haute qualité (44.1 kHz, 16 bits)
+- Nommer les fichiers : slide1.mp3, slide2.mp3, etc.
+- Placer dans : frontend/public/audio/
+- Ou créer une vidéo MP4 complète et la placer dans : frontend/public/videos/azalscore-demo.mp4
+
+MUSIQUE DE FOND (optionnel) :
+- Corporate, moderne, non intrusive
+- Volume : -15dB par rapport à la voix
+- Fondu en fin de vidéo
+
+════════════════════════════════════════════════════════════════════════════════

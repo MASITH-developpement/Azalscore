@@ -49,7 +49,7 @@ function logViolation(type: ViolationType, moduleCode: string): void {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(violation),
-    }).catch((error) => {
+    }).catch((_error) => {
       // Ne pas bloquer si l'endpoint n'existe pas encore
     });
   }

@@ -404,7 +404,8 @@ def login(
             "email": user.email,
             "tenant_id": user.tenant_id,
             "role": user.role.value,
-            "full_name": getattr(user, 'full_name', None)
+            "full_name": getattr(user, 'full_name', None),
+            "default_view": getattr(user, 'default_view', None)
         },
         "tokens": {
             "access_token": access_token,
@@ -975,7 +976,8 @@ def get_current_user_info(
             "role": current_user.role.value,
             "full_name": getattr(current_user, 'full_name', None),
             "is_active": current_user.is_active == 1,
-            "totp_enabled": current_user.totp_enabled == 1
+            "totp_enabled": current_user.totp_enabled == 1,
+            "default_view": getattr(current_user, 'default_view', None)
         }
 
     except HTTPException:

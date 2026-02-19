@@ -47,7 +47,7 @@ function getRiskIcon(level: RiskLevel) {
   }
 }
 
-function getRiskColor(level: RiskLevel): string {
+function _getRiskColor(level: RiskLevel): string {
   switch (level) {
     case 'low':
       return 'green';
@@ -280,7 +280,7 @@ export function RiskAnalysis({
     error,
     cached,
     analyze,
-    reset,
+    reset: _reset,
   } = useRiskAnalysis({
     onSuccess: onAnalysis,
   });

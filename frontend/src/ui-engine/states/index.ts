@@ -4,9 +4,9 @@
  */
 
 import { create } from 'zustand';
-import type { ModuleInfo, Tenant } from '@/types';
 import { api } from '@core/api-client';
 import { logError } from '@core/error-handling';
+import type { ModuleInfo, Tenant } from '@/types';
 
 // ============================================================
 // UI GLOBAL STATE
@@ -152,7 +152,7 @@ interface NotificationState {
   markAllAsRead: () => Promise<void>;
 }
 
-export const useNotificationStore = create<NotificationState>((set, get) => ({
+export const useNotificationStore = create<NotificationState>((set, _get) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,

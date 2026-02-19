@@ -6,8 +6,7 @@
  * Exclusions: Paiements, comptabilité, PDF, réceptions, devis
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -16,9 +15,7 @@ import {
   Users,
   Edit,
   Trash2,
-  Eye,
   CheckCircle2,
-  Download,
   Search,
   Filter,
   X,
@@ -27,29 +24,37 @@ import {
   AlertTriangle,
   AlertCircle,
   Clock,
-  RefreshCw,
   Building2,
   List,
   Euro,
   Paperclip,
   Sparkles,
-  CreditCard,
   Shield,
 } from 'lucide-react';
+import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard } from '@core/capabilities';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup, Modal, ConfirmDialog, DropdownMenu } from '@ui/actions';
+import { serializeFilters } from '@core/query-keys';
+import { Button, ButtonGroup, ConfirmDialog } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
-import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
-import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
-import { unwrapApiResponse } from '@/types';
+import { DataTable } from '@ui/tables';
+import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 
 // Import tab components
+
+// Auto-enrichissement fournisseur (SIRET + Adresse)
+import { SiretLookup, AddressAutocomplete, CompanyAutocomplete } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
+import { unwrapApiResponse } from '@/types';
+import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
+
+// Import types from module types file
+import {
+  formatCurrency as formatCurrencyFn,
+  formatDate as formatDateFn,
+} from '@/utils/formatters';
 import {
   SupplierInfoTab, SupplierOrdersTab, SupplierInvoicesTab,
   SupplierDocumentsTab, SupplierHistoryTab, SupplierRiskTab, SupplierIATab,
@@ -58,29 +63,19 @@ import {
   InvoiceInfoTab, InvoiceLinesTab, InvoiceFinancialTab,
   InvoiceDocumentsTab, InvoiceHistoryTab, InvoiceIATab,
 } from './components';
-
-// Auto-enrichissement fournisseur (SIRET + Adresse)
-import { SiretLookup, AddressAutocomplete, CompanyAutocomplete } from '@/modules/enrichment';
-import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
-
-// Import types from module types file
+import {
+  ORDER_STATUS_CONFIG as ORDER_STATUS,
+  INVOICE_STATUS_CONFIG as INVOICE_STATUS,
+  canEditOrder, canValidateOrder, canCreateInvoiceFromOrder,
+  canEditInvoice, canValidateInvoice,
+  isOverdue,
+} from './types';
 import type {
   Supplier as SupplierType,
   PurchaseOrder as PurchaseOrderType,
   PurchaseInvoice as PurchaseInvoiceType,
 } from './types';
-import {
-  SUPPLIER_STATUS_CONFIG as SUPPLIER_STATUS,
-  ORDER_STATUS_CONFIG as ORDER_STATUS,
-  INVOICE_STATUS_CONFIG as INVOICE_STATUS,
-  canEditOrder, canValidateOrder, canCreateInvoiceFromOrder,
-  canEditInvoice, canValidateInvoice, canPayInvoice,
-  isOverdue,
-} from './types';
-import {
-  formatCurrency as formatCurrencyFn,
-  formatDate as formatDateFn,
-} from '@/utils/formatters';
+import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
 
 // ============================================================================
 // TYPES

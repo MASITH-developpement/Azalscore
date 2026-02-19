@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { FileText, Image, Upload, Download, ExternalLink } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Product } from '../types';
-import { formatFileSize } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDateTime } from '@/utils/formatters';
+import { formatFileSize } from '../types';
+import type { Product } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductDocumentsTab - Documents et images
@@ -132,15 +132,15 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
       <Card title="Tracabilite" icon={<FileText size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{product.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDateTime(product.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDateTime(product.updated_at)}</div>
           </div>
         </Grid>

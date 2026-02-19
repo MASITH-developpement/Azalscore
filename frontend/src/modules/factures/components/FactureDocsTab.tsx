@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Facture, FactureDocument } from '../types';
-import { TYPE_CONFIG } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { TYPE_CONFIG } from '../types';
+import type { Facture, FactureDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * FactureDocsTab - Gestion des documents attachés

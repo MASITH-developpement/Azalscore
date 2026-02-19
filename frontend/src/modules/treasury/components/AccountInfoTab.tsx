@@ -5,16 +5,16 @@
 
 import React from 'react';
 import {
-  Building2, CreditCard, Calendar, CheckCircle2, XCircle,
+  Building2, CreditCard, Calendar,
   Star, RefreshCw, Mail, Phone, User
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { BankAccount } from '../types';
 import { formatDate, formatDateTime, formatIBAN, formatCurrency } from '@/utils/formatters';
 import {
   ACCOUNT_TYPE_CONFIG
 } from '../types';
+import type { BankAccount } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AccountInfoTab - Informations generales
@@ -26,15 +26,15 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
       <Card title="Identification" icon={<Building2 size={18} />}>
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Nom du compte</label>
+            <span className="azals-field__label">Nom du compte</span>
             <div className="azals-field__value">{account.name}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Banque</label>
+            <span className="azals-field__label">Banque</span>
             <div className="azals-field__value">{account.bank_name}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               {account.is_active ? (
                 <span className="azals-badge azals-badge--green">Actif</span>
@@ -45,13 +45,13 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
           </div>
           {account.code && (
             <div className="azals-field azals-std-field--secondary">
-              <label className="azals-field__label">Code interne</label>
+              <span className="azals-field__label">Code interne</span>
               <div className="azals-field__value font-mono">{account.code}</div>
             </div>
           )}
           {account.account_type && (
             <div className="azals-field">
-              <label className="azals-field__label">Type de compte</label>
+              <span className="azals-field__label">Type de compte</span>
               <div className="azals-field__value">
                 <span className={`azals-badge azals-badge--${ACCOUNT_TYPE_CONFIG[account.account_type]?.color || 'blue'}`}>
                   {ACCOUNT_TYPE_CONFIG[account.account_type]?.label || account.account_type}
@@ -60,7 +60,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
             </div>
           )}
           <div className="azals-field">
-            <label className="azals-field__label">Compte par defaut</label>
+            <span className="azals-field__label">Compte par defaut</span>
             <div className="azals-field__value">
               {account.is_default ? (
                 <span className="flex items-center gap-1 text-yellow-600">
@@ -78,18 +78,18 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
       <Card title="Coordonnees bancaires" icon={<CreditCard size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">IBAN</label>
+            <span className="azals-field__label">IBAN</span>
             <div className="azals-field__value font-mono text-sm">
               {formatIBAN(account.iban)}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">BIC / SWIFT</label>
+            <span className="azals-field__label">BIC / SWIFT</span>
             <div className="azals-field__value font-mono">{account.bic}</div>
           </div>
           {account.account_number && (
             <div className="azals-field azals-std-field--secondary">
-              <label className="azals-field__label">Numero de compte</label>
+              <span className="azals-field__label">Numero de compte</span>
               <div className="azals-field__value font-mono">{account.account_number}</div>
             </div>
           )}
@@ -100,21 +100,21 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
       <Card title="Situation financiere" icon={<CreditCard size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Solde actuel</label>
+            <span className="azals-field__label">Solde actuel</span>
             <div className={`azals-field__value text-xl font-bold ${account.balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
               {formatCurrency(account.balance, account.currency)}
             </div>
           </div>
           {account.available_balance !== undefined && (
             <div className="azals-field">
-              <label className="azals-field__label">Solde disponible</label>
+              <span className="azals-field__label">Solde disponible</span>
               <div className="azals-field__value text-lg font-medium">
                 {formatCurrency(account.available_balance, account.currency)}
               </div>
             </div>
           )}
           <div className="azals-field">
-            <label className="azals-field__label">Devise</label>
+            <span className="azals-field__label">Devise</span>
             <div className="azals-field__value">{account.currency}</div>
           </div>
         </Grid>
@@ -124,7 +124,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
             <Grid cols={2} gap="md">
               {account.pending_in !== undefined && (
                 <div className="azals-field">
-                  <label className="azals-field__label">Encaissements en attente</label>
+                  <span className="azals-field__label">Encaissements en attente</span>
                   <div className="azals-field__value text-green-600">
                     +{formatCurrency(account.pending_in, account.currency)}
                   </div>
@@ -132,7 +132,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
               )}
               {account.pending_out !== undefined && (
                 <div className="azals-field">
-                  <label className="azals-field__label">Decaissements prevus</label>
+                  <span className="azals-field__label">Decaissements prevus</span>
                   <div className="azals-field__value text-red-600">
                     -{formatCurrency(account.pending_out, account.currency)}
                   </div>
@@ -148,7 +148,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
         <Grid cols={3} gap="md">
           {account.last_sync && (
             <div className="azals-field">
-              <label className="azals-field__label">Derniere synchronisation</label>
+              <span className="azals-field__label">Derniere synchronisation</span>
               <div className="azals-field__value flex items-center gap-1">
                 <RefreshCw size={14} className="text-muted" />
                 {formatDateTime(account.last_sync)}
@@ -157,7 +157,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
           )}
           {account.last_statement_date && (
             <div className="azals-field">
-              <label className="azals-field__label">Dernier releve</label>
+              <span className="azals-field__label">Dernier releve</span>
               <div className="azals-field__value">
                 {formatDate(account.last_statement_date)}
               </div>
@@ -165,7 +165,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
           )}
           {account.opening_date && (
             <div className="azals-field azals-std-field--secondary">
-              <label className="azals-field__label">Date d'ouverture</label>
+              <span className="azals-field__label">Date d'ouverture</span>
               <div className="azals-field__value flex items-center gap-1">
                 <Calendar size={14} className="text-muted" />
                 {formatDate(account.opening_date)}
@@ -181,13 +181,13 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
           <Grid cols={3} gap="md">
             {account.contact_name && (
               <div className="azals-field">
-                <label className="azals-field__label">Nom du contact</label>
+                <span className="azals-field__label">Nom du contact</span>
                 <div className="azals-field__value">{account.contact_name}</div>
               </div>
             )}
             {account.contact_phone && (
               <div className="azals-field">
-                <label className="azals-field__label">Telephone</label>
+                <span className="azals-field__label">Telephone</span>
                 <div className="azals-field__value">
                   <a href={`tel:${account.contact_phone}`} className="text-primary hover:underline flex items-center gap-1">
                     <Phone size={14} />
@@ -198,7 +198,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
             )}
             {account.contact_email && (
               <div className="azals-field">
-                <label className="azals-field__label">Email</label>
+                <span className="azals-field__label">Email</span>
                 <div className="azals-field__value">
                   <a href={`mailto:${account.contact_email}`} className="text-primary hover:underline flex items-center gap-1">
                     <Mail size={14} />

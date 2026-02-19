@@ -191,10 +191,7 @@ class OrchestrationEngine:
             Pour l'instant, on respecte l'ordre déclaré.
             Une future version pourrait paralléliser les steps indépendants.
         """
-        # TODO: Implémenter résolution topologique avancée
-        # Pour détecter les cycles et paralléliser les steps indépendants
-
-        # Pour l'instant : ordre déclaré
+        # NOTE: Phase 2 - Résolution topologique (détection cycles, parallélisation)
         return steps
 
     def _evaluate_condition(self, condition: str, context: Dict[str, Any]) -> bool:

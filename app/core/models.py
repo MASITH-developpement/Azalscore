@@ -87,6 +87,9 @@ class User(Base, TenantMixin):
     must_change_password = Column(Integer, default=0, nullable=False)  # 1=doit changer au prochain login
     password_changed_at = Column(DateTime, nullable=True)  # Date du dernier changement
 
+    # Préférences UI
+    default_view = Column(String(50), nullable=True)  # Vue par défaut après connexion (cockpit, admin, saisie, etc.)
+
     # SÉCURITÉ P1-5: Contrainte unique composite (tenant_id, email)
     # Permet le même email dans des tenants différents
     __table_args__ = (

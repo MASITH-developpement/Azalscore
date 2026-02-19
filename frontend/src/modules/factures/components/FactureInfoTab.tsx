@@ -9,14 +9,14 @@ import {
   Hash, AlertTriangle, Shield, ShieldCheck, ShieldAlert, ShieldX
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Facture } from '../types';
+import { useRiskAnalysis, useInternalScore } from '@/modules/enrichment';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   STATUS_CONFIG, TYPE_CONFIG,
   PAYMENT_METHODS, isOverdue, getDaysUntilDue
 } from '../types';
-import { formatDate, formatCurrency } from '@/utils/formatters';
-import { useRiskAnalysis, useInternalScore, ScoreGauge } from '@/modules/enrichment';
+import type { Facture } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * Compact Risk Badge Component

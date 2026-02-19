@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
+import { formatFrequency } from '../types';
 import type { Asset, SparePart, MaintenancePlan } from '../types';
-import { formatFrequency, FREQUENCY_CONFIG } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AssetPartsTab - Pieces de rechange et plans de maintenance

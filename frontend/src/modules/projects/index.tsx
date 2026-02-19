@@ -5,12 +5,17 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Folder, ClipboardList, CheckCircle, RefreshCw, Clock, BarChart3,
+  DollarSign, ArrowLeft, Edit, Printer,
+  Sparkles, FileText, CheckSquare
+} from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -19,25 +24,11 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import {
-  Folder, ClipboardList, CheckCircle, RefreshCw, Clock, BarChart3,
-  DollarSign, ArrowLeft, Edit, Send, Printer, Trash2, Target,
-  User, Sparkles, FileText, CheckSquare
-} from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
 // Types et helpers
-import type { Project, Task, TimeEntry, ProjectStats } from './types';
-import {
-  PROJECT_STATUS_CONFIG, TASK_STATUS_CONFIG, PRIORITY_CONFIG,
-  getDaysRemaining, getBudgetUsedPercent, getTaskCountByStatus,
-  getTotalLoggedHours, isProjectOverdue, isProjectNearDeadline,
-  isBudgetOverrun
-} from './types';
 import { formatDate, formatCurrency, formatHours, formatPercent } from '@/utils/formatters';
-
-// Composants tabs
 import {
   ProjectInfoTab,
   ProjectTasksTab,
@@ -46,6 +37,15 @@ import {
   ProjectHistoryTab,
   ProjectIATab
 } from './components';
+import {
+  PROJECT_STATUS_CONFIG, PRIORITY_CONFIG,
+  getDaysRemaining, getBudgetUsedPercent, getTaskCountByStatus,
+  getTotalLoggedHours, isProjectOverdue, isProjectNearDeadline,
+  isBudgetOverrun
+} from './types';
+import type { Project, Task, TimeEntry, ProjectStats } from './types';
+
+// Composants tabs
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -150,7 +150,7 @@ const useTimeEntries = (filters?: { project_id?: string; date_from?: string; dat
   });
 };
 
-const useCreateProject = () => {
+const _useCreateProject = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Project>) => {

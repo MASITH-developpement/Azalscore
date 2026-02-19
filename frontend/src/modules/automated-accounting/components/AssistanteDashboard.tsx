@@ -17,13 +17,11 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FileText,
   Upload,
   Search,
-  Filter,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -32,15 +30,16 @@ import {
   Plus,
   Inbox,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
-import { Modal, Input, TextArea, Select } from '@ui/forms';
-import { ErrorState } from '../../../ui-engine/components/StateViews';
+import { Modal, Select } from '@ui/forms';
+import { PageWrapper, Card } from '@ui/layout';
+import { DataTable } from '@ui/tables';
 import type { TableColumn, PaginatedResponse } from '@/types';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES
@@ -441,7 +440,7 @@ export const AssistanteDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useAssistanteDashboard();
-  const { data: documents, isLoading: documentsLoading, error: documentsError, refetch: refetchDocuments } = useDocuments(
+  const { data: documents, isLoading: documentsLoading, error: _documentsError, refetch: _refetchDocuments } = useDocuments(
     page,
     20,
     statusFilter ? { status: statusFilter } : {}

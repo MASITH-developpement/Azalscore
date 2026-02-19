@@ -6,15 +6,15 @@
 import React from 'react';
 import {
   ArrowDownLeft, ArrowUpRight, CheckCircle2, XCircle,
-  FileText, Calendar, Search
+  FileText
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { BankAccount, Transaction } from '../types';
-import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   isCredit, isDebit, isTransactionReconciled
 } from '../types';
+import type { BankAccount, Transaction } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AccountTransactionsTab - Transactions du compte

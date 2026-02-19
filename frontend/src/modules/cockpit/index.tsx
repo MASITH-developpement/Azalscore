@@ -10,17 +10,17 @@
 
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { clsx } from 'clsx';
 import {
   Users, FileText, Package, Wrench, Briefcase, Receipt, Calculator,
-  TrendingUp, TrendingDown, ArrowRight, RefreshCw, Eye, AlertTriangle,
-  Clock, CheckCircle2, XCircle, Euro, Calendar, ChevronRight, Activity,
-  ShieldAlert, Shield
+  TrendingUp, TrendingDown, ArrowRight, RefreshCw, Eye,
+  Clock, CheckCircle2, Euro, Calendar, ChevronRight, Activity,
+  ShieldAlert
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import { api } from '@core/api-client';
 import { COLORS } from '@core/design-tokens';
-import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
+import { Card } from '@ui/layout';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 import '../../styles/cockpit.css';
 

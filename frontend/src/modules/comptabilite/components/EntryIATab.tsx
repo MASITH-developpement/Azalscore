@@ -7,16 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, CheckCircle2, AlertTriangle, BookOpen } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Entry } from '../types';
-import { formatCurrency } from '@/utils/formatters';
-import {
-  isEntryBalanced, canValidateEntry, canPostEntry,
-  ENTRY_STATUS_CONFIG
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -25,6 +15,16 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  isEntryBalanced, canValidateEntry, canPostEntry,
+  ENTRY_STATUS_CONFIG
+} from '../types';
+import type { Entry } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * EntryIATab - Assistant IA
@@ -200,7 +200,7 @@ function generateSuggestedActions(entry: Entry): SuggestedActionData[] {
  */
 function generateInsights(entry: Entry): Insight[] {
   const insights: Insight[] = [];
-  const statusConfig = ENTRY_STATUS_CONFIG[entry.status];
+  const _statusConfig = ENTRY_STATUS_CONFIG[entry.status];
 
   // Statut
   if (entry.status === 'DRAFT') {

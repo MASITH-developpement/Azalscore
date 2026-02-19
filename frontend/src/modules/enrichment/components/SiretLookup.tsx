@@ -6,10 +6,9 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSiretLookup, isValidSiret, isValidSiren } from '../hooks';
 import { acceptEnrichment, searchCompanyByName } from '../api';
-import type { CompanySuggestion } from '../types';
-import type { EnrichedContactFields, SiretLookupProps } from '../types';
+import { useSiretLookup, isValidSiret, isValidSiren } from '../hooks';
+import type { CompanySuggestion , EnrichedContactFields, SiretLookupProps } from '../types';
 
 // ============================================================================
 // COMPONENT

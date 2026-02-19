@@ -5,19 +5,19 @@
 
 import React from 'react';
 import {
-  Target, Euro, Calendar, TrendingUp, Clock,
+  Target, Euro, Calendar, TrendingUp,
   CheckCircle, XCircle, AlertTriangle, ChevronRight
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Customer, Opportunity } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   OPPORTUNITY_STATUS_CONFIG,
   isOpportunityOpen, isOpportunityWon, isOpportunityLost,
   getWeightedValue, getDaysToClose, isOverdue
 } from '../types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Customer, Opportunity } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CustomerOpportunitiesTab - Opportunités du client
@@ -30,7 +30,7 @@ export const CustomerOpportunitiesTab: React.FC<TabContentProps<Customer>> = ({ 
 
   // Calculs
   const totalOpenValue = openOpportunities.reduce((sum, o) => sum + o.amount, 0);
-  const totalWeightedValue = openOpportunities.reduce((sum, o) => sum + getWeightedValue(o), 0);
+  const _totalWeightedValue = openOpportunities.reduce((sum, o) => sum + getWeightedValue(o), 0);
   const totalWonValue = wonOpportunities.reduce((sum, o) => sum + o.amount, 0);
   const conversionRate = opportunities.length > 0
     ? (wonOpportunities.length / opportunities.length) * 100
@@ -231,7 +231,7 @@ const OpportunityItem: React.FC<OpportunityItemProps> = ({ opportunity }) => {
  * Composant item d'opportunité compact
  */
 const OpportunityItemCompact: React.FC<OpportunityItemProps> = ({ opportunity }) => {
-  const statusConfig = OPPORTUNITY_STATUS_CONFIG[opportunity.status];
+  const _statusConfig = OPPORTUNITY_STATUS_CONFIG[opportunity.status];
 
   return (
     <div className="azals-opportunity-item-compact">

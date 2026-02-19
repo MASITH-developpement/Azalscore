@@ -132,10 +132,32 @@ class DonneurOrdre(Base):
     client_id = Column(UniversalUUID())  # Lien vers customers si applicable
     fournisseur_id = Column(UniversalUUID())  # Lien vers suppliers si applicable
 
-    # Contact
+    # Contact principal
     email = Column(String(255))
     telephone = Column(String(50))
     adresse = Column(Text)
+
+    # Adresse de facturation (si différente)
+    adresse_facturation = Column(Text)
+
+    # Facturation et rapports
+    delai_paiement = Column(Integer, default=30)  # Délai de paiement en jours
+    email_rapport = Column(String(255))  # Email pour envoi des rapports d'intervention
+
+    # Contact commercial
+    contact_commercial_nom = Column(String(255))
+    contact_commercial_email = Column(String(255))
+    contact_commercial_telephone = Column(String(50))
+
+    # Contact comptabilité
+    contact_comptabilite_nom = Column(String(255))
+    contact_comptabilite_email = Column(String(255))
+    contact_comptabilite_telephone = Column(String(50))
+
+    # Contact technique / chantier
+    contact_technique_nom = Column(String(255))
+    contact_technique_email = Column(String(255))
+    contact_technique_telephone = Column(String(50))
 
     # Métadonnées
     is_active = Column(Boolean, default=True)

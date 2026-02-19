@@ -5,16 +5,17 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
-import { useVerifyEmail } from './api';
 import { COLORS } from '@core/design-tokens';
+import { useVerifyEmail } from './api';
 import { ProgressBar } from './components/ProgressBar';
-import { StepPersonalInfo } from './components/StepPersonalInfo';
 import { StepCompanyInfo } from './components/StepCompanyInfo';
-import { StepPricingReminder } from './components/StepPricingReminder';
-import { StepValidation } from './components/StepValidation';
 import { StepEmailVerification } from './components/StepEmailVerification';
 import { StepPayment } from './components/StepPayment';
+import { StepPersonalInfo } from './components/StepPersonalInfo';
+import { StepPricingReminder } from './components/StepPricingReminder';
 import { StepSuccess } from './components/StepSuccess';
+import { StepValidation } from './components/StepValidation';
+import { initialFormData, TRIAL_STEPS } from './types';
 import type {
   TrialStep,
   TrialFormData,
@@ -23,7 +24,6 @@ import type {
   PricingInfo,
   TrialCompleteResponse,
 } from './types';
-import { initialFormData, TRIAL_STEPS } from './types';
 import './trial.css';
 
 // Logo AZALSCORE

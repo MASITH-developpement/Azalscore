@@ -71,7 +71,7 @@ router = APIRouter(prefix="/tenants", tags=["Tenants"])
 
 def verify_tenant_ownership(context: SaaSContext, tenant_id: str) -> None:
     """Vérifie que l'utilisateur a accès au tenant spécifié."""
-    if context.role == UserRole.SUPER_ADMIN:
+    if context.role == UserRole.SUPERADMIN:
         return
     if context.tenant_id != tenant_id:
         raise HTTPException(
@@ -81,7 +81,7 @@ def verify_tenant_ownership(context: SaaSContext, tenant_id: str) -> None:
 
 def require_super_admin(context: SaaSContext) -> None:
     """Vérifie que l'utilisateur est super_admin (opérations plateforme)."""
-    if context.role != UserRole.SUPER_ADMIN:
+    if context.role != UserRole.SUPERADMIN:
         raise HTTPException(
             status_code=403,
             detail="Accès refusé. Droits super_admin requis pour cette opération."
@@ -89,7 +89,7 @@ def require_super_admin(context: SaaSContext) -> None:
 
 def require_tenant_admin(context: SaaSContext) -> None:
     """Vérifie que l'utilisateur a un rôle admin dans son tenant."""
-    if context.role not in [UserRole.SUPER_ADMIN, UserRole.DIRIGEANT, UserRole.ADMIN]:
+    if context.role not in [UserRole.SUPERADMIN, UserRole.DIRIGEANT, UserRole.ADMIN]:
         raise HTTPException(
             status_code=403,
             detail="Accès refusé. Rôle ADMIN ou DIRIGEANT requis."
@@ -107,7 +107,7 @@ def create_tenant(
 ):
     """Créer un nouveau tenant."""
     require_super_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
 
     if service.get_tenant(data.tenant_id):
         raise HTTPException(status_code=409, detail="Tenant ID déjà utilisé")
@@ -165,7 +165,7 @@ def update_tenant(
     """Mettre à jour un tenant."""
     verify_tenant_ownership(context, tenant_id)
     require_tenant_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     tenant = service.update_tenant(tenant_id, data)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -179,7 +179,7 @@ def activate_tenant(
 ):
     """Activer un tenant."""
     require_super_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     tenant = service.activate_tenant(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -194,7 +194,7 @@ def suspend_tenant(
 ):
     """Suspendre un tenant."""
     require_super_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     tenant = service.suspend_tenant(tenant_id, reason)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -209,7 +209,7 @@ def cancel_tenant(
 ):
     """Annuler un tenant."""
     require_super_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     tenant = service.cancel_tenant(tenant_id, reason)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -223,7 +223,7 @@ def start_trial(
     context: SaaSContext = Depends(get_context)
 ):
     """Démarrer un essai gratuit."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     tenant = service.start_trial(tenant_id, days)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -242,7 +242,7 @@ def create_subscription(
 ):
     """Créer un abonnement."""
     require_super_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
 
     if not service.get_tenant(tenant_id):
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -270,7 +270,7 @@ def update_subscription(
     context: SaaSContext = Depends(get_context)
 ):
     """Mettre à jour l'abonnement."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     subscription = service.update_subscription(tenant_id, data)
     if not subscription:
         raise HTTPException(status_code=404, detail="Aucun abonnement actif")
@@ -288,7 +288,7 @@ def activate_module(
     context: SaaSContext = Depends(get_context)
 ):
     """Activer un module."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
 
     if not service.get_tenant(tenant_id):
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -314,7 +314,7 @@ def deactivate_module(
     context: SaaSContext = Depends(get_context)
 ):
     """Désactiver un module."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     module = service.deactivate_module(tenant_id, module_code)
     if not module:
         raise HTTPException(status_code=404, detail="Module non trouvé")
@@ -374,7 +374,7 @@ def create_invitation(
     context: SaaSContext = Depends(get_context)
 ):
     """Créer une invitation."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     return service.create_invitation(data)
 
 @router.get("/invitations/{token}", response_model=TenantInvitationResponse)
@@ -397,7 +397,7 @@ def accept_invitation(
     context: SaaSContext = Depends(get_context)
 ):
     """Accepter une invitation."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     invitation = service.accept_invitation(token)
     if not invitation:
         raise HTTPException(status_code=404, detail="Invitation invalide ou expirée")
@@ -469,7 +469,7 @@ def update_tenant_settings(
     context: SaaSContext = Depends(get_context)
 ):
     """Mettre à jour les paramètres."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     return service.update_settings(tenant_id, data)
 
 # ============================================================================
@@ -497,7 +497,7 @@ def update_onboarding_step(
     context: SaaSContext = Depends(get_context)
 ):
     """Mettre à jour une étape onboarding."""
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     onboarding = service.update_onboarding_step(tenant_id, data)
     if not onboarding:
         raise HTTPException(status_code=404, detail="Onboarding non trouvé")
@@ -549,7 +549,7 @@ def provision_tenant(
 ):
     """Provisionner un tenant complet."""
     require_super_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
 
     if service.get_tenant(data.tenant.tenant_id):
         raise HTTPException(status_code=409, detail="Tenant ID déjà utilisé")
@@ -563,7 +563,7 @@ def provision_masith(
 ):
     """Provisionner le tenant SAS MASITH (premier client)."""
     require_super_admin(context)
-    service = get_tenant_service(db, context.user_id, email=None)
+    service = get_tenant_service(db, context.user_id, actor_email=None)
     return service.provision_masith()
 
 # ============================================================================

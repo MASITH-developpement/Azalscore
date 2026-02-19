@@ -7,16 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, UserCheck, Star, ShoppingCart, Mail, Phone } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner, Client } from '../types';
-import { formatCurrency } from '@/utils/formatters';
-import {
-  getPartnerAgeDays, hasContacts, hasDocuments,
-  getContactsCount, CLIENT_TYPE_CONFIG
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -25,6 +15,16 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  getPartnerAgeDays, hasContacts,
+  getContactsCount, CLIENT_TYPE_CONFIG
+} from '../types';
+import type { Partner, Client } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * PartnerIATab - Assistant IA

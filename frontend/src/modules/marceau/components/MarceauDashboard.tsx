@@ -5,8 +5,25 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Phone, FileText, Calendar, TrendingUp, TrendingDown, AlertCircle, Clock, Bot } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Phone, FileText, Calendar, MessageSquare, TrendingUp, TrendingDown, AlertCircle, Clock, Bot } from 'lucide-react';
+import type { ApiMutationError } from '@/types';
+
+interface RecentAction {
+  id: string;
+  module: string;
+  action_type: string;
+  status: string;
+  created_at: string;
+  confidence_score?: number;
+}
+
+interface DashboardAlert {
+  id: string;
+  message: string;
+  severity: string;
+  created_at: string;
+}
 
 interface DashboardData {
   total_actions_today: number;
@@ -19,8 +36,8 @@ interface DashboardData {
   appointments_trend: number;
   actions_by_module: Record<string, number>;
   pending_validations: number;
-  recent_actions: any[];
-  alerts: any[];
+  recent_actions: RecentAction[];
+  alerts: DashboardAlert[];
   avg_confidence_score: number;
 }
 
@@ -41,8 +58,8 @@ export function MarceauDashboard() {
       const response = await api.get<DashboardData>('/marceau/dashboard');
       setData(response.data);
       setError(null);
-    } catch (e: any) {
-      setError(e.message || 'Erreur chargement dashboard');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur chargement dashboard');
     } finally {
       setLoading(false);
     }
@@ -171,7 +188,7 @@ export function MarceauDashboard() {
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="font-semibold mb-4">Actions recentes</h3>
         <div className="space-y-2">
-          {data.recent_actions.slice(0, 10).map((action: any) => (
+          {data.recent_actions.slice(0, 10).map((action: RecentAction) => (
             <div
               key={action.id}
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -194,7 +211,7 @@ export function MarceauDashboard() {
                   {new Date(action.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Confiance: {(action.confidence_score * 100).toFixed(0)}%
+                  Confiance: {((action.confidence_score ?? 0) * 100).toFixed(0)}%
                 </p>
               </div>
             </div>

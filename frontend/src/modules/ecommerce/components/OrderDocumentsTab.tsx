@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { FileText, Download, Printer, Receipt, Package } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Order } from '../types';
-import { formatFileSize } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDateTime } from '@/utils/formatters';
+import { formatFileSize } from '../types';
+import type { Order } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderDocumentsTab - Documents
@@ -121,15 +121,15 @@ export const OrderDocumentsTab: React.FC<TabContentProps<Order>> = ({ data: orde
       <Card title="Tracabilite" icon={<FileText size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Creee par</label>
+            <span className="azals-field__label">Creee par</span>
             <div className="azals-field__value">{order.created_by_name || 'Client'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Creee le</label>
+            <span className="azals-field__label">Creee le</span>
             <div className="azals-field__value">{formatDateTime(order.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifiee le</label>
+            <span className="azals-field__label">Modifiee le</span>
             <div className="azals-field__value">{formatDateTime(order.updated_at)}</div>
           </div>
         </Grid>

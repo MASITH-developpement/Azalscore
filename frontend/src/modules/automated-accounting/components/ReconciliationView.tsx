@@ -10,15 +10,11 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Link2,
-  Unlink,
   Check,
   X,
-  Search,
-  Filter,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -28,21 +24,19 @@ import {
   Calendar,
   Hash,
   Plus,
-  RefreshCw,
   Settings,
   Eye,
   ArrowRight,
   Zap,
   Target,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
 import { Modal, Input, Select, TextArea } from '@ui/forms';
+import { PageWrapper, Card } from '@ui/layout';
 import { ErrorState } from '../../../ui-engine/components/StateViews';
-import type { TableColumn } from '@/types';
 
 // ============================================================
 // TYPES
@@ -202,7 +196,7 @@ const useDeleteRule = () => {
   });
 };
 
-const useUnreconcile = () => {
+const _useUnreconcile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -231,7 +225,7 @@ const formatCurrency = (value: number, currency = 'EUR') =>
 const formatDate = (dateStr: string | null) =>
   dateStr ? new Date(dateStr).toLocaleDateString('fr-FR') : '-';
 
-const formatDateTime = (dateStr: string) =>
+const _formatDateTime = (dateStr: string) =>
   new Date(dateStr).toLocaleString('fr-FR');
 
 const formatPercent = (value: number) =>

@@ -5,14 +5,14 @@
 
 import React from 'react';
 import {
-  FileText, Download, Printer, Eye, Upload, Trash2,
+  FileText, Download, Eye, Upload, Trash2,
   File, FileImage, FilePlus, FolderOpen, ExternalLink
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Affaire, AffaireDocument } from '../types';
 import { formatDate } from '@/utils/formatters';
+import type { Affaire, AffaireDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AffaireDocsTab - Gestion des documents attachés

@@ -10,18 +10,18 @@ import {
   Building2, Lock, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Info, CreditCard
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Document } from '../types';
 import { CapabilityGuard } from '@core/capabilities';
+import { Button } from '@ui/actions';
+import { Card, Grid } from '@ui/layout';
 import {
   useRiskAnalysis,
   useInternalScore,
   ScoreGauge
 } from '@/modules/enrichment';
-import type { RiskAnalysis as RiskAnalysisType, RiskLevel } from '@/modules/enrichment';
+import type { RiskLevel } from '@/modules/enrichment';
 import { formatCurrency } from '@/utils/formatters';
+import type { Document } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * Banniere d'alerte risque

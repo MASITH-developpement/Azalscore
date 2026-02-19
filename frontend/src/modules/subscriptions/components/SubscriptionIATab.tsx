@@ -9,18 +9,6 @@ import React, { useState } from 'react';
 import {
   TrendingUp, AlertTriangle, CheckCircle, Gift, Repeat, XCircle, ThumbsUp
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Subscription } from '../types';
-import {
-  getSubscriptionAgeDays, getDaysUntilRenewal,
-  getTrialDaysRemaining, getTotalPaid,
-  isActive, isInTrial, isPastDue, isCancelled, willCancel,
-  SUBSCRIPTION_STATUS_CONFIG
-} from '../types';
-import { formatCurrency } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -29,6 +17,18 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  getSubscriptionAgeDays, getDaysUntilRenewal,
+  getTrialDaysRemaining, getTotalPaid,
+  isActive, isInTrial, isPastDue, isCancelled, willCancel,
+  SUBSCRIPTION_STATUS_CONFIG
+} from '../types';
+import type { Subscription } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * SubscriptionIATab - Assistant IA

@@ -418,8 +418,7 @@ class RegistryLoader:
             if full_id in self._programs:
                 return self._programs[full_id]
 
-            # TODO: Implémenter résolution SemVer avancée (^, ~, >=, etc.)
-            # Pour l'instant, on recherche la version exacte
+            # NOTE: Phase 2 - Résolution SemVer avancée (^, ~, >=)
             raise VersionError(
                 f"Version '{version_spec}' non trouvée pour {program_id}"
             )

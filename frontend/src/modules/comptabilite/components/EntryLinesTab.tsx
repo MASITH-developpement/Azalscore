@@ -6,10 +6,10 @@
 import React from 'react';
 import { List, Calculator, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Entry, EntryLine } from '../types';
-import { formatAccountCode, isEntryBalanced } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import { formatAccountCode, isEntryBalanced } from '../types';
+import type { Entry, EntryLine } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EntryLinesTab - Lignes de l'ecriture

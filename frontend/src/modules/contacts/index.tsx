@@ -16,6 +16,14 @@ import { Routes, Route, useParams, useNavigate, Link } from 'react-router-dom';
 
 // API et Types
 import { contactsApi } from './api';
+import {
+  ContactPersonsManager,
+  AddressManager,
+  LogoUploader,
+} from './components';
+import {
+  EntityTypeLabels,
+} from './types';
 import type {
   Contact,
   ContactCreate,
@@ -25,19 +33,8 @@ import type {
   EntityType,
   RelationType,
 } from './types';
-import {
-  EntityTypeLabels,
-  RelationTypeLabels,
-  CustomerTypeLabels,
-  SupplierStatusLabels,
-} from './types';
 
 // Sous-programmes réutilisables
-import {
-  ContactPersonsManager,
-  AddressManager,
-  LogoUploader,
-} from './components';
 
 // ============================================================================
 // COMPOSANT PRINCIPAL (ROUTES)

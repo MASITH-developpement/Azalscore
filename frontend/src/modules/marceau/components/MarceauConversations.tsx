@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Phone, Clock, Star, ChevronDown, ChevronUp, AlertCircle, Play } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Phone, Clock, User, MessageSquare, Star, ChevronDown, ChevronUp, AlertCircle, Play } from 'lucide-react';
 
 interface MarceauConversation {
   id: string;

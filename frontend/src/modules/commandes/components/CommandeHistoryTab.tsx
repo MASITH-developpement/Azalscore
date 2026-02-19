@@ -5,14 +5,14 @@
 
 import React from 'react';
 import {
-  Clock, User, Edit, Check, Send, X, Plus,
+  Clock, User, Edit, Check, X, Plus,
   FileText, ArrowRight, Truck, Package
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Commande, CommandeHistoryEntry } from '../types';
-import { STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { STATUS_CONFIG } from '../types';
+import type { Commande, CommandeHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CommandeHistoryTab - Historique et audit trail de la commande

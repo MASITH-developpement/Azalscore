@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { List, Plus, AlertCircle } from 'lucide-react';
-import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseOrder } from '../types';
-import { calculateLineTotal, canEditOrder } from '../types';
+import { Card } from '@ui/layout';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
+import { calculateLineTotal, canEditOrder } from '../types';
+import type { PurchaseOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderLinesTab - Lignes de commande
@@ -124,7 +124,7 @@ export const OrderLinesTab: React.FC<TabContentProps<PurchaseOrder>> = ({ data: 
 /**
  * Calcul ventilation TVA
  */
-function getVATBreakdown(lines: PurchaseOrder['lines'], currency: string) {
+function getVATBreakdown(lines: PurchaseOrder['lines'], _currency: string) {
   const breakdown: Record<number, { base: number; amount: number }> = {};
 
   lines.forEach((line) => {

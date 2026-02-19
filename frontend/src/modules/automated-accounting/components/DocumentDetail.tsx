@@ -10,10 +10,8 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft,
   FileText,
   Brain,
   Calculator,
@@ -24,8 +22,6 @@ import {
   Eye,
   Download,
   MessageSquare,
-  Link2,
-  Edit3,
   History,
   User,
   Building,
@@ -35,13 +31,14 @@ import {
   Receipt,
   Tag,
 } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
+import { useAuth } from '@core/auth';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
-import { Modal, Input, TextArea, Select } from '@ui/forms';
+import { Modal, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { ErrorState } from '../../../ui-engine/components/StateViews';
-import { useAuth } from '@core/auth';
 
 // ============================================================
 // TYPES

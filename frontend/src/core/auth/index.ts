@@ -120,7 +120,7 @@ interface AuthStore extends AuthState {
 // STORE AUTH (ZUSTAND)
 // ============================================================
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>((set, _get) => ({
   user: null,
   tokens: null,
   isAuthenticated: false,

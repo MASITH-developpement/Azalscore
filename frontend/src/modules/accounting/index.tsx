@@ -5,17 +5,16 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, FileSpreadsheet, BarChart3, FileText, Download, Filter } from 'lucide-react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { API_CONFIG, MODULES } from '@core/api-client/config';
-import { CapabilityGuard } from '@core/capabilities';
+import { serializeFilters } from '@core/query-keys';
+import { Button, ButtonGroup } from '@ui/actions';
+import { KPICard } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
-import { KPICard, MetricComparison } from '@ui/dashboards';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 

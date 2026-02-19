@@ -11,20 +11,19 @@
  * FUTURE : Permettre à l'utilisateur de personnaliser son interface
  */
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   Menu, X, Bell, User, LogOut, Settings, ChevronDown,
-  Search, Plus, LayoutList, LayoutGrid, Database, AlertTriangle,
-  FileText, Users, Package, Truck, Star, Clock, Sparkles
+  LayoutList, LayoutGrid, Database, AlertTriangle,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
-import { DynamicMenu } from '@ui/menu-dynamic';
+import { useTheo } from '@core/theo';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
 import { TheoPanelContainer } from '@ui/components/TheoPanel';
-import { useTheo } from '@core/theo';
 import { isDemoMode, setDemoMode } from '../utils/demoMode';
 import { setInterfaceMode, getCurrentMode, type InterfaceMode } from '../utils/interfaceMode';
 

@@ -5,24 +5,22 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { Badge } from '@ui/simple';
-import { BaseViewStandard } from '@ui/standards';
-import type { TableColumn } from '@/types';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 import {
   ClipboardList, Calendar, Wrench, CheckCircle, BarChart3, Clock, MapPin,
   User, FileText, History, Sparkles, Package, Euro, AlertTriangle, Play, X,
   FileEdit, Lock, Unlock, CheckSquare, Edit, Trash2
 } from 'lucide-react';
+import { api } from '@core/api-client';
+import { Button, Modal } from '@ui/actions';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
-
-// Import API hooks (AZA-FE-003: api.ts)
+import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { Badge } from '@ui/simple';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn, Intervenant, ApiMutationError } from '@/types';
+import { formatDate, formatDuration, formatCurrency } from '@/utils/formatters';
 import {
   useInterventionStats,
   useInterventions,
@@ -34,12 +32,9 @@ import {
   interventionKeys,
 } from './api';
 
+// Import API hooks (AZA-FE-003: api.ts)
+
 // Import workflow hooks
-import { usePlanifierIntervention } from './hooks/usePlanningActions';
-import {
-  useValiderIntervention, useDemarrerIntervention, useTerminerIntervention,
-  useBloquerIntervention, useDebloquerIntervention, useAnnulerIntervention
-} from './hooks/useWorkflowActions';
 
 // Import tab components
 import {
@@ -52,14 +47,19 @@ import {
   InterventionFormView,
   PlanningView
 } from './components';
+import { usePlanifierIntervention } from './hooks/usePlanningActions';
+import {
+  useValiderIntervention, useDemarrerIntervention, useTerminerIntervention,
+  useBloquerIntervention, useDebloquerIntervention, useAnnulerIntervention
+} from './hooks/useWorkflowActions';
 
 // Import shared types
-import type { Intervention, InterventionType, InterventionPriorite, CorpsEtat, DonneurOrdre, InterventionStats } from './types';
 import {
   STATUT_CONFIG, PRIORITE_CONFIG, TYPE_CONFIG, CORPS_ETAT_CONFIG,
-  isLate, canValidate, canBlock, canUnblock
+  isLate, canValidate, canUnblock
 } from './types';
-import { formatDate, formatDuration, formatCurrency } from '@/utils/formatters';
+import type { Intervention, InterventionType, InterventionPriorite, CorpsEtat, DonneurOrdre } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 
 // ============================================================================
 // CONSTANTES
@@ -251,7 +251,7 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       onClick: () => {
         valider.mutate(intervention.id, {
           onSuccess: () => onClose(),
-          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur validation'),
+          onError: (err: ApiMutationError) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur validation'),
         });
       }
     });
@@ -276,7 +276,7 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       onClick: () => {
         demarrer.mutate(intervention.id, {
           onSuccess: () => onClose(),
-          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur'),
+          onError: (err: ApiMutationError) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur'),
         });
       }
     });
@@ -291,7 +291,7 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       onClick: () => {
         terminer.mutate(intervention.id, {
           onSuccess: () => onClose(),
-          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur'),
+          onError: (err: ApiMutationError) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur'),
         });
       }
     });
@@ -313,7 +313,7 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       onClick: () => {
         debloquer.mutate(intervention.id, {
           onSuccess: () => onClose(),
-          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur déblocage'),
+          onError: (err: ApiMutationError) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur déblocage'),
         });
       }
     });
@@ -345,14 +345,14 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       }
     }, {
       onSuccess: () => { setShowPlanifierModal(false); onClose(); },
-      onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur planification'),
+      onError: (err: ApiMutationError) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur planification'),
     });
   };
 
   const handleAnnulerConfirm = () => {
     annuler.mutate(intervention.id, {
       onSuccess: () => { setShowConfirmAnnuler(false); onClose(); },
-      onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur annulation'),
+      onError: (err: ApiMutationError) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur annulation'),
     });
   };
 
@@ -394,24 +394,24 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
               {intervention.reference} — {intervention.titre || 'Sans titre'}
             </p>
             <div className="azals-field">
-              <label className="azals-field__label">Date <span className="azals-field__required">*</span></label>
-              <input className="azals-input" type="date" value={planDate} onChange={e => setPlanDate(e.target.value)} />
+              <label className="azals-field__label" htmlFor="plan-date">Date <span className="azals-field__required">*</span></label>
+              <input id="plan-date" className="azals-input" type="date" value={planDate} onChange={e => setPlanDate(e.target.value)} />
             </div>
             <div className="azals-grid azals-grid--cols-2">
               <div className="azals-field">
-                <label className="azals-field__label">Heure début</label>
-                <input className="azals-input" type="time" value={planHeureDebut} onChange={e => setPlanHeureDebut(e.target.value)} />
+                <label className="azals-field__label" htmlFor="plan-heure-debut">Heure début</label>
+                <input id="plan-heure-debut" className="azals-input" type="time" value={planHeureDebut} onChange={e => setPlanHeureDebut(e.target.value)} />
               </div>
               <div className="azals-field">
-                <label className="azals-field__label">Heure fin</label>
-                <input className="azals-input" type="time" value={planHeureFin} onChange={e => setPlanHeureFin(e.target.value)} />
+                <label className="azals-field__label" htmlFor="plan-heure-fin">Heure fin</label>
+                <input id="plan-heure-fin" className="azals-input" type="time" value={planHeureFin} onChange={e => setPlanHeureFin(e.target.value)} />
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Intervenant <span className="azals-field__required">*</span></label>
-              <select className="azals-select" value={planIntervenantId} onChange={e => setPlanIntervenantId(e.target.value)}>
+              <label className="azals-field__label" htmlFor="plan-intervenant">Intervenant <span className="azals-field__required">*</span></label>
+              <select id="plan-intervenant" className="azals-select" value={planIntervenantId} onChange={e => setPlanIntervenantId(e.target.value)}>
                 <option value="">Choisir un intervenant...</option>
-                {intervenants.map((i: any) => (
+                {intervenants.map((i: Intervenant) => (
                   <option key={i.id} value={i.id}>{i.first_name} {i.last_name}</option>
                 ))}
               </select>
@@ -434,8 +434,9 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
               {intervention.reference} — {intervention.titre || 'Sans titre'}
             </p>
             <div className="azals-field">
-              <label className="azals-field__label">Motif du blocage <span className="azals-field__required">*</span></label>
+              <label className="azals-field__label" htmlFor="blocage-motif">Motif du blocage <span className="azals-field__required">*</span></label>
               <textarea
+                id="blocage-motif"
                 className="azals-input"
                 rows={3}
                 value={motifBlocage}
@@ -454,7 +455,7 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
               onClick={() => {
                 bloquer.mutate({ id: intervention.id, motif: motifBlocage }, {
                   onSuccess: () => { setShowBloquerModal(false); setMotifBlocage(''); onClose(); },
-                  onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur blocage'),
+                  onError: (err: ApiMutationError) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur blocage'),
                 });
               }}
               disabled={motifBlocage.length < 5 || bloquer.isPending}
@@ -727,24 +728,24 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void; onEditIn
               {workflowTarget.reference} — {workflowTarget.titre || 'Sans titre'}
             </p>
             <div className="azals-field">
-              <label className="azals-field__label">Date <span className="azals-field__required">*</span></label>
-              <input className="azals-input" type="date" value={listPlanDate} onChange={e => setListPlanDate(e.target.value)} />
+              <label className="azals-field__label" htmlFor="list-plan-date">Date <span className="azals-field__required">*</span></label>
+              <input id="list-plan-date" className="azals-input" type="date" value={listPlanDate} onChange={e => setListPlanDate(e.target.value)} />
             </div>
             <div className="azals-grid azals-grid--cols-2">
               <div className="azals-field">
-                <label className="azals-field__label">Heure début</label>
-                <input className="azals-input" type="time" value={listPlanHeureDebut} onChange={e => setListPlanHeureDebut(e.target.value)} />
+                <label className="azals-field__label" htmlFor="list-plan-heure-debut">Heure début</label>
+                <input id="list-plan-heure-debut" className="azals-input" type="time" value={listPlanHeureDebut} onChange={e => setListPlanHeureDebut(e.target.value)} />
               </div>
               <div className="azals-field">
-                <label className="azals-field__label">Heure fin</label>
-                <input className="azals-input" type="time" value={listPlanHeureFin} onChange={e => setListPlanHeureFin(e.target.value)} />
+                <label className="azals-field__label" htmlFor="list-plan-heure-fin">Heure fin</label>
+                <input id="list-plan-heure-fin" className="azals-input" type="time" value={listPlanHeureFin} onChange={e => setListPlanHeureFin(e.target.value)} />
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Intervenant <span className="azals-field__required">*</span></label>
-              <select className="azals-select" value={listPlanIntervenantId} onChange={e => setListPlanIntervenantId(e.target.value)}>
+              <label className="azals-field__label" htmlFor="list-plan-intervenant">Intervenant <span className="azals-field__required">*</span></label>
+              <select id="list-plan-intervenant" className="azals-select" value={listPlanIntervenantId} onChange={e => setListPlanIntervenantId(e.target.value)}>
                 <option value="">Choisir un intervenant...</option>
-                {intervenantsList.map((i: any) => (
+                {intervenantsList.map((i: Intervenant) => (
                   <option key={i.id} value={i.id}>{i.first_name} {i.last_name}</option>
                 ))}
               </select>
@@ -788,7 +789,13 @@ const DonneursOrdreView: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingDonneur, setEditingDonneur] = useState<DonneurOrdre | null>(null);
-  const [formData, setFormData] = useState({ code: '', nom: '', email: '', telephone: '' });
+  const [formData, setFormData] = useState({
+    code: '', nom: '', email: '', telephone: '', type: '', adresse: '', client_id: '',
+    adresse_facturation: '', delai_paiement: '30', email_rapport: '',
+    contact_commercial_nom: '', contact_commercial_email: '', contact_commercial_telephone: '',
+    contact_comptabilite_nom: '', contact_comptabilite_email: '', contact_comptabilite_telephone: '',
+    contact_technique_nom: '', contact_technique_email: '', contact_technique_telephone: ''
+  });
   const [createError, setCreateError] = useState('');
 
   const updateFormField = useCallback((field: string, value: string) => {
@@ -805,7 +812,13 @@ const DonneursOrdreView: React.FC = () => {
     setEditingDonneur(null);
   }, []);
 
-  const [editFormData, setEditFormData] = useState({ nom: '', code: '', email: '', telephone: '' });
+  const [editFormData, setEditFormData] = useState({
+    nom: '', code: '', email: '', telephone: '', type: '', adresse: '', client_id: '',
+    adresse_facturation: '', delai_paiement: '30', email_rapport: '',
+    contact_commercial_nom: '', contact_commercial_email: '', contact_commercial_telephone: '',
+    contact_comptabilite_nom: '', contact_comptabilite_email: '', contact_comptabilite_telephone: '',
+    contact_technique_nom: '', contact_technique_email: '', contact_technique_telephone: ''
+  });
   const updateEditFormField = useCallback((field: string, value: string) => {
     setEditFormData(prev => ({ ...prev, [field]: value }));
   }, []);
@@ -820,6 +833,21 @@ const DonneursOrdreView: React.FC = () => {
       code: donneur.code || '',
       email: donneur.email || '',
       telephone: donneur.telephone || '',
+      type: donneur.type || '',
+      adresse: donneur.adresse || '',
+      client_id: donneur.client_id || '',
+      adresse_facturation: donneur.adresse_facturation || '',
+      delai_paiement: String(donneur.delai_paiement ?? 30),
+      email_rapport: donneur.email_rapport || '',
+      contact_commercial_nom: donneur.contact_commercial_nom || '',
+      contact_commercial_email: donneur.contact_commercial_email || '',
+      contact_commercial_telephone: donneur.contact_commercial_telephone || '',
+      contact_comptabilite_nom: donneur.contact_comptabilite_nom || '',
+      contact_comptabilite_email: donneur.contact_comptabilite_email || '',
+      contact_comptabilite_telephone: donneur.contact_comptabilite_telephone || '',
+      contact_technique_nom: donneur.contact_technique_nom || '',
+      contact_technique_email: donneur.contact_technique_email || '',
+      contact_technique_telephone: donneur.contact_technique_telephone || '',
     });
     setShowEdit(true);
   };
@@ -828,30 +856,45 @@ const DonneursOrdreView: React.FC = () => {
     if (window.confirm(`Supprimer le donneur d'ordre "${donneur.nom}" ?`)) {
       try {
         await deleteDonneur.mutateAsync(donneur.id);
-      } catch (error: any) {
-        alert(`Erreur lors de la suppression: ${error?.response?.data?.detail || error?.message || 'Erreur inconnue'}`);
+      } catch (error: unknown) {
+        const err = error as ApiMutationError;
+        alert(`Erreur lors de la suppression: ${err?.response?.data?.detail || err?.message || 'Erreur inconnue'}`);
       }
     }
   };
 
   const handleSaveEdit = async () => {
     if (!editingDonneur) return;
-    await updateDonneur.mutateAsync({ id: editingDonneur.id, data: editFormData });
+    const dataToSend = {
+      ...editFormData,
+      delai_paiement: editFormData.delai_paiement ? parseInt(editFormData.delai_paiement, 10) : undefined,
+    };
+    await updateDonneur.mutateAsync({ id: editingDonneur.id, data: dataToSend });
     setShowEdit(false);
     setEditingDonneur(null);
   };
 
   const createDonneur = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return api.post('/interventions/donneurs-ordre', data);
+      const dataToSend = {
+        ...data,
+        delai_paiement: data.delai_paiement ? parseInt(data.delai_paiement, 10) : 30,
+      };
+      return api.post('/interventions/donneurs-ordre', dataToSend);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
       setShowCreate(false);
-      setFormData({ nom: '', code: '', email: '', telephone: '' });
+      setFormData({
+        nom: '', code: '', email: '', telephone: '', type: '', adresse: '', client_id: '',
+        adresse_facturation: '', delai_paiement: '30', email_rapport: '',
+        contact_commercial_nom: '', contact_commercial_email: '', contact_commercial_telephone: '',
+        contact_comptabilite_nom: '', contact_comptabilite_email: '', contact_comptabilite_telephone: '',
+        contact_technique_nom: '', contact_technique_email: '', contact_technique_telephone: ''
+      });
       setCreateError('');
     },
-    onError: (error: any) => {
+    onError: (error: ApiMutationError) => {
       setCreateError(error?.response?.data?.detail || error?.message || 'Erreur lors de la création');
     },
   });
@@ -911,21 +954,118 @@ const DonneursOrdreView: React.FC = () => {
                 {createError}
               </div>
             )}
-            <div className="azals-field">
-              <label className="azals-field__label" htmlFor="donneur-nom">Nom <span className="azals-field__required">*</span></label>
-              <input id="donneur-nom" className="azals-input" value={formData.nom} onChange={e => updateFormField('nom', e.target.value)} placeholder="Nom du donneur d'ordre" autoFocus />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="donneur-nom">Nom <span className="azals-field__required">*</span></label>
+                <input id="donneur-nom" className="azals-input" value={formData.nom} onChange={e => updateFormField('nom', e.target.value)} placeholder="Nom du donneur d'ordre" autoFocus />
+              </div>
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="donneur-code">Code <span className="text-gray-400 text-xs">(auto si vide)</span></label>
+                <input id="donneur-code" className="azals-input" value={formData.code} onChange={e => updateFormField('code', e.target.value)} placeholder="Auto: DO-0001" />
+              </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label" htmlFor="donneur-code">Code <span className="text-gray-400 text-xs">(auto si vide)</span></label>
-              <input id="donneur-code" className="azals-input" value={formData.code} onChange={e => updateFormField('code', e.target.value)} placeholder="Auto: DO-0001" />
+              <label className="azals-field__label" htmlFor="donneur-type">Type</label>
+              <select id="donneur-type" className="azals-select" value={formData.type} onChange={e => updateFormField('type', e.target.value)}>
+                <option value="">-- Sélectionner un type --</option>
+                <option value="ASSURANCE">Assurance</option>
+                <option value="SYNDIC">Syndic</option>
+                <option value="BAILLEUR">Bailleur</option>
+                <option value="PARTICULIER">Particulier</option>
+                <option value="ENTREPRISE">Entreprise</option>
+                <option value="COLLECTIVITE">Collectivité</option>
+                <option value="AUTRE">Autre</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="donneur-email">Email</label>
+                <input id="donneur-email" className="azals-input" type="email" value={formData.email} onChange={e => updateFormField('email', e.target.value)} placeholder="email@example.com" />
+              </div>
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="donneur-telephone">Téléphone</label>
+                <input id="donneur-telephone" className="azals-input" type="tel" value={formData.telephone} onChange={e => updateFormField('telephone', e.target.value)} placeholder="0612345678" />
+              </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label" htmlFor="donneur-email">Email</label>
-              <input id="donneur-email" className="azals-input" type="email" value={formData.email} onChange={e => updateFormField('email', e.target.value)} placeholder="email@example.com" />
+              <label className="azals-field__label" htmlFor="donneur-adresse">Adresse</label>
+              <textarea id="donneur-adresse" className="azals-input" rows={2} value={formData.adresse} onChange={e => updateFormField('adresse', e.target.value)} placeholder="Adresse complète" />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label" htmlFor="donneur-telephone">Téléphone</label>
-              <input id="donneur-telephone" className="azals-input" type="tel" value={formData.telephone} onChange={e => updateFormField('telephone', e.target.value)} placeholder="0612345678" />
+              <label className="azals-field__label" htmlFor="donneur-adresse-fact">Adresse de facturation <span className="text-gray-400 text-xs">(si différente)</span></label>
+              <textarea id="donneur-adresse-fact" className="azals-input" rows={2} value={formData.adresse_facturation} onChange={e => updateFormField('adresse_facturation', e.target.value)} placeholder="Adresse de facturation" />
+            </div>
+
+            {/* Facturation */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Facturation & Rapports</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-delai">Délai de paiement (jours)</label>
+                  <input id="donneur-delai" className="azals-input" type="number" min="0" max="365" value={formData.delai_paiement} onChange={e => updateFormField('delai_paiement', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-email-rapport">Email rapports d'intervention</label>
+                  <input id="donneur-email-rapport" className="azals-input" type="email" value={formData.email_rapport} onChange={e => updateFormField('email_rapport', e.target.value)} placeholder="rapports@example.com" />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Commercial */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Contact Commercial</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-comm-nom">Nom</label>
+                  <input id="donneur-comm-nom" className="azals-input" value={formData.contact_commercial_nom} onChange={e => updateFormField('contact_commercial_nom', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-comm-email">Email</label>
+                  <input id="donneur-comm-email" className="azals-input" type="email" value={formData.contact_commercial_email} onChange={e => updateFormField('contact_commercial_email', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-comm-tel">Téléphone</label>
+                  <input id="donneur-comm-tel" className="azals-input" type="tel" value={formData.contact_commercial_telephone} onChange={e => updateFormField('contact_commercial_telephone', e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Comptabilité */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Contact Comptabilité</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-compta-nom">Nom</label>
+                  <input id="donneur-compta-nom" className="azals-input" value={formData.contact_comptabilite_nom} onChange={e => updateFormField('contact_comptabilite_nom', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-compta-email">Email</label>
+                  <input id="donneur-compta-email" className="azals-input" type="email" value={formData.contact_comptabilite_email} onChange={e => updateFormField('contact_comptabilite_email', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-compta-tel">Téléphone</label>
+                  <input id="donneur-compta-tel" className="azals-input" type="tel" value={formData.contact_comptabilite_telephone} onChange={e => updateFormField('contact_comptabilite_telephone', e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Technique */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Contact Technique / Chantier</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-tech-nom">Nom</label>
+                  <input id="donneur-tech-nom" className="azals-input" value={formData.contact_technique_nom} onChange={e => updateFormField('contact_technique_nom', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-tech-email">Email</label>
+                  <input id="donneur-tech-email" className="azals-input" type="email" value={formData.contact_technique_email} onChange={e => updateFormField('contact_technique_email', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="donneur-tech-tel">Téléphone</label>
+                  <input id="donneur-tech-tel" className="azals-input" type="tel" value={formData.contact_technique_telephone} onChange={e => updateFormField('contact_technique_telephone', e.target.value)} />
+                </div>
+              </div>
             </div>
           </div>
           <div className="azals-modal__footer">
@@ -940,22 +1080,119 @@ const DonneursOrdreView: React.FC = () => {
       {/* Modal édition */}
       {showEdit && editingDonneur && (
         <Modal isOpen onClose={closeEditModal} title="Modifier le donneur d'ordre">
-          <div className="azals-modal__body">
-            <div className="azals-field">
-              <label className="azals-field__label" htmlFor="edit-donneur-code">Code</label>
-              <input id="edit-donneur-code" className="azals-input" value={editFormData.code} disabled />
+          <div className="azals-modal__body max-h-[70vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="edit-donneur-code">Code</label>
+                <input id="edit-donneur-code" className="azals-input bg-gray-100" value={editFormData.code} disabled />
+              </div>
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="edit-donneur-nom">Nom <span className="azals-field__required">*</span></label>
+                <input id="edit-donneur-nom" className="azals-input" value={editFormData.nom} onChange={e => updateEditFormField('nom', e.target.value)} autoFocus />
+              </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label" htmlFor="edit-donneur-nom">Nom <span className="azals-field__required">*</span></label>
-              <input id="edit-donneur-nom" className="azals-input" value={editFormData.nom} onChange={e => updateEditFormField('nom', e.target.value)} autoFocus />
+              <label className="azals-field__label" htmlFor="edit-donneur-type">Type</label>
+              <select id="edit-donneur-type" className="azals-select" value={editFormData.type} onChange={e => updateEditFormField('type', e.target.value)}>
+                <option value="">-- Sélectionner un type --</option>
+                <option value="ASSURANCE">Assurance</option>
+                <option value="SYNDIC">Syndic</option>
+                <option value="BAILLEUR">Bailleur</option>
+                <option value="PARTICULIER">Particulier</option>
+                <option value="ENTREPRISE">Entreprise</option>
+                <option value="COLLECTIVITE">Collectivité</option>
+                <option value="AUTRE">Autre</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="edit-donneur-email">Email</label>
+                <input id="edit-donneur-email" className="azals-input" type="email" value={editFormData.email} onChange={e => updateEditFormField('email', e.target.value)} />
+              </div>
+              <div className="azals-field">
+                <label className="azals-field__label" htmlFor="edit-donneur-telephone">Téléphone</label>
+                <input id="edit-donneur-telephone" className="azals-input" type="tel" value={editFormData.telephone} onChange={e => updateEditFormField('telephone', e.target.value)} />
+              </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label" htmlFor="edit-donneur-email">Email</label>
-              <input id="edit-donneur-email" className="azals-input" type="email" value={editFormData.email} onChange={e => updateEditFormField('email', e.target.value)} />
+              <label className="azals-field__label" htmlFor="edit-donneur-adresse">Adresse</label>
+              <textarea id="edit-donneur-adresse" className="azals-input" rows={2} value={editFormData.adresse} onChange={e => updateEditFormField('adresse', e.target.value)} />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label" htmlFor="edit-donneur-telephone">Téléphone</label>
-              <input id="edit-donneur-telephone" className="azals-input" type="tel" value={editFormData.telephone} onChange={e => updateEditFormField('telephone', e.target.value)} />
+              <label className="azals-field__label" htmlFor="edit-donneur-adresse-fact">Adresse de facturation</label>
+              <textarea id="edit-donneur-adresse-fact" className="azals-input" rows={2} value={editFormData.adresse_facturation} onChange={e => updateEditFormField('adresse_facturation', e.target.value)} />
+            </div>
+
+            {/* Facturation */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Facturation & Rapports</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-donneur-delai">Délai de paiement (jours)</label>
+                  <input id="edit-donneur-delai" className="azals-input" type="number" min="0" max="365" value={editFormData.delai_paiement} onChange={e => updateEditFormField('delai_paiement', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-donneur-email-rapport">Email rapports</label>
+                  <input id="edit-donneur-email-rapport" className="azals-input" type="email" value={editFormData.email_rapport} onChange={e => updateEditFormField('email_rapport', e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Commercial */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Contact Commercial</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-comm-nom">Nom</label>
+                  <input id="edit-contact-comm-nom" className="azals-input" value={editFormData.contact_commercial_nom} onChange={e => updateEditFormField('contact_commercial_nom', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-comm-email">Email</label>
+                  <input id="edit-contact-comm-email" className="azals-input" type="email" value={editFormData.contact_commercial_email} onChange={e => updateEditFormField('contact_commercial_email', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-comm-tel">Téléphone</label>
+                  <input id="edit-contact-comm-tel" className="azals-input" type="tel" value={editFormData.contact_commercial_telephone} onChange={e => updateEditFormField('contact_commercial_telephone', e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Comptabilité */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Contact Comptabilité</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-compta-nom">Nom</label>
+                  <input id="edit-contact-compta-nom" className="azals-input" value={editFormData.contact_comptabilite_nom} onChange={e => updateEditFormField('contact_comptabilite_nom', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-compta-email">Email</label>
+                  <input id="edit-contact-compta-email" className="azals-input" type="email" value={editFormData.contact_comptabilite_email} onChange={e => updateEditFormField('contact_comptabilite_email', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-compta-tel">Téléphone</label>
+                  <input id="edit-contact-compta-tel" className="azals-input" type="tel" value={editFormData.contact_comptabilite_telephone} onChange={e => updateEditFormField('contact_comptabilite_telephone', e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Technique */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Contact Technique / Chantier</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-tech-nom">Nom</label>
+                  <input id="edit-contact-tech-nom" className="azals-input" value={editFormData.contact_technique_nom} onChange={e => updateEditFormField('contact_technique_nom', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-tech-email">Email</label>
+                  <input id="edit-contact-tech-email" className="azals-input" type="email" value={editFormData.contact_technique_email} onChange={e => updateEditFormField('contact_technique_email', e.target.value)} />
+                </div>
+                <div className="azals-field">
+                  <label className="azals-field__label" htmlFor="edit-contact-tech-tel">Téléphone</label>
+                  <input id="edit-contact-tech-tel" className="azals-input" type="tel" value={editFormData.contact_technique_telephone} onChange={e => updateEditFormField('contact_technique_telephone', e.target.value)} />
+                </div>
+              </div>
             </div>
           </div>
           <div className="azals-modal__footer">

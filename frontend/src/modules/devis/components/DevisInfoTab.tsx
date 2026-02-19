@@ -4,11 +4,11 @@
  */
 
 import React from 'react';
-import { Building2, User, MapPin, Calendar, FileText, Tag } from 'lucide-react';
+import { Building2, MapPin, Calendar, FileText, Tag } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Devis } from '../types';
 import { formatDate } from '@/utils/formatters';
+import type { Devis } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * DevisInfoTab - Affichage des informations générales du devis

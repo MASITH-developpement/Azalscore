@@ -5,37 +5,36 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   Settings, ClipboardList, CheckCircle, BarChart3, Factory, Clock,
   Package, Layers, FileText, History, Sparkles, ArrowLeft,
-  Play, Pause, Edit, X, Eye
+  Play, Edit, X, Eye
 } from 'lucide-react';
-
-import type {
-  WorkCenter, BillOfMaterials, BOMLine, BOMOperation,
-  ProductionOrder, WorkOrder, ProductionDashboard
-} from './types';
-import {
-  formatQuantity,
-  WORK_CENTER_TYPE_CONFIG, BOM_STATUS_CONFIG, ORDER_STATUS_CONFIG,
-  ORDER_PRIORITY_CONFIG, WORK_ORDER_STATUS_CONFIG,
-  isLate, isUrgent, getCompletionRate, isDraft, canConfirm, canStart, canComplete
-} from './types';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn } from '@/types';
 import { formatDate, formatCurrency, formatDuration, formatPercent } from '@/utils/formatters';
 import {
   OrderInfoTab, OrderOperationsTab, OrderMaterialsTab,
   OrderDocsTab, OrderHistoryTab, OrderIATab
 } from './components';
+import {
+  formatQuantity,
+  ORDER_STATUS_CONFIG,
+  ORDER_PRIORITY_CONFIG,
+  getCompletionRate, isDraft, canConfirm, canStart, canComplete
+} from './types';
+import type {
+  WorkCenter, BillOfMaterials, BOMLine, BOMOperation,
+  ProductionOrder, WorkOrder, ProductionDashboard
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS

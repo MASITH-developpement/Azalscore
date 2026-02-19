@@ -6,10 +6,10 @@
 import React from 'react';
 import { Package, Tag, Barcode, Scale, Box } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product } from '../types';
-import { PRODUCT_STATUS_CONFIG, formatWeight, calculateMargin } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import { PRODUCT_STATUS_CONFIG, formatWeight, calculateMargin } from '../types';
+import type { Product } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductInfoTab - Informations generales
@@ -24,19 +24,19 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
       <Card title="Identification" icon={<Package size={18} />}>
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">SKU</label>
+            <span className="azals-field__label">SKU</span>
             <div className="azals-field__value font-mono">{product.sku}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value">{product.name}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Categorie</label>
+            <span className="azals-field__label">Categorie</span>
             <div className="azals-field__value">{product.category_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                 {statusConfig.label}
@@ -47,17 +47,17 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
 
         {product.description && (
           <div className="azals-field mt-4">
-            <label className="azals-field__label">Description</label>
+            <span className="azals-field__label">Description</span>
             <div className="azals-field__value text-sm">{product.description}</div>
           </div>
         )}
 
         {product.barcode && (
           <div className="azals-field mt-4 azals-std-field--secondary">
-            <label className="azals-field__label">
+            <span className="azals-field__label">
               <Barcode size={14} className="inline mr-1" />
               Code-barres
-            </label>
+            </span>
             <div className="azals-field__value font-mono">{product.barcode}</div>
           </div>
         )}
@@ -67,21 +67,21 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
       <Card title="Tarification" icon={<Tag size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Prix de vente</label>
+            <span className="azals-field__label">Prix de vente</span>
             <div className="azals-field__value text-lg font-semibold text-green-600">
               {formatCurrency(product.price, product.currency)}
             </div>
           </div>
           {product.compare_price && product.compare_price > product.price && (
             <div className="azals-field">
-              <label className="azals-field__label">Prix barre</label>
+              <span className="azals-field__label">Prix barre</span>
               <div className="azals-field__value text-lg text-muted line-through">
                 {formatCurrency(product.compare_price, product.currency)}
               </div>
             </div>
           )}
           <div className="azals-field azals-std-field--secondary">
-            <label className="azals-field__label">Prix d'achat</label>
+            <span className="azals-field__label">Prix d'achat</span>
             <div className="azals-field__value">
               {product.cost ? formatCurrency(product.cost, product.currency) : '-'}
             </div>
@@ -93,13 +93,13 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
           <div className="mt-4 p-4 bg-gray-50 rounded azals-std-field--secondary">
             <Grid cols={2} gap="md">
               <div className="azals-field">
-                <label className="azals-field__label">Marge brute</label>
+                <span className="azals-field__label">Marge brute</span>
                 <div className="azals-field__value font-semibold">
                   {formatCurrency(product.price - product.cost, product.currency)}
                 </div>
               </div>
               <div className="azals-field">
-                <label className="azals-field__label">Taux de marge</label>
+                <span className="azals-field__label">Taux de marge</span>
                 <div className={`azals-field__value font-semibold ${margin >= 30 ? 'text-green-600' : margin >= 15 ? 'text-orange-600' : 'text-red-600'}`}>
                   {margin.toFixed(1)}%
                 </div>
@@ -111,7 +111,7 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
         {/* TVA */}
         <Grid cols={2} gap="md" className="mt-4 azals-std-field--secondary">
           <div className="azals-field">
-            <label className="azals-field__label">Soumis a TVA</label>
+            <span className="azals-field__label">Soumis a TVA</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${product.is_taxable ? 'green' : 'gray'}`}>
                 {product.is_taxable ? 'Oui' : 'Non'}
@@ -120,7 +120,7 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
           </div>
           {product.is_taxable && product.tax_rate !== undefined && (
             <div className="azals-field">
-              <label className="azals-field__label">Taux TVA</label>
+              <span className="azals-field__label">Taux TVA</span>
               <div className="azals-field__value">{product.tax_rate}%</div>
             </div>
           )}
@@ -131,15 +131,15 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
       <Card title="Caracteristiques" icon={<Box size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">
+            <span className="azals-field__label">
               <Scale size={14} className="inline mr-1" />
               Poids
-            </label>
+            </span>
             <div className="azals-field__value">{formatWeight(product.weight)}</div>
           </div>
           {product.dimensions && (
             <div className="azals-field">
-              <label className="azals-field__label">Dimensions (L x l x h)</label>
+              <span className="azals-field__label">Dimensions (L x l x h)</span>
               <div className="azals-field__value">
                 {product.dimensions.length} x {product.dimensions.width} x {product.dimensions.height} cm
               </div>
@@ -154,7 +154,7 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
           <Grid cols={2} gap="md">
             {Object.entries(product.attributes).map(([key, value]) => (
               <div key={key} className="azals-field">
-                <label className="azals-field__label">{key}</label>
+                <span className="azals-field__label">{key}</span>
                 <div className="azals-field__value">{value}</div>
               </div>
             ))}
@@ -179,13 +179,13 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
           <Grid cols={1} gap="md">
             {product.seo_title && (
               <div className="azals-field">
-                <label className="azals-field__label">Titre SEO</label>
+                <span className="azals-field__label">Titre SEO</span>
                 <div className="azals-field__value">{product.seo_title}</div>
               </div>
             )}
             {product.seo_description && (
               <div className="azals-field">
-                <label className="azals-field__label">Meta description</label>
+                <span className="azals-field__label">Meta description</span>
                 <div className="azals-field__value text-sm">{product.seo_description}</div>
               </div>
             )}

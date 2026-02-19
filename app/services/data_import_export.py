@@ -16,8 +16,20 @@ from enum import Enum
 from typing import Any, Optional, Callable, Generator, TypeVar, Generic
 from dataclasses import dataclass, field
 from pathlib import Path
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
+# XML - Import standard pour types, defusedxml pour parsing sécurisé
+import xml.etree.ElementTree as ET_std  # Pour les types (Element, etc.)
+import defusedxml.ElementTree as DefusedET  # Pour parsing sécurisé (XXE protection)
+import defusedxml.minidom as minidom  # Sécurisé contre XXE attacks
+
+# Alias pour compatibilité - utiliser DefusedET.fromstring() pour parser
+ET = type('ET', (), {
+    'Element': ET_std.Element,
+    'SubElement': ET_std.SubElement,
+    'tostring': ET_std.tostring,
+    'fromstring': DefusedET.fromstring,  # Parsing sécurisé
+    'parse': DefusedET.parse,  # Parsing sécurisé
+    'ParseError': ET_std.ParseError,
+})()
 import logging
 
 logger = logging.getLogger(__name__)

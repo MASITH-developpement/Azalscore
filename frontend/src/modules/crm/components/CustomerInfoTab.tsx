@@ -6,15 +6,15 @@
 import React from 'react';
 import {
   User, Building2, Mail, Phone, MapPin, Globe,
-  Hash, Calendar, Tag, Star, Briefcase
+  Hash, Calendar, Tag, Briefcase
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Customer, Contact } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   CUSTOMER_TYPE_CONFIG, getContactFullName
 } from '../types';
-import { formatDate } from '@/utils/formatters';
+import type { Customer } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CustomerInfoTab - Informations générales du client
@@ -31,17 +31,17 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
         <Card title="Identification" icon={<Building2 size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Hash size={14} />
                 Code client
-              </label>
+              </span>
               <div className="azals-std-field__value font-mono">{customer.code}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Tag size={14} />
                 Type
-              </label>
+              </span>
               <div className="azals-std-field__value">
                 <span className={`azals-badge azals-badge--${typeConfig.color}`}>
                   {typeConfig.label}
@@ -49,25 +49,25 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Building2 size={14} />
                 Nom
-              </label>
+              </span>
               <div className="azals-std-field__value font-medium">{customer.name}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Raison sociale</label>
+              <span className="azals-std-field__label">Raison sociale</span>
               <div className="azals-std-field__value">{customer.legal_name || '-'}</div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Briefcase size={14} />
                 Secteur d'activité
-              </label>
+              </span>
               <div className="azals-std-field__value">{customer.industry || '-'}</div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">Source</label>
+              <span className="azals-std-field__label">Source</span>
               <div className="azals-std-field__value">{customer.source || '-'}</div>
             </div>
           </div>
@@ -77,10 +77,10 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
         <Card title="Coordonnées" icon={<Phone size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Mail size={14} />
                 Email
-              </label>
+              </span>
               <div className="azals-std-field__value">
                 {customer.email ? (
                   <a href={`mailto:${customer.email}`} className="text-primary hover:underline">
@@ -90,10 +90,10 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Phone size={14} />
                 Téléphone
-              </label>
+              </span>
               <div className="azals-std-field__value">
                 {customer.phone ? (
                   <a href={`tel:${customer.phone}`} className="text-primary hover:underline">
@@ -103,10 +103,10 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Phone size={14} />
                 Mobile
-              </label>
+              </span>
               <div className="azals-std-field__value">
                 {customer.mobile ? (
                   <a href={`tel:${customer.mobile}`} className="text-primary hover:underline">
@@ -116,10 +116,10 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
               </div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Globe size={14} />
                 Site web
-              </label>
+              </span>
               <div className="azals-std-field__value">
                 {customer.website ? (
                   <a href={customer.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -135,25 +135,25 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
         <Card title="Adresse" icon={<MapPin size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field azals-std-field--full">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <MapPin size={14} />
                 Adresse
-              </label>
+              </span>
               <div className="azals-std-field__value">
                 {customer.address_line1 || '-'}
                 {customer.address_line2 && <div>{customer.address_line2}</div>}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Code postal</label>
+              <span className="azals-std-field__label">Code postal</span>
               <div className="azals-std-field__value">{customer.postal_code || '-'}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Ville</label>
+              <span className="azals-std-field__label">Ville</span>
               <div className="azals-std-field__value">{customer.city || '-'}</div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">Pays</label>
+              <span className="azals-std-field__label">Pays</span>
               <div className="azals-std-field__value">{customer.country_code || 'FR'}</div>
             </div>
           </div>
@@ -163,11 +163,11 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
         <Card title="Informations légales" icon={<Briefcase size={18} />} className="azals-std-field--secondary">
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">N° TVA</label>
+              <span className="azals-std-field__label">N° TVA</span>
               <div className="azals-std-field__value font-mono">{customer.tax_id || '-'}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">SIRET</label>
+              <span className="azals-std-field__label">SIRET</span>
               <div className="azals-std-field__value font-mono">{customer.registration_number || '-'}</div>
             </div>
           </div>
@@ -250,19 +250,19 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
       >
         <Grid cols={4} gap="md">
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Date de création</label>
+            <span className="azals-std-field__label">Date de création</span>
             <div className="azals-std-field__value text-sm">{formatDate(customer.created_at)}</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Créé par</label>
+            <span className="azals-std-field__label">Créé par</span>
             <div className="azals-std-field__value text-sm">{customer.created_by || '-'}</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Dernière modification</label>
+            <span className="azals-std-field__label">Dernière modification</span>
             <div className="azals-std-field__value text-sm">{formatDate(customer.updated_at)}</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Commercial assigné</label>
+            <span className="azals-std-field__label">Commercial assigné</span>
             <div className="azals-std-field__value text-sm">{customer.assigned_to_name || '-'}</div>
           </div>
         </Grid>

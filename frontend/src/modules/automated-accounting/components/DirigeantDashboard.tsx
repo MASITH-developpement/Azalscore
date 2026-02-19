@@ -18,25 +18,20 @@
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Wallet,
   TrendingUp,
   TrendingDown,
-  FileText,
   AlertTriangle,
   RefreshCw,
   ArrowRight,
-  Calendar,
-  CheckCircle,
   Clock,
-  CreditCard,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { KPICard, AlertList, ProgressBar } from '@ui/dashboards';
 import { Button, ButtonGroup } from '@ui/actions';
+import { ProgressBar } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 
 // ============================================================
 // TYPES
@@ -290,7 +285,7 @@ const CashForecastWidget: React.FC<{ data: CashForecast }> = ({ data }) => {
 };
 
 const InvoicesWidget: React.FC<{ data: InvoicesSummary }> = ({ data }) => {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   return (
     <Card title="Mes factures">

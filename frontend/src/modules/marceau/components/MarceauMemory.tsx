@@ -5,8 +5,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Brain, Upload, Search, Trash2, FileText, AlertCircle, Tag, Star } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Brain, Upload, Search, Trash2, Plus, FileText, AlertCircle, Tag, Star } from 'lucide-react';
+import type { ApiMutationError } from '@/types';
 
 interface MarceauMemory {
   id: string;
@@ -73,8 +74,8 @@ export function MarceauMemory() {
       setStats(statsRes.data);
       setDocuments(docsRes.data);
       setError(null);
-    } catch (e: any) {
-      setError(e.message || 'Erreur chargement');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur chargement');
     } finally {
       setLoading(false);
     }
@@ -92,8 +93,8 @@ export function MarceauMemory() {
         limit: 20,
       });
       setMemories(response.data.memories || []);
-    } catch (e: any) {
-      setError(e.message || 'Erreur recherche');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur recherche');
     }
   };
 
@@ -105,8 +106,8 @@ export function MarceauMemory() {
     try {
       await api.post('/marceau/knowledge/upload', formData);
       loadData();
-    } catch (e: any) {
-      setError(e.message || 'Erreur upload');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur upload');
     } finally {
       setUploading(false);
     }
@@ -118,8 +119,8 @@ export function MarceauMemory() {
     try {
       await api.delete(`/marceau/knowledge/${id}`);
       loadData();
-    } catch (e: any) {
-      setError(e.message || 'Erreur suppression');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur suppression');
     }
   };
 

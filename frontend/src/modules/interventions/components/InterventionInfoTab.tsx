@@ -9,14 +9,14 @@ import {
   Phone, Mail, AlertTriangle, Wrench, Package, Lock, ShieldAlert
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import { formatDate, formatDuration } from '@/utils/formatters';
 import {
   formatAddress,
   PRIORITE_CONFIG, TYPE_CONFIG, STATUT_CONFIG,
   isLate, getDaysUntilIntervention
 } from '../types';
-import { formatDate, formatTime, formatDuration } from '@/utils/formatters';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionInfoTab - Informations générales de l'intervention

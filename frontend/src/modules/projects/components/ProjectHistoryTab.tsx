@@ -9,12 +9,12 @@ import {
   Play, Pause, CheckCircle, XCircle, Target, Users
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Project, ProjectHistoryEntry, Milestone } from '../types';
 import { formatDateTime, formatDate } from '@/utils/formatters';
 import {
   PROJECT_STATUS_CONFIG, MILESTONE_STATUS_CONFIG
 } from '../types';
+import type { Project, ProjectHistoryEntry, Milestone } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProjectHistoryTab - Historique du projet

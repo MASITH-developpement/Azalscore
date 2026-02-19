@@ -6,42 +6,28 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
 import {
   Box, AlertTriangle, DollarSign, BarChart3, Clock, ClipboardList,
-  Package, Tag, MapPin, ArrowLeft, Edit, Trash2, Eye, Printer,
-  ArrowUpRight, ArrowDownRight, RefreshCw, Layers, Hash, Sparkles
+  Package, Tag, MapPin, ArrowLeft, Edit, Eye, Printer,
+  RefreshCw, Hash, Sparkles
 } from 'lucide-react';
-import type { TableColumn } from '@/types';
-import type { SemanticColor } from '@ui/standards';
+import { api } from '@core/api-client';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
   type InfoBarItem,
   type SidebarSection,
   type ActionDefinition
-} from '@ui/standards';
-
-// Types et helpers
-import type {
-  Category, Warehouse, Location, Product, Lot, Serial,
-  Movement, InventoryCount, InventoryCountLine, Picking, PickingLine,
-  InventoryDashboard, MovementType, MovementStatus
-} from './types';
-import {
-  formatQuantity,
-  MOVEMENT_TYPE_CONFIG, MOVEMENT_STATUS_CONFIG,
-  PICKING_TYPE_CONFIG, PICKING_STATUS_CONFIG,
-  isLowStock, isOutOfStock, isOverstock, getStockLevel, getStockLevelLabel
-} from './types';
+, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import { BarcodeLookup } from '@/modules/enrichment';
+import type { EnrichedProductFields } from '@/modules/enrichment';
+import type { TableColumn } from '@/types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-
-// Composants tabs
 import {
   ProductInfoTab,
   ProductStockTab,
@@ -50,10 +36,23 @@ import {
   ProductHistoryTab,
   ProductIATab
 } from './components';
+import {
+  formatQuantity,
+  MOVEMENT_TYPE_CONFIG, MOVEMENT_STATUS_CONFIG,
+  PICKING_TYPE_CONFIG, PICKING_STATUS_CONFIG,
+  isLowStock, isOutOfStock, getStockLevel, getStockLevelLabel
+} from './types';
+import type {
+  Category, Warehouse, Location, Product,
+  Movement, InventoryCount, Picking,
+  InventoryDashboard, MovementType, MovementStatus
+} from './types';
+
+// Types et helpers
+
+// Composants tabs
 
 // Auto-enrichissement produit par code-barres
-import { BarcodeLookup } from '@/modules/enrichment';
-import type { EnrichedProductFields } from '@/modules/enrichment';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -220,7 +219,7 @@ interface ProductDetailViewProps {
 
 const ProductDetailView: React.FC<ProductDetailViewProps> = ({ productId, onBack }) => {
   const { data: product, isLoading, error, refetch } = useProduct(productId);
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   if (isLoading) {
     return (

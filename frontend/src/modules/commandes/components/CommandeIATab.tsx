@@ -7,12 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, ChevronRight, Zap, Truck, FileText, Package } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Commande } from '../types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -21,6 +15,12 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import type { Commande } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * CommandeIATab - Assistant IA pour la commande

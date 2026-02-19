@@ -5,14 +5,14 @@
 
 import React from 'react';
 import {
-  Clock, User, Edit, Check, Send, X, Plus,
+  Clock, User, Edit, Check, Send, Plus,
   FileText, ArrowRight, CreditCard, Ban, AlertTriangle
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Facture, FactureHistoryEntry, Payment } from '../types';
-import { STATUS_CONFIG, PAYMENT_METHODS } from '../types';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
+import { STATUS_CONFIG, PAYMENT_METHODS } from '../types';
+import type { Facture, FactureHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * FactureHistoryTab - Historique et audit trail de la facture
@@ -225,7 +225,7 @@ function generateHistoryFromFacture(facture: Facture): FactureHistoryEntry[] {
 
   // Paiements
   if (facture.payments && facture.payments.length > 0) {
-    facture.payments.forEach((payment, index) => {
+    facture.payments.forEach((payment, _index) => {
       history.push({
         id: `payment-${payment.id}`,
         timestamp: payment.date,

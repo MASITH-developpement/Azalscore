@@ -9,10 +9,10 @@ import {
   FileText, ArrowRight, Calendar, Target, AlertTriangle
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Affaire, AffaireHistoryEntry } from '../types';
-import { STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { STATUS_CONFIG } from '../types';
+import type { Affaire, AffaireHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AffaireHistoryTab - Historique et audit trail de l'affaire

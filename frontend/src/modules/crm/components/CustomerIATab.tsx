@@ -7,17 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, Target, Euro, Phone, Mail, FileText, RefreshCw } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Customer } from '../types';
-import {
-  CUSTOMER_TYPE_CONFIG,
-  isProspect, isActiveCustomer, isChurned, canConvert,
-  getCustomerValue, getLeadScore, getLeadScoreLevel
-} from '../types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -26,6 +15,17 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatDate } from '@/utils/formatters';
+import {
+  CUSTOMER_TYPE_CONFIG,
+  isProspect, isActiveCustomer, isChurned, canConvert,
+  getCustomerValue, getLeadScore, getLeadScoreLevel
+} from '../types';
+import type { Customer } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * CustomerIATab - Assistant IA pour le client

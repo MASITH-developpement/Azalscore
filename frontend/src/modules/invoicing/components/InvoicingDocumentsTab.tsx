@@ -5,14 +5,14 @@
 
 import React from 'react';
 import {
-  FileText, Link2, ArrowRight, Upload, Download, File, Image, FileSpreadsheet
+  FileText, Link2, ArrowRight, Upload, File
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Document, RelatedDocument } from '../types';
-import { DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG } from '../types';
+import { Card } from '@ui/layout';
 import { formatDate, formatCurrency } from '@/utils/formatters';
+import { DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG } from '../types';
+import type { Document } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoicingDocumentsTab - Documents lies

@@ -177,7 +177,7 @@ export const useIntervenants = () => {
 
 export const useAnalyseIA = (interventionId: string | undefined) => {
   return useQuery({
-    queryKey: interventionKeys.analyseIA(interventionId!),
+    queryKey: interventionKeys.analyseIA(interventionId ?? ''),
     queryFn: async () => {
       const response = await api.get<AnalyseIA>(`/interventions/${interventionId}/analyse-ia`);
       return response as unknown as AnalyseIA;

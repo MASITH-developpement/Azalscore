@@ -1,36 +1,52 @@
 import React, { useState } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { useCapabilitiesStore } from '@core/capabilities';
-import { useAuth } from '@core/auth';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import { PermissionsManager } from '@ui/simple';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 import {
   Users, Building, Shield, Database, Activity, AlertTriangle,
   User, Key, Clock, Sparkles, ArrowLeft, Edit3, Lock, Unlock, Trash2,
-  Settings, Package
+  Package
 } from 'lucide-react';
-import type { TableColumn } from '@/types';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { api } from '@core/api-client';
+import { useAuth } from '@core/auth';
+import { useCapabilitiesStore } from '@core/capabilities';
+import { serializeFilters } from '@core/query-keys';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { AvailableModule } from '@/constants/modules';
+import type { TableColumn, ApiMutationError } from '@/types';
 import { unwrapApiResponse } from '@/types';
-import type { AdminUser, Role } from './types';
-import {
-  USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
-  hasTwoFactorEnabled, mustChangePassword
-} from './types';
+
+// Type for Pydantic validation error
+interface ValidationErrorDetail {
+  loc: string[];
+  msg: string;
+  type?: string;
+}
+
+interface ValidationError {
+  message?: string;
+  response?: {
+    data?: {
+      detail?: string | ValidationErrorDetail[];
+    };
+  };
+  detail?: ValidationErrorDetail[];
+}
 import { formatDateTime } from '@/utils/formatters';
 import {
   UserInfoTab, UserPermissionsTab, UserActivityTab,
   UserHistoryTab, UserIATab, SequencesView, EnrichmentProvidersView
 } from './components';
-import type { AvailableModule } from '@/constants/modules';
+import {
+  USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
+  hasTwoFactorEnabled, mustChangePassword
+} from './types';
+import type { AdminUser, Role } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 
 // ============================================================================
 // HOOK: Charger les modules depuis l'API (source unique de verite)
@@ -47,15 +63,19 @@ const useAvailableModules = () => {
     queryKey: ['admin', 'modules', 'available'],
     queryFn: async (): Promise<ModulesResponse> => {
       try {
+        console.log('[Admin] Fetching available modules...');
         const response = await api.get<ModulesResponse>('/admin/modules/available');
         const data = response?.data || response;
+        console.log('[Admin] Modules loaded:', data?.modules?.length || 0);
         return data as ModulesResponse;
-      } catch {
+      } catch (err) {
+        console.error('[Admin] Error loading modules:', err);
         // Fallback vide si API non disponible
         return { categories: [], modules: [], modules_by_category: {} };
       }
     },
-    staleTime: 5 * 60 * 1000, // Cache 5 minutes
+    staleTime: 30 * 1000, // Cache 30 secondes (réduit pour debug)
+    retry: 2,
   });
 };
 
@@ -102,6 +122,7 @@ interface User {
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
   last_login?: string;
   created_at: string;
+  default_view?: string;
 }
 
 interface Tenant {
@@ -198,7 +219,7 @@ const BACKUP_DESTINATIONS = [
 // HELPERS
 // ============================================================================
 
-const formatDate = (date: string): string => {
+const _formatDate = (date: string): string => {
   return new Date(date).toLocaleDateString('fr-FR');
 };
 
@@ -216,7 +237,7 @@ const getStatusInfo = (statuses: StatusInfo[], status: string): StatusInfo => {
   return statuses.find(s => s.value === status) || { value: status, label: status, color: 'gray' };
 };
 
-const formatBytes = (bytes: number): string => {
+const _formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -807,13 +828,13 @@ const UsersView: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Parser les erreurs de validation Pydantic
-  const parseValidationErrors = (error: any): Record<string, string> => {
+  const parseValidationErrors = (error: ValidationError): Record<string, string> => {
     const errors: Record<string, string> = {};
     try {
       // Format: { detail: [{ loc: ['body', 'field'], msg: 'message' }] }
       const details = error?.response?.data?.detail || error?.detail || [];
       if (Array.isArray(details)) {
-        details.forEach((err: any) => {
+        details.forEach((err: ValidationErrorDetail) => {
           const field = err.loc?.[err.loc.length - 1] || 'general';
           errors[field] = err.msg;
         });
@@ -831,8 +852,8 @@ const UsersView: React.FC = () => {
       await createUser.mutateAsync(formData);
       setShowModal(false);
       setFormData({ password: '' });
-    } catch (error: any) {
-      const errors = parseValidationErrors(error);
+    } catch (error: unknown) {
+      const errors = parseValidationErrors(error as ValidationError);
       setFieldErrors(errors);
     }
   };
@@ -854,7 +875,8 @@ const UsersView: React.FC = () => {
       last_name: user.last_name || '',
       username: user.username,
       email: user.email,
-      role_id: user.role_id || ''
+      role_id: user.role_id || '',
+      default_view: user.default_view || ''
     });
     setFieldErrors({});
     setShowEditModal(true);
@@ -866,12 +888,12 @@ const UsersView: React.FC = () => {
     setFieldErrors({});
     try {
       // N'envoyer que les champs supportés par l'API
-      const { role_id, ...updateData } = editFormData;
+      const { role_id: _role_id, ...updateData } = editFormData;
       await updateUser.mutateAsync({ id: editingUser.id, data: updateData });
       setShowEditModal(false);
       setEditingUser(null);
-    } catch (error: any) {
-      const errors = parseValidationErrors(error);
+    } catch (error: unknown) {
+      const errors = parseValidationErrors(error as ValidationError);
       setFieldErrors(errors);
     }
   };
@@ -1081,6 +1103,36 @@ const UsersView: React.FC = () => {
               {fieldErrors.email && <span className="azals-field__error">{fieldErrors.email}</span>}
             </div>
           </Grid>
+          <div className="azals-field mt-4">
+            <label>Vue par défaut après connexion</label>
+            <Select
+              value={editFormData.default_view || ''}
+              onChange={(v) => setEditFormData({ ...editFormData, default_view: v || undefined })}
+              options={[
+                { value: '', label: 'Automatique (selon le rôle)' },
+                { value: 'cockpit', label: 'Cockpit (Tableau de bord)' },
+                { value: 'admin', label: 'Administration' },
+                { value: 'saisie', label: 'Nouvelle saisie' },
+                { value: 'gestion-devis', label: 'Gestion - Devis' },
+                { value: 'gestion-commandes', label: 'Gestion - Commandes' },
+                { value: 'gestion-interventions', label: 'Gestion - Interventions' },
+                { value: 'gestion-factures', label: 'Gestion - Factures' },
+                { value: 'gestion-paiements', label: 'Gestion - Paiements' },
+                { value: 'affaires', label: 'Affaires' },
+                { value: 'crm', label: 'CRM' },
+                { value: 'stock', label: 'Stock' },
+                { value: 'achats', label: 'Achats' },
+                { value: 'projets', label: 'Projets' },
+                { value: 'rh', label: 'Ressources Humaines' },
+                { value: 'vehicules', label: 'Véhicules' },
+                { value: 'compta', label: 'Comptabilité' },
+                { value: 'tresorerie', label: 'Trésorerie' },
+              ]}
+            />
+            <span className="text-xs text-gray-500 mt-1 block">
+              Définit la première page affichée lors de la connexion de l'utilisateur
+            </span>
+          </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="secondary" onClick={handleCloseEditModal}>Annuler</Button>
             <Button type="submit" isLoading={updateUser.isPending}>Enregistrer</Button>
@@ -1106,7 +1158,7 @@ const UserPermissionsModal: React.FC<{
 
   // Pour rafraîchir les capabilities si l'utilisateur modifié est l'utilisateur connecté
   const refreshCapabilities = useCapabilitiesStore((state) => state.refreshCapabilities);
-  const { user: currentUser } = useAuth();
+  const { user: _currentUser } = useAuth();
 
   const [selectedCaps, setSelectedCaps] = useState<Set<string>>(new Set());
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());

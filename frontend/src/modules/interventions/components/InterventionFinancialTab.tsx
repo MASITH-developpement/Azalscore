@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
+import { formatCurrency, formatDuration } from '@/utils/formatters';
 import type { Intervention } from '../types';
-import { formatCurrency, formatDate, formatDuration } from '@/utils/formatters';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionFinancialTab - Facturation de l'intervention

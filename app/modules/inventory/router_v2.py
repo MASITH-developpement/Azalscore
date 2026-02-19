@@ -878,4 +878,4 @@ async def get_inventory_dashboard(
     - current_user → context
     """
     service = get_inventory_service(db, context.tenant_id, context.user_id)
-    return service.get_inventory_dashboard()
+    return service.get_dashboard()

@@ -11,19 +11,21 @@
 
 import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { ShieldX } from 'lucide-react';
-import { LoadingState } from './ui-engine/components/StateViews';
-import { tokenManager, setTenantId } from '@core/api-client';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
+import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
+import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import LandingPage from './pages/LandingPage';
 import { MentionsLegales, Confidentialite, CGV, Contact } from './pages/legal';
 import { TrialRegistration } from './pages/trial';
-import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
-import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
+import { LoadingState } from './ui-engine/components/StateViews';
 import './styles/main.css';
 import './styles/unified-layout.css';
 import './styles/azalscore.css';
+import './styles/blog.css';
 import './modules/saisie/saisie.css';
 
 // ============================================================
@@ -66,6 +68,15 @@ const AxonautImport = lazy(() => import('./modules/import').then(m => ({ default
 const PennylaneImport = lazy(() => import('./modules/import').then(m => ({ default: m.PennylaneImportModule })));
 const SageImport = lazy(() => import('./modules/import').then(m => ({ default: m.SageImportModule })));
 const ChorusImport = lazy(() => import('./modules/import').then(m => ({ default: m.ChorusImportModule })));
+
+// Blog pages
+const BlogIndex = lazy(() => import('./pages/blog'));
+const BlogFacturation2026 = lazy(() => import('./pages/blog/FacturationElectronique2026'));
+const BlogErpPmeGuide = lazy(() => import('./pages/blog/ErpPmeGuideComplet'));
+const BlogRgpdErp = lazy(() => import('./pages/blog/ConformiteRgpdErp'));
+const BlogTresorerie = lazy(() => import('./pages/blog/GestionTresoreriePme'));
+const BlogCrm = lazy(() => import('./pages/blog/CrmRelationClient'));
+const BlogStock = lazy(() => import('./pages/blog/GestionStockOptimisation'));
 
 // ============================================================
 // VIEW KEY → CAPABILITY MAPPING
@@ -607,9 +618,10 @@ const UnifiedApp: React.FC = () => {
   // Non authentifié - afficher landing page, pages légales ou login
   if (!isAuthenticated) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/essai-gratuit" element={<TrialRegistration />} />
             <Route path="/essai-gratuit/verify" element={<TrialRegistration />} />
@@ -617,22 +629,32 @@ const UnifiedApp: React.FC = () => {
             <Route path="/confidentialite" element={<Confidentialite />} />
             <Route path="/cgv" element={<CGV />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogIndex /></Suspense>} />
+            <Route path="/blog/facturation-electronique-2026" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogFacturation2026 /></Suspense>} />
+            <Route path="/blog/erp-pme-guide-complet" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogErpPmeGuide /></Suspense>} />
+            <Route path="/blog/conformite-rgpd-erp" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogRgpdErp /></Suspense>} />
+            <Route path="/blog/gestion-tresorerie-pme" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogTresorerie /></Suspense>} />
+            <Route path="/blog/crm-relation-client" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogCrm /></Suspense>} />
+            <Route path="/blog/gestion-stock-optimisation" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogStock /></Suspense>} />
             <Route path="*" element={<LandingPage />} />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
+            </Routes>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </HelmetProvider>
     );
   }
 
   // Authentifié
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <HelmetProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </HelmetProvider>
   );
 };
 

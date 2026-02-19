@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention, InterventionDocument, RapportIntervention } from '../types';
 import { formatDate, formatDuration } from '@/utils/formatters';
+import type { Intervention, InterventionDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionDocsTab - Documents et rapport d'intervention

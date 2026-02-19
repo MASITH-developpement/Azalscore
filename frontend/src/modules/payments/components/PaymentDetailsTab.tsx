@@ -8,13 +8,12 @@ import {
   CreditCard, Hash, Building, Shield, Receipt, Percent
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Payment } from '../types';
 import { formatCurrency } from '@/utils/formatters';
 import {
-  getMethodLabel, getMethodIcon,
   METHOD_CONFIG
 } from '../types';
+import type { Payment } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PaymentDetailsTab - Details techniques
@@ -29,7 +28,7 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
         <Card title="Methode de paiement" icon={<CreditCard size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Type</label>
+              <span>Type</span>
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{methodConfig.icon}</span>
                 <span className="font-medium">{methodConfig.label}</span>
@@ -40,13 +39,13 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
               <>
                 {payment.card_brand && (
                   <div className="azals-std-field">
-                    <label>Reseau</label>
+                    <span>Reseau</span>
                     <div className="font-medium">{payment.card_brand}</div>
                   </div>
                 )}
                 {payment.card_last_four && (
                   <div className="azals-std-field">
-                    <label>Numero de carte</label>
+                    <span>Numero de carte</span>
                     <div className="font-mono">**** **** **** {payment.card_last_four}</div>
                   </div>
                 )}
@@ -55,7 +54,7 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
 
             {payment.method === 'BANK_TRANSFER' && payment.bank_name && (
               <div className="azals-std-field">
-                <label>Banque</label>
+                <span>Banque</span>
                 <div className="flex items-center gap-2">
                   <Building size={16} className="text-muted" />
                   {payment.bank_name}
@@ -69,23 +68,23 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
         <Card title="Identifiants" icon={<Hash size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Reference paiement</label>
+              <span>Reference paiement</span>
               <div className="font-mono">{payment.reference}</div>
             </div>
             {payment.transaction_id && (
               <div className="azals-std-field">
-                <label>ID Transaction (processeur)</label>
+                <span>ID Transaction (processeur)</span>
                 <div className="font-mono text-sm">{payment.transaction_id}</div>
               </div>
             )}
             {payment.authorization_code && (
               <div className="azals-std-field">
-                <label>Code d'autorisation</label>
+                <span>Code d'autorisation</span>
                 <div className="font-mono">{payment.authorization_code}</div>
               </div>
             )}
             <div className="azals-std-field azals-std-field--secondary">
-              <label>ID interne</label>
+              <span>ID interne</span>
               <div className="font-mono text-xs">{payment.id}</div>
             </div>
           </div>
@@ -95,14 +94,14 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
         <Card title="Montants" icon={<Receipt size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Montant brut</label>
+              <span>Montant brut</span>
               <div className="text-lg font-medium">
                 {formatCurrency(payment.amount, payment.currency)}
               </div>
             </div>
             {payment.fees !== undefined && payment.fees > 0 && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Frais de traitement</label>
+                <span>Frais de traitement</span>
                 <div className="text-danger">
                   -{formatCurrency(payment.fees, payment.currency)}
                 </div>
@@ -110,14 +109,14 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
             )}
             {payment.net_amount !== undefined && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Montant net</label>
+                <span>Montant net</span>
                 <div className="text-success font-medium">
                   {formatCurrency(payment.net_amount, payment.currency)}
                 </div>
               </div>
             )}
             <div className="azals-std-field">
-              <label>Devise</label>
+              <span>Devise</span>
               <div>{payment.currency}</div>
             </div>
           </div>
@@ -127,19 +126,19 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
         <Card title="Securite" icon={<Shield size={18} />} className="azals-std-field--secondary">
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Verification 3D Secure</label>
+              <span>Verification 3D Secure</span>
               <div className={payment.metadata?.['3ds_authenticated'] ? 'text-success' : 'text-muted'}>
                 {payment.metadata?.['3ds_authenticated'] ? 'Authentifie' : 'Non applicable'}
               </div>
             </div>
             <div className="azals-std-field">
-              <label>Code AVS</label>
+              <span>Code AVS</span>
               <div className="font-mono">
                 {payment.metadata?.avs_code || '-'}
               </div>
             </div>
             <div className="azals-std-field">
-              <label>Code CVC</label>
+              <span>Code CVC</span>
               <div className="font-mono">
                 {payment.metadata?.cvc_check || '-'}
               </div>

@@ -7,11 +7,11 @@ import React from 'react';
 import {
   FileText, Upload, Download, Trash2, File, Image, FileSpreadsheet
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner, PartnerDocument } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate } from '@/utils/formatters';
+import type { Partner, PartnerDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PartnerDocumentsTab - Documents

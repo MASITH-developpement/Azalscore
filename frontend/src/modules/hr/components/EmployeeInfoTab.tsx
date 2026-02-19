@@ -9,14 +9,14 @@ import {
   Briefcase, UserCheck, AlertTriangle, Globe
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Employee } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   getFullName, getSeniorityFormatted, getAge,
   CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG,
-  isContractExpiringSoon, isOnProbation, isActive
+  isContractExpiringSoon, isOnProbation
 } from '../types';
-import { formatDate } from '@/utils/formatters';
+import type { Employee } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EmployeeInfoTab - Informations generales de l'employe
@@ -43,15 +43,15 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
         <Card title="Informations personnelles" icon={<User size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Nom complet</label>
+              <span className="azals-field__label">Nom complet</span>
               <div className="azals-field__value text-lg font-semibold">{getFullName(employee)}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Matricule</label>
+              <span className="azals-field__label">Matricule</span>
               <div className="azals-field__value font-mono">{employee.employee_number}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Statut</label>
+              <span className="azals-field__label">Statut</span>
               <div className="azals-field__value">
                 <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                   {statusConfig.label}
@@ -60,7 +60,7 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             </div>
             {employee.birth_date && (
               <div className="azals-field azals-std-field--secondary">
-                <label className="azals-field__label">Date de naissance</label>
+                <span className="azals-field__label">Date de naissance</span>
                 <div className="azals-field__value">
                   {formatDate(employee.birth_date)}
                   {getAge(employee) && <span className="text-muted ml-2">({getAge(employee)} ans)</span>}
@@ -69,7 +69,7 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             )}
             {employee.nationality && (
               <div className="azals-field azals-std-field--secondary">
-                <label className="azals-field__label">Nationalite</label>
+                <span className="azals-field__label">Nationalite</span>
                 <div className="azals-field__value">
                   <Globe size={14} className="inline mr-1" />
                   {employee.nationality}
@@ -83,7 +83,7 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
         <Card title="Coordonnees" icon={<Mail size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Email</label>
+              <span className="azals-field__label">Email</span>
               <div className="azals-field__value">
                 <a href={`mailto:${employee.email}`} className="text-primary hover:underline">
                   <Mail size={14} className="inline mr-1" />
@@ -93,7 +93,7 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             </div>
             {employee.phone && (
               <div className="azals-field">
-                <label className="azals-field__label">Telephone</label>
+                <span className="azals-field__label">Telephone</span>
                 <div className="azals-field__value">
                   <Phone size={14} className="inline mr-1" />
                   {employee.phone}
@@ -102,7 +102,7 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             )}
             {employee.mobile && (
               <div className="azals-field">
-                <label className="azals-field__label">Mobile</label>
+                <span className="azals-field__label">Mobile</span>
                 <div className="azals-field__value">
                   <Phone size={14} className="inline mr-1" />
                   {employee.mobile}
@@ -111,7 +111,7 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             )}
             {employee.address && (
               <div className="azals-field azals-std-field--secondary">
-                <label className="azals-field__label">Adresse</label>
+                <span className="azals-field__label">Adresse</span>
                 <div className="azals-field__value">
                   <MapPin size={14} className="inline mr-1" />
                   {employee.address}
@@ -128,21 +128,21 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
         <Card title="Poste et departement" icon={<Briefcase size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Departement</label>
+              <span className="azals-field__label">Departement</span>
               <div className="azals-field__value">
                 <Building size={14} className="inline mr-1" />
                 {employee.department_name || '-'}
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Poste</label>
+              <span className="azals-field__label">Poste</span>
               <div className="azals-field__value font-medium">
                 {employee.position_title || '-'}
               </div>
             </div>
             {employee.manager_name && (
               <div className="azals-field">
-                <label className="azals-field__label">Responsable</label>
+                <span className="azals-field__label">Responsable</span>
                 <div className="azals-field__value">
                   <UserCheck size={14} className="inline mr-1" />
                   {employee.manager_name}
@@ -156,17 +156,17 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
         <Card title="Anciennete" icon={<Calendar size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Date d'embauche</label>
+              <span className="azals-field__label">Date d'embauche</span>
               <div className="azals-field__value">{formatDate(employee.hire_date)}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Anciennete</label>
+              <span className="azals-field__label">Anciennete</span>
               <div className="azals-field__value text-lg font-semibold text-primary">
                 {getSeniorityFormatted(employee)}
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Type de contrat</label>
+              <span className="azals-field__label">Type de contrat</span>
               <div className="azals-field__value">
                 <span className={`azals-badge azals-badge--${contractConfig.color}`}>
                   {contractConfig.label}
@@ -175,7 +175,7 @@ export const EmployeeInfoTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             </div>
             {employee.contract_end_date && (
               <div className="azals-field">
-                <label className="azals-field__label">Fin de contrat</label>
+                <span className="azals-field__label">Fin de contrat</span>
                 <div className={`azals-field__value ${isContractExpiringSoon(employee) ? 'text-warning font-semibold' : ''}`}>
                   {formatDate(employee.contract_end_date)}
                 </div>

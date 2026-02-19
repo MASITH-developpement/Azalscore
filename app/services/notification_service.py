@@ -490,8 +490,9 @@ class WebhookProvider(NotificationProvider):
     """Provider Webhook avec protection SSRF."""
 
     # Liste des hôtes/réseaux bloqués (protection SSRF)
+    # nosec B104 - Ce sont des hôtes BLOQUÉS, pas des bindings
     BLOCKED_HOSTS = {
-        "localhost", "127.0.0.1", "0.0.0.0", "::1",
+        "localhost", "127.0.0.1", "0.0.0.0", "::1",  # nosec B104
         "metadata.google.internal", "169.254.169.254",
     }
 

@@ -303,7 +303,8 @@ async def record_metric_value(
     value = service.record_metric(
         metric_code=data.metric_code,
         value=data.value,
-        dimensions=data.dimensions
+        dimensions=data.dimensions,
+        timestamp=data.timestamp
     )
     if not value:
         raise HTTPException(status_code=404, detail=f"Métrique {data.metric_code} non trouvée")
@@ -782,7 +783,7 @@ async def get_audit_stats(
 
 @router.get("/dashboard", response_model=AuditDashboardResponseSchema)
 async def get_audit_dashboard(
-    period: str = Query("7d", regex="^(24h|7d|30d|90d|365d)$"),
+    period: str = Query("7d", pattern="^(24h|7d|30d|90d|365d)$"),
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):

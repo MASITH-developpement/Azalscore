@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Vehicule, VehicleDocument } from '../types';
-import { DOCUMENT_TYPE_CONFIG, getExpiringDocuments } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { DOCUMENT_TYPE_CONFIG, getExpiringDocuments } from '../types';
+import type { Vehicule, VehicleDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * VehicleDocsTab - Documents du vehicule

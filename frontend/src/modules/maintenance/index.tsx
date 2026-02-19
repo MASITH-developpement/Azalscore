@@ -5,13 +5,17 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Check, Wrench, X, Cog, AlertTriangle, Calendar, BarChart3, Clock,
+  ArrowLeft, Edit, Printer, Package, FileText, Sparkles
+} from 'lucide-react';
 import { api } from '@core/api-client';
 import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -20,25 +24,11 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import {
-  Check, Wrench, X, Cog, AlertTriangle, Calendar, BarChart3, Clock,
-  ArrowLeft, Edit, Printer, Package, FileText, Sparkles
-} from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
 // Types et helpers
-import type { Asset, MaintenanceOrder, MaintenancePlan, MaintenanceDashboard } from './types';
-import {
-  ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
-  ORDER_TYPE_CONFIG, ORDER_STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG,
-  getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon,
-  isWarrantyExpired, getAssetAge, getTotalMaintenanceCost, getOrderCountByStatus,
-  getLowStockParts
-} from './types';
-import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
-
-// Composants tabs
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   AssetInfoTab,
   AssetOrdersTab,
@@ -47,6 +37,15 @@ import {
   AssetHistoryTab,
   AssetIATab
 } from './components';
+import {
+  ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
+  getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon,
+  isWarrantyExpired, getAssetAge, getTotalMaintenanceCost, getOrderCountByStatus,
+  getLowStockParts
+} from './types';
+import type { Asset, MaintenanceOrder, MaintenancePlan, MaintenanceDashboard } from './types';
+
+// Composants tabs
 
 // ============================================================================
 // LOCAL TYPES & HELPERS

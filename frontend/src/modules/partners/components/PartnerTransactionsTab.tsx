@@ -7,11 +7,11 @@ import React from 'react';
 import {
   ShoppingCart, Receipt, TrendingUp, DollarSign, Clock, AlertCircle
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner, Client } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Partner, Client } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PartnerTransactionsTab - Transactions

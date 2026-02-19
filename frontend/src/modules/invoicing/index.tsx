@@ -17,23 +17,21 @@
  * Types T0: QUOTE (Devis), INVOICE (Facture)
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Plus, FileText, Check, Download, Eye, Edit, Trash2,
+  Plus, FileText, Check, Edit, Trash2,
   ArrowRight, Filter, Search, X, FileSpreadsheet,
   AlertCircle, CheckCircle2, Clock, UserPlus, Copy, ShoppingCart,
   DollarSign, Link2, Sparkles, Shield
 } from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
+import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard, useHasCapability } from '@core/capabilities';
+import { serializeFilters } from '@core/query-keys';
+import { Button, ButtonGroup, ConfirmDialog } from '@ui/actions';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -42,14 +40,9 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
-import { z } from 'zod';
+import { DataTable } from '@ui/tables';
+import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import type { PaginatedResponse, TableColumn, TableAction } from '@/types';
-import type { Document as InvoicingDocument } from './types';
-import {
-  DOCUMENT_STATUS_CONFIG, DOCUMENT_TYPE_CONFIG,
-  TRANSFORM_WORKFLOW as TRANSFORM_WORKFLOW_TYPES,
-  getDaysUntilDue, isDocumentOverdue, canTransformDocument
-} from './types';
 import { formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '@/utils/formatters';
 import {
   InvoicingInfoTab,
@@ -61,7 +54,12 @@ import {
   InvoicingRiskTab,
   LineEditor as LineEditorModal
 } from './components';
-import type { LineFormData } from './types';
+import {
+  DOCUMENT_STATUS_CONFIG, DOCUMENT_TYPE_CONFIG,
+  TRANSFORM_WORKFLOW as TRANSFORM_WORKFLOW_TYPES,
+  getDaysUntilDue, isDocumentOverdue, canTransformDocument
+} from './types';
+import type { Document as InvoicingDocument , LineFormData } from './types';
 
 // ============================================================
 // TYPES - Alignés avec le backend
@@ -156,7 +154,7 @@ const TRANSFORM_WORKFLOW: Partial<Record<DocumentType, { target: DocumentType; l
   ORDER: { target: 'INVOICE', label: 'Transformer en facture', icon: <FileText size={14} /> },
 };
 
-const TVA_RATES = [
+const _TVA_RATES = [
   { value: 0, label: '0%' },
   { value: 5.5, label: '5,5%' },
   { value: 10, label: '10%' },

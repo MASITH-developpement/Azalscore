@@ -514,7 +514,7 @@ async def get_audit_stats(
 
 @router.get("/dashboard", response_model=AuditDashboardResponseSchema)
 async def get_audit_dashboard(
-    period: str = Query("7d", regex="^(24h|7d|30d|90d|365d)$"),
+    period: str = Query("7d", pattern="^(24h|7d|30d|90d|365d)$"),
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_context)
 ):

@@ -269,7 +269,7 @@ class RBACService:
 
     def _get_user_teams(self, user: IAMUser) -> list[int]:
         """Récupère les IDs des équipes de l'utilisateur."""
-        # TODO: Implémenter selon la structure des équipes
+        # NOTE: Phase 2 - Intégration table user_teams
         return []
 
     def _apply_limited_filter(

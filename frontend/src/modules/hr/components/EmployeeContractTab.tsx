@@ -9,13 +9,13 @@ import {
   AlertTriangle, CheckCircle, Clock
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Employee } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   CONTRACT_TYPE_CONFIG,
   isFixedTerm, isContractExpiringSoon, isOnProbation
 } from '../types';
-import { formatDate, formatCurrency } from '@/utils/formatters';
+import type { Employee } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EmployeeContractTab - Contrat et remuneration
@@ -30,7 +30,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
         <Card title="Contrat de travail" icon={<FileText size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Type de contrat</label>
+              <span className="azals-field__label">Type de contrat</span>
               <div className="azals-field__value">
                 <span className={`azals-badge azals-badge--${contractConfig.color}`}>
                   {contractConfig.label}
@@ -39,14 +39,14 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Date de debut</label>
+              <span className="azals-field__label">Date de debut</span>
               <div className="azals-field__value">
                 {formatDate(employee.contract_start_date || employee.hire_date)}
               </div>
             </div>
             {isFixedTerm(employee) && employee.contract_end_date && (
               <div className="azals-field">
-                <label className="azals-field__label">Date de fin</label>
+                <span className="azals-field__label">Date de fin</span>
                 <div className={`azals-field__value ${isContractExpiringSoon(employee) ? 'text-warning font-semibold' : ''}`}>
                   {formatDate(employee.contract_end_date)}
                   {isContractExpiringSoon(employee) && (
@@ -57,7 +57,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
             )}
             {employee.probation_end_date && (
               <div className="azals-field">
-                <label className="azals-field__label">Fin de periode d'essai</label>
+                <span className="azals-field__label">Fin de periode d'essai</span>
                 <div className="azals-field__value">
                   {formatDate(employee.probation_end_date)}
                   {isOnProbation(employee) ? (
@@ -76,7 +76,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
           <div className="azals-field-group">
             {employee.salary !== undefined && (
               <div className="azals-field">
-                <label className="azals-field__label">Salaire mensuel brut</label>
+                <span className="azals-field__label">Salaire mensuel brut</span>
                 <div className="azals-field__value text-xl font-semibold text-primary">
                   {formatCurrency(employee.salary)}
                 </div>
@@ -84,7 +84,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
             )}
             {employee.salary !== undefined && (
               <div className="azals-field azals-std-field--secondary">
-                <label className="azals-field__label">Salaire annuel brut</label>
+                <span className="azals-field__label">Salaire annuel brut</span>
                 <div className="azals-field__value">
                   {formatCurrency(employee.salary * 12)}
                 </div>
@@ -165,7 +165,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
           <div className="azals-field-group">
             {employee.bank_name && (
               <div className="azals-field">
-                <label className="azals-field__label">Banque</label>
+                <span className="azals-field__label">Banque</span>
                 <div className="azals-field__value">
                   <Building size={14} className="inline mr-1" />
                   {employee.bank_name}
@@ -174,13 +174,13 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
             )}
             {employee.bank_iban && (
               <div className="azals-field">
-                <label className="azals-field__label">IBAN</label>
+                <span className="azals-field__label">IBAN</span>
                 <div className="azals-field__value font-mono">{employee.bank_iban}</div>
               </div>
             )}
             {employee.bank_bic && (
               <div className="azals-field">
-                <label className="azals-field__label">BIC</label>
+                <span className="azals-field__label">BIC</span>
                 <div className="azals-field__value font-mono">{employee.bank_bic}</div>
               </div>
             )}
@@ -199,19 +199,19 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
         <Grid cols={3} gap="md">
           {employee.social_security_number && (
             <div className="azals-field">
-              <label className="azals-field__label">N Securite sociale</label>
+              <span className="azals-field__label">N Securite sociale</span>
               <div className="azals-field__value font-mono">{employee.social_security_number}</div>
             </div>
           )}
           {employee.birth_place && (
             <div className="azals-field">
-              <label className="azals-field__label">Lieu de naissance</label>
+              <span className="azals-field__label">Lieu de naissance</span>
               <div className="azals-field__value">{employee.birth_place}</div>
             </div>
           )}
           {employee.nationality && (
             <div className="azals-field">
-              <label className="azals-field__label">Nationalite</label>
+              <span className="azals-field__label">Nationalite</span>
               <div className="azals-field__value">{employee.nationality}</div>
             </div>
           )}

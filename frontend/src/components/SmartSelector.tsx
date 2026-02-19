@@ -12,10 +12,11 @@
  */
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Plus, Check, Loader2, X, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
+import type { ApiMutationError } from '@/types';
 
 // ============================================================
 // TYPES
@@ -26,6 +27,7 @@ export interface SelectorItem {
   name: string;
   code?: string;
   email?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -161,7 +163,7 @@ export function SmartSelector<T extends SelectorItem>({
       setFormData({});
       setCreateError('');
     },
-    onError: (err: any) => {
+    onError: (err: ApiMutationError) => {
       setCreateError(err.message || `Erreur lors de la création`);
     },
   });

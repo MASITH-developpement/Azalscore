@@ -19,8 +19,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { contactsApi } from '../api';
-import type { ContactLookup, RelationType, EntityType } from '../types';
 import { EntityTypeLabels } from '../types';
+import type { ContactLookup, RelationType, EntityType } from '../types';
 
 interface ContactSelectorProps {
   /** ID du contact sélectionné */

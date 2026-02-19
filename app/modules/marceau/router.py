@@ -490,7 +490,7 @@ async def upload_knowledge_document(
     db.commit()
     db.refresh(doc)
 
-    # TODO: Declencher traitement asynchrone pour extraction et embeddings
+    # NOTE: Phase 2 - Celery task pour extraction + embeddings LLM
 
     return doc
 

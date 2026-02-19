@@ -23,7 +23,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ currentStep }) => {
         {displaySteps.map((step, index) => {
           const isCompleted = index < currentIndex;
           const isCurrent = step === currentStep;
-          const isUpcoming = index > currentIndex;
+          const _isUpcoming = index > currentIndex;
 
           return (
             <React.Fragment key={step}>

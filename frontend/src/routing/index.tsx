@@ -6,10 +6,10 @@
 
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { MainLayout, AuthLayout } from '@ui/layout';
-import { CapabilityGuard } from '@core/capabilities';
 import { useIsAuthenticated } from '@core/auth';
+import { CapabilityGuard } from '@core/capabilities';
 import { LoadingState } from '@ui/components/StateViews';
+import { MainLayout, AuthLayout } from '@ui/layout';
 
 // ============================================================
 // LAZY LOADING DES MODULES
@@ -53,6 +53,20 @@ const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPassword'));
 
 // Pages publiques - import direct pour page d'accueil (performance critique)
 import LandingPage from '@/pages/LandingPage';
+
+// Pages publiques additionnelles (lazy)
+const TrialPage = lazy(() => import('@/pages/trial'));
+const FeaturesPage = lazy(() => import('@/pages/public/Features'));
+const PricingPage = lazy(() => import('@/pages/public/Pricing'));
+const AboutPage = lazy(() => import('@/pages/public/About'));
+const DemoPage = lazy(() => import('@/pages/public/Demo'));
+const DocsPage = lazy(() => import('@/pages/public/Docs'));
+
+// Pages légales
+const MentionsLegales = lazy(() => import('@/pages/legal/MentionsLegales'));
+const Confidentialite = lazy(() => import('@/pages/legal/Confidentialite'));
+const CGV = lazy(() => import('@/pages/legal/CGV'));
+const ContactPage = lazy(() => import('@/pages/legal/Contact'));
 
 // Pages communes
 const NotFoundPage = lazy(() => import('@/pages/NotFound'));
@@ -142,6 +156,20 @@ export const AppRouter: React.FC = () => {
         <Routes>
           {/* Page d'accueil publique */}
           <Route path="/" element={<HomeRoute />} />
+
+          {/* Pages publiques marketing */}
+          <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/demo" element={<DemoPage />} />
+          <Route path="/docs" element={<DocsPage />} />
+          <Route path="/essai-gratuit" element={<TrialPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+
+          {/* Pages légales */}
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
+          <Route path="/cgv" element={<CGV />} />
 
           {/* Routes publiques (Auth) */}
           <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>

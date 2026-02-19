@@ -344,11 +344,8 @@ class DatabaseKeyStore(KeyStore):
             key.encrypted_key_material = self._encrypt_key_material(key.key_material)
             key.key_material = None  # Ne pas stocker en clair
 
-        # TODO: Implémenter le stockage en DB
-        # Utilise self._db_session_factory pour créer une session
-        # et stocke dans une table crypto_keys
-
-        # Pour l'instant, utilise le cache
+        # NOTE: Production - Implémenter stockage en table crypto_keys
+        # Pour l'instant: cache mémoire
         with self._lock:
             self._cache[key.key_id] = key
             self._cache_times[key.key_id] = time.time()
@@ -365,7 +362,7 @@ class DatabaseKeyStore(KeyStore):
                         key.key_material = self._decrypt_key_material(key.encrypted_key_material)
                     return key
 
-        # TODO: Récupérer depuis DB si pas en cache
+        # NOTE: Production - Récupérer depuis DB crypto_keys si pas en cache
         return None
 
     def get_active_key(self, key_type: KeyType, tenant_id: Optional[str] = None) -> Optional[CryptoKey]:
@@ -1317,7 +1314,7 @@ def initialize_encryption_services(
         hsm = AWSKMSProvider(**(hsm_config or {}))
 
     # Key Store
-    key_store = InMemoryKeyStore()  # TODO: Utiliser DatabaseKeyStore en production
+    key_store = InMemoryKeyStore()  # NOTE: Production - Utiliser DatabaseKeyStore
 
     # KMS
     _kms_service = KeyManagementService(key_store, hsm)

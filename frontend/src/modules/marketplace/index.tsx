@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   Store, Hourglass, Package, ClipboardList, ShoppingCart, Banknote,
-  DollarSign, Wallet, BarChart3, User, Clock, Sparkles, ArrowLeft, Edit, Trash2
+  DollarSign, Wallet, BarChart3, User, Clock, Sparkles, ArrowLeft, Edit
 } from 'lucide-react';
-import type {
-  Seller, MarketplaceProduct, MarketplaceOrder, Payout, MarketplaceStats
-} from './types';
-import {
-  SELLER_STATUS_CONFIG, PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYOUT_STATUS_CONFIG,
-  formatRating, isSellerActive, isSellerPending
-} from './types';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn } from '@/types';
 import {
   formatCurrency as formatCurrencyHelper,
   formatDate as formatDateHelper,
@@ -31,6 +23,14 @@ import {
   SellerInfoTab, SellerProductsTab, SellerOrdersTab,
   SellerPayoutsTab, SellerHistoryTab, SellerIATab
 } from './components';
+import {
+  SELLER_STATUS_CONFIG, PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYOUT_STATUS_CONFIG,
+  formatRating
+} from './types';
+import type {
+  Seller, MarketplaceProduct, MarketplaceOrder, Payout, MarketplaceStats
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS

@@ -365,7 +365,7 @@ async def get_risk_alerts(
     Utilise pour les alertes du tableau de bord.
     """
     from .models import EnrichmentHistory
-    from datetime import timedelta
+    from datetime import datetime, timedelta
 
     tenant_id = getattr(request.state, "tenant_id", None)
     if not tenant_id:

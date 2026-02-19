@@ -10,7 +10,6 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
@@ -21,24 +20,19 @@ import {
   AlertTriangle,
   Clock,
   CreditCard,
-  Wallet,
-  TrendingUp,
-  TrendingDown,
   Calendar,
-  Link2,
   Unlink,
   Eye,
-  Settings,
-  ChevronRight,
   Shield,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
+import { useAuth } from '@core/auth';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
-import { Modal, Select, Input } from '@ui/forms';
+import { Modal, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { ErrorState } from '../../../ui-engine/components/StateViews';
-import { useAuth } from '@core/auth';
 
 // ============================================================
 // TYPES

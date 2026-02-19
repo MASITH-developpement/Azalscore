@@ -9,15 +9,6 @@ import React, { useState } from 'react';
 import {
   TrendingUp, AlertTriangle, Search, CheckCircle, Shield, Clock, ThumbsUp
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { NonConformance } from '../types';
-import {
-  SEVERITY_CONFIG, NC_STATUS_CONFIG,
-  getNCAge, getNCAgeDays, isNCOverdue, canCloseNC
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -26,6 +17,15 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import {
+  SEVERITY_CONFIG, NC_STATUS_CONFIG,
+  getNCAge, getNCAgeDays, isNCOverdue, canCloseNC
+} from '../types';
+import type { NonConformance } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * NCIATab - Assistant IA

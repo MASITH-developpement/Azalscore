@@ -9,10 +9,10 @@ import {
   Calendar, FileText, ArrowRight
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Audit, AuditHistoryEntry } from '../types';
-import { AUDIT_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { AUDIT_STATUS_CONFIG } from '../types';
+import type { Audit, AuditHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AuditHistoryTab - Historique de l'audit

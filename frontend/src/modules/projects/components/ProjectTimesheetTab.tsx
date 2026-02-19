@@ -10,13 +10,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Project, TimeEntry } from '../types';
 import { formatDate, formatHours, formatCurrency } from '@/utils/formatters';
 import {
   getTotalLoggedHours, getBillableHours, getBillableAmount,
   getTotalEstimatedHours
 } from '../types';
+import type { Project, TimeEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProjectTimesheetTab - Feuilles de temps du projet
