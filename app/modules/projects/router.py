@@ -109,6 +109,53 @@ def list_projects(
     return {"items": projects, "total": total, "page": skip // limit + 1, "page_size": limit}
 
 
+@router.get("/summary", response_model=ProjectStats)
+def get_projects_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Récupérer les statistiques globales des projets."""
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
+    return service.get_global_stats()
+
+
+@router.get("/time-entries", response_model=TimeEntryList)
+def list_all_time_entries(
+    project_id: UUID | None = None,
+    user_id: UUID | None = None,
+    status: TimeEntryStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Lister toutes les entrées de temps (tous projets)."""
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
+    entries, total = service.list_all_time_entries(
+        project_id=project_id,
+        user_id=user_id,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+        skip=skip,
+        limit=limit
+    )
+    return {"items": entries, "total": total, "page": skip // limit + 1, "page_size": limit}
+
+
+@router.post("/time-entries", response_model=TimeEntryResponse, status_code=201)
+def create_time_entry_global(
+    data: TimeEntryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Créer une entrée de temps (chemin global)."""
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
+    return service.create_time_entry(data.project_id, data)
+
+
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(
     project_id: UUID,

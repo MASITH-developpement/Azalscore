@@ -1533,6 +1533,88 @@ class ProjectsService:
             }
         }
 
+    def get_global_stats(self) -> ProjectStats:
+        """Obtenir les statistiques globales de tous les projets."""
+        # Récupérer tous les projets actifs
+        projects = self.db.query(Project).filter(
+            and_(
+                Project.tenant_id == self.tenant_id,
+                Project.is_active == True
+            )
+        ).all()
+
+        # Toutes les tâches
+        tasks = self.db.query(ProjectTask).filter(
+            ProjectTask.tenant_id == self.tenant_id
+        ).all()
+
+        # Tous les jalons
+        milestones = self.db.query(ProjectMilestone).filter(
+            ProjectMilestone.tenant_id == self.tenant_id
+        ).all()
+
+        # Tous les risques
+        risks = self.db.query(ProjectRisk).filter(
+            ProjectRisk.tenant_id == self.tenant_id
+        ).all()
+
+        # Toutes les issues
+        issues = self.db.query(ProjectIssue).filter(
+            ProjectIssue.tenant_id == self.tenant_id
+        ).all()
+
+        today = date.today()
+
+        # Calculs budgétaires globaux
+        total_planned = sum((p.planned_budget or Decimal("0")) for p in projects)
+        total_actual = sum((p.actual_cost or Decimal("0")) for p in projects)
+
+        return ProjectStats(
+            tasks_total=len(tasks),
+            tasks_completed=len([t for t in tasks if t.status == TaskStatus.COMPLETED]),
+            tasks_in_progress=len([t for t in tasks if t.status == TaskStatus.IN_PROGRESS]),
+            tasks_blocked=len([t for t in tasks if t.status == TaskStatus.BLOCKED]),
+            tasks_overdue=len([t for t in tasks if t.due_date and t.due_date < today and t.status not in [TaskStatus.COMPLETED, TaskStatus.CANCELLED]]),
+            milestones_total=len(milestones),
+            milestones_achieved=len([m for m in milestones if m.status == MilestoneStatus.ACHIEVED]),
+            milestones_overdue=len([m for m in milestones if m.target_date < today and m.status == MilestoneStatus.PENDING]),
+            risks_total=len(risks),
+            risks_open=len([r for r in risks if r.status != RiskStatus.CLOSED]),
+            risks_high=len([r for r in risks if r.risk_score and r.risk_score >= 15]),
+            issues_total=len(issues),
+            issues_open=len([i for i in issues if i.status not in [IssueStatus.CLOSED, IssueStatus.RESOLVED]]),
+            issues_critical=len([i for i in issues if i.priority == IssuePriority.CRITICAL]),
+            team_size=len(projects),  # Nombre de projets comme indicateur
+            hours_planned=sum(t.estimated_hours or 0 for t in tasks),
+            hours_actual=sum(t.actual_hours or 0 for t in tasks),
+            hours_remaining=sum(t.remaining_hours or 0 for t in tasks),
+            budget_planned=total_planned,
+            budget_actual=total_actual,
+            budget_remaining=total_planned - total_actual
+        )
+
+    def list_all_time_entries(
+        self,
+        project_id: UUID | None = None,
+        user_id: UUID | None = None,
+        status: TimeEntryStatus | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        skip: int = 0,
+        limit: int = 50
+    ) -> tuple[list[ProjectTimeEntry], int]:
+        """Lister toutes les entrées de temps avec pagination."""
+        entries, total, _, _ = self.get_time_entries(
+            project_id=project_id,
+            user_id=user_id,
+            status=status,
+            start_date=start_date,
+            end_date=end_date,
+            skip=skip,
+            limit=limit
+        )
+        return entries, total
+
 
 def get_projects_service(db: Session, tenant_id: str, user_id: UUID) -> ProjectsService:
     """Factory pour le service projets."""
