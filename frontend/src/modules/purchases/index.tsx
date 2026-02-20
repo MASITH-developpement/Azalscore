@@ -347,10 +347,16 @@ const useDeleteSupplier = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/purchases/suppliers/${id}`);
+      const response = await api.delete(`/purchases/suppliers/${id}`);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
+    },
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+      const message = error.response?.data?.detail || error.message || 'Erreur lors de la suppression';
+      alert(`Erreur: ${message}`);
+      console.error('[DELETE_SUPPLIER] Erreur:', error);
     },
   });
 };
@@ -1209,9 +1215,16 @@ export const SupplierFormPage: React.FC = () => {
   const deleteMutation = useDeleteSupplier();
 
   const handleDelete = async () => {
-    if (supplier && window.confirm(`Supprimer le fournisseur "${supplier.name}" ?`)) {
-      await deleteMutation.mutateAsync(supplier.id);
-      navigate('/purchases/suppliers');
+    if (!supplier) return;
+
+    if (window.confirm(`Supprimer le fournisseur "${supplier.name}" ?\n\nCette action est irréversible.`)) {
+      try {
+        await deleteMutation.mutateAsync(supplier.id);
+        navigate('/purchases/suppliers');
+      } catch (error) {
+        // L'erreur est déjà gérée par onError du mutation
+        console.error('[SUPPLIER_DELETE] Échec:', error);
+      }
     }
   };
 
@@ -1512,6 +1525,7 @@ export const SupplierFormPage: React.FC = () => {
           </div>
           {!isNew && (
             <Button
+              type="button"
               variant="danger"
               leftIcon={<Trash2 size={16} />}
               onClick={handleDelete}

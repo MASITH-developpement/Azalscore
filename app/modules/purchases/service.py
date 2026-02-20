@@ -151,7 +151,7 @@ class PurchasesService:
         return supplier
 
     def delete_supplier(self, supplier_id: UUID) -> bool:
-        """Supprimer un fournisseur (soft delete)."""
+        """Supprimer un fournisseur définitivement de la base de données."""
         supplier = self.get_supplier(supplier_id)
         if not supplier:
             return False
@@ -165,8 +165,8 @@ class PurchasesService:
         if orders_count > 0:
             raise ValueError("Impossible de supprimer un fournisseur ayant des commandes")
 
-        supplier.is_active = False
-        supplier.status = SupplierStatus.INACTIVE
+        # Hard delete - suppression définitive
+        self.db.delete(supplier)
         self.db.commit()
         return True
 

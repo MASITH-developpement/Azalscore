@@ -64,13 +64,13 @@ async def create_supplier(
 async def list_suppliers(
     status_filter: Optional[SupplierStatus] = Query(None, alias="status"),
     search: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    is_active: Optional[bool] = Query(True, description="Filtrer par actif/inactif. Par défaut True (actifs uniquement)"),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100, alias="page_size"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Lister les fournisseurs avec filtres."""
+    """Lister les fournisseurs avec filtres. Par défaut, seuls les actifs sont affichés."""
     service = get_purchases_service(db, current_user.tenant_id)
     items, total = service.list_suppliers(status_filter, search, is_active, page, per_page)
 

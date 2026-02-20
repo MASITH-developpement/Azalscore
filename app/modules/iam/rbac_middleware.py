@@ -351,8 +351,23 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     ("POST", r"/v1/invoicing/credits/?$"): RoutePermission(Module.BILLING, Action.CREATE),
 
     # =========================================================================
-    # PURCHASES / PROCUREMENT (v1 et v2 routes)
+    # PURCHASES / PROCUREMENT (routes sans prefix et v1)
     # =========================================================================
+    # Routes sans prefix (utilisées par le frontend)
+    ("GET", r"/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/purchases/orders/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/purchases/orders/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("GET", r"/purchases/invoices/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/purchases/invoices/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/purchases/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    # Routes v1
     ("GET", r"/v1/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
     ("GET", r"/v1/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
     ("POST", r"/v1/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
@@ -697,6 +712,7 @@ PUBLIC_ROUTES: list[str] = [
     r"^/api/auth/.*$",
     r"^/auth/.*$",
     r"^/v1/auth/.*$",       # Routes auth sous /v1
+    r"^/api/v1/auth/.*$",   # Routes auth sous /api/v1
     r"^/v1/audit/.*$",      # Routes audit (UI events)
     r"^/$",
     r"^/static/.*$",        # Fichiers statiques
