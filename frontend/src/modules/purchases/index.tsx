@@ -46,7 +46,7 @@ import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 
 // Auto-enrichissement fournisseur (SIRET + Adresse)
 import { SiretLookup, AddressAutocomplete, CompanyAutocomplete } from '@/modules/enrichment';
-import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion, RiskData } from '@/modules/enrichment';
 import { unwrapApiResponse } from '@/types';
 import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
 
@@ -1206,6 +1206,14 @@ export const SupplierFormPage: React.FC = () => {
   const { data: supplier, isLoading } = useSupplier(id || '');
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
+  const deleteMutation = useDeleteSupplier();
+
+  const handleDelete = async () => {
+    if (supplier && window.confirm(`Supprimer le fournisseur "${supplier.name}" ?`)) {
+      await deleteMutation.mutateAsync(supplier.id);
+      navigate('/purchases/suppliers');
+    }
+  };
 
   const [form, setForm] = useState<SupplierCreate>({
     code: '',
@@ -1221,6 +1229,9 @@ export const SupplierFormPage: React.FC = () => {
     payment_terms: 'NET30',
     notes: '',
   });
+
+  // État pour les données de risque BODACC (mis à jour automatiquement via onRiskData)
+  const [riskData, setRiskData] = useState<RiskData | null>(null);
 
   useEffect(() => {
     if (supplier) {
@@ -1262,6 +1273,19 @@ export const SupplierFormPage: React.FC = () => {
       postal_code: fields.postal_code || prev.postal_code,
       tax_id: fields.siret || fields.siren || prev.tax_id,
     }));
+
+    // Stocker les données de risque BODACC
+    if (fields._bodacc_risk_level || fields._risk_level) {
+      setRiskData({
+        level: fields._bodacc_risk_level || fields._risk_level,
+        label: fields._bodacc_risk_label || fields._risk_label,
+        reason: fields._bodacc_risk_reason || fields._risk_reason,
+        score: fields._bodacc_risk_score ?? fields._risk_score,
+        alerts: fields._bodacc_critical_alerts || [],
+      });
+    } else {
+      setRiskData(null);
+    }
   };
 
   // Handler pour l'enrichissement SIRET/SIREN (reutilise le meme handler)
@@ -1319,6 +1343,7 @@ export const SupplierFormPage: React.FC = () => {
                 value={form.name}
                 onChange={(value: string) => setForm({ ...form, name: value })}
                 onSelect={handleCompanySelect}
+                onRiskData={setRiskData}
                 placeholder="Tapez le nom d'une entreprise..."
               />
             </div>
@@ -1354,6 +1379,7 @@ export const SupplierFormPage: React.FC = () => {
               <SiretLookup
                 value={form.tax_id}
                 onEnrich={handleSiretEnrich}
+                onRiskData={setRiskData}
               />
             </div>
             <div className="azals-field">
@@ -1424,17 +1450,76 @@ export const SupplierFormPage: React.FC = () => {
           </div>
         </Card>
 
-        <div className="azals-form__actions">
-          <Button variant="secondary" onClick={() => navigate(-1)}>
-            Annuler
-          </Button>
-          <Button
-            type="submit"
-            leftIcon={<Save size={16} />}
-            isLoading={isSubmitting}
+        {/* Encadré Analyse de risque BODACC */}
+        {riskData && (
+          <Card
+            title="Analyse de risque"
+            className={riskData.level === 'critical' ? 'azals-card--danger' : riskData.level === 'high' ? 'azals-card--warning' : ''}
           >
-            {isNew ? 'Créer le fournisseur' : 'Enregistrer'}
-          </Button>
+            <div style={{
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              background: riskData.level === 'critical' ? 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' :
+                         riskData.level === 'high' ? 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' : '#f0fdf4',
+              border: riskData.level === 'critical' ? '2px solid #ef4444' :
+                     riskData.level === 'high' ? '2px solid #f59e0b' : '2px solid #22c55e'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.5rem' }}>
+                  {riskData.level === 'critical' ? '⛔' : riskData.level === 'high' ? '⚠️' : '✅'}
+                </span>
+                <div>
+                  <div style={{
+                    fontWeight: 700,
+                    color: riskData.level === 'critical' ? '#dc2626' : riskData.level === 'high' ? '#d97706' : '#16a34a'
+                  }}>
+                    {riskData.level === 'critical' ? 'RISQUE CRITIQUE' :
+                     riskData.level === 'high' ? 'RISQUE ÉLEVÉ' : 'RISQUE FAIBLE'}
+                  </div>
+                  <div style={{ fontWeight: 500, color: '#374151' }}>
+                    {riskData.reason || riskData.label}
+                  </div>
+                </div>
+              </div>
+              {riskData.alerts && riskData.alerts.length > 0 && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                  {riskData.alerts.map((alert, idx) => (
+                    <div key={idx}>• {alert.type} ({alert.date})</div>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#9ca3af' }}>
+                Sources: {riskData.sources && riskData.sources.length > 0
+                  ? riskData.sources.join(', ')
+                  : 'INSEE, BODACC'}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        <div className="azals-form__actions" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Button variant="secondary" onClick={() => navigate(-1)}>
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              leftIcon={<Save size={16} />}
+              isLoading={isSubmitting}
+            >
+              {isNew ? 'Créer le fournisseur' : 'Enregistrer'}
+            </Button>
+          </div>
+          {!isNew && (
+            <Button
+              variant="danger"
+              leftIcon={<Trash2 size={16} />}
+              onClick={handleDelete}
+              isLoading={deleteMutation.isPending}
+            >
+              Supprimer
+            </Button>
+          )}
         </div>
       </form>
     </PageWrapper>

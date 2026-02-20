@@ -73,6 +73,10 @@ CSRF_EXEMPT_PATHS = {
     "/api/metrics/update-users",
     "/api/metrics/reset",
     "/api/metrics/update-marketing",
+    # Admin Social Networks endpoints (internal use)
+    "/admin/social-networks/",
+    "/v1/admin/social-networks/",
+    "/api/v1/admin/social-networks/",
 }
 
 

@@ -263,14 +263,68 @@ class EnrichmentService:
                 # Mapper les champs pour l'entite
                 enriched_fields = provider.map_to_entity(entity_type.value, result.data)
 
+                # Initialiser la liste des sources utilisées
+                sources_used = [provider_enum.value.upper()]
+
                 # Recuperer les suggestions pour address et name
                 suggestions = []
                 if lookup_type in (LookupType.ADDRESS, LookupType.NAME) and hasattr(provider, 'get_suggestions'):
                     suggestions = provider.get_suggestions(result.data)
 
+                # === VERIFICATION BODACC AUTOMATIQUE ===
+                # Pour les recherches SIRET/SIREN/NAME, vérifier les annonces légales
+                # Extraire le SIRET depuis les résultats si disponible
+                siret_for_bodacc = None
+                if lookup_type in (LookupType.SIRET, LookupType.SIREN):
+                    siret_for_bodacc = lookup_value
+                elif lookup_type == LookupType.NAME:
+                    # Extraire le SIRET depuis les champs enrichis
+                    siret_for_bodacc = enriched_fields.get("siret") or enriched_fields.get("siren")
+
+                if siret_for_bodacc:
+                    try:
+                        bodacc_result = await self.check_bodacc(siret_for_bodacc)
+                        if bodacc_result.get("success"):
+                            # Ajouter BODACC à la liste des sources
+                            sources_used.append("BODACC")
+
+                            # Ajouter les données BODACC aux champs enrichis
+                            enriched_fields["_bodacc_risk_score"] = bodacc_result.get("risk_score", 100)
+                            enriched_fields["_bodacc_risk_level"] = bodacc_result.get("risk_level", "none")
+                            enriched_fields["_bodacc_risk_label"] = bodacc_result.get("risk_label", "")
+                            enriched_fields["_bodacc_risk_reason"] = bodacc_result.get("risk_reason")
+                            enriched_fields["_bodacc_has_critical"] = bodacc_result.get("has_critical", False)
+                            enriched_fields["_bodacc_has_warning"] = bodacc_result.get("has_warning", False)
+                            enriched_fields["_bodacc_critical_alerts"] = bodacc_result.get("critical_alerts", [])
+                            enriched_fields["_bodacc_warning_alerts"] = bodacc_result.get("warning_alerts", [])
+
+                            # Si risque critique BODACC, surcharger le score de risque global
+                            if bodacc_result.get("has_critical"):
+                                enriched_fields["_risk_score"] = 0
+                                enriched_fields["_risk_level"] = "critical"
+                                enriched_fields["_risk_label"] = bodacc_result.get("risk_label")
+                                enriched_fields["_risk_reason"] = bodacc_result.get("risk_reason")
+                            elif bodacc_result.get("has_warning"):
+                                # Ne pas écraser si déjà critique
+                                if enriched_fields.get("_risk_score", 100) > 30:
+                                    enriched_fields["_risk_score"] = 30
+                                    enriched_fields["_risk_level"] = "high"
+                                    enriched_fields["_risk_label"] = bodacc_result.get("risk_label")
+                                    enriched_fields["_risk_reason"] = bodacc_result.get("risk_reason")
+
+                            logger.info(
+                                f"[BODACC] Vérification OK pour {siret_for_bodacc}: "
+                                f"niveau={bodacc_result.get('risk_level')}"
+                            )
+                    except Exception as e:
+                        logger.warning(f"[BODACC] Erreur vérification pour {siret_for_bodacc}: {e}")
+
+                # Ajouter la liste des sources utilisées aux champs enrichis
+                enriched_fields["_sources"] = sources_used
+
                 logger.info(
                     f"[ENRICHMENT] Succes: {lookup_type.value}='{lookup_value[:20]}...' "
-                    f"via {provider_enum.value} ({result.response_time_ms}ms)"
+                    f"via {provider_enum.value} ({result.response_time_ms}ms) - Sources: {', '.join(sources_used)}"
                 )
 
                 return {

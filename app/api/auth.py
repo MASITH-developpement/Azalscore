@@ -1074,9 +1074,10 @@ def get_user_capabilities(
         "treasury.accounts.view", "treasury.accounts.create", "treasury.accounts.edit", "treasury.accounts.delete",
         # Accounting
         "accounting.view", "accounting.journal.view", "accounting.journal.delete",
-        # Purchases - generiques ET specifiques (orders)
-        "purchases.view", "purchases.create", "purchases.edit",
+        # Purchases - generiques ET specifiques (orders, invoices)
+        "purchases.view", "purchases.create", "purchases.edit", "purchases.delete",
         "purchases.orders.view", "purchases.orders.create", "purchases.orders.edit", "purchases.orders.delete",
+        "purchases.invoices.view", "purchases.invoices.create", "purchases.invoices.edit", "purchases.invoices.delete",
         # Projects
         "projects.view", "projects.create", "projects.edit", "projects.delete",
         # HR - Ressources Humaines

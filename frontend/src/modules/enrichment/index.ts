@@ -141,4 +141,7 @@ export type {
   EnrichedRiskFields,
   RiskAnalysisProps,
   RiskAnalysisDisplayProps,
+  // BODACC Risk types
+  RiskData,
+  BodaccAlert,
 } from './types';

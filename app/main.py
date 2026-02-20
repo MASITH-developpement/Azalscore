@@ -134,6 +134,9 @@ from app.modules.website.router_crud import router as website_router
 # Module ECOMMERCE - Boutique en ligne
 from app.modules.ecommerce.router_crud import router as ecommerce_router
 
+# Module SOCIAL NETWORKS - Métriques Marketing (Administration)
+from app.modules.social_networks import router as social_networks_router
+
 # ===========================================================================
 # MODULES V3 - CRUDRouter (Migration complète)
 # ===========================================================================
@@ -686,6 +689,9 @@ api_v1.include_router(website_router)
 
 # Module ECOMMERCE - Boutique en ligne
 api_v1.include_router(ecommerce_router)
+
+# Module SOCIAL NETWORKS - Administration > Réseaux Sociaux
+api_v1.include_router(social_networks_router)
 
 
 # ==================== UTILITY ENDPOINTS ====================
