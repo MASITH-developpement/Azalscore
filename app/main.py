@@ -102,6 +102,10 @@ from app.modules.country_packs.france.router import router as france_pack_router
 from app.modules.country_packs.france.einvoicing_router import router as france_einvoicing_router
 from app.modules.country_packs.france.fec.router import router as france_fec_router
 from app.modules.country_packs.france.pcg.router import router as france_pcg_router
+from app.modules.country_packs.france.liasses_router import router as france_liasses_router
+
+# Finance - Dunning (Relances Impayés)
+from app.modules.finance.dunning.router import router as dunning_router
 
 # Module Settings - Paramètres dynamiques par module
 from app.api.module_settings_router import router as module_settings_router
@@ -642,6 +646,8 @@ api_v1.include_router(france_pack_router)      # France Country Pack
 api_v1.include_router(france_einvoicing_router)# France E-Invoicing 2026
 api_v1.include_router(france_fec_router)       # France FEC Export (DGFiP)
 api_v1.include_router(france_pcg_router)       # France PCG 2025 (Plan Comptable Général)
+api_v1.include_router(france_liasses_router)   # France Liasses Fiscales (GAP-049)
+api_v1.include_router(dunning_router)          # Relances Impayés (GAP-021)
 api_v1.include_router(module_settings_router)  # Paramètres dynamiques par module
 api_v1.include_router(ai_orchestration_router) # IA Orchestration
 api_v1.include_router(guardian_ai_router)      # Guardian AI

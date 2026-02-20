@@ -325,9 +325,21 @@ def mock_auth_global(tenant_id, user_id):
 
     # Override FastAPI dependencies
     from app.core.dependencies_v2 import get_saas_context
+    from app.core.auth import get_current_user
+    from app.core.compat import get_context
     from app.main import app
 
+    # Mock pour retourner l'utilisateur mock
+    def mock_get_current_user():
+        return mock_user_obj
+
+    # Mock pour retourner le contexte SaaS
+    def mock_get_context_override():
+        return mock_context
+
     app.dependency_overrides[get_saas_context] = mock_get_context
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.dependency_overrides[get_context] = mock_get_context_override
 
     yield {
         'context': mock_context,
@@ -341,6 +353,8 @@ def mock_auth_global(tenant_id, user_id):
         p.stop()
 
     app.dependency_overrides.pop(get_saas_context, None)
+    app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_context, None)
 
 
 # ============================================================================
