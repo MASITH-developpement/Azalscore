@@ -233,7 +233,7 @@
 }
 
 .azals-planning-card__ref {
-  font-family: monospace;
+  font-family: var(--azals-font-mono);
   font-size: 0.65rem;
   color: var(--azals-text-secondary);
 }

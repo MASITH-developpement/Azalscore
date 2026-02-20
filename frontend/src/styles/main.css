@@ -84,6 +84,8 @@
 
   /* Typography (Charte AZALSCORE: Inter) */
   --azals-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --azals-font-mono: 'SF Mono', 'Fira Code', 'Monaco', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  --azals-font-serif: Georgia, 'Times New Roman', Times, serif;
   --azals-font-size-xs: 0.75rem;
   --azals-font-size-sm: 0.875rem;
   --azals-font-size-md: 1rem;
@@ -147,13 +149,38 @@
 
   /* Transition tokens */
   --azals-transition-instant: 100ms ease;
+
+  /* ============================================================
+     ALIASES - Compatibilité et cohérence
+     P0/P1 FIX: Variables manquantes et unification du nommage
+     ============================================================ */
+
+  /* Alias couleur primaire: unifie --azals-primary et --azals-primary-500 */
+  --azals-primary: var(--azals-primary-500);
+
+  /* Alias backgrounds */
+  --azals-bg-primary: var(--azals-bg);
+  --azals-bg-hover: var(--azals-gray-50);
+
+  /* Alias textes */
+  --azals-text-primary: var(--azals-text);
+
+  /* Alias danger (cohérence sémantique) */
+  --azals-danger-100: var(--azals-red-light);
+  --azals-danger-600: var(--azals-danger);
+
+  /* Alias primary-800 manquant (utilisé dans guardian-panel.css) */
+  --azals-primary-800: #1650B8;
 }
 
 /* Dark Theme */
 [data-theme='dark'] {
   --azals-bg: var(--azals-gray-900);
   --azals-bg-secondary: var(--azals-gray-800);
+  --azals-bg-primary: var(--azals-gray-900);
+  --azals-bg-hover: var(--azals-gray-800);
   --azals-text: var(--azals-gray-100);
+  --azals-text-primary: var(--azals-gray-100);
   --azals-text-secondary: var(--azals-gray-400);
   --azals-border: var(--azals-gray-700);
 }
@@ -163,7 +190,10 @@
 [data-theme='light'] {
   --azals-bg: #ffffff;
   --azals-bg-secondary: var(--azals-gray-50);
+  --azals-bg-primary: #ffffff;
+  --azals-bg-hover: var(--azals-gray-50);
   --azals-text: var(--azals-gray-900);
+  --azals-text-primary: var(--azals-gray-900);
   --azals-text-secondary: var(--azals-gray-500);
   --azals-border: var(--azals-gray-200);
 }
@@ -1419,7 +1449,7 @@ body {
   margin-top: var(--azals-spacing-md);
   font-size: var(--azals-font-size-xs);
   color: var(--azals-text-secondary);
-  font-family: monospace;
+  font-family: var(--azals-font-mono);
 }
 
 .azals-app-error {
@@ -1509,7 +1539,7 @@ body {
 }
 
 .azals-break-glass__phrase-box code {
-  font-family: monospace;
+  font-family: var(--azals-font-mono);
   font-size: var(--azals-font-size-sm);
 }
 

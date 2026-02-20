@@ -27,7 +27,7 @@
 
 .blog-page,
 .blog-article {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--azals-font-family);
   color: var(--blog-text);
   line-height: 1.7;
 }
@@ -973,7 +973,7 @@
   padding: 20px 24px;
   margin: 24px 0;
   border-radius: 0 8px 8px 0;
-  font-family: 'Fira Code', 'Monaco', monospace;
+  font-family: var(--azals-font-mono);
 }
 
 .blog-formula p {
