@@ -55,6 +55,9 @@ CSRF_EXEMPT_PATHS = {
     # Webhooks (authentifiés différemment)
     "/webhooks/",
     "/api/webhooks/",
+    # Metrics endpoints (internal use)
+    "/metrics/test-ai",
+    "/metrics/update-tenants",
 }
 
 

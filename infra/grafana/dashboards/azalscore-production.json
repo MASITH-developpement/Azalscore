@@ -364,10 +364,176 @@
       "type": "stat",
       "targets": [{ "expr": "sum(increase(azals_ai_tokens_total[5m]))", "legendFormat": "Tokens" }]
     },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "stacking": { "mode": "normal" } }
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*input.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*output.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+      "id": 35,
+      "title": "📊 Consommation Tokens par IA",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"input\"}[5m])) * 60", "legendFormat": "Claude input/min" },
+        { "expr": "sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"output\"}[5m])) * 60", "legendFormat": "Claude output/min" },
+        { "expr": "sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"input\"}[5m])) * 60", "legendFormat": "GPT-4 input/min" },
+        { "expr": "sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"output\"}[5m])) * 60", "legendFormat": "GPT-4 output/min" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 20 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Claude" }, "properties": [{ "id": "color", "value": { "fixedColor": "#8B5CF6", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "GPT-4" }, "properties": [{ "id": "color", "value": { "fixedColor": "#10B981", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 52 },
+      "id": 36,
+      "title": "📈 Tokens cumulés par modèle",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(azals_ai_tokens_total{model=\"claude-sonnet-4\"})", "legendFormat": "Claude" },
+        { "expr": "sum(azals_ai_tokens_total{model=\"gpt-4o\"})", "legendFormat": "GPT-4" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 12, "y": 56 },
+      "id": 37,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Claude (1h)",
+      "description": "Estimation: $3/M input, $15/M output",
+      "type": "stat",
+      "targets": [{
+        "expr": "(sum(increase(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"input\"}[1h])) * 0.000003) + (sum(increase(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"output\"}[1h])) * 0.000015)",
+        "legendFormat": "Coût"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 15, "y": 56 },
+      "id": 39,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "💰 Claude /mois",
+      "description": "Projection mensuelle basée sur le taux actuel. $3/M input, $15/M output",
+      "type": "stat",
+      "targets": [{
+        "expr": "((sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"input\"}[1h])) * 0.000003) + (sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"output\"}[1h])) * 0.000015)) * 3600 * 24 * 30",
+        "legendFormat": "Coût/mois"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 18, "y": 56 },
+      "id": 38,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "GPT-4 (1h)",
+      "description": "Estimation: $2.5/M input, $10/M output",
+      "type": "stat",
+      "targets": [{
+        "expr": "(sum(increase(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"input\"}[1h])) * 0.0000025) + (sum(increase(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"output\"}[1h])) * 0.00001)",
+        "legendFormat": "Coût"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 21, "y": 56 },
+      "id": 41,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "💰 GPT-4 /mois",
+      "description": "Projection mensuelle basée sur le taux actuel. $2.5/M input, $10/M output",
+      "type": "stat",
+      "targets": [{
+        "expr": "((sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"input\"}[1h])) * 0.0000025) + (sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"output\"}[1h])) * 0.00001)) * 3600 * 24 * 30",
+        "legendFormat": "Coût/mois"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "orange", "value": 250 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 60 },
+      "id": 42,
+      "options": { "graphMode": "area", "colorMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "💵 TOTAL IA /mois (projection)",
+      "description": "Coût mensuel total projeté (Claude + GPT-4) basé sur le taux de consommation actuel",
+      "type": "stat",
+      "targets": [{
+        "expr": "(((sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"input\"}[1h])) * 0.000003) + (sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"output\"}[1h])) * 0.000015)) + ((sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"input\"}[1h])) * 0.0000025) + (sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"output\"}[1h])) * 0.00001))) * 3600 * 24 * 30",
+        "legendFormat": "Total/mois"
+      }]
+    },
 
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 64 },
       "id": 500,
       "title": "🗄️ Base de données & Cache",
       "type": "row"
@@ -437,7 +603,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 69 },
       "id": 600,
-      "title": "🐳 Containers (cAdvisor)",
+      "title": "🐳 Containers (Docker Stats)",
       "type": "row"
     },
     {
@@ -448,7 +614,7 @@
       "title": "CPU par container",
       "type": "timeseries",
       "targets": [{
-        "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\"azals_.*\"}[5m])) by (name) * 100",
+        "expr": "dockerstats_cpu_usage_ratio{name=~\"azals_.*\"}",
         "legendFormat": "{{name}}"
       }]
     },
@@ -460,7 +626,7 @@
       "title": "RAM par container",
       "type": "timeseries",
       "targets": [{
-        "expr": "container_memory_usage_bytes{name=~\"azals_.*\"}",
+        "expr": "dockerstats_memory_usage_bytes{name=~\"azals_.*\"}",
         "legendFormat": "{{name}}"
       }]
     },
@@ -472,21 +638,21 @@
       "title": "Réseau par container (TX/RX)",
       "type": "timeseries",
       "targets": [
-        { "expr": "sum(rate(container_network_transmit_bytes_total{name=~\"azals_.*\"}[5m])) by (name)", "legendFormat": "{{name}} TX" },
-        { "expr": "sum(rate(container_network_receive_bytes_total{name=~\"azals_.*\"}[5m])) by (name)", "legendFormat": "{{name}} RX" }
+        { "expr": "rate(dockerstats_network_transmitted_bytes{name=~\"azals_.*\"}[5m])", "legendFormat": "{{name}} TX" },
+        { "expr": "rate(dockerstats_network_received_bytes{name=~\"azals_.*\"}[5m])", "legendFormat": "{{name}} RX" }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "fieldConfig": { "defaults": { "unit": "short" } },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 1 } } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 78 },
       "id": 53,
-      "title": "Restarts containers",
+      "title": "Block I/O par container",
       "type": "timeseries",
-      "targets": [{
-        "expr": "sum(increase(container_start_time_seconds{name=~\"azals_.*\"}[1h])) by (name)",
-        "legendFormat": "{{name}}"
-      }]
+      "targets": [
+        { "expr": "rate(dockerstats_blockio_read_bytes{name=~\"azals_.*\"}[5m])", "legendFormat": "{{name}} Read" },
+        { "expr": "rate(dockerstats_blockio_written_bytes{name=~\"azals_.*\"}[5m])", "legendFormat": "{{name}} Write" }
+      ]
     },
 
     {

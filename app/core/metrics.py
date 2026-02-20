@@ -10,13 +10,15 @@ import time
 from collections.abc import Callable
 from functools import wraps
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, Gauge, Histogram, Info, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
+from app.core.database import get_db
 
 # ============================================================================
 # MÉTRIQUES GLOBALES
@@ -249,6 +251,74 @@ async def metrics():
         content=generate_latest(REGISTRY),
         media_type=CONTENT_TYPE_LATEST
     )
+
+
+@router.post("/metrics/update-tenants")
+async def update_tenants_metrics(db: Session = Depends(get_db)):
+    """
+    Met à jour le compteur de tenants actifs basé sur les sessions récentes.
+    """
+    from sqlalchemy import text
+    from datetime import datetime, timedelta
+
+    try:
+        # Compter les tenants distincts avec des utilisateurs actifs
+        result = db.execute(text("""
+            SELECT COUNT(DISTINCT tenant_id) as active_tenants
+            FROM users
+            WHERE is_active = 1
+        """))
+        row = result.fetchone()
+        active_count = row[0] if row else 0
+
+        TENANTS_ACTIVE.set(active_count)
+
+        return {
+            "status": "ok",
+            "active_tenants": active_count
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/metrics/test-ai")
+async def test_ai_metrics():
+    """
+    Génère des métriques IA de test pour valider le dashboard.
+    À utiliser uniquement en développement/test.
+    """
+    import random
+
+    # Simuler appels Claude
+    for _ in range(3):
+        AI_SESSIONS_ACTIVE.inc()
+        duration = random.uniform(0.5, 3.0)
+        AI_INFERENCE_DURATION.labels(model="claude-sonnet-4", operation="reasoning").observe(duration)
+        AI_REQUESTS_TOTAL.labels(model="claude-sonnet-4", operation="reasoning", status="success").inc()
+        AI_TOKENS_TOTAL.labels(model="claude-sonnet-4", direction="input").inc(random.randint(400, 800))
+        AI_TOKENS_TOTAL.labels(model="claude-sonnet-4", direction="output").inc(random.randint(150, 400))
+        AI_GUARDIAN_DECISIONS.labels(decision="allowed", risk_level="low").inc()
+        AI_SESSIONS_ACTIVE.dec()
+
+    # Simuler appels GPT
+    for _ in range(2):
+        AI_SESSIONS_ACTIVE.inc()
+        duration = random.uniform(0.3, 1.5)
+        AI_INFERENCE_DURATION.labels(model="gpt-4o", operation="structure").observe(duration)
+        AI_REQUESTS_TOTAL.labels(model="gpt-4o", operation="structure", status="success").inc()
+        AI_TOKENS_TOTAL.labels(model="gpt-4o", direction="input").inc(random.randint(300, 600))
+        AI_TOKENS_TOTAL.labels(model="gpt-4o", direction="output").inc(random.randint(100, 250))
+        AI_GUARDIAN_DECISIONS.labels(decision="allowed", risk_level="low").inc()
+        AI_SESSIONS_ACTIVE.dec()
+
+    return {
+        "status": "ok",
+        "message": "Métriques IA de test générées",
+        "details": {
+            "claude_calls": 3,
+            "gpt_calls": 2
+        }
+    }
 
 
 @router.get("/metrics/json")

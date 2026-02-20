@@ -20,6 +20,7 @@ from app.core.models import User, UserRole
 from app.core.rate_limiter import auth_rate_limiter  # P1-4: Redis-backed rate limiter
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.core.two_factor import TwoFactorService
+from app.core.metrics import record_auth_attempt, TENANTS_ACTIVE
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -328,6 +329,7 @@ def login(
     if not user:
         # Enregistrer l'échec (timing constant pour éviter user enumeration)
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
+        record_auth_attempt(method="password", success=False, tenant_id=tenant_id)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -336,6 +338,7 @@ def login(
     # Vérification du mot de passe
     if not verify_password(user_data.password, user.password_hash):
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
+        record_auth_attempt(method="password", success=False, tenant_id=tenant_id)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -390,6 +393,8 @@ def login(
 
     # Enregistrer le succes (reset du compteur d'echecs)
     auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=True)
+    record_auth_attempt(method="password", success=True, tenant_id=tenant_id)
+    TENANTS_ACTIVE.inc()  # Incrémenter les tenants actifs
 
     # Vérifier si changement de mot de passe obligatoire
     must_change = getattr(user, 'must_change_password', 0) == 1

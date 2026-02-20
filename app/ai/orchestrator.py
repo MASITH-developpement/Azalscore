@@ -18,6 +18,12 @@ from enum import Enum
 from app.ai.roles import AIRole, get_role_config, validate_role_action
 from app.ai.audit import get_audit_logger, AuditEventType
 from app.ai.guardian import get_guardian, GuardianDecision
+from app.core.metrics import (
+    record_ai_inference,
+    record_ai_tokens,
+    record_guardian_decision,
+    AI_SESSIONS_ACTIVE
+)
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +116,15 @@ class AIOrchestrator:
             AICallResult
         """
         start_time = time.time()
+        AI_SESSIONS_ACTIVE.inc()
 
+        try:
+            return self._execute_call(request, start_time)
+        finally:
+            AI_SESSIONS_ACTIVE.dec()
+
+    def _execute_call(self, request: AICallRequest, start_time: float) -> AICallResult:
+        """Exécution interne de l'appel IA"""
         # 1. Validation Guardian
         guardian_check = self.guardian.validate_request(
             session_id=request.session_id,
@@ -119,6 +133,12 @@ class AIOrchestrator:
             target_module=request.module.value,
             role=request.role,
             input_data=request.input_data
+        )
+
+        # Enregistrer la décision Guardian
+        record_guardian_decision(
+            decision=guardian_check.decision.value,
+            risk_level=getattr(guardian_check, 'risk_level', 'unknown')
         )
 
         if guardian_check.decision == GuardianDecision.BLOCKED:
@@ -241,6 +261,7 @@ class AIOrchestrator:
         system_prompt = self._get_gpt_system_prompt(request.role)
         user_content = self._format_input(request.input_data)
 
+        start_time = time.time()
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -250,6 +271,23 @@ class AIOrchestrator:
             max_tokens=2000,
             temperature=0.3
         )
+        duration = time.time() - start_time
+
+        # Enregistrer les métriques
+        record_ai_inference(
+            model="gpt-4o",
+            operation=request.role.value,
+            duration=duration,
+            success=True
+        )
+
+        # Enregistrer les tokens si disponibles
+        if hasattr(response, 'usage') and response.usage:
+            record_ai_tokens(
+                model="gpt-4o",
+                input_tokens=response.usage.prompt_tokens,
+                output_tokens=response.usage.completion_tokens
+            )
 
         return response.choices[0].message.content
 
@@ -271,12 +309,30 @@ class AIOrchestrator:
         system_prompt = self._get_claude_system_prompt(request.role)
         user_content = self._format_input(request.input_data)
 
+        start_time = time.time()
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=2000,
             system=system_prompt,
             messages=[{"role": "user", "content": user_content}]
         )
+        duration = time.time() - start_time
+
+        # Enregistrer les métriques
+        record_ai_inference(
+            model="claude-sonnet-4",
+            operation=request.role.value,
+            duration=duration,
+            success=True
+        )
+
+        # Enregistrer les tokens si disponibles
+        if hasattr(response, 'usage') and response.usage:
+            record_ai_tokens(
+                model="claude-sonnet-4",
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens
+            )
 
         return response.content[0].text
 

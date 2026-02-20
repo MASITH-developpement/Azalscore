@@ -280,33 +280,24 @@ services:
           memory: ${PROMTAIL_MEMORY_RESERVATION:-32M}
 
   # ============================================================
-  # cAdvisor - Métriques containers (CPU, RAM, I/O)
+  # Docker Stats Exporter - Métriques containers via Docker API
   # ============================================================
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.51.0
-    container_name: azals_cadvisor
+  docker-exporter:
+    image: wywywywy/docker_stats_exporter:latest
+    container_name: azals_docker_exporter
     restart: always
-    privileged: true
-    group_add:
-      - "999"  # GID du groupe docker sur l'hôte
+    environment:
+      - DOCKERSTATS_INTERVAL=15
     volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    command:
-      - '--housekeeping_interval=15s'
-      - '--docker_only=true'
-      - '--disable_metrics=percpu,sched,tcp,udp,disk,diskIO,hugetlb,referenced_memory,resctrl,process'
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - azals_internal
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 128M
         reservations:
-          memory: 64M
+          memory: 32M
 
   # ============================================================
   # Node Exporter - Métriques système
