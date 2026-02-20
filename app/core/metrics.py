@@ -210,6 +210,73 @@ WEBSITE_AVG_SESSION_DURATION = Gauge(
 
 
 # ============================================================================
+# MÉTRIQUES MARKETING - PLATEFORMES EXTERNES
+# ============================================================================
+
+# --- Google Analytics ---
+GA_SESSIONS = Gauge('azals_ga_sessions', 'Google Analytics - Sessions actives')
+GA_USERS = Gauge('azals_ga_users', 'Google Analytics - Utilisateurs uniques')
+GA_PAGEVIEWS = Gauge('azals_ga_pageviews', 'Google Analytics - Pages vues')
+GA_BOUNCE_RATE = Gauge('azals_ga_bounce_rate', 'Google Analytics - Taux de rebond (%)')
+GA_AVG_SESSION_DURATION = Gauge('azals_ga_avg_session_duration', 'Google Analytics - Durée moyenne session (s)')
+GA_CONVERSIONS = Gauge('azals_ga_conversions', 'Google Analytics - Conversions')
+GA_CONVERSION_RATE = Gauge('azals_ga_conversion_rate', 'Google Analytics - Taux de conversion (%)')
+
+# --- Google Ads ---
+GADS_IMPRESSIONS = Gauge('azals_gads_impressions', 'Google Ads - Impressions')
+GADS_CLICKS = Gauge('azals_gads_clicks', 'Google Ads - Clics')
+GADS_COST = Gauge('azals_gads_cost_euros', 'Google Ads - Coût total (€)')
+GADS_CONVERSIONS = Gauge('azals_gads_conversions', 'Google Ads - Conversions')
+GADS_CTR = Gauge('azals_gads_ctr', 'Google Ads - CTR (%)')
+GADS_CPC = Gauge('azals_gads_cpc', 'Google Ads - CPC moyen (€)')
+GADS_ROAS = Gauge('azals_gads_roas', 'Google Ads - ROAS')
+
+# --- Google Search Console ---
+GSC_IMPRESSIONS = Gauge('azals_gsc_impressions', 'Google Search Console - Impressions')
+GSC_CLICKS = Gauge('azals_gsc_clicks', 'Google Search Console - Clics')
+GSC_CTR = Gauge('azals_gsc_ctr', 'Google Search Console - CTR (%)')
+GSC_POSITION = Gauge('azals_gsc_avg_position', 'Google Search Console - Position moyenne')
+
+# --- Meta Business (Facebook/Instagram) ---
+META_REACH = Gauge('azals_meta_reach', 'Meta Business - Portée')
+META_IMPRESSIONS = Gauge('azals_meta_impressions', 'Meta Business - Impressions')
+META_ENGAGEMENT = Gauge('azals_meta_engagement', 'Meta Business - Engagements')
+META_CLICKS = Gauge('azals_meta_clicks', 'Meta Business - Clics')
+META_COST = Gauge('azals_meta_cost_euros', 'Meta Business - Coût pub (€)')
+META_FOLLOWERS_FB = Gauge('azals_meta_followers_facebook', 'Meta - Abonnés Facebook')
+META_FOLLOWERS_IG = Gauge('azals_meta_followers_instagram', 'Meta - Abonnés Instagram')
+META_CTR = Gauge('azals_meta_ctr', 'Meta Business - CTR (%)')
+META_CPM = Gauge('azals_meta_cpm', 'Meta Business - CPM (€)')
+
+# --- Solocal (PagesJaunes) ---
+SOLOCAL_IMPRESSIONS = Gauge('azals_solocal_impressions', 'Solocal - Impressions fiche')
+SOLOCAL_CLICKS = Gauge('azals_solocal_clicks', 'Solocal - Clics vers site')
+SOLOCAL_CALLS = Gauge('azals_solocal_calls', 'Solocal - Appels téléphoniques')
+SOLOCAL_DIRECTIONS = Gauge('azals_solocal_directions', 'Solocal - Demandes itinéraire')
+SOLOCAL_REVIEWS = Gauge('azals_solocal_reviews', 'Solocal - Nombre avis')
+SOLOCAL_RATING = Gauge('azals_solocal_rating', 'Solocal - Note moyenne')
+
+# --- LinkedIn ---
+LINKEDIN_FOLLOWERS = Gauge('azals_linkedin_followers', 'LinkedIn - Abonnés page')
+LINKEDIN_IMPRESSIONS = Gauge('azals_linkedin_impressions', 'LinkedIn - Impressions')
+LINKEDIN_CLICKS = Gauge('azals_linkedin_clicks', 'LinkedIn - Clics')
+LINKEDIN_ENGAGEMENT_RATE = Gauge('azals_linkedin_engagement_rate', 'LinkedIn - Taux engagement (%)')
+LINKEDIN_VISITORS = Gauge('azals_linkedin_visitors', 'LinkedIn - Visiteurs page')
+
+# --- Google My Business ---
+GMB_VIEWS = Gauge('azals_gmb_views', 'Google My Business - Vues fiche')
+GMB_SEARCHES = Gauge('azals_gmb_searches', 'Google My Business - Recherches')
+GMB_ACTIONS = Gauge('azals_gmb_actions', 'Google My Business - Actions (appels, site, itinéraire)')
+GMB_REVIEWS = Gauge('azals_gmb_reviews', 'Google My Business - Nombre avis')
+GMB_RATING = Gauge('azals_gmb_rating', 'Google My Business - Note moyenne')
+
+# --- Récapitulatif Marketing ---
+MARKETING_TOTAL_SPEND = Gauge('azals_marketing_total_spend_euros', 'Budget marketing total dépensé (€)')
+MARKETING_TOTAL_CONVERSIONS = Gauge('azals_marketing_total_conversions', 'Conversions totales toutes plateformes')
+MARKETING_OVERALL_ROI = Gauge('azals_marketing_roi', 'ROI marketing global (%)')
+
+
+# ============================================================================
 # MIDDLEWARE DE MÉTRIQUES
 # ============================================================================
 
@@ -475,6 +542,153 @@ async def test_website_metrics():
             "sessions": "10-30",
             "forms": len(form_types),
             "blog_posts": len(posts)
+        }
+    }
+
+
+@router.post("/metrics/update-marketing")
+async def update_marketing_metrics():
+    """
+    Met à jour les métriques des plateformes marketing.
+    Simule des données réalistes pour Google, Meta, Solocal, LinkedIn, etc.
+
+    En production, ces données proviendraient des APIs respectives.
+    """
+    import random
+
+    # === Google Analytics ===
+    ga_sessions = random.randint(150, 400)
+    ga_users = int(ga_sessions * random.uniform(0.7, 0.9))
+    ga_pageviews = int(ga_sessions * random.uniform(2.5, 4.5))
+    ga_bounce = random.uniform(35, 55)
+    ga_duration = random.uniform(120, 240)
+    ga_conversions = random.randint(5, 25)
+
+    GA_SESSIONS.set(ga_sessions)
+    GA_USERS.set(ga_users)
+    GA_PAGEVIEWS.set(ga_pageviews)
+    GA_BOUNCE_RATE.set(ga_bounce)
+    GA_AVG_SESSION_DURATION.set(ga_duration)
+    GA_CONVERSIONS.set(ga_conversions)
+    GA_CONVERSION_RATE.set((ga_conversions / ga_sessions) * 100 if ga_sessions > 0 else 0)
+
+    # === Google Ads ===
+    gads_impressions = random.randint(5000, 15000)
+    gads_clicks = int(gads_impressions * random.uniform(0.02, 0.05))
+    gads_cost = random.uniform(50, 200)
+    gads_conversions = random.randint(3, 15)
+
+    GADS_IMPRESSIONS.set(gads_impressions)
+    GADS_CLICKS.set(gads_clicks)
+    GADS_COST.set(gads_cost)
+    GADS_CONVERSIONS.set(gads_conversions)
+    GADS_CTR.set((gads_clicks / gads_impressions) * 100 if gads_impressions > 0 else 0)
+    GADS_CPC.set(gads_cost / gads_clicks if gads_clicks > 0 else 0)
+    GADS_ROAS.set(random.uniform(2.5, 6.0))
+
+    # === Google Search Console ===
+    gsc_impressions = random.randint(8000, 25000)
+    gsc_clicks = int(gsc_impressions * random.uniform(0.03, 0.08))
+
+    GSC_IMPRESSIONS.set(gsc_impressions)
+    GSC_CLICKS.set(gsc_clicks)
+    GSC_CTR.set((gsc_clicks / gsc_impressions) * 100 if gsc_impressions > 0 else 0)
+    GSC_POSITION.set(random.uniform(8, 25))
+
+    # === Meta Business (Facebook/Instagram) ===
+    meta_reach = random.randint(3000, 12000)
+    meta_impressions = int(meta_reach * random.uniform(1.5, 2.5))
+    meta_engagement = random.randint(100, 500)
+    meta_clicks = random.randint(50, 200)
+    meta_cost = random.uniform(30, 150)
+
+    META_REACH.set(meta_reach)
+    META_IMPRESSIONS.set(meta_impressions)
+    META_ENGAGEMENT.set(meta_engagement)
+    META_CLICKS.set(meta_clicks)
+    META_COST.set(meta_cost)
+    META_FOLLOWERS_FB.set(random.randint(500, 2000))
+    META_FOLLOWERS_IG.set(random.randint(300, 1500))
+    META_CTR.set((meta_clicks / meta_impressions) * 100 if meta_impressions > 0 else 0)
+    META_CPM.set((meta_cost / meta_impressions) * 1000 if meta_impressions > 0 else 0)
+
+    # === Solocal (PagesJaunes) ===
+    solocal_impressions = random.randint(200, 800)
+    solocal_clicks = int(solocal_impressions * random.uniform(0.05, 0.15))
+
+    SOLOCAL_IMPRESSIONS.set(solocal_impressions)
+    SOLOCAL_CLICKS.set(solocal_clicks)
+    SOLOCAL_CALLS.set(random.randint(5, 30))
+    SOLOCAL_DIRECTIONS.set(random.randint(10, 50))
+    SOLOCAL_REVIEWS.set(random.randint(15, 80))
+    SOLOCAL_RATING.set(random.uniform(4.0, 4.8))
+
+    # === LinkedIn ===
+    linkedin_impressions = random.randint(1000, 5000)
+    linkedin_clicks = int(linkedin_impressions * random.uniform(0.01, 0.04))
+
+    LINKEDIN_FOLLOWERS.set(random.randint(200, 1000))
+    LINKEDIN_IMPRESSIONS.set(linkedin_impressions)
+    LINKEDIN_CLICKS.set(linkedin_clicks)
+    LINKEDIN_ENGAGEMENT_RATE.set(random.uniform(1.5, 5.0))
+    LINKEDIN_VISITORS.set(random.randint(50, 200))
+
+    # === Google My Business ===
+    gmb_views = random.randint(300, 1200)
+
+    GMB_VIEWS.set(gmb_views)
+    GMB_SEARCHES.set(int(gmb_views * random.uniform(0.6, 0.9)))
+    GMB_ACTIONS.set(random.randint(30, 150))
+    GMB_REVIEWS.set(random.randint(20, 100))
+    GMB_RATING.set(random.uniform(4.2, 4.9))
+
+    # === Récapitulatif ===
+    total_spend = gads_cost + meta_cost
+    total_conversions = ga_conversions + gads_conversions
+
+    MARKETING_TOTAL_SPEND.set(total_spend)
+    MARKETING_TOTAL_CONVERSIONS.set(total_conversions)
+    MARKETING_OVERALL_ROI.set(random.uniform(150, 400))
+
+    logger.info("[METRICS] Métriques marketing mises à jour")
+
+    return {
+        "status": "ok",
+        "message": "Métriques marketing mises à jour",
+        "data": {
+            "google_analytics": {
+                "sessions": ga_sessions,
+                "users": ga_users,
+                "conversions": ga_conversions
+            },
+            "google_ads": {
+                "impressions": gads_impressions,
+                "clicks": gads_clicks,
+                "cost_eur": round(gads_cost, 2)
+            },
+            "google_search_console": {
+                "impressions": gsc_impressions,
+                "clicks": gsc_clicks
+            },
+            "meta_business": {
+                "reach": meta_reach,
+                "engagement": meta_engagement,
+                "cost_eur": round(meta_cost, 2)
+            },
+            "solocal": {
+                "impressions": solocal_impressions,
+                "calls": SOLOCAL_CALLS._value._value
+            },
+            "linkedin": {
+                "followers": LINKEDIN_FOLLOWERS._value._value,
+                "impressions": linkedin_impressions
+            },
+            "google_my_business": {
+                "views": gmb_views,
+                "rating": round(GMB_RATING._value._value, 1)
+            },
+            "total_marketing_spend_eur": round(total_spend, 2),
+            "total_conversions": total_conversions
         }
     }
 

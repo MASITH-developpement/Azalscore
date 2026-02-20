@@ -18,7 +18,7 @@
         "y": 0
       },
       "id": 100,
-      "title": "🔴 SIGNAUX CRITIQUES",
+      "title": "\ud83d\udd34 SIGNAUX CRITIQUES",
       "type": "row"
     },
     {
@@ -56,12 +56,12 @@
           ]
         }
       },
-      "title": "👥 Utilisateurs",
+      "title": "\ud83d\udc65 Utilisateurs",
       "type": "stat",
       "targets": [
         {
           "expr": "azals_users_connected",
-          "legendFormat": "Connectés",
+          "legendFormat": "Connect\u00e9s",
           "instant": true
         }
       ]
@@ -402,7 +402,7 @@
         "y": 5
       },
       "id": 200,
-      "title": "📊 API — Requêtes & Latence",
+      "title": "\ud83d\udcca API \u2014 Requ\u00eates & Latence",
       "type": "row"
     },
     {
@@ -449,7 +449,7 @@
           "legendFormat": "5xx"
         }
       ],
-      "title": "Requêtes par seconde (RPS)",
+      "title": "Requ\u00eates par seconde (RPS)",
       "type": "timeseries"
     },
     {
@@ -522,7 +522,7 @@
           "legendFormat": "{{endpoint}}"
         }
       ],
-      "title": "Top endpoints — Latence P95",
+      "title": "Top endpoints \u2014 Latence P95",
       "type": "timeseries"
     },
     {
@@ -548,7 +548,7 @@
           "legendFormat": "{{endpoint}}"
         }
       ],
-      "title": "Requêtes en cours",
+      "title": "Requ\u00eates en cours",
       "type": "timeseries"
     },
     {
@@ -560,7 +560,7 @@
         "y": 22
       },
       "id": 300,
-      "title": "🐍 Python Runtime — Mémoire, CPU, GC",
+      "title": "\ud83d\udc0d Python Runtime \u2014 M\u00e9moire, CPU, GC",
       "type": "row"
     },
     {
@@ -587,14 +587,14 @@
       "targets": [
         {
           "expr": "process_resident_memory_bytes{job=\"azals-api\"}",
-          "legendFormat": "RSS (réel)"
+          "legendFormat": "RSS (r\u00e9el)"
         },
         {
           "expr": "process_virtual_memory_bytes{job=\"azals-api\"}",
           "legendFormat": "Virtual"
         }
       ],
-      "title": "Mémoire Process (RSS vs Virtual)",
+      "title": "M\u00e9moire Process (RSS vs Virtual)",
       "type": "timeseries"
     },
     {
@@ -620,7 +620,7 @@
       "targets": [
         {
           "expr": "rate(process_cpu_seconds_total{job=\"azals-api\"}[5m])",
-          "legendFormat": "CPU cores utilisés"
+          "legendFormat": "CPU cores utilis\u00e9s"
         }
       ],
       "title": "CPU Process (rate)",
@@ -706,10 +706,10 @@
         },
         {
           "expr": "predict_linear(process_resident_memory_bytes{job=\"azals-api\"}[1h], 3600)",
-          "legendFormat": "Prédiction +1h"
+          "legendFormat": "Pr\u00e9diction +1h"
         }
       ],
-      "title": "⚠️ Dérive mémoire (RSS trend 1h)",
+      "title": "\u26a0\ufe0f D\u00e9rive m\u00e9moire (RSS trend 1h)",
       "type": "timeseries"
     },
     {
@@ -751,7 +751,7 @@
         "y": 39
       },
       "id": 400,
-      "title": "🤖 Intelligence Artificielle",
+      "title": "\ud83e\udd16 Intelligence Artificielle",
       "type": "row"
     },
     {
@@ -785,7 +785,7 @@
           "legendFormat": "{{model}} P95"
         }
       ],
-      "title": "Temps inférence IA (P50/P95)",
+      "title": "Temps inf\u00e9rence IA (P50/P95)",
       "type": "timeseries"
     },
     {
@@ -815,7 +815,7 @@
           "legendFormat": "{{model}} errors"
         }
       ],
-      "title": "Requêtes IA / sec",
+      "title": "Requ\u00eates IA / sec",
       "type": "timeseries"
     },
     {
@@ -841,7 +841,7 @@
           "legendFormat": "{{decision}}"
         }
       ],
-      "title": "Guardian — Décisions sécurité",
+      "title": "Guardian \u2014 D\u00e9cisions s\u00e9curit\u00e9",
       "type": "timeseries"
     },
     {
@@ -911,7 +911,7 @@
           "legendFormat": "Tokens"
         }
       ],
-      "title": "Tokens consommés (5m)",
+      "title": "Tokens consomm\u00e9s (5m)",
       "type": "stat"
     },
     {
@@ -988,7 +988,7 @@
           "legendFormat": "GPT-4 output/min"
         }
       ],
-      "title": "📊 Consommation Tokens par IA",
+      "title": "\ud83d\udcca Consommation Tokens par IA",
       "type": "timeseries"
     },
     {
@@ -1054,7 +1054,7 @@
           "legendFormat": "GPT-4"
         }
       ],
-      "title": "📈 Tokens cumulés par modèle",
+      "title": "\ud83d\udcc8 Tokens cumul\u00e9s par mod\u00e8le",
       "type": "timeseries"
     },
     {
@@ -1088,7 +1088,7 @@
       "targets": [
         {
           "expr": "(sum(increase(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"input\"}[1h])) * 0.000003) + (sum(increase(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"output\"}[1h])) * 0.000015)",
-          "legendFormat": "Coût"
+          "legendFormat": "Co\u00fbt"
         }
       ],
       "title": "Claude (1h)",
@@ -1099,7 +1099,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Projection mensuelle basée sur le taux actuel. $3/M input, $15/M output",
+      "description": "Projection mensuelle bas\u00e9e sur le taux actuel. $3/M input, $15/M output",
       "fieldConfig": {
         "defaults": {
           "decimals": 2,
@@ -1146,10 +1146,10 @@
       "targets": [
         {
           "expr": "((sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"input\"}[1h])) * 0.000003) + (sum(rate(azals_ai_tokens_total{model=\"claude-sonnet-4\", direction=\"output\"}[1h])) * 0.000015)) * 3600 * 24 * 30",
-          "legendFormat": "Coût/mois"
+          "legendFormat": "Co\u00fbt/mois"
         }
       ],
-      "title": "💰 Claude /mois",
+      "title": "\ud83d\udcb0 Claude /mois",
       "type": "stat"
     },
     {
@@ -1183,7 +1183,7 @@
       "targets": [
         {
           "expr": "(sum(increase(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"input\"}[1h])) * 0.0000025) + (sum(increase(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"output\"}[1h])) * 0.00001)",
-          "legendFormat": "Coût"
+          "legendFormat": "Co\u00fbt"
         }
       ],
       "title": "GPT-4 (1h)",
@@ -1194,7 +1194,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Projection mensuelle basée sur le taux actuel. $2.5/M input, $10/M output",
+      "description": "Projection mensuelle bas\u00e9e sur le taux actuel. $2.5/M input, $10/M output",
       "fieldConfig": {
         "defaults": {
           "decimals": 2,
@@ -1241,10 +1241,10 @@
       "targets": [
         {
           "expr": "((sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"input\"}[1h])) * 0.0000025) + (sum(rate(azals_ai_tokens_total{model=\"gpt-4o\", direction=\"output\"}[1h])) * 0.00001)) * 3600 * 24 * 30",
-          "legendFormat": "Coût/mois"
+          "legendFormat": "Co\u00fbt/mois"
         }
       ],
-      "title": "💰 GPT-4 /mois",
+      "title": "\ud83d\udcb0 GPT-4 /mois",
       "type": "stat"
     },
     {
@@ -1252,7 +1252,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Coût mensuel total projeté (Claude + GPT-4) basé sur le taux de consommation actuel",
+      "description": "Co\u00fbt mensuel total projet\u00e9 (Claude + GPT-4) bas\u00e9 sur le taux de consommation actuel",
       "fieldConfig": {
         "defaults": {
           "decimals": 2,
@@ -1302,7 +1302,7 @@
           "legendFormat": "Total/mois"
         }
       ],
-      "title": "💵 TOTAL IA /mois (projection)",
+      "title": "\ud83d\udcb5 TOTAL IA /mois (projection)",
       "type": "stat"
     },
     {
@@ -1314,7 +1314,7 @@
         "y": 64
       },
       "id": 500,
-      "title": "🗄️ Base de données & Cache",
+      "title": "\ud83d\uddc4\ufe0f Base de donn\u00e9es & Cache",
       "type": "row"
     },
     {
@@ -1352,7 +1352,7 @@
           "legendFormat": "Pool applicatif"
         }
       ],
-      "title": "PostgreSQL — Connexions",
+      "title": "PostgreSQL \u2014 Connexions",
       "type": "timeseries"
     },
     {
@@ -1381,7 +1381,7 @@
           "legendFormat": "{{operation}}"
         }
       ],
-      "title": "Latence requêtes DB (P95)",
+      "title": "Latence requ\u00eates DB (P95)",
       "type": "timeseries"
     },
     {
@@ -1408,14 +1408,14 @@
       "targets": [
         {
           "expr": "redis_memory_used_bytes{job=\"redis\"}",
-          "legendFormat": "Utilisée"
+          "legendFormat": "Utilis\u00e9e"
         },
         {
           "expr": "redis_memory_max_bytes{job=\"redis\"}",
           "legendFormat": "Max"
         }
       ],
-      "title": "Redis — Mémoire",
+      "title": "Redis \u2014 M\u00e9moire",
       "type": "timeseries"
     },
     {
@@ -1475,10 +1475,10 @@
         },
         {
           "expr": "redis_connected_clients{job=\"redis\"}",
-          "legendFormat": "Clients connectés"
+          "legendFormat": "Clients connect\u00e9s"
         }
       ],
-      "title": "Redis — Opérations/sec",
+      "title": "Redis \u2014 Op\u00e9rations/sec",
       "type": "timeseries"
     },
     {
@@ -1490,7 +1490,7 @@
         "y": 69
       },
       "id": 600,
-      "title": "🐳 Containers (Docker Stats)",
+      "title": "\ud83d\udc33 Containers (Docker Stats)",
       "type": "row"
     },
     {
@@ -1583,7 +1583,7 @@
           "legendFormat": "{{name}} RX"
         }
       ],
-      "title": "Réseau par container (TX/RX)",
+      "title": "R\u00e9seau par container (TX/RX)",
       "type": "timeseries"
     },
     {
@@ -1628,7 +1628,7 @@
         "y": 86
       },
       "id": 700,
-      "title": "🔐 Sécurité & Auth",
+      "title": "\ud83d\udd10 S\u00e9curit\u00e9 & Auth",
       "type": "row"
     },
     {
@@ -1654,14 +1654,14 @@
       "targets": [
         {
           "expr": "sum(rate(azals_auth_attempts_total{status=\"success\"}[5m]))",
-          "legendFormat": "Succès/s"
+          "legendFormat": "Succ\u00e8s/s"
         },
         {
           "expr": "sum(rate(azals_auth_attempts_total{status=\"failure\"}[5m]))",
-          "legendFormat": "Échecs/s"
+          "legendFormat": "\u00c9checs/s"
         }
       ],
-      "title": "Tentatives auth (succès vs échecs)",
+      "title": "Tentatives auth (succ\u00e8s vs \u00e9checs)",
       "type": "timeseries"
     },
     {
@@ -1702,7 +1702,7 @@
         "y": 95
       },
       "id": 800,
-      "title": "🏢 Business — Tenants & Décisions",
+      "title": "\ud83c\udfe2 Business \u2014 Tenants & D\u00e9cisions",
       "type": "row"
     },
     {
@@ -1769,10 +1769,10 @@
       "targets": [
         {
           "expr": "sum(increase(azals_decisions_total[5m]))",
-          "legendFormat": "Décisions"
+          "legendFormat": "D\u00e9cisions"
         }
       ],
-      "title": "Décisions (5m)",
+      "title": "D\u00e9cisions (5m)",
       "type": "stat"
     },
     {
@@ -1798,7 +1798,7 @@
           "legendFormat": "{{component}}"
         }
       ],
-      "title": "Santé composants",
+      "title": "Sant\u00e9 composants",
       "type": "timeseries"
     },
     {
@@ -1810,7 +1810,7 @@
         "y": 105
       },
       "id": 900,
-      "title": "🌐 Site Web — azalscore.com",
+      "title": "\ud83c\udf10 Site Web \u2014 azalscore.com",
       "type": "row"
     },
     {
@@ -1960,12 +1960,12 @@
           ]
         }
       },
-      "title": "Durée session moy.",
+      "title": "Dur\u00e9e session moy.",
       "type": "stat",
       "targets": [
         {
           "expr": "azals_website_avg_session_duration_seconds",
-          "legendFormat": "Durée"
+          "legendFormat": "Dur\u00e9e"
         }
       ]
     },
@@ -2316,7 +2316,7 @@
           "mode": "multi"
         }
       },
-      "title": "Blog — Vues par article",
+      "title": "Blog \u2014 Vues par article",
       "type": "timeseries",
       "targets": [
         {
@@ -2359,6 +2359,1322 @@
           "legendFormat": "{{medium}}"
         }
       ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 134
+      },
+      "id": 1000,
+      "title": "\ud83d\udcc8 Marketing Digital",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyEUR",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 135
+      },
+      "id": 1001,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_marketing_total_spend_euros",
+          "legendFormat": "Budget",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcb0 Budget Marketing",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 135
+      },
+      "id": 1002,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_marketing_total_conversions",
+          "legendFormat": "Conversions",
+          "instant": true
+        }
+      ],
+      "title": "\ud83c\udfaf Conversions Totales",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 135
+      },
+      "id": 1003,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_marketing_roi",
+          "legendFormat": "ROI",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcca ROI Marketing",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 135
+      },
+      "id": 1004,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_ga_sessions",
+          "legendFormat": "Sessions",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcca GA Sessions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 135
+      },
+      "id": 1005,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_ga_users",
+          "legendFormat": "Users",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udc65 GA Users",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 135
+      },
+      "id": 1006,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_ga_conversion_rate",
+          "legendFormat": "Conv %",
+          "instant": true
+        }
+      ],
+      "title": "\ud83c\udfaf GA Conv. Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 135
+      },
+      "id": 1007,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_ga_conversions",
+          "legendFormat": "Conv",
+          "instant": true
+        }
+      ],
+      "title": "\u2705 GA Conversions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 0,
+        "y": 139
+      },
+      "id": 1010,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gads_impressions",
+          "legendFormat": "Impr",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udc41\ufe0f Ads Impressions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 139
+      },
+      "id": 1011,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gads_clicks",
+          "legendFormat": "Clicks",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\uddb1\ufe0f Ads Clics",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyEUR",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 6,
+        "y": 139
+      },
+      "id": 1012,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gads_cost_euros",
+          "legendFormat": "Cost",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcb6 Ads Co\u00fbt",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 9,
+        "y": 139
+      },
+      "id": 1013,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gads_roas",
+          "legendFormat": "ROAS",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcc8 Ads ROAS",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 139
+      },
+      "id": 1014,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gsc_impressions",
+          "legendFormat": "Impr",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udd0d GSC Impressions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 139
+      },
+      "id": 1015,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gsc_clicks",
+          "legendFormat": "Clicks",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\uddb1\ufe0f GSC Clics",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 139
+      },
+      "id": 1016,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gsc_ctr",
+          "legendFormat": "CTR",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcca GSC CTR",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 15
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 139
+      },
+      "id": 1017,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gsc_avg_position",
+          "legendFormat": "Pos",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udccd GSC Position",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3b5998",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 0,
+        "y": 143
+      },
+      "id": 1020,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_meta_reach",
+          "legendFormat": "Reach",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udce3 Meta Port\u00e9e",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3b5998",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 143
+      },
+      "id": 1021,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_meta_engagement",
+          "legendFormat": "Eng",
+          "instant": true
+        }
+      ],
+      "title": "\u2764\ufe0f Meta Engagement",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E1306C",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 6,
+        "y": 143
+      },
+      "id": 1022,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_meta_followers_facebook",
+          "legendFormat": "FB",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udc65 Facebook Abonn\u00e9s",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E1306C",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 9,
+        "y": 143
+      },
+      "id": 1023,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_meta_followers_instagram",
+          "legendFormat": "IG",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcf8 Instagram Abonn\u00e9s",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#0077B5",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 143
+      },
+      "id": 1024,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_linkedin_followers",
+          "legendFormat": "Followers",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcbc LinkedIn Abonn\u00e9s",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#0077B5",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 143
+      },
+      "id": 1025,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_linkedin_impressions",
+          "legendFormat": "Impr",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udc41\ufe0f LinkedIn Impr.",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#0077B5",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 143
+      },
+      "id": 1026,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_linkedin_engagement_rate",
+          "legendFormat": "Eng%",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcca LinkedIn Eng.",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FFD700",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 147
+      },
+      "id": 1030,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_solocal_impressions",
+          "legendFormat": "Impr",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcc4 Solocal Vues",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FFD700",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 147
+      },
+      "id": 1031,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_solocal_calls",
+          "legendFormat": "Appels",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udcde Solocal Appels",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3.5
+              },
+              {
+                "color": "green",
+                "value": 4.0
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 147
+      },
+      "id": 1032,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_solocal_rating",
+          "legendFormat": "Note",
+          "instant": true
+        }
+      ],
+      "title": "\u2b50 Solocal Note",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#4285F4",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 147
+      },
+      "id": 1033,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gmb_views",
+          "legendFormat": "Vues",
+          "instant": true
+        }
+      ],
+      "title": "\ud83d\udccd GMB Vues",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#4285F4",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 147
+      },
+      "id": 1034,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gmb_actions",
+          "legendFormat": "Actions",
+          "instant": true
+        }
+      ],
+      "title": "\ud83c\udfaf GMB Actions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3.5
+              },
+              {
+                "color": "green",
+                "value": 4.0
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 147
+      },
+      "id": 1035,
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "azals_gmb_rating",
+          "legendFormat": "Note",
+          "instant": true
+        }
+      ],
+      "title": "\u2b50 GMB Note",
+      "type": "stat"
     }
   ],
   "refresh": "15s",
@@ -2424,7 +3740,7 @@
   },
   "timepicker": {},
   "timezone": "Europe/Paris",
-  "title": "AZALSCORE — Production",
+  "title": "AZALSCORE \u2014 Production",
   "uid": "azalscore-production",
   "version": 9
 }
