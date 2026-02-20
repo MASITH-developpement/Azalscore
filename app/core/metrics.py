@@ -154,6 +154,55 @@ AI_CACHE_RATIO = Gauge(
     ['model']
 )
 
+# ============================================================================
+# MÉTRIQUES SITE WEB (azalscore.com)
+# ============================================================================
+
+WEBSITE_PAGE_VIEWS = Counter(
+    'azals_website_page_views_total',
+    'Total page views on website',
+    ['page', 'device_type']
+)
+
+WEBSITE_UNIQUE_VISITORS = Gauge(
+    'azals_website_unique_visitors',
+    'Unique visitors (24h rolling)'
+)
+
+WEBSITE_SESSIONS = Counter(
+    'azals_website_sessions_total',
+    'Total website sessions',
+    ['source', 'medium']
+)
+
+WEBSITE_FORM_SUBMISSIONS = Counter(
+    'azals_website_form_submissions_total',
+    'Form submissions on website',
+    ['form_type', 'status']
+)
+
+WEBSITE_NEWSLETTER_SIGNUPS = Counter(
+    'azals_website_newsletter_signups_total',
+    'Newsletter signup events',
+    ['status']
+)
+
+WEBSITE_BLOG_VIEWS = Counter(
+    'azals_website_blog_views_total',
+    'Blog post views',
+    ['post_slug']
+)
+
+WEBSITE_BOUNCE_RATE = Gauge(
+    'azals_website_bounce_rate',
+    'Website bounce rate (0-100)'
+)
+
+WEBSITE_AVG_SESSION_DURATION = Gauge(
+    'azals_website_avg_session_duration_seconds',
+    'Average session duration in seconds'
+)
+
 
 # ============================================================================
 # MIDDLEWARE DE MÉTRIQUES
@@ -323,6 +372,61 @@ async def test_ai_metrics():
             "claude_calls": 3,
             "gpt_calls": 2,
             "decisions": 3
+        }
+    }
+
+
+@router.post("/metrics/test-website")
+async def test_website_metrics():
+    """
+    Génère des métriques site web de test pour valider le dashboard.
+    À utiliser uniquement en développement/test.
+    """
+    import random
+
+    # Simuler des vues de pages
+    pages = ["home", "features", "pricing", "contact", "about", "demo"]
+    devices = ["desktop", "mobile", "tablet"]
+    for page in pages:
+        for _ in range(random.randint(5, 20)):
+            WEBSITE_PAGE_VIEWS.labels(page=page, device_type=random.choice(devices)).inc()
+
+    # Simuler des sessions
+    sources = ["google", "direct", "linkedin", "twitter", "email"]
+    mediums = ["organic", "cpc", "social", "referral", "email"]
+    for _ in range(random.randint(10, 30)):
+        WEBSITE_SESSIONS.labels(
+            source=random.choice(sources),
+            medium=random.choice(mediums)
+        ).inc()
+
+    # Simuler des soumissions de formulaires
+    form_types = ["contact", "demo", "support", "partnership"]
+    for form_type in form_types:
+        WEBSITE_FORM_SUBMISSIONS.labels(form_type=form_type, status="success").inc(random.randint(1, 5))
+
+    # Simuler des inscriptions newsletter
+    WEBSITE_NEWSLETTER_SIGNUPS.labels(status="success").inc(random.randint(3, 10))
+    WEBSITE_NEWSLETTER_SIGNUPS.labels(status="error").inc(random.randint(0, 2))
+
+    # Simuler des vues de blog
+    posts = ["lancement-v2", "nouveautes-ia", "guide-erp", "cas-client-xyz"]
+    for post in posts:
+        WEBSITE_BLOG_VIEWS.labels(post_slug=post).inc(random.randint(10, 50))
+
+    # Stats globales
+    WEBSITE_UNIQUE_VISITORS.set(random.randint(500, 2000))
+    WEBSITE_BOUNCE_RATE.set(random.uniform(30.0, 60.0))
+    WEBSITE_AVG_SESSION_DURATION.set(random.uniform(120.0, 300.0))
+
+    return {
+        "status": "ok",
+        "message": "Métriques site web de test générées",
+        "details": {
+            "pages": len(pages),
+            "sessions": "10-30",
+            "forms": len(form_types),
+            "blog_posts": len(posts)
         }
     }
 
@@ -515,3 +619,44 @@ def track_ai_inference(model: str, operation: str):
                 record_ai_inference(model, operation, duration, success)
         return wrapper
     return decorator
+
+
+# ============================================================================
+# HELPERS SITE WEB
+# ============================================================================
+
+def record_page_view(page: str, device_type: str = "desktop"):
+    """Enregistre une vue de page sur le site web."""
+    WEBSITE_PAGE_VIEWS.labels(page=page, device_type=device_type).inc()
+
+
+def record_website_session(source: str = "direct", medium: str = "none"):
+    """Enregistre une nouvelle session sur le site web."""
+    WEBSITE_SESSIONS.labels(source=source, medium=medium).inc()
+
+
+def record_form_submission(form_type: str, success: bool = True):
+    """Enregistre une soumission de formulaire."""
+    WEBSITE_FORM_SUBMISSIONS.labels(
+        form_type=form_type,
+        status="success" if success else "error"
+    ).inc()
+
+
+def record_newsletter_signup(success: bool = True):
+    """Enregistre une inscription newsletter."""
+    WEBSITE_NEWSLETTER_SIGNUPS.labels(
+        status="success" if success else "error"
+    ).inc()
+
+
+def record_blog_view(post_slug: str):
+    """Enregistre une vue d'article de blog."""
+    WEBSITE_BLOG_VIEWS.labels(post_slug=post_slug).inc()
+
+
+def update_website_stats(unique_visitors: int, bounce_rate: float, avg_duration: float):
+    """Met à jour les statistiques globales du site."""
+    WEBSITE_UNIQUE_VISITORS.set(unique_visitors)
+    WEBSITE_BOUNCE_RATE.set(bounce_rate)
+    WEBSITE_AVG_SESSION_DURATION.set(avg_duration)

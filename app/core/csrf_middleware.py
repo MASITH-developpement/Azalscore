@@ -48,6 +48,11 @@ CSRF_EXEMPT_PATHS = {
     "/v1/auth/logout",
     "/v1/auth/refresh",
     "/v1/auth/2fa/verify-login",
+    "/api/v1/auth/login",
+    "/api/v1/auth/register",
+    "/api/v1/auth/logout",
+    "/api/v1/auth/refresh",
+    "/api/v1/auth/2fa/verify-login",
     # Health checks
     "/health",
     "/health/live",
@@ -57,6 +62,7 @@ CSRF_EXEMPT_PATHS = {
     "/api/webhooks/",
     # Metrics endpoints (internal use)
     "/metrics/test-ai",
+    "/metrics/test-website",
     "/metrics/update-tenants",
 }
 

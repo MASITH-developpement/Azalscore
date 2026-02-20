@@ -17,8 +17,9 @@ EXPORTS:
 """
 
 import logging
+import time
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
@@ -59,6 +60,48 @@ logger.info(
         "echo": False
     }
 )
+
+# ============================================================================
+# MÉTRIQUES POOL DE CONNEXIONS
+# ============================================================================
+
+def _get_db_metrics():
+    """Import lazy des métriques pour éviter les imports circulaires."""
+    from app.core.metrics import DB_CONNECTIONS_ACTIVE, DB_QUERY_DURATION
+    return DB_CONNECTIONS_ACTIVE, DB_QUERY_DURATION
+
+
+@event.listens_for(engine, "checkout")
+def on_checkout(dbapi_conn, connection_record, connection_proxy):
+    """Appelé quand une connexion est empruntée du pool."""
+    try:
+        DB_CONNECTIONS_ACTIVE, _ = _get_db_metrics()
+        DB_CONNECTIONS_ACTIVE.inc()
+    except Exception:
+        pass  # Silencieux si les métriques ne sont pas disponibles
+
+
+@event.listens_for(engine, "checkin")
+def on_checkin(dbapi_conn, connection_record):
+    """Appelé quand une connexion est retournée au pool."""
+    try:
+        DB_CONNECTIONS_ACTIVE, _ = _get_db_metrics()
+        DB_CONNECTIONS_ACTIVE.dec()
+    except Exception:
+        pass
+
+
+def get_pool_status() -> dict:
+    """Retourne les statistiques du pool de connexions."""
+    pool = engine.pool
+    return {
+        "size": pool.size(),
+        "checkedin": pool.checkedin(),
+        "checkedout": pool.checkedout(),
+        "overflow": pool.overflow(),
+        "invalidated": pool.invalidated()
+    }
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

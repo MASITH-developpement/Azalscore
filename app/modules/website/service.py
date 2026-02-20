@@ -12,6 +12,14 @@ from typing import Any
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.metrics import (
+    record_page_view,
+    record_blog_view,
+    record_form_submission,
+    record_newsletter_signup,
+    update_website_stats,
+)
+
 from .models import (
     BlogPost,
     ContactSubmission,
@@ -187,13 +195,17 @@ class WebsiteService:
         self.db.commit()
         return True
 
-    def increment_page_views(self, page_id: int) -> None:
+    def increment_page_views(self, page_id: int, device_type: str = "desktop") -> None:
         """Incrémenter le compteur de vues."""
-        self.db.query(SitePage).filter(
+        page = self.db.query(SitePage).filter(
             SitePage.id == page_id,
             SitePage.tenant_id == self.tenant_id
-        ).update({"view_count": SitePage.view_count + 1})
-        self.db.commit()
+        ).first()
+        if page:
+            page.view_count = (page.view_count or 0) + 1
+            self.db.commit()
+            # Métriques Prometheus
+            record_page_view(page=page.slug or f"page-{page_id}", device_type=device_type)
 
     def get_menu_pages(self, language: str = "fr") -> list[SitePage]:
         """Récupérer les pages pour le menu."""
@@ -362,11 +374,15 @@ class WebsiteService:
 
     def increment_post_views(self, post_id: int) -> None:
         """Incrémenter le compteur de vues."""
-        self.db.query(BlogPost).filter(
+        post = self.db.query(BlogPost).filter(
             BlogPost.id == post_id,
             BlogPost.tenant_id == self.tenant_id
-        ).update({"view_count": BlogPost.view_count + 1})
-        self.db.commit()
+        ).first()
+        if post:
+            post.view_count = (post.view_count or 0) + 1
+            self.db.commit()
+            # Métriques Prometheus
+            record_blog_view(post_slug=post.slug or f"post-{post_id}")
 
     def get_blog_categories(self) -> list[dict[str, Any]]:
         """Récupérer les catégories avec compteurs."""
@@ -532,6 +548,9 @@ class WebsiteService:
         # Auto-inscription newsletter si consentement
         if data.consent_newsletter:
             self._auto_subscribe_newsletter(data.email, data.first_name, data.last_name)
+
+        # Métriques Prometheus
+        record_form_submission(form_type=data.form_category, success=True)
 
         return submission
 
@@ -707,6 +726,10 @@ class WebsiteService:
         self.db.add(subscriber)
         self.db.commit()
         self.db.refresh(subscriber)
+
+        # Métriques Prometheus
+        record_newsletter_signup(success=True)
+
         return subscriber
 
     def verify_newsletter(self, token: str) -> NewsletterSubscriber | None:
