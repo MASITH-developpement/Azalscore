@@ -90,7 +90,8 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percent",
+          "noValue": "0%"
         }
       },
       "gridPos": {
@@ -111,8 +112,9 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(azals_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(azals_http_requests_total[5m])) * 100",
-          "legendFormat": "5xx %"
+          "expr": "sum(rate(azals_http_requests_total{status_code=~\"5..\"}[15m])) / sum(rate(azals_http_requests_total[15m])) * 100 or vector(0)",
+          "legendFormat": "5xx %",
+          "instant": true
         }
       ],
       "title": "Taux erreurs 5xx",
