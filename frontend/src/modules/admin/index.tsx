@@ -41,6 +41,7 @@ import {
   UserInfoTab, UserPermissionsTab, UserActivityTab,
   UserHistoryTab, UserIATab, SequencesView, EnrichmentProvidersView
 } from './components';
+import SocialNetworksModule from '@modules/social-networks';
 import {
   USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
   hasTwoFactorEnabled, mustChangePassword
@@ -2360,7 +2361,7 @@ const BackupsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'sequences' | 'enrichment' | 'audit' | 'backups';
+type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'sequences' | 'enrichment' | 'social-networks' | 'audit' | 'backups';
 
 const AdminDashboardView: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -2374,6 +2375,7 @@ const AdminDashboardView: React.FC = () => {
     { id: 'tenants', label: 'Tenants' },
     { id: 'sequences', label: 'Numerotation' },
     { id: 'enrichment', label: 'Enrichissement' },
+    { id: 'social-networks', label: 'Reseaux Sociaux' },
     { id: 'audit', label: 'Audit' },
     { id: 'backups', label: 'Sauvegardes' }
   ];
@@ -2392,6 +2394,8 @@ const AdminDashboardView: React.FC = () => {
         return <SequencesView />;
       case 'enrichment':
         return <EnrichmentProvidersView />;
+      case 'social-networks':
+        return <SocialNetworksModule />;
       case 'audit':
         return <AuditView />;
       case 'backups':
