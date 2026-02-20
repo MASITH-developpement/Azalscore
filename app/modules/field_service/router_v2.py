@@ -56,6 +56,12 @@ from .schemas import (
     ZoneUpdate,
 )
 from .service import FieldServiceService
+from .route_optimization import (
+    RouteOptimizationService,
+    OptimizationAlgorithm,
+    OptimizedRoute,
+    VRPSolution,
+)
 
 router = APIRouter(prefix="/v2/field-service", tags=["Field Service v2 - CORE SaaS"])
 
@@ -745,3 +751,219 @@ async def get_dashboard(
 ):
     """Dashboard Field Service complet."""
     return service.get_dashboard(days)
+
+
+# ============================================================================
+# ROUTE OPTIMIZATION (GAP-002)
+# ============================================================================
+
+def get_optimization_service(
+    db: Session = Depends(get_db),
+    ctx: SaaSContext = Depends(get_saas_context)
+) -> RouteOptimizationService:
+    """Dependency pour le service d'optimisation."""
+    return RouteOptimizationService(db, ctx.tenant_id)
+
+
+@router.get("/routes/{technician_id}/optimize/preview")
+async def preview_route_optimization(
+    technician_id: str,
+    route_date: date = Query(..., description="Date de la tournée"),
+    depot_lat: float | None = Query(None, description="Latitude du dépôt"),
+    depot_lng: float | None = Query(None, description="Longitude du dépôt"),
+    opt_service: RouteOptimizationService = Depends(get_optimization_service)
+):
+    """
+    Prévisualisation de l'optimisation d'une tournée.
+
+    Retourne une comparaison entre l'état actuel et l'état optimisé,
+    avec les économies potentielles en distance et en temps.
+    """
+    import uuid
+    try:
+        tech_uuid = uuid.UUID(technician_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID technicien invalide")
+
+    return opt_service.get_optimization_preview(tech_uuid, route_date)
+
+
+@router.post("/routes/{technician_id}/optimize")
+async def optimize_route(
+    technician_id: str,
+    route_date: date = Query(..., description="Date de la tournée"),
+    algorithm: str = Query("hybrid", description="Algorithme: nearest_neighbor, 2-opt, or-opt, simulated_annealing, hybrid"),
+    depot_lat: float | None = Query(None, description="Latitude du dépôt"),
+    depot_lng: float | None = Query(None, description="Longitude du dépôt"),
+    apply: bool = Query(False, description="Appliquer l'optimisation à la base"),
+    opt_service: RouteOptimizationService = Depends(get_optimization_service)
+):
+    """
+    Optimise la tournée d'un technicien pour une date donnée.
+
+    Algorithmes disponibles:
+    - nearest_neighbor: Plus proche voisin (rapide)
+    - 2-opt: Amélioration locale par inversion de segments
+    - or-opt: Amélioration par déplacement de segments
+    - simulated_annealing: Métaheuristique globale
+    - hybrid: Combinaison optimale (recommandé)
+    """
+    import uuid
+    try:
+        tech_uuid = uuid.UUID(technician_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID technicien invalide")
+
+    # Convertit l'algorithme
+    algo_map = {
+        "nearest_neighbor": OptimizationAlgorithm.NEAREST_NEIGHBOR,
+        "2-opt": OptimizationAlgorithm.TWO_OPT,
+        "or-opt": OptimizationAlgorithm.OR_OPT,
+        "simulated_annealing": OptimizationAlgorithm.SIMULATED_ANNEALING,
+        "hybrid": OptimizationAlgorithm.HYBRID,
+    }
+    algo = algo_map.get(algorithm, OptimizationAlgorithm.HYBRID)
+
+    # Optimise
+    result = opt_service.optimize_route(
+        technician_id=tech_uuid,
+        route_date=route_date,
+        algorithm=algo,
+        depot_lat=depot_lat,
+        depot_lng=depot_lng
+    )
+
+    response = {
+        "optimized_route": {
+            "total_distance_km": result.total_distance,
+            "total_duration_minutes": result.total_duration,
+            "total_service_time_minutes": result.total_service_time,
+            "total_travel_time_minutes": result.total_travel_time,
+            "total_waiting_time_minutes": result.total_waiting_time,
+            "optimization_score": result.optimization_score,
+            "algorithm_used": result.algorithm_used,
+            "computation_time_ms": result.computation_time_ms,
+            "feasible": result.feasible,
+            "violations": result.violations,
+            "stops": [
+                {
+                    "id": stop.location.id,
+                    "name": stop.location.name,
+                    "lat": stop.location.lat,
+                    "lng": stop.location.lng,
+                    "arrival_time": stop.arrival_time.isoformat() if stop.arrival_time else None,
+                    "departure_time": stop.departure_time.isoformat() if stop.departure_time else None,
+                    "service_time_minutes": stop.location.service_time,
+                    "waiting_time_minutes": stop.waiting_time,
+                    "travel_time_from_prev_minutes": stop.travel_time_from_prev,
+                    "distance_from_prev_km": round(stop.distance_from_prev, 2),
+                }
+                for stop in result.stops
+            ]
+        },
+        "applied": False
+    }
+
+    # Applique si demandé
+    if apply and result.feasible:
+        route = opt_service.apply_optimization(tech_uuid, route_date, result)
+        response["applied"] = True
+        response["route_id"] = str(route.id)
+
+    return response
+
+
+@router.post("/routes/optimize-multiple")
+async def optimize_multiple_routes(
+    route_date: date = Query(..., description="Date des tournées"),
+    technician_ids: list[str] | None = Query(None, description="IDs des techniciens (tous si non spécifié)"),
+    rebalance: bool = Query(True, description="Rééquilibrer la charge entre techniciens"),
+    opt_service: RouteOptimizationService = Depends(get_optimization_service)
+):
+    """
+    Optimise les tournées de plusieurs techniciens (VRP).
+
+    Cette fonctionnalité permet d'optimiser globalement les affectations
+    pour minimiser la distance totale et équilibrer la charge.
+    """
+    import uuid
+
+    tech_uuids = None
+    if technician_ids:
+        try:
+            tech_uuids = [uuid.UUID(tid) for tid in technician_ids]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="ID technicien invalide")
+
+    result = opt_service.optimize_multiple_routes(
+        route_date=route_date,
+        technician_ids=tech_uuids,
+        rebalance=rebalance
+    )
+
+    return {
+        "total_distance_km": result.total_distance,
+        "total_duration_minutes": result.total_duration,
+        "balance_score": result.balance_score,
+        "overall_score": result.overall_score,
+        "computation_time_ms": result.computation_time_ms,
+        "unassigned_count": len(result.unassigned_locations),
+        "routes": {
+            tech_id: {
+                "total_distance_km": route.total_distance,
+                "total_duration_minutes": route.total_duration,
+                "optimization_score": route.optimization_score,
+                "stops_count": len(route.stops),
+                "feasible": route.feasible,
+            }
+            for tech_id, route in result.routes.items()
+        }
+    }
+
+
+@router.get("/optimization/algorithms")
+async def list_optimization_algorithms():
+    """
+    Liste les algorithmes d'optimisation disponibles.
+    """
+    return {
+        "algorithms": [
+            {
+                "id": "nearest_neighbor",
+                "name": "Plus proche voisin",
+                "description": "Algorithme glouton rapide. Qualité ~80% de l'optimal.",
+                "complexity": "O(n²)",
+                "recommended_for": "Tournées simples, calcul rapide"
+            },
+            {
+                "id": "2-opt",
+                "name": "2-opt",
+                "description": "Amélioration locale par inversion de segments.",
+                "complexity": "O(n² × iterations)",
+                "recommended_for": "Amélioration d'une solution existante"
+            },
+            {
+                "id": "or-opt",
+                "name": "Or-opt",
+                "description": "Amélioration par déplacement de segments de 1-3 clients.",
+                "complexity": "O(n² × iterations)",
+                "recommended_for": "Ajustements fins"
+            },
+            {
+                "id": "simulated_annealing",
+                "name": "Recuit simulé",
+                "description": "Métaheuristique globale évitant les optima locaux.",
+                "complexity": "O(n × temperature_steps)",
+                "recommended_for": "Solutions de haute qualité, plus de temps"
+            },
+            {
+                "id": "hybrid",
+                "name": "Hybride (recommandé)",
+                "description": "Combinaison: Nearest Neighbor + 2-opt + Or-opt.",
+                "complexity": "O(n² × iterations)",
+                "recommended_for": "Meilleur compromis qualité/temps"
+            }
+        ],
+        "default": "hybrid",
+        "note": "Pour le VRP multi-véhicules, l'algorithme de Clarke-Wright (Savings) est utilisé automatiquement."
+    }
