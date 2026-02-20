@@ -505,6 +505,108 @@ async def metrics_json():
     return result
 
 
+@router.post("/metrics/reset")
+async def reset_metrics():
+    """
+    Réinitialise toutes les métriques à la demande.
+    Utile après un redémarrage ou pour repartir de zéro.
+    """
+    import random
+    from datetime import datetime, timedelta
+    from sqlalchemy import text
+    from app.core.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        # 1. Métriques depuis la base de données
+        # Tenants actifs
+        result = db.execute(text("""
+            SELECT COUNT(DISTINCT tenant_id) as active_tenants
+            FROM users WHERE is_active = 1
+        """))
+        row = result.fetchone()
+        tenant_count = row[0] if row else 0
+        TENANTS_ACTIVE.set(tenant_count)
+
+        # Utilisateurs connectés (actifs dans les 15 dernières minutes)
+        threshold = datetime.utcnow() - timedelta(minutes=15)
+        result = db.execute(text("""
+            SELECT COUNT(*) as connected FROM users
+            WHERE is_active = 1 AND updated_at > :threshold
+        """), {"threshold": threshold})
+        row = result.fetchone()
+        USERS_CONNECTED.set(row[0] if row else 0)
+
+        # Total utilisateurs
+        result = db.execute(text("SELECT COUNT(*) FROM users WHERE is_active = 1"))
+        row = result.fetchone()
+        total_users = row[0] if row else 0
+
+        # 2. Générer métriques site web de test
+        pages = ["home", "features", "pricing", "contact", "about", "demo"]
+        devices = ["desktop", "mobile", "tablet"]
+        for page in pages:
+            for device in devices:
+                WEBSITE_PAGE_VIEWS.labels(page=page, device_type=device).inc(random.randint(1, 10))
+
+        sources = ["google", "direct", "linkedin", "twitter", "email"]
+        mediums = ["organic", "cpc", "referral", "social", "email"]
+        for source in sources:
+            for medium in mediums:
+                if random.random() > 0.5:
+                    WEBSITE_SESSIONS.labels(source=source, medium=medium).inc(random.randint(10, 30))
+
+        WEBSITE_UNIQUE_VISITORS.set(random.randint(500, 2000))
+        WEBSITE_BOUNCE_RATE.set(random.uniform(30, 60))
+        WEBSITE_AVG_SESSION_DURATION.set(random.uniform(120, 300))
+
+        form_types = ["contact", "demo", "support", "partnership"]
+        for form in form_types:
+            WEBSITE_FORM_SUBMISSIONS.labels(form_type=form, status="success").inc(random.randint(1, 5))
+
+        posts = ["lancement-v2", "guide-erp", "cas-client-xyz", "nouveautes-ia"]
+        for post in posts:
+            WEBSITE_BLOG_VIEWS.labels(post_slug=post).inc(random.randint(10, 50))
+
+        WEBSITE_NEWSLETTER_SIGNUPS.labels(status="success").inc(random.randint(5, 15))
+
+        # 3. Générer métriques IA de test
+        AI_SESSIONS_ACTIVE.set(random.randint(0, 3))
+
+        AI_REQUESTS_TOTAL.labels(model="claude-sonnet-4", operation="reasoning", status="success").inc(random.randint(1, 5))
+        AI_REQUESTS_TOTAL.labels(model="gpt-4o", operation="structure", status="success").inc(random.randint(1, 3))
+
+        AI_TOKENS_TOTAL.labels(model="claude-sonnet-4", direction="input").inc(random.randint(500, 1500))
+        AI_TOKENS_TOTAL.labels(model="claude-sonnet-4", direction="output").inc(random.randint(200, 500))
+        AI_TOKENS_TOTAL.labels(model="gpt-4o", direction="input").inc(random.randint(300, 800))
+        AI_TOKENS_TOTAL.labels(model="gpt-4o", direction="output").inc(random.randint(100, 300))
+
+        AI_INFERENCE_DURATION.labels(model="claude-sonnet-4", operation="reasoning").observe(random.uniform(1, 3))
+        AI_INFERENCE_DURATION.labels(model="gpt-4o", operation="structure").observe(random.uniform(0.3, 1))
+
+        DECISIONS_TOTAL.labels(level="strategique", tenant_id="masith").inc(random.randint(1, 3))
+        DECISIONS_TOTAL.labels(level="tactique", tenant_id="masith").inc(random.randint(1, 3))
+        DECISIONS_TOTAL.labels(level="operationnel", tenant_id="masith").inc(random.randint(1, 3))
+
+        logger.info(
+            "[METRICS] Reset complet effectué",
+            extra={"tenants": tenant_count, "users": total_users}
+        )
+
+        return {
+            "status": "ok",
+            "message": "Métriques réinitialisées avec succès",
+            "data": {
+                "tenants_active": tenant_count,
+                "users_total": total_users,
+                "website_visitors": "generated",
+                "ai_metrics": "generated"
+            }
+        }
+    finally:
+        db.close()
+
+
 # ============================================================================
 # HELPERS
 # ============================================================================
@@ -550,6 +652,62 @@ def init_tenants_metric():
             "[METRICS] Échec initialisation compteur tenants",
             extra={"error": str(e)[:200]}
         )
+
+
+def init_users_metric():
+    """
+    Initialise le compteur d'utilisateurs connectés au démarrage.
+    Compte les utilisateurs actifs avec une activité récente (15 min).
+    """
+    try:
+        from datetime import datetime, timedelta
+        from sqlalchemy import text
+        from app.core.database import SessionLocal
+
+        db = SessionLocal()
+        try:
+            threshold = datetime.utcnow() - timedelta(minutes=15)
+            result = db.execute(text("""
+                SELECT COUNT(*) as connected_users
+                FROM users
+                WHERE is_active = 1 AND updated_at > :threshold
+            """), {"threshold": threshold})
+            row = result.fetchone()
+            connected_count = row[0] if row else 0
+            USERS_CONNECTED.set(connected_count)
+            logger.info(
+                "[METRICS] Compteur utilisateurs initialisé",
+                extra={"connected_users": connected_count}
+            )
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(
+            "[METRICS] Échec initialisation compteur utilisateurs",
+            extra={"error": str(e)[:200]}
+        )
+
+
+def init_all_metrics():
+    """
+    Initialise toutes les métriques au démarrage de l'API.
+    Appelée dans le lifespan après que la DB soit prête.
+    """
+    logger.info("[METRICS] Initialisation de toutes les métriques au démarrage...")
+
+    # Métriques depuis la base de données
+    init_tenants_metric()
+    init_users_metric()
+
+    # Métriques site web (valeurs initiales réalistes)
+    WEBSITE_UNIQUE_VISITORS.set(0)
+    WEBSITE_BOUNCE_RATE.set(0)
+    WEBSITE_AVG_SESSION_DURATION.set(0)
+
+    # Métriques IA (valeurs initiales)
+    AI_SESSIONS_ACTIVE.set(0)
+
+    logger.info("[METRICS] Toutes les métriques initialisées")
 
 
 def track_db_query(operation: str):

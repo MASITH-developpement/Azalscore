@@ -52,7 +52,7 @@ from app.core.health import router as health_router
 from app.api.health_business import router as health_business_router
 from app.core.http_errors import register_error_handlers
 from app.core.logging_config import get_logger, setup_logging
-from app.core.metrics import MetricsMiddleware, init_metrics, init_tenants_metric
+from app.core.metrics import MetricsMiddleware, init_metrics, init_all_metrics
 from app.core.metrics import router as metrics_router
 from app.core.middleware import TenantMiddleware
 from app.core.core_auth_middleware import CoreAuthMiddleware
@@ -496,8 +496,8 @@ async def lifespan(app: FastAPI):
             extra=startup_context
         )
 
-    # Initialiser les métriques business (tenants actifs)
-    init_tenants_metric()
+    # Initialiser toutes les métriques au démarrage
+    init_all_metrics()
 
     yield
 
