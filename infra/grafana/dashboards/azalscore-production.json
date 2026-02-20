@@ -146,9 +146,8 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "#EAB839", "value": 0.5 },
-              { "color": "red", "value": 0 }
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
             ]
           },
           "mappings": [
@@ -158,12 +157,13 @@
       },
       "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
       "id": 6,
-      "options": { "graphMode": "none", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "options": { "graphMode": "none", "colorMode": "background", "reduceOptions": { "calcs": ["last"] } },
       "title": "Services UP",
       "type": "stat",
       "targets": [{
         "expr": "min(up{job=~\"azals-api|postgres|redis\"})",
-        "legendFormat": "All services"
+        "legendFormat": "All services",
+        "instant": true
       }]
     },
 

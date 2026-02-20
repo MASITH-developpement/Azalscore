@@ -52,7 +52,7 @@ from app.core.health import router as health_router
 from app.api.health_business import router as health_business_router
 from app.core.http_errors import register_error_handlers
 from app.core.logging_config import get_logger, setup_logging
-from app.core.metrics import MetricsMiddleware, init_metrics
+from app.core.metrics import MetricsMiddleware, init_metrics, init_tenants_metric
 from app.core.metrics import router as metrics_router
 from app.core.middleware import TenantMiddleware
 from app.core.core_auth_middleware import CoreAuthMiddleware
@@ -121,6 +121,18 @@ from app.modules.enrichment import enrichment_router
 
 # Module ODOO IMPORT - Import de données depuis Odoo (versions 8-18)
 from app.modules.odoo_import import odoo_import_router
+
+# Module INVENTORY - Gestion des stocks et produits
+from app.modules.inventory.router import router as inventory_router
+
+# Module POS - Point de Vente
+from app.modules.pos.router_crud import router as pos_router
+
+# Module WEBSITE - Site Web / CMS
+from app.modules.website.router_crud import router as website_router
+
+# Module ECOMMERCE - Boutique en ligne
+from app.modules.ecommerce.router_crud import router as ecommerce_router
 
 # ===========================================================================
 # MODULES V3 - CRUDRouter (Migration complète)
@@ -484,6 +496,9 @@ async def lifespan(app: FastAPI):
             extra=startup_context
         )
 
+    # Initialiser les métriques business (tenants actifs)
+    init_tenants_metric()
+
     yield
 
     # Arrêter le scheduler à l'arrêt
@@ -659,6 +674,18 @@ api_v1.include_router(workflows_router)
 
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)
+
+# Module INVENTORY - Gestion stocks et produits
+api_v1.include_router(inventory_router)
+
+# Module POS - Point de Vente
+api_v1.include_router(pos_router)
+
+# Module WEBSITE - Site Web / CMS
+api_v1.include_router(website_router)
+
+# Module ECOMMERCE - Boutique en ligne
+api_v1.include_router(ecommerce_router)
 
 
 # ==================== UTILITY ENDPOINTS ====================

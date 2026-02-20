@@ -311,12 +311,18 @@ async def test_ai_metrics():
         AI_GUARDIAN_DECISIONS.labels(decision="allowed", risk_level="low").inc()
         AI_SESSIONS_ACTIVE.dec()
 
+    # Simuler des décisions business
+    decision_levels = ["strategique", "tactique", "operationnel"]
+    for level in decision_levels:
+        DECISIONS_TOTAL.labels(level=level, tenant_id="masith").inc(random.randint(1, 5))
+
     return {
         "status": "ok",
         "message": "Métriques IA de test générées",
         "details": {
             "claude_calls": 3,
-            "gpt_calls": 2
+            "gpt_calls": 2,
+            "decisions": 3
         }
     }
 
@@ -360,6 +366,38 @@ def init_metrics():
         'environment': settings.environment,
         'app_name': settings.app_name
     })
+
+
+def init_tenants_metric():
+    """
+    Initialise le compteur de tenants actifs au démarrage.
+    Appelée après que la DB soit prête.
+    """
+    try:
+        from sqlalchemy import text
+        from app.core.database import SessionLocal
+
+        db = SessionLocal()
+        try:
+            result = db.execute(text("""
+                SELECT COUNT(DISTINCT tenant_id) as active_tenants
+                FROM users
+                WHERE is_active = 1
+            """))
+            row = result.fetchone()
+            active_count = row[0] if row else 0
+            TENANTS_ACTIVE.set(active_count)
+            logger.info(
+                "[METRICS] Compteur tenants initialisé",
+                extra={"active_tenants": active_count}
+            )
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(
+            "[METRICS] Échec initialisation compteur tenants",
+            extra={"error": str(e)[:200]}
+        )
 
 
 def track_db_query(operation: str):
