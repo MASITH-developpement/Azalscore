@@ -24,7 +24,7 @@ from decimal import Decimal
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_, case, func
 from sqlalchemy.orm import Session
 
 from app.core.query_optimizer import QueryOptimizer
@@ -32,6 +32,7 @@ from app.modules.finance.models import BankAccount, BankTransaction, BankTransac
 
 from .models import AccountType, TransactionType
 from .schemas import (
+    AccountSummary,
     BankAccountCreate,
     BankAccountResponse,
     BankAccountUpdate,
@@ -103,26 +104,26 @@ class TreasuryService:
             balance = Decimal(str(account.current_balance or 0))
             total_balance += balance
 
-            account_summaries.append({
-                "id": str(account.id),
-                "name": account.name,
-                "bank_name": account.bank_name or "",
-                "balance": balance,
-                "currency": account.currency or "EUR"
-            })
+            account_summaries.append(AccountSummary(
+                id=str(account.id),
+                name=account.name,
+                bank_name=account.bank_name or "",
+                balance=balance,
+                currency=account.currency or "EUR"
+            ))
 
         # Calculer les transactions en attente (7 derniers jours)
         seven_days_ago = datetime.utcnow() - timedelta(days=7)
 
         pending_query = self.db.query(
             func.sum(
-                func.case(
+                case(
                     (BankTransaction.type == BankTransactionType.CREDIT, BankTransaction.amount),
                     else_=Decimal("0")
                 )
             ).label("pending_in"),
             func.sum(
-                func.case(
+                case(
                     (BankTransaction.type == BankTransactionType.DEBIT, BankTransaction.amount),
                     else_=Decimal("0")
                 )

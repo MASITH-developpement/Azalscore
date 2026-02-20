@@ -227,6 +227,8 @@ class EmployeeList(BaseModel):
     """Liste d'employés."""
     items: list[EmployeeResponse]
     total: int
+    page: int = 1
+    page_size: int = 50
 
 
 # ============================================================================

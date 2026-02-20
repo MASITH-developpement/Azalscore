@@ -244,7 +244,9 @@ def list_employees(
     )
     return EmployeeList(
         items=employees,
-        total=total
+        total=total,
+        page=page,
+        page_size=page_size
     )
 
 @router.get("/employees/{employee_id}", response_model=EmployeeResponse)
@@ -363,12 +365,18 @@ def create_leave_request_simple(
 ):
     """Créer une demande de congé (endpoint simplifié)."""
     service = get_hr_service(db, context.tenant_id)
-    leave_data = LeaveRequestCreate(
-        leave_type=LeaveType(data.type),
-        start_date=data.start_date,
-        end_date=data.end_date,
-        reason=data.reason
-    )
+    try:
+        leave_data = LeaveRequestCreate(
+            leave_type=LeaveType(data.type),
+            start_date=data.start_date,
+            end_date=data.end_date,
+            reason=data.reason
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type de congé invalide: {data.type}. Valeurs acceptées: {[t.value for t in LeaveType]}"
+        )
     return service.create_leave_request(data.employee_id, leave_data)
 
 @router.post("/employees/{employee_id}/leave-requests", response_model=LeaveRequestResponse, status_code=status.HTTP_201_CREATED)

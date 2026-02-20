@@ -103,16 +103,7 @@ async def list_accounts(
 ):
     """Lister les comptes bancaires."""
     service = get_treasury_service(db, context.tenant_id, str(context.user_id))
-    items, total = service.list_accounts(is_active, page, per_page)
-    pages = (total + per_page - 1) // per_page
-
-    return PaginatedBankAccounts(
-        total=total,
-        page=page,
-        per_page=per_page,
-        pages=pages,
-        items=items
-    )
+    return service.list_accounts(is_active, page, per_page)
 
 @router.get("/accounts/{account_id}", response_model=BankAccountResponse)
 async def get_account(

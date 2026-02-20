@@ -236,10 +236,10 @@ const useRecentActivity = () => {
     queryFn: async () => {
       // Recuperer les items recents de chaque module
       const [devisRes, commandesRes, interventionsRes, facturesRes] = await Promise.all([
-        api.get('/commercial/documents?type=QUOTE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
-        api.get('/commercial/documents?type=ORDER&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
-        api.get('/interventions?limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<InterventionItem>>,
-        api.get('/commercial/documents?type=INVOICE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/commercial/documents?type=QUOTE&page_size=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/commercial/documents?type=ORDER&page_size=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/interventions?page_size=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<InterventionItem>>,
+        api.get('/commercial/documents?type=INVOICE&page_size=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
       ]);
 
       const items: RecentItem[] = [];

@@ -90,7 +90,10 @@ async def list_pages(
 ):
     """Liste les pages du site."""
     service = get_website_service(db, context.tenant_id, context.user_id)
-    pages = service.list_pages(page_type=page_type, published_only=published_only)
+    # Convertir les paramètres pour le service
+    page_type_str = page_type.value if page_type else None
+    status_str = "PUBLISHED" if published_only else None
+    pages = service.list_pages(page_type=page_type_str, status=status_str)
     return pages
 
 @router.get("/pages/{page_id}", response_model=SitePageResponse)

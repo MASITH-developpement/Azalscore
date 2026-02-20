@@ -135,7 +135,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                 "validation_error",
                 extra={
                     "error_code": error.error_code,
-                    "message": error.message,
+                    "error_message": error.message,
                     "path": request.url.path,
                     "method": request.method,
                     "correlation_id": correlation_id

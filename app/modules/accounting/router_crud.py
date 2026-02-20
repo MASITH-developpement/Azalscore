@@ -121,7 +121,7 @@ async def get_accounting_monitoring(
     - Nombre d'ecritures en attente
     - Date de derniere cloture
     """
-    service = AccountingService(db, context)
+    service = AccountingService(db, context.tenant_id)
     return service.get_status()
 
 
@@ -146,9 +146,11 @@ async def create_fiscal_year(
     - Code unique
     - Date de fin > date de debut
     """
-    service = AccountingService(db, context)
-    result = service.create_fiscal_year(data)
-    return handle_result(result, 201)
+    try:
+        service = AccountingService(db, context.tenant_id, context.user_id)
+        return service.create_fiscal_year(data, context.user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/fiscal-years", response_model=PaginatedResponse[FiscalYearResponse])
@@ -160,8 +162,17 @@ async def list_fiscal_years(
     db: Session = Depends(get_db)
 ):
     """Lister les exercices comptables avec pagination."""
-    service = AccountingService(db, context)
-    return service.list_fiscal_years(status_filter, page, page_size)
+    service = AccountingService(db, context.tenant_id)
+    items, total = service.list_fiscal_years(status_filter, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=(total + page_size - 1) // page_size if total else 1,
+        has_next=(page * page_size) < total if total else False,
+        has_prev=page > 1
+    )
 
 
 @router.get("/fiscal-years/active", response_model=FiscalYearResponse)
@@ -170,7 +181,7 @@ async def get_active_fiscal_year(
     db: Session = Depends(get_db)
 ):
     """Recuperer l'exercice comptable actif."""
-    service = AccountingService(db, context)
+    service = AccountingService(db, context.tenant_id)
     fiscal_year = service.get_active_fiscal_year()
     if not fiscal_year:
         raise HTTPException(
@@ -187,7 +198,7 @@ async def get_fiscal_year(
     db: Session = Depends(get_db)
 ):
     """Recuperer un exercice comptable par ID."""
-    service = AccountingService(db, context)
+    service = AccountingService(db, context.tenant_id)
     fiscal_year = service.get_fiscal_year(fiscal_year_id)
     if not fiscal_year:
         raise HTTPException(status_code=404, detail="Exercice comptable non trouve")
@@ -202,9 +213,14 @@ async def update_fiscal_year(
     db: Session = Depends(get_db)
 ):
     """Mettre a jour un exercice comptable (seulement si OPEN)."""
-    service = AccountingService(db, context)
-    result = service.update_fiscal_year(fiscal_year_id, data)
-    return handle_result(result)
+    try:
+        service = AccountingService(db, context.tenant_id)
+        result = service.update_fiscal_year(fiscal_year_id, data)
+        if not result:
+            raise HTTPException(status_code=404, detail="Exercice comptable non trouve")
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/fiscal-years/{fiscal_year_id}/close", response_model=FiscalYearResponse)
@@ -220,9 +236,11 @@ async def close_fiscal_year(
     - Exercice doit etre OPEN
     - Aucune ecriture en brouillon
     """
-    service = AccountingService(db, context)
-    result = service.close_fiscal_year(fiscal_year_id)
-    return handle_result(result)
+    try:
+        service = AccountingService(db, context.tenant_id, context.user_id)
+        return service.close_fiscal_year(fiscal_year_id, context.user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # =============================================================================
@@ -240,9 +258,11 @@ async def create_account(
     db: Session = Depends(get_db)
 ):
     """Creer un compte comptable."""
-    service = AccountingService(db, context)
-    result = service.create_account(data)
-    return handle_result(result, 201)
+    try:
+        service = AccountingService(db, context.tenant_id, context.user_id)
+        return service.create_account(data, context.user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/accounts", response_model=PaginatedResponse[ChartOfAccountsResponse])
@@ -256,8 +276,17 @@ async def list_accounts(
     db: Session = Depends(get_db)
 ):
     """Lister les comptes comptables avec filtres."""
-    service = AccountingService(db, context)
-    return service.list_accounts(account_type, account_class, search, page, page_size)
+    service = AccountingService(db, context.tenant_id)
+    items, total = service.list_accounts(account_type, account_class, search, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=(total + page_size - 1) // page_size if total else 1,
+        has_next=(page * page_size) < total if total else False,
+        has_prev=page > 1
+    )
 
 
 @router.get("/accounts/{account_number}", response_model=ChartOfAccountsResponse)
@@ -267,7 +296,7 @@ async def get_account(
     db: Session = Depends(get_db)
 ):
     """Recuperer un compte comptable par numero."""
-    service = AccountingService(db, context)
+    service = AccountingService(db, context.tenant_id)
     account = service.get_account(account_number)
     if not account:
         raise HTTPException(status_code=404, detail="Compte non trouve")
@@ -282,9 +311,11 @@ async def update_account(
     db: Session = Depends(get_db)
 ):
     """Mettre a jour un compte comptable."""
-    service = AccountingService(db, context)
+    service = AccountingService(db, context.tenant_id)
     result = service.update_account(account_number, data)
-    return handle_result(result)
+    if not result:
+        raise HTTPException(status_code=404, detail="Compte non trouve")
+    return result
 
 
 # =============================================================================
@@ -309,9 +340,11 @@ async def create_journal_entry(
     - Date dans la periode de l'exercice
     - Ecriture equilibree (debit = credit)
     """
-    service = AccountingService(db, context)
-    result = service.create_journal_entry(data)
-    return handle_result(result, 201)
+    try:
+        service = AccountingService(db, context.tenant_id, context.user_id)
+        return service.create_journal_entry(data, context.user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/journal", response_model=PaginatedResponse[JournalEntryResponse])
@@ -327,9 +360,18 @@ async def list_journal_entries(
     db: Session = Depends(get_db)
 ):
     """Lister les ecritures comptables avec filtres."""
-    service = AccountingService(db, context)
-    return service.list_journal_entries(
+    service = AccountingService(db, context.tenant_id)
+    items, total = service.list_journal_entries(
         fiscal_year_id, journal_code, status_filter, period, search, page, page_size
+    )
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=(total + page_size - 1) // page_size if total else 1,
+        has_next=(page * page_size) < total if total else False,
+        has_prev=page > 1
     )
 
 
@@ -340,7 +382,7 @@ async def get_journal_entry(
     db: Session = Depends(get_db)
 ):
     """Recuperer une ecriture comptable avec ses lignes."""
-    service = AccountingService(db, context)
+    service = AccountingService(db, context.tenant_id)
     entry = service.get_journal_entry(entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Ecriture non trouvee")
@@ -360,9 +402,11 @@ async def post_journal_entry(
     - Ecriture en brouillon (DRAFT)
     - Ecriture equilibree
     """
-    service = AccountingService(db, context)
-    result = service.post_journal_entry(entry_id)
-    return handle_result(result)
+    try:
+        service = AccountingService(db, context.tenant_id, context.user_id)
+        return service.post_journal_entry(entry_id, context.user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/journal/{entry_id}/validate", response_model=JournalEntryResponse)
@@ -377,9 +421,11 @@ async def validate_journal_entry(
     Pre-requis:
     - Ecriture comptabilisee (POSTED)
     """
-    service = AccountingService(db, context)
-    result = service.validate_journal_entry(entry_id)
-    return handle_result(result)
+    try:
+        service = AccountingService(db, context.tenant_id, context.user_id)
+        return service.validate_journal_entry(entry_id, context.user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # =============================================================================
@@ -400,8 +446,17 @@ async def get_ledger(
 
     Retourne les soldes par compte avec debits/credits totaux.
     """
-    service = AccountingService(db, context)
-    return service.get_ledger(account_number, fiscal_year_id, page, page_size)
+    service = AccountingService(db, context.tenant_id)
+    items, total = service.get_ledger(account_number, fiscal_year_id, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=(total + page_size - 1) // page_size if total else 1,
+        has_next=(page * page_size) < total if total else False,
+        has_prev=page > 1
+    )
 
 
 @router.get("/balance", response_model=PaginatedResponse[BalanceEntry])
@@ -421,5 +476,14 @@ async def get_balance(
     - Mouvements de la periode
     - Solde de cloture
     """
-    service = AccountingService(db, context)
-    return service.get_balance(fiscal_year_id, period, page, page_size)
+    service = AccountingService(db, context.tenant_id)
+    items, total = service.get_balance(fiscal_year_id, period, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=(total + page_size - 1) // page_size if total else 1,
+        has_next=(page * page_size) < total if total else False,
+        has_prev=page > 1
+    )

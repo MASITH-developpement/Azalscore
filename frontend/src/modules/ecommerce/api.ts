@@ -477,7 +477,7 @@ export interface EcommerceDashboard {
 // API CLIENT
 // ============================================================================
 
-const BASE_PATH = '/v1/ecommerce';
+const BASE_PATH = '/ecommerce';
 
 export const ecommerceApi = {
   // Dashboard

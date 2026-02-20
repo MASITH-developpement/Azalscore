@@ -308,17 +308,18 @@ def list_transactions(
     customer_id: int | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=200),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
     service: POSService = Depends(get_pos_service)
 ):
     """Lister les transactions."""
+    skip = (page - 1) * page_size
     items, total = service.list_transactions(
         session_id=session_id, status=status, customer_id=customer_id,
-        date_from=date_from, date_to=date_to, skip=skip, limit=limit
+        date_from=date_from, date_to=date_to, skip=skip, limit=page_size
     )
     return TransactionListResponse(
-        items=items, total=total, page=skip // limit + 1, page_size=limit
+        items=items, total=total, page=page, page_size=page_size
     )
 
 @router.get("/transactions/{transaction_id}", response_model=TransactionResponse)

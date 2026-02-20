@@ -643,7 +643,8 @@ class CommercialService:
         quote = self.get_document(quote_id)
         if not quote or quote.type != DocumentType.QUOTE:
             return None
-        if quote.status not in [DocumentStatus.SENT, DocumentStatus.ACCEPTED]:
+        # Accepter DRAFT, VALIDATED, SENT ou ACCEPTED pour conversion
+        if quote.status not in [DocumentStatus.DRAFT, DocumentStatus.VALIDATED, DocumentStatus.SENT, DocumentStatus.ACCEPTED]:
             return None
 
         # Marquer le devis comme accepté

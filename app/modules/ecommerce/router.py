@@ -418,7 +418,7 @@ def update_cart_item(
 ):
     """Mettre à jour la quantité d'un article."""
     result, message = service.update_cart_item(cart_id, item_id, data.quantity)
-    if result is None and not isinstance(result, bool):
+    if result is None:
         raise HTTPException(status_code=400, detail=message)
 
     return {"success": True, "message": message}

@@ -160,8 +160,9 @@ export const saisieApi = {
     api.get<PaginatedResponse<QuickProduct>>(
       `/inventory/products${buildQueryString({
         search: params.search,
-        page_size: params.page_size || 10,
-        is_active: params.is_active ?? true,
+        limit: params.page_size || 10,
+        active_only: params.is_active ?? true,
+        skip: 0,
       })}`
     ),
 

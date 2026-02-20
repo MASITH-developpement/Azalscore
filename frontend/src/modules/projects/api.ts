@@ -835,7 +835,7 @@ export interface ProjectDashboard {
 // API CLIENT
 // ============================================================================
 
-const BASE_PATH = '/v1/projects';
+const BASE_PATH = '/projects';
 
 export const projectsApi = {
   // --------------------------------------------------------------------------

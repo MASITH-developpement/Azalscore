@@ -176,26 +176,26 @@ export const cockpitApi = {
   /**
    * Recupere les devis recents
    */
-  getRecentDevis: (limit = 5) =>
-    api.get<PaginatedResponse<DocumentItem>>(`/commercial/documents?type=QUOTE&limit=${limit}`),
+  getRecentDevis: (pageSize = 5) =>
+    api.get<PaginatedResponse<DocumentItem>>(`/commercial/documents?type=QUOTE&page_size=${pageSize}`),
 
   /**
    * Recupere les commandes recentes
    */
-  getRecentCommandes: (limit = 5) =>
-    api.get<PaginatedResponse<DocumentItem>>(`/commercial/documents?type=ORDER&limit=${limit}`),
+  getRecentCommandes: (pageSize = 5) =>
+    api.get<PaginatedResponse<DocumentItem>>(`/commercial/documents?type=ORDER&page_size=${pageSize}`),
 
   /**
    * Recupere les interventions recentes
    */
-  getRecentInterventions: (limit = 5) =>
-    api.get<PaginatedResponse<InterventionItem>>(`/interventions?limit=${limit}`),
+  getRecentInterventions: (pageSize = 5) =>
+    api.get<PaginatedResponse<InterventionItem>>(`/interventions?page_size=${pageSize}`),
 
   /**
    * Recupere les factures recentes
    */
-  getRecentFactures: (limit = 5) =>
-    api.get<PaginatedResponse<DocumentItem>>(`/commercial/documents?type=INVOICE&limit=${limit}`),
+  getRecentFactures: (pageSize = 5) =>
+    api.get<PaginatedResponse<DocumentItem>>(`/commercial/documents?type=INVOICE&page_size=${pageSize}`),
 };
 
 export default cockpitApi;

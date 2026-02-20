@@ -17,10 +17,10 @@ class TenantMixin:
 
     @declared_attr
     def tenant_id(cls):
-        """Clé étrangère obligatoire vers tenants.id"""
+        """Clé étrangère obligatoire vers tenants.tenant_id (VARCHAR, pas UUID)"""
         return Column(
-            String(255),
-            ForeignKey('tenants.id', ondelete='CASCADE'),
+            String(50),
+            ForeignKey('tenants.tenant_id', ondelete='CASCADE'),
             nullable=False,
             index=True
         )
