@@ -20,6 +20,7 @@
     "type-check": "tsc --noEmit",
     "azalscore:lint": "tsx ../scripts/frontend/azalscore-linter.ts",
     "scaffold:module": "tsx ../scripts/frontend/scaffold-module.ts",
+    "register:modules": "tsx ../scripts/frontend/register-modules.ts",
     "generate:meta": "tsx ../scripts/frontend/generate-module-meta.ts",
     "validate:modules": "tsx ../scripts/frontend/validate-module-structure.ts",
     "validate:meta": "tsx ../scripts/frontend/validate-module-meta.ts",
