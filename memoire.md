@@ -1029,6 +1029,20 @@ for c in db.query(EnrichmentProviderConfig).all():
 19. `/app/modules/treasury/service.py` - Ajout get_summary(), get_forecast()
 20. `/app/modules/accounting/service.py` - Fix references modeles (AccountingJournalEntry, etc.)
 
+### Ajout d'un Nouveau Module
+
+Pour ajouter un nouveau module à l'avenir :
+
+1. **Backend** : Crée le dossier dans `app/modules/nom_module/`
+2. **Métadonnées** : Ajoute les métadonnées dans `MODULE_METADATA_OVERRIDES` dans `app/core/modules_registry.py` (optionnel si `__init__.py` les contient)
+3. **Frontend** : Crée le module avec `npm run scaffold:module -- nom-module` (dans frontend/)
+4. **Routes/Menu** : Enregistre avec `npm run register:modules` (dans frontend/)
+5. **Redémarre** le backend - le module sera découvert automatiquement
+
+**Fichiers clés :**
+- `app/core/modules_registry.py` - Registre auto-découverte des modules backend
+- `scripts/frontend/register-modules.ts` - Script d'enregistrement routes/menu frontend
+
 ### Frontend (frontend/src/)
 1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules", onglet "Enrichissement"
 2. `/modules/admin/types.ts` - Ajout created_by_name dans interface Role
