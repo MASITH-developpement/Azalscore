@@ -5,6 +5,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 3,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1750,6 +1751,565 @@
       ],
       "title": "Santé composants",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 105
+      },
+      "id": 900,
+      "title": "🌐 Site Web — azalscore.com",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "green",
+                "value": 500
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 106
+      },
+      "id": 901,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Visiteurs uniques (24h)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "azals_website_unique_visitors",
+          "legendFormat": "Visiteurs"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 106
+      },
+      "id": 902,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Taux de rebond",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "azals_website_bounce_rate",
+          "legendFormat": "Bounce"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 120
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 106
+      },
+      "id": 903,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Durée session moy.",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "azals_website_avg_session_duration_seconds",
+          "legendFormat": "Durée"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 106
+      },
+      "id": 904,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Pages vues (5m)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(azals_website_page_views_total[5m]))",
+          "legendFormat": "Vues"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 106
+      },
+      "id": 905,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Sessions (5m)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(azals_website_sessions_total[5m]))",
+          "legendFormat": "Sessions"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 106
+      },
+      "id": 906,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Formulaires (5m)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(azals_website_form_submissions_total[5m]))",
+          "legendFormat": "Forms"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 110
+      },
+      "id": 910,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "Vues par page",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(azals_website_page_views_total[5m])) by (page) * 60",
+          "legendFormat": "{{page}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 110
+      },
+      "id": 911,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "Sessions par source",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(azals_website_sessions_total[5m])) by (source) * 60",
+          "legendFormat": "{{source}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 118
+      },
+      "id": 912,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "Vues par device",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(azals_website_page_views_total[5m])) by (device_type) * 60",
+          "legendFormat": "{{device_type}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 118
+      },
+      "id": 913,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "Formulaires par type",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(azals_website_form_submissions_total[5m])) by (form_type) * 60",
+          "legendFormat": "{{form_type}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 118
+      },
+      "id": 914,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "Newsletter signups",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(azals_website_newsletter_signups_total[5m])) by (status) * 60",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 126
+      },
+      "id": 915,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "Blog — Vues par article",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(azals_website_blog_views_total[5m])) by (post_slug) * 60)",
+          "legendFormat": "{{post_slug}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 126
+      },
+      "id": 916,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "Sessions par medium",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(azals_website_sessions_total[5m])) by (medium) * 60",
+          "legendFormat": "{{medium}}"
+        }
+      ]
     }
   ],
   "refresh": "15s",
@@ -1817,5 +2377,5 @@
   "timezone": "Europe/Paris",
   "title": "AZALSCORE — Production",
   "uid": "azalscore-production",
-  "version": 8
+  "version": 9
 }
