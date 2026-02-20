@@ -325,19 +325,69 @@ const Login: React.FC = () => {
 // ============================================================
 
 const VIEW_BASE_PATH: Partial<Record<ViewKey, string>> = {
+  // Saisie rapide
+  'saisie': '/saisie',
+
+  // Gestion documents
   'gestion-devis': '/invoicing',
   'gestion-commandes': '/invoicing',
   'gestion-factures': '/invoicing',
   'gestion-paiements': '/invoicing',
   'gestion-interventions': '/interventions',
+
+  // Affaires
+  'affaires': '/affaires',
+
+  // Modules métier
   'crm': '/partners',
+  'stock': '/inventory',
   'achats': '/purchases',
+  'projets': '/projects',
+  'rh': '/hr',
+  'vehicules': '/vehicles',
+
+  // Logistique & Production
+  'production': '/production',
+  'maintenance': '/maintenance',
+  'quality': '/quality',
+
+  // Commerce
+  'pos': '/pos',
+  'ecommerce': '/ecommerce',
+  'marketplace': '/marketplace',
+  'subscriptions': '/subscriptions',
+
+  // Services
+  'helpdesk': '/helpdesk',
+
+  // Digital
+  'web': '/web',
+  'bi': '/bi',
+  'compliance': '/compliance',
+
+  // Finance
   'compta': '/accounting',
   'tresorerie': '/treasury',
-  'ecommerce': '/ecommerce',
-  'pos': '/pos',
-  'compliance': '/compliance',
+
+  // Direction
+  'cockpit': '/cockpit',
+
+  // IA
+  'marceau': '/marceau',
+
+  // Import
+  'import-odoo': '/import/odoo',
+  'import-axonaut': '/import/axonaut',
+  'import-pennylane': '/import/pennylane',
+  'import-sage': '/import/sage',
+  'import-chorus': '/import/chorus',
+
+  // Système
   'admin': '/admin',
+
+  // Utilisateur
+  'profile': '/profile',
+  'settings': '/settings',
 };
 
 // Reverse mapping: URL path → ViewKey (for URL-based navigation)

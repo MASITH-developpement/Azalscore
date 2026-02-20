@@ -127,7 +127,7 @@ async def create_incident(
             stack_trace=data.stack_trace,
             screenshot_path=screenshot_path,
             has_screenshot=has_screenshot,
-            frontend_timestamp=data.timestamp,
+            frontend_timestamp=data.frontend_timestamp,
         )
 
         db.add(incident)

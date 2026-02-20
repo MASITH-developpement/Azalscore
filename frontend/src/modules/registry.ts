@@ -17,18 +17,23 @@ import { moduleMeta as cockpit } from './cockpit/meta';
 import { moduleMeta as commandes } from './commandes/meta';
 import { moduleMeta as compliance } from './compliance/meta';
 import { moduleMeta as comptabilite } from './comptabilite/meta';
+import { moduleMeta as contacts } from './contacts/meta';
 import { moduleMeta as country_packs_france } from './country-packs-france/meta';
 import { moduleMeta as crm } from './crm/meta';
 import { moduleMeta as devis } from './devis/meta';
 import { moduleMeta as ecommerce } from './ecommerce/meta';
+import { moduleMeta as enrichment } from './enrichment/meta';
 import { moduleMeta as factures } from './factures/meta';
 import { moduleMeta as helpdesk } from './helpdesk/meta';
 import { moduleMeta as hr } from './hr/meta';
 import { moduleMeta as i18n } from './i18n/meta';
+import { moduleMeta as import_data } from './import/meta';
+import { moduleMeta as import_gateways } from './import-gateways/meta';
 import { moduleMeta as interventions } from './interventions/meta';
 import { moduleMeta as inventory } from './inventory/meta';
 import { moduleMeta as invoicing } from './invoicing/meta';
 import { moduleMeta as maintenance } from './maintenance/meta';
+import { moduleMeta as marceau } from './marceau/meta';
 import { moduleMeta as marketplace } from './marketplace/meta';
 import { moduleMeta as mobile } from './mobile/meta';
 import { moduleMeta as not_found } from './not-found/meta';
@@ -41,6 +46,7 @@ import { moduleMeta as profile } from './profile/meta';
 import { moduleMeta as projects } from './projects/meta';
 import { moduleMeta as purchases } from './purchases/meta';
 import { moduleMeta as qualite } from './qualite/meta';
+import { moduleMeta as saisie } from './saisie/meta';
 import { moduleMeta as settings } from './settings/meta';
 import { moduleMeta as subscriptions } from './subscriptions/meta';
 import { moduleMeta as treasury } from './treasury/meta';
@@ -83,18 +89,23 @@ export const moduleRegistry: Record<string, ModuleMeta> = {
   'commandes': commandes,
   'compliance': compliance,
   'comptabilite': comptabilite,
+  'contacts': contacts,
   'country-packs-france': country_packs_france,
   'crm': crm,
   'devis': devis,
   'ecommerce': ecommerce,
+  'enrichment': enrichment,
   'factures': factures,
   'helpdesk': helpdesk,
   'hr': hr,
   'i18n': i18n,
+  'import': import_data,
+  'import-gateways': import_gateways,
   'interventions': interventions,
   'inventory': inventory,
   'invoicing': invoicing,
   'maintenance': maintenance,
+  'marceau': marceau,
   'marketplace': marketplace,
   'mobile': mobile,
   'not-found': not_found,
@@ -107,6 +118,7 @@ export const moduleRegistry: Record<string, ModuleMeta> = {
   'projects': projects,
   'purchases': purchases,
   'qualite': qualite,
+  'saisie': saisie,
   'settings': settings,
   'subscriptions': subscriptions,
   'treasury': treasury,

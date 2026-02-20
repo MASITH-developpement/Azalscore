@@ -1,7 +1,7 @@
 /**
- * AZALSCORE - Métadonnées Module Passerelles d'Import (AZA-FE-META)
- * =================================================================
- * Gestion des connexions d'import multi-sources (Odoo, etc.)
+ * AZALSCORE - Métadonnées Module Import (AZA-FE-META)
+ * ===================================================
+ * Import de données depuis fichiers (CSV, Excel, etc.)
  */
 
 export const moduleMeta = {
@@ -9,8 +9,8 @@ export const moduleMeta = {
   // IDENTIFICATION
   // ============================================================
 
-  name: 'Passerelles d\'Import',
-  code: 'import-gateways',
+  name: 'Import',
+  code: 'import',
   version: '1.0.0',
 
   // ============================================================
@@ -40,13 +40,11 @@ export const moduleMeta = {
     apiAvailable: true,
     lastCheck: '2026-02-20',
     endpoints: [
-      'GET /import-gateways',
-      'GET /import-gateways/{id}',
-      'POST /import-gateways',
-      'PUT /import-gateways/{id}',
-      'DELETE /import-gateways/{id}',
-      'POST /import-gateways/{id}/sync',
-      'POST /import-gateways/{id}/test',
+      'POST /import/upload',
+      'POST /import/parse',
+      'POST /import/validate',
+      'POST /import/execute',
+      'GET /import/history',
     ] as readonly string[],
   },
 
@@ -61,7 +59,7 @@ export const moduleMeta = {
   // AUDIT
   // ============================================================
 
-  createdAt: '2026-02-15',
+  createdAt: '2026-02-18',
   updatedAt: '2026-02-20',
 } as const;
 
