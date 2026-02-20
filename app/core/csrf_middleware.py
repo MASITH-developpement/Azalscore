@@ -64,6 +64,11 @@ CSRF_EXEMPT_PATHS = {
     "/metrics/test-ai",
     "/metrics/test-website",
     "/metrics/update-tenants",
+    "/metrics/update-users",
+    "/api/metrics/test-ai",
+    "/api/metrics/test-website",
+    "/api/metrics/update-tenants",
+    "/api/metrics/update-users",
 }
 
 

@@ -101,6 +101,11 @@ USERS_TOTAL = Gauge(
     ['tenant_id']
 )
 
+USERS_CONNECTED = Gauge(
+    'azals_users_connected',
+    'Currently connected users (active sessions)'
+)
+
 DECISIONS_TOTAL = Counter(
     'azals_decisions_total',
     'Total decisions by level',
@@ -325,6 +330,49 @@ async def update_tenants_metrics(db: Session = Depends(get_db)):
         return {
             "status": "ok",
             "active_tenants": active_count
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/metrics/update-users")
+async def update_users_metrics(db: Session = Depends(get_db)):
+    """
+    Met à jour le compteur d'utilisateurs connectés.
+    Compte les utilisateurs actifs (session récente < 15 min).
+    """
+    from sqlalchemy import text
+    from datetime import datetime, timedelta
+
+    try:
+        # Compter les utilisateurs avec activité récente (15 min)
+        # Note: Utilise updated_at comme proxy pour l'activité
+        threshold = datetime.utcnow() - timedelta(minutes=15)
+
+        result = db.execute(text("""
+            SELECT COUNT(*) as connected_users
+            FROM users
+            WHERE is_active = 1
+            AND updated_at > :threshold
+        """), {"threshold": threshold})
+        row = result.fetchone()
+        connected_count = row[0] if row else 0
+
+        USERS_CONNECTED.set(connected_count)
+
+        # Aussi mettre à jour le total d'utilisateurs
+        result_total = db.execute(text("""
+            SELECT COUNT(*) as total_users
+            FROM users
+            WHERE is_active = 1
+        """))
+        row_total = result_total.fetchone()
+        total_count = row_total[0] if row_total else 0
+
+        return {
+            "status": "ok",
+            "connected_users": connected_count,
+            "total_users": total_count
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
