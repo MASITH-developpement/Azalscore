@@ -862,7 +862,7 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
               </select>
             </div>
             <div className="azals-field">
-              <label htmlFor="emp-hire-date">Date d'embauche *</label>
+              <label htmlFor="emp-hire-date">Date d&apos;embauche *</label>
               <input
                 id="emp-hire-date"
                 name="hire_date"
@@ -1044,7 +1044,7 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             </Grid>
             <Grid cols={2}>
               <div className="azals-field">
-                <label htmlFor="edit-emp-hire-date">Date d'embauche *</label>
+                <label htmlFor="edit-emp-hire-date">Date d&apos;embauche *</label>
                 <input id="edit-emp-hire-date" name="hire_date" type="date" className="azals-input" defaultValue={editingEmployee.hire_date} required />
               </div>
               <div className="azals-field">
@@ -1113,8 +1113,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             </div>
           )}
           <div className="azals-field">
-            <label>Code</label>
+            <label htmlFor="new-dept-code">Code</label>
             <input
+              id="new-dept-code"
               type="text"
               className="azals-input"
               value={newDeptData.code}
@@ -1123,8 +1124,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             />
           </div>
           <div className="azals-field">
-            <label>Nom</label>
+            <label htmlFor="new-dept-name">Nom</label>
             <input
+              id="new-dept-name"
               type="text"
               className="azals-input"
               value={newDeptData.name}
@@ -1148,8 +1150,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             </div>
           )}
           <div className="azals-field">
-            <label>Code</label>
+            <label htmlFor="new-pos-code">Code</label>
             <input
+              id="new-pos-code"
               type="text"
               className="azals-input"
               value={newPosData.code}
@@ -1158,8 +1161,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             />
           </div>
           <div className="azals-field">
-            <label>Intitule</label>
+            <label htmlFor="new-pos-title">Intitule</label>
             <input
+              id="new-pos-title"
               type="text"
               className="azals-input"
               value={newPosData.title}
@@ -1612,8 +1616,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
     <form onSubmit={handleSubmit}>
       <Grid cols={2}>
         <div className="azals-field">
-          <label>Code *</label>
+          <label htmlFor="dept-form-code">Code *</label>
           <input
+            id="dept-form-code"
             type="text"
             className="azals-input"
             value={code}
@@ -1623,8 +1628,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
           />
         </div>
         <div className="azals-field">
-          <label>Nom *</label>
+          <label htmlFor="dept-form-name">Nom *</label>
           <input
+            id="dept-form-name"
             type="text"
             className="azals-input"
             value={name}
@@ -1635,8 +1641,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
         </div>
       </Grid>
       <div className="azals-field">
-        <label>Description</label>
+        <label htmlFor="dept-form-desc">Description</label>
         <textarea
+          id="dept-form-desc"
           className="azals-input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -1662,8 +1669,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
           />
         </div>
         <div className="azals-field">
-          <label>Centre de cout</label>
+          <label htmlFor="dept-form-cost-center">Centre de cout</label>
           <input
+            id="dept-form-cost-center"
             type="text"
             className="azals-input"
             value={costCenter}
@@ -1848,8 +1856,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
     <form onSubmit={handleSubmit}>
       <Grid cols={2}>
         <div className="azals-field">
-          <label>Code *</label>
+          <label htmlFor="pos-form-code">Code *</label>
           <input
+            id="pos-form-code"
             type="text"
             className="azals-input"
             value={code}
@@ -1859,8 +1868,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
           />
         </div>
         <div className="azals-field">
-          <label>Intitule du poste *</label>
+          <label htmlFor="pos-form-title">Intitule du poste *</label>
           <input
+            id="pos-form-title"
             type="text"
             className="azals-input"
             value={title}
@@ -1871,8 +1881,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
         </div>
       </Grid>
       <div className="azals-field">
-        <label>Description</label>
+        <label htmlFor="pos-form-desc">Description</label>
         <textarea
+          id="pos-form-desc"
           className="azals-input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -1898,8 +1909,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
           />
         </div>
         <div className="azals-field">
-          <label>Niveau hierarchique</label>
+          <label htmlFor="pos-form-level">Niveau hierarchique</label>
           <input
+            id="pos-form-level"
             type="number"
             className="azals-input"
             value={level}
@@ -1911,8 +1923,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
       </Grid>
       <Grid cols={2}>
         <div className="azals-field">
-          <label>Salaire minimum</label>
+          <label htmlFor="pos-form-min-salary">Salaire minimum</label>
           <input
+            id="pos-form-min-salary"
             type="number"
             className="azals-input"
             value={minSalary}
@@ -1921,8 +1934,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
           />
         </div>
         <div className="azals-field">
-          <label>Salaire maximum</label>
+          <label htmlFor="pos-form-max-salary">Salaire maximum</label>
           <input
+            id="pos-form-max-salary"
             type="number"
             className="azals-input"
             value={maxSalary}
@@ -1932,12 +1946,13 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
         </div>
       </Grid>
       <div className="azals-field">
-        <label>Competences requises (une par ligne)</label>
+        <label htmlFor="pos-form-requirements">Competences requises (une par ligne)</label>
         <textarea
+          id="pos-form-requirements"
           className="azals-input"
           value={requirements}
           onChange={(e) => setRequirements(e.target.value)}
-          placeholder="Ex:&#10;Diplome Bac+5&#10;3 ans d'experience&#10;Anglais courant"
+          placeholder="Ex:&#10;Diplome Bac+5&#10;3 ans d&apos;experience&#10;Anglais courant"
           rows={3}
         />
       </div>
@@ -2101,8 +2116,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSubmit, onCancel, isLoa
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Employe *</label>
-        <select name="employee_id" required className="w-full border rounded px-3 py-2">
+        <label htmlFor="time-form-employee" className="block text-sm font-medium mb-1">Employe *</label>
+        <select id="time-form-employee" name="employee_id" required className="w-full border rounded px-3 py-2">
           <option value="">Selectionnez un employe</option>
           {employees.map(emp => (
             <option key={emp.id} value={emp.id}>{getFullName(emp)}</option>
@@ -2111,27 +2126,27 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSubmit, onCancel, isLoa
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Date *</label>
-          <input type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-date" className="block text-sm font-medium mb-1">Date *</label>
+          <input id="time-form-date" type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border rounded px-3 py-2" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Heures travaillees *</label>
-          <input type="number" name="worked_hours" required step={0.5} min={0} max={24} defaultValue={8} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-worked" className="block text-sm font-medium mb-1">Heures travaillees *</label>
+          <input id="time-form-worked" type="number" name="worked_hours" required step={0.5} min={0} max={24} defaultValue={8} className="w-full border rounded px-3 py-2" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Heures supplementaires</label>
-          <input type="number" name="overtime_hours" step={0.5} min={0} max={24} defaultValue={0} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-overtime" className="block text-sm font-medium mb-1">Heures supplementaires</label>
+          <input id="time-form-overtime" type="number" name="overtime_hours" step={0.5} min={0} max={24} defaultValue={0} className="w-full border rounded px-3 py-2" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Pause (minutes)</label>
-          <input type="number" name="break_duration" min={0} max={480} defaultValue={60} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-break" className="block text-sm font-medium mb-1">Pause (minutes)</label>
+          <input id="time-form-break" type="number" name="break_duration" min={0} max={480} defaultValue={60} className="w-full border rounded px-3 py-2" />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Description tache</label>
-        <textarea name="task_description" className="w-full border rounded px-3 py-2" rows={3} placeholder="Description du travail effectue..." />
+        <label htmlFor="time-form-task-desc" className="block text-sm font-medium mb-1">Description tache</label>
+        <textarea id="time-form-task-desc" name="task_description" className="w-full border rounded px-3 py-2" rows={3} placeholder="Description du travail effectue..." />
       </div>
       <div className="flex justify-end gap-2 pt-4">
         <Button variant="secondary" onClick={onCancel} disabled={isLoading}>Annuler</Button>
@@ -2184,8 +2199,9 @@ const TimesheetsView: React.FC = () => {
       </div>
       <div className="flex gap-4 mb-4">
         <div className="flex-1">
-          <label className="block text-sm font-medium mb-1">Employe</label>
+          <label htmlFor="ts-filter-employee" className="block text-sm font-medium mb-1">Employe</label>
           <select
+            id="ts-filter-employee"
             value={filterEmployee}
             onChange={(e) => setFilterEmployee(e.target.value)}
             className="w-full border rounded px-3 py-2"
@@ -2197,8 +2213,9 @@ const TimesheetsView: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Du</label>
+          <label htmlFor="ts-filter-from" className="block text-sm font-medium mb-1">Du</label>
           <input
+            id="ts-filter-from"
             type="date"
             value={filterFromDate}
             onChange={(e) => setFilterFromDate(e.target.value)}
@@ -2206,8 +2223,9 @@ const TimesheetsView: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Au</label>
+          <label htmlFor="ts-filter-to" className="block text-sm font-medium mb-1">Au</label>
           <input
+            id="ts-filter-to"
             type="date"
             value={filterToDate}
             onChange={(e) => setFilterToDate(e.target.value)}

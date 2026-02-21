@@ -387,22 +387,25 @@ const AccountsView: React.FC = () => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau compte">
         <form onSubmit={handleSubmit}>
           <div className="azals-field">
-            <label>Code</label>
+            <label htmlFor="account-code">Code</label>
             <Input
+              id="account-code"
               value={formData.code || ''}
               onChange={(v) => setFormData({ ...formData, code: v })}
             />
           </div>
           <div className="azals-field">
-            <label>Libelle</label>
+            <label htmlFor="account-name">Libelle</label>
             <Input
+              id="account-name"
               value={formData.name || ''}
               onChange={(v) => setFormData({ ...formData, name: v })}
             />
           </div>
           <div className="azals-field">
-            <label>Type</label>
+            <label htmlFor="account-type">Type</label>
             <Select
+              id="account-type"
               value={formData.type || ''}
               onChange={(v) => setFormData({ ...formData, type: v as Account['type'] })}
               options={ACCOUNT_TYPES}
@@ -454,22 +457,25 @@ const JournalsView: React.FC = () => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau journal">
         <form onSubmit={handleSubmit}>
           <div className="azals-field">
-            <label>Code</label>
+            <label htmlFor="journal-code">Code</label>
             <Input
+              id="journal-code"
               value={formData.code || ''}
               onChange={(v) => setFormData({ ...formData, code: v })}
             />
           </div>
           <div className="azals-field">
-            <label>Libelle</label>
+            <label htmlFor="journal-name">Libelle</label>
             <Input
+              id="journal-name"
               value={formData.name || ''}
               onChange={(v) => setFormData({ ...formData, name: v })}
             />
           </div>
           <div className="azals-field">
-            <label>Type</label>
+            <label htmlFor="journal-type">Type</label>
             <Select
+              id="journal-type"
               value={formData.type || ''}
               onChange={(v) => setFormData({ ...formData, type: v as Journal['type'] })}
               options={JOURNAL_TYPES}
@@ -556,16 +562,18 @@ const EntriesView: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Journal</label>
+              <label htmlFor="entry-journal">Journal</label>
               <Select
+                id="entry-journal"
                 value={formData.journal_id || ''}
                 onChange={(v) => setFormData({ ...formData, journal_id: v })}
                 options={journals.map(j => ({ value: j.id, label: `${j.code} - ${j.name}` }))}
               />
             </div>
             <div className="azals-field">
-              <label>Date</label>
+              <label htmlFor="entry-date">Date</label>
               <input
+                id="entry-date"
                 type="date"
                 className="azals-input"
                 value={formData.date || ''}
@@ -575,8 +583,9 @@ const EntriesView: React.FC = () => {
             </div>
           </Grid>
           <div className="azals-field">
-            <label>Libelle</label>
+            <label htmlFor="entry-description">Libelle</label>
             <Input
+              id="entry-description"
               value={formData.description || ''}
               onChange={(v) => setFormData({ ...formData, description: v })}
             />

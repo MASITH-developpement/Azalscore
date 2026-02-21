@@ -24,7 +24,7 @@ export const NCAnalysisTab: React.FC<TabContentProps<NonConformance>> = ({ data:
           <Search size={48} className="text-muted" />
           <h3>Analyse en attente</h3>
           <p className="text-muted">
-            L'analyse de cette non-conformite n'a pas encore commence.
+            L&apos;analyse de cette non-conformite n&apos;a pas encore commence.
           </p>
         </div>
       </div>
@@ -44,7 +44,7 @@ export const NCAnalysisTab: React.FC<TabContentProps<NonConformance>> = ({ data:
             <Search size={32} className="text-muted" />
             <p className="text-muted">Cause racine non identifiee</p>
             <p className="text-sm text-muted">
-              Utilisez la methode des 5 pourquoi ou un diagramme d'Ishikawa.
+              Utilisez la methode des 5 pourquoi ou un diagramme d&apos;Ishikawa.
             </p>
           </div>
         )}
@@ -110,7 +110,7 @@ export const NCAnalysisTab: React.FC<TabContentProps<NonConformance>> = ({ data:
             <div className="azals-methodology-step__content">
               <h4>Identifier la cause racine</h4>
               <p className="text-sm text-muted">
-                Utilisez la methode des 5 pourquoi ou un diagramme d'Ishikawa (causes-effets).
+                Utilisez la methode des 5 pourquoi ou un diagramme d&apos;Ishikawa (causes-effets).
               </p>
             </div>
             {nc.root_cause && <CheckCircle size={20} className="text-success" />}
@@ -119,7 +119,7 @@ export const NCAnalysisTab: React.FC<TabContentProps<NonConformance>> = ({ data:
           <div className="azals-methodology-step">
             <div className="azals-methodology-step__number">2</div>
             <div className="azals-methodology-step__content">
-              <h4>Definir l'action corrective</h4>
+              <h4>Definir l&apos;action corrective</h4>
               <p className="text-sm text-muted">
                 Action immediate pour corriger le probleme detecte et traiter les effets.
               </p>
@@ -130,7 +130,7 @@ export const NCAnalysisTab: React.FC<TabContentProps<NonConformance>> = ({ data:
           <div className="azals-methodology-step">
             <div className="azals-methodology-step__number">3</div>
             <div className="azals-methodology-step__content">
-              <h4>Definir l'action preventive</h4>
+              <h4>Definir l&apos;action preventive</h4>
               <p className="text-sm text-muted">
                 Action pour eviter que le probleme ne se reproduise (modification de processus, formation, etc.).
               </p>
@@ -141,7 +141,7 @@ export const NCAnalysisTab: React.FC<TabContentProps<NonConformance>> = ({ data:
           <div className="azals-methodology-step">
             <div className="azals-methodology-step__number">4</div>
             <div className="azals-methodology-step__content">
-              <h4>Verifier l'efficacite</h4>
+              <h4>Verifier l&apos;efficacite</h4>
               <p className="text-sm text-muted">
                 Controler que les actions mises en place sont efficaces et cloturer la NC.
               </p>

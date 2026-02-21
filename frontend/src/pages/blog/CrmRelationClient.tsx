@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Calendar, Clock, User, ArrowLeft, ArrowRight, Share2, Bookmark, Users, Target, Heart, Zap, CheckCircle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 
 const CrmRelationClient: React.FC = () => {
   const publishDate = '2026-01-20';

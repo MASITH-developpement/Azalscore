@@ -134,7 +134,7 @@ export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: emp
         </Card>
 
         {/* Pieces d'identite */}
-        <Card title="Pieces d'identite" icon={<CreditCard size={18} />}>
+        <Card title="Pieces d&apos;identite" icon={<CreditCard size={18} />}>
           {ids.length > 0 ? (
             <ul className="azals-document-list">
               {ids.map((doc) => (
@@ -144,7 +144,7 @@ export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: emp
           ) : (
             <div className="azals-empty azals-empty--sm">
               <CreditCard size={32} className="text-muted" />
-              <p className="text-muted">Aucune piece d'identite</p>
+              <p className="text-muted">Aucune piece d&apos;identite</p>
               <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>

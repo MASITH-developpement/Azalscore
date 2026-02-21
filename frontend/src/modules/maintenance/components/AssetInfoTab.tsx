@@ -125,12 +125,12 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
         <Card title="Dates et garantie" icon={<Calendar size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <span className="azals-field__label">Date d'achat</span>
+              <span className="azals-field__label">Date d&apos;achat</span>
               <span className="azals-field__value">{formatDate(asset.purchase_date)}</span>
             </div>
             {asset.purchase_cost && (
               <div className="azals-field">
-                <span className="azals-field__label">Cout d'achat</span>
+                <span className="azals-field__label">Cout d&apos;achat</span>
                 <span className="azals-field__value">{formatCurrency(asset.purchase_cost)}</span>
               </div>
             )}

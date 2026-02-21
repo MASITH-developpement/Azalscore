@@ -191,17 +191,17 @@ const ThemesView: React.FC = () => {
       <Modal isOpen={showModal} onClose={handleCloseModal} title="Nouveau thème">
         <div className="space-y-4">
           <div className="azals-field">
-            <label>Nom du thème</label>
-            <Input value={formData.name} onChange={(v: string) => setFormData(p => ({ ...p, name: v }))} placeholder="Mon thème" />
+            <label htmlFor="theme-name">Nom du thème</label>
+            <Input id="theme-name" value={formData.name} onChange={(v: string) => setFormData(p => ({ ...p, name: v }))} placeholder="Mon thème" />
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Couleur primaire</label>
-              <input type="color" value={formData.primary_color} onChange={(e) => setFormData(p => ({ ...p, primary_color: e.target.value }))} className="w-full h-10" />
+              <label htmlFor="theme-primary-color">Couleur primaire</label>
+              <input id="theme-primary-color" type="color" value={formData.primary_color} onChange={(e) => setFormData(p => ({ ...p, primary_color: e.target.value }))} className="w-full h-10" />
             </div>
             <div className="azals-field">
-              <label>Couleur secondaire</label>
-              <input type="color" value={formData.secondary_color} onChange={(e) => setFormData(p => ({ ...p, secondary_color: e.target.value }))} className="w-full h-10" />
+              <label htmlFor="theme-secondary-color">Couleur secondaire</label>
+              <input id="theme-secondary-color" type="color" value={formData.secondary_color} onChange={(e) => setFormData(p => ({ ...p, secondary_color: e.target.value }))} className="w-full h-10" />
             </div>
           </Grid>
           <div className="flex justify-end gap-2 pt-4">

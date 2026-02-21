@@ -31,7 +31,7 @@ export const InterventionReportTab: React.FC<TabContentProps<Intervention>> = ({
           <FileText size={48} className="text-muted" />
           <h3>Compte-rendu non disponible</h3>
           <p className="text-muted">
-            Le compte-rendu sera disponible une fois l'intervention terminee.
+            Le compte-rendu sera disponible une fois l&apos;intervention terminee.
           </p>
         </div>
       </div>

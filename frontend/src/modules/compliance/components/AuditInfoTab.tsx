@@ -42,7 +42,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
             </div>
           </div>
           <div className="azals-field">
-            <span className="azals-field__label">Type d'audit</span>
+            <span className="azals-field__label">Type d&apos;audit</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${AUDIT_TYPE_CONFIG[audit.type].color}`}>
                 {AUDIT_TYPE_CONFIG[audit.type].label}
@@ -77,7 +77,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
       </Card>
 
       {/* Equipe d'audit */}
-      <Card title="Equipe d'audit" icon={<Users size={18} />} className="mt-4">
+      <Card title="Equipe d&apos;audit" icon={<Users size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
             <span className="azals-field__label">Auditeur principal</span>
@@ -199,7 +199,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
             <div className="mt-4 pt-4 border-t">
               <Grid cols={2} gap="md">
                 <div className="azals-field">
-                  <span className="azals-field__label">Plan d'action</span>
+                  <span className="azals-field__label">Plan d&apos;action</span>
                   <div className="azals-field__value">
                     <span className={`azals-badge azals-badge--${
                       audit.action_plan_status === 'COMPLETED' ? 'green' :

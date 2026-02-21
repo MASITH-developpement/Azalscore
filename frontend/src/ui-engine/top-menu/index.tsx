@@ -142,7 +142,7 @@ const OverviewDropdown: React.FC = () => {
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
       >
         <LayoutGrid size={20} className="azals-topmenu__icon" />
-        <span>Vue d'ensemble</span>
+        <span>Vue d&apos;ensemble</span>
         <ChevronDown size={16} className="azals-topmenu__chevron" />
       </button>
 

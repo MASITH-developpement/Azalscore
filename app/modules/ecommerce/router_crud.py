@@ -923,11 +923,12 @@ def remove_from_wishlist(
 # ============================================================================
 
 @router.get("/dashboard", response_model=EcommerceDashboard)
+@router.get("/summary", response_model=EcommerceDashboard)
 def get_dashboard(
     context: SaaSContext = Depends(get_context),
     service: EcommerceService = Depends(get_service)
 ):
-    """Récupérer les statistiques du dashboard e-commerce."""
+    """Récupérer les statistiques du dashboard e-commerce (alias: /summary)."""
     require_ecommerce_admin(context)
     stats = service.get_dashboard_stats()
     top_products = service.get_top_selling_products()

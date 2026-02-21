@@ -30,7 +30,7 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
       <Card title="Identite" icon={<User size={18} />}>
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <span className="azals-field__label">Nom d'utilisateur</span>
+            <span className="azals-field__label">Nom d&apos;utilisateur</span>
             <div className="azals-field__value font-mono">{user.username}</div>
           </div>
           <div className="azals-field">

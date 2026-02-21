@@ -271,3 +271,92 @@ export function formatDate(dateString: string): string {
     year: 'numeric'
   });
 }
+
+// === Types pour la configuration des plateformes ===
+
+export type OAuthStatus = 'not_connected' | 'connected' | 'expired' | 'error';
+export type SyncStatus = 'never' | 'success' | 'error' | 'in_progress';
+
+export interface PlatformStatus {
+  platform: MarketingPlatform;
+  name: string;
+  is_configured: boolean;
+  is_connected: boolean;
+  is_enabled: boolean;
+  last_sync_at: string | null;
+  sync_status: SyncStatus;
+  error_message: string | null;
+  account_id: string | null;
+  account_name: string | null;
+}
+
+export interface AllPlatformsStatus {
+  platforms: PlatformStatus[];
+  total_configured: number;
+  total_connected: number;
+  last_global_sync: string | null;
+}
+
+export interface PlatformConfigInput {
+  platform: MarketingPlatform;
+  is_enabled?: boolean;
+  account_id?: string;
+  property_id?: string;
+  api_key?: string;
+  api_secret?: string;
+}
+
+export interface OAuthInitResponse {
+  auth_url: string;
+  state: string;
+  platform: MarketingPlatform;
+}
+
+export interface OAuthCallbackRequest {
+  platform: MarketingPlatform;
+  code: string;
+  state: string;
+}
+
+export interface OAuthCallbackResponse {
+  success: boolean;
+  platform: MarketingPlatform;
+  message: string;
+  account_id?: string;
+  account_name?: string;
+}
+
+export interface SyncRequest {
+  platform?: MarketingPlatform;
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface SyncResponse {
+  success: boolean;
+  platform?: MarketingPlatform;
+  message: string;
+  records_synced: number;
+  errors: string[];
+}
+
+// Plateformes supportant OAuth
+export const OAUTH_PLATFORMS: MarketingPlatform[] = [
+  'google_analytics',
+  'google_ads',
+  'google_search_console',
+  'google_my_business',
+  'meta_facebook',
+  'meta_instagram',
+  'linkedin'
+];
+
+// Plateformes avec clé API simple
+export const API_KEY_PLATFORMS: MarketingPlatform[] = [
+  'solocal'
+];
+
+// Helper pour savoir si une plateforme utilise OAuth
+export function usesOAuth(platform: MarketingPlatform): boolean {
+  return OAUTH_PLATFORMS.includes(platform);
+}

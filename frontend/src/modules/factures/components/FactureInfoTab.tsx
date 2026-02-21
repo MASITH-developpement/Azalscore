@@ -92,7 +92,7 @@ export const FactureInfoTab: React.FC<TabContentProps<Facture>> = ({ data: factu
           <AlertTriangle size={20} />
           <div>
             <strong>Facture en retard</strong>
-            <p>L'échéance est dépassée de {Math.abs(daysUntilDue!)} jours.</p>
+            <p>L&apos;échéance est dépassée de {Math.abs(daysUntilDue!)} jours.</p>
           </div>
         </div>
       )}

@@ -617,11 +617,17 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="azals-modal-overlay" onClick={onClose}>
+    <div
+      className="azals-modal-overlay"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+      role="presentation"
+    >
       <div
         ref={dialogRef}
         className={clsx('azals-modal', `azals-modal--${size}`)}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >

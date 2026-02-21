@@ -369,8 +369,9 @@ const UploadModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} title="Ajouter un document">
       <div className="azals-auto-accounting__upload-form">
         <div className="azals-form-group">
-          <label className="azals-form-label">Type de document</label>
+          <label htmlFor="upload-doc-type" className="azals-form-label">Type de document</label>
           <Select
+            id="upload-doc-type"
             value={documentType}
             onChange={(value) => setDocumentType(value)}
             options={documentTypes}
@@ -378,13 +379,14 @@ const UploadModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Fichier</label>
+          <label htmlFor="upload-doc-file" className="azals-form-label">Fichier</label>
           <div
             className={`azals-auto-accounting__dropzone ${
               selectedFile ? 'azals-auto-accounting__dropzone--has-file' : ''
             }`}
           >
             <input
+              id="upload-doc-file"
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
@@ -408,7 +410,7 @@ const UploadModal: React.FC<{
         <div className="azals-form-group azals-form-group--info">
           <p>
             Le document sera automatiquement analysé et comptabilisé.
-            Vous n'avez rien d'autre à faire !
+            Vous n&apos;avez rien d&apos;autre à faire !
           </p>
         </div>
 

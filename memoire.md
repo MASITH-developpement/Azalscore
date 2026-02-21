@@ -1,10 +1,163 @@
 # AZALSCORE - Memoire de Session
 
-## Derniere mise a jour: 2026-02-17
+## Derniere mise a jour: 2026-02-20
 
 ---
 
-## Tâches Complétées Aujourd'hui [2026-02-17]
+## Tâches Complétées [2026-02-20]
+
+### Automatisation Complète Backend → Frontend
+
+**Objectif :** Synchroniser automatiquement les 66 modules backend avec le frontend (menu + permissions).
+
+#### Ce qui a été fait :
+
+1. **Auto-génération IAM Capabilities** (`app/modules/iam/router.py`)
+   - Fonction `_generate_capabilities_by_module()` parcourt `MODULES` depuis `modules_registry.py`
+   - Génère automatiquement 4 capabilities par module : `view`, `create`, `edit`, `delete`
+   - 326 permissions générées pour 66 modules
+   - Support overrides personnalisés via `_get_custom_capabilities()`
+
+2. **Script génération menu** (`scripts/frontend/generate-menu.js`)
+   - Parse `modules_registry.py` (MODULE_METADATA_OVERRIDES)
+   - Génère `ViewKey` type et `MENU_ITEMS` array
+   - Configuration groupes : `MODULE_GROUP_MAP`
+   - Labels personnalisés : `MODULE_LABELS`
+   - Usage : `node scripts/frontend/generate-menu.js`
+
+3. **Mise à jour UnifiedLayout.tsx**
+   - 63 entrées de menu réparties en 14 groupes
+   - Modules non implémentés → `PlaceholderModule` (message "en cours de développement")
+
+4. **Endpoint PUT permissions** (`app/modules/iam/router_crud.py`)
+   - `PUT /iam/users/{user_id}/permissions` pour sauvegarder les permissions
+
+#### Fichiers modifiés :
+
+| Fichier | Modification |
+|---------|--------------|
+| `app/modules/iam/router.py` | Auto-génération capabilities |
+| `app/modules/iam/router_crud.py` | Ajout PUT endpoint permissions |
+| `app/modules/iam/schemas.py` | Ajout `UserPermissionsUpdate` |
+| `scripts/frontend/generate-menu.js` | NOUVEAU - Générateur menu |
+| `frontend/src/components/UnifiedLayout.tsx` | 63 items menu, 14 groupes |
+| `frontend/src/UnifiedApp.tsx` | PlaceholderModule + mappings |
+| `frontend/src/styles/azalscore.css` | Styles `.azals-placeholder` |
+
+#### Vérification :
+
+- Admin → Tenants → 66/66 modules visibles
+- Admin → Utilisateurs → Accès Modules → 326/326 permissions
+- Menu latéral → 63 entrées dans 14 groupes
+
+---
+
+## Modules à Développer (Interface Frontend) [2026-02-20]
+
+**Résumé :** 28 modules ont un backend complet mais utilisent un PlaceholderModule côté frontend.
+
+### Modules Métier (7 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `contracts` | 1147 | HAUTE | Gestion des contrats clients/fournisseurs |
+| `timesheet` | 1208 | HAUTE | Feuilles de temps, saisie heures |
+| `field-service` | 2694 | MOYENNE | Gestion équipes terrain, planification |
+| `complaints` | 1078 | MOYENNE | Réclamations clients, suivi |
+| `warranty` | 986 | MOYENNE | Garanties produits, SAV |
+| `rfq` | 1015 | MOYENNE | Appels d'offres, réponses |
+| `procurement` | 2753 | HAUTE | Approvisionnement, réapprovisionnement auto |
+
+### Commerce (1 module)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `commercial` | 2794 | HAUTE | Gestion commerciale, objectifs, commissions |
+
+### Digital (2 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `broadcast` | 2015 | BASSE | Diffusion multi-canal, newsletters |
+| `social-networks` | 1119 | BASSE | Gestion réseaux sociaux, publications |
+
+### Communication (2 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `esignature` | 1427 | HAUTE | Signature électronique documents |
+| `email` | 998 | MOYENNE | Gestion emails, templates, campagnes |
+
+### Finance (5 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `assets` | 1195 | HAUTE | Immobilisations, amortissements |
+| `expenses` | 1091 | HAUTE | Notes de frais, remboursements |
+| `finance` | 2820 | MOYENNE | Finance avancée, budgets, prévisions |
+| `consolidation` | 1227 | BASSE | Consolidation multi-sociétés |
+| `automated-accounting` | 2031 | HAUTE | Comptabilisation automatique, OCR |
+
+### Système (11 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `audit` | 3112 | HAUTE | Audit logs, traçabilité, conformité |
+| `backup` | 892 | MOYENNE | Sauvegardes, restauration |
+| `guardian` | 3230 | HAUTE | Sécurité, détection anomalies, alertes |
+| `iam` | 4202 | CRITIQUE | Gestion accès (partiellement dans Admin) |
+| `tenants` | 1830 | MOYENNE | Multi-tenants (partiellement dans Admin) |
+| `triggers` | 2624 | HAUTE | Automatisations, workflows déclenchés |
+| `autoconfig` | 1902 | BASSE | Configuration automatique tenant |
+| `hr-vault` | 1110 | MOYENNE | Coffre-fort documents RH sécurisés |
+| `stripe-integration` | 2767 | HAUTE | Paiements Stripe, abonnements SaaS |
+| `country-packs` | 1718 | MOYENNE | Localisations par pays (TVA, formats) |
+
+### Priorités de développement suggérées
+
+**Phase 1 - Critique/Haute (12 modules) :**
+1. `iam` - Gestion des accès avancée
+2. `contracts` - Contrats
+3. `timesheet` - Feuilles de temps
+4. `procurement` - Approvisionnement
+5. `commercial` - Commercial
+6. `esignature` - Signature électronique
+7. `assets` - Immobilisations
+8. `expenses` - Notes de frais
+9. `automated-accounting` - Comptabilité auto
+10. `audit` - Audit & logs
+11. `guardian` - Sécurité
+12. `triggers` - Automatisations
+
+**Phase 2 - Moyenne (10 modules) :**
+- `field-service`, `complaints`, `warranty`, `rfq`, `email`
+- `finance`, `backup`, `tenants`, `hr-vault`, `country-packs`
+
+**Phase 3 - Basse (6 modules) :**
+- `broadcast`, `social-networks`, `consolidation`, `autoconfig`, `stripe-integration`
+
+### Modules avec Interface Implémentée (24 modules)
+
+| Catégorie | Modules |
+|-----------|---------|
+| Saisie | `saisie` |
+| Gestion | `gestion-devis`, `gestion-commandes`, `gestion-factures`, `gestion-paiements`, `gestion-interventions` |
+| Affaires | `affaires` |
+| Modules | `partners`, `crm`, `inventory`, `purchases`, `projects`, `hr` |
+| Logistique | `production`, `maintenance`, `quality`, `qc` |
+| Commerce | `pos`, `ecommerce`, `marketplace`, `subscriptions` |
+| Services | `helpdesk` |
+| Digital | `web`, `website`, `bi`, `compliance` |
+| Finance | `accounting`, `treasury` |
+| Direction | `cockpit` |
+| IA | `marceau`, `ai-assistant` |
+| Import | `import-odoo`, `import-axonaut`, `import-pennylane`, `import-sage`, `import-chorus` |
+| Système | `admin` |
+| Utilisateur | `profile`, `settings` |
+
+---
+
+## Tâches Complétées [2026-02-17]
 
 ### #93 Workflows d'Approbation - ANALYSE COMPLÈTE
 
@@ -1029,19 +1182,180 @@ for c in db.query(EnrichmentProviderConfig).all():
 19. `/app/modules/treasury/service.py` - Ajout get_summary(), get_forecast()
 20. `/app/modules/accounting/service.py` - Fix references modeles (AccountingJournalEntry, etc.)
 
-### Ajout d'un Nouveau Module
+### Ajout d'un Nouveau Module [PROCÉDURE COMPLÈTE - AUTOMATISÉE]
 
-Pour ajouter un nouveau module à l'avenir :
+Pour ajouter un nouveau module fonctionnel (visible dans tenant + permissions auto-générées) :
 
-1. **Backend** : Crée le dossier dans `app/modules/nom_module/`
-2. **Métadonnées** : Ajoute les métadonnées dans `MODULE_METADATA_OVERRIDES` dans `app/core/modules_registry.py` (optionnel si `__init__.py` les contient)
-3. **Frontend** : Crée le module avec `npm run scaffold:module -- nom-module` (dans frontend/)
-4. **Routes/Menu** : Enregistre avec `npm run register:modules` (dans frontend/)
-5. **Redémarre** le backend - le module sera découvert automatiquement
+#### Étape 1 : Backend - Créer le module
 
-**Fichiers clés :**
-- `app/core/modules_registry.py` - Registre auto-découverte des modules backend
-- `scripts/frontend/register-modules.ts` - Script d'enregistrement routes/menu frontend
+```bash
+# Créer le dossier du module
+mkdir -p app/modules/nom_module
+touch app/modules/nom_module/__init__.py
+touch app/modules/nom_module/router.py
+touch app/modules/nom_module/service.py
+touch app/modules/nom_module/models.py
+touch app/modules/nom_module/schemas.py
+```
+
+#### Étape 2 : Métadonnées Backend - `app/core/modules_registry.py`
+
+```python
+# Dans MODULE_METADATA_OVERRIDES (ligne ~44)
+MODULE_METADATA_OVERRIDES: Dict[str, Dict] = {
+    # ...existant
+    "nom_module": {
+        "name": "Nom Affiché",
+        "description": "Description du module",
+        "category": "Metier",  # ou "Technique" ou "Import"
+        "icon": "icon-name",   # lucide icon (voir liste ci-dessous)
+        "enabled_by_default": False
+    },
+}
+```
+
+**Icônes disponibles** : `book`, `file-text`, `dollar-sign`, `users`, `credit-card`, `briefcase`, `package`, `shopping-cart`, `user`, `settings`, `tool`, `check-circle`, `monitor`, `shopping-bag`, `headphones`, `bar-chart-2`, `shield`, `truck`, `bot`, `building`, `file-signature`, `receipt`, `clock`, `map-pin`, `alert-circle`, `shield-check`, `file-search`, `repeat`, `store`, `pen-tool`, `mail`, `send`, `globe`, `trending-up`, `layers`, `check-square`, `cpu`, `share-2`, `smartphone`, `mic`, `database`, `eye`, `key`, `building-2`, `zap`, `download`, `flag`, `lock`
+
+#### Étape 3 : Capabilities IAM - AUTOMATIQUE !
+
+**Les capabilities sont auto-générées** depuis `modules_registry.py` via `_generate_capabilities_by_module()` dans `app/modules/iam/router.py`.
+
+Chaque module obtient automatiquement :
+- `{module}.view` - Voir le module
+- `{module}.create` - Créer
+- `{module}.edit` - Modifier
+- `{module}.delete` - Supprimer
+
+**Pour des capabilities personnalisées**, ajouter dans `_get_custom_capabilities()` :
+
+```python
+# Dans app/modules/iam/router.py, fonction _get_custom_capabilities()
+"nom_module": {
+    "name": "Nom Module",
+    "icon": "IconName",
+    "capabilities": [
+        {"code": "nom_module.view", "name": "Voir", "description": "..."},
+        {"code": "nom_module.action_speciale", "name": "Action", "description": "..."},
+    ]
+},
+```
+
+#### Étape 4 : Frontend - Scaffolder le module
+
+```bash
+cd frontend
+npm run scaffold:module -- nom-module
+npm run register:modules
+```
+
+#### Étape 5 : Menu Frontend - SEMI-AUTOMATIQUE !
+
+**Option A : Génération automatique** (recommandé)
+
+```bash
+# Générer le code du menu depuis modules_registry.py
+node scripts/frontend/generate-menu.js
+
+# Le script affiche ViewKey et MENU_ITEMS à copier dans UnifiedLayout.tsx
+```
+
+**Option B : Ajout manuel** dans `frontend/src/components/UnifiedLayout.tsx`
+
+```typescript
+// Ajouter dans ViewKey (ligne ~35)
+export type ViewKey =
+  | 'existant'
+  | 'nom-module'  // Ajouter ici
+  | 'admin';
+
+// Ajouter dans MENU_ITEMS (ligne ~120)
+const MENU_ITEMS: MenuItem[] = [
+  // ...existant
+  { key: 'nom-module', label: 'Nom Module', group: 'Modules', capability: 'nom_module.view' },
+];
+```
+
+**Groupes de menu disponibles** : `Saisie`, `Gestion`, `Affaires`, `Modules`, `Logistique`, `Commerce`, `Services`, `Digital`, `Communication`, `Finance`, `Direction`, `IA`, `Système`, `Import`
+
+#### Étape 6 : Build & Redéployer
+
+```bash
+cd /home/ubuntu/azalscore
+docker compose -f docker-compose.prod.yml build frontend --no-cache
+docker compose -f docker-compose.prod.yml up -d frontend
+docker compose -f docker-compose.prod.yml restart api
+```
+
+#### Architecture Auto-Génération (Capabilities + Menu)
+
+```
+                    modules_registry.py
+                    (SOURCE UNIQUE DE VÉRITÉ)
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                                 ▼
+   iam/router.py                    generate-menu.js
+          │                                 │
+          │ _generate_capabilities_         │ Génère ViewKey
+          │ _by_module()                    │ et MENU_ITEMS
+          ▼                                 ▼
+┌──────────────────────┐        ┌──────────────────────┐
+│ CAPABILITIES_BY_MODULE│        │ UnifiedLayout.tsx    │
+│ (auto: view/create/  │        │ (copier le output)   │
+│  edit/delete)        │        │                      │
+│ + custom overrides   │        │ ViewKey type         │
+└──────────────────────┘        │ MENU_ITEMS array     │
+          │                     └──────────────────────┘
+          ▼
+/api/v1/iam/capabilities/modules
+(66 modules, 326+ permissions)
+```
+
+#### Fichiers clés
+
+| Fichier | Rôle |
+|---------|------|
+| `app/core/modules_registry.py` | Source unique modules (auto-découverte depuis app/modules/) |
+| `app/modules/iam/router.py` | Auto-génération capabilities + overrides personnalisés |
+| `scripts/frontend/generate-menu.js` | Génère ViewKey + MENU_ITEMS depuis modules_registry |
+| `frontend/src/components/UnifiedLayout.tsx` | Menu latéral (63 entrées, 14 groupes) |
+
+#### Script generate-menu.js
+
+```bash
+# Usage
+node scripts/frontend/generate-menu.js
+
+# Output exemple:
+# ============================================================
+# ViewKey (copier dans UnifiedLayout.tsx)
+# ============================================================
+# export type ViewKey =
+#   | 'saisie'
+#   | 'accounting'
+#   | 'treasury'
+#   ...
+#
+# ============================================================
+# MENU_ITEMS (copier dans UnifiedLayout.tsx)
+# ============================================================
+# const MENU_ITEMS: MenuItem[] = [
+#   { key: 'saisie', label: 'Nouvelle saisie', group: 'Saisie' },
+#   { key: 'accounting', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },
+#   ...
+# ];
+```
+
+**Configuration dans generate-menu.js :**
+- `MODULE_GROUP_MAP` : Mapping module → groupe menu
+- `MODULE_LABELS` : Labels personnalisés (ex: 'hr' → 'Ressources Humaines')
+- `IGNORED_MODULES` : Modules exclus du menu (utilitaires)
+
+#### Vérification
+
+1. **Modules Tenant** : Admin → Tenants → Modifier tenant → X/X modules
+2. **Accès Modules** : Admin → Utilisateurs → Accès Modules → X/X permissions (auto-généré)
+3. **Menu** : Le module apparaît dans le menu latéral
 
 ### Frontend (frontend/src/)
 1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules", onglet "Enrichissement"
@@ -1846,3 +2160,340 @@ app/modules/odoo_import/
 ---
 
 **Document de référence complet:** `/home/ubuntu/azalscore/PROMPT_PHASE_CRITIQUE.md`
+
+---
+
+## Vérification des 95 Modules - Checklist Qualité
+
+**Date ajout:** 2026-02-20
+**Objectif:** Vérifier chaque module pour qualité code, sécurité, multi-tenant et intégration B-F
+
+### Légende des statuts
+
+- [ ] Non vérifié
+- [x] Vérifié et conforme
+- [!] Problème détecté (voir notes)
+
+### Critères de vérification
+
+| Critère | Description |
+|---------|-------------|
+| **B-F** | Backend-Frontend connecté (API routes, endpoints) |
+| **QC** | Contrôle qualité code (typing, docstrings, tests) |
+| **MT** | Respect multi-tenant (isolation tenant_id) |
+| **SEC** | Sécurité (auth, validation, injection, OWASP) |
+
+---
+
+### Core / Infrastructure
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `tenants` | [ ] | [ ] | [ ] | [ ] | |
+| `iam` | [ ] | [ ] | [ ] | [ ] | |
+| `audit` | [ ] | [ ] | [ ] | [ ] | |
+| `backup` | [ ] | [ ] | [ ] | [ ] | |
+| `cache` | [ ] | [ ] | [ ] | [ ] | |
+| `storage` | [ ] | [ ] | [ ] | [ ] | |
+| `search` | [ ] | [ ] | [ ] | [ ] | |
+| `i18n` | [ ] | [ ] | [ ] | [ ] | |
+| `gateway` | [ ] | [ ] | [ ] | [ ] | |
+| `guardian` | [ ] | [ ] | [ ] | [ ] | |
+| `autoconfig` | [ ] | [ ] | [ ] | [ ] | |
+
+### Finance & Comptabilité
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `accounting` | [ ] | [ ] | [ ] | [ ] | |
+| `automated_accounting` | [ ] | [ ] | [ ] | [ ] | |
+| `finance` | [ ] | [ ] | [ ] | [ ] | |
+| `treasury` | [ ] | [ ] | [ ] | [ ] | |
+| `budget` | [ ] | [ ] | [ ] | [ ] | |
+| `consolidation` | [ ] | [ ] | [ ] | [ ] | |
+| `currency` | [ ] | [ ] | [ ] | [ ] | |
+| `expense` | [ ] | [ ] | [ ] | [ ] | GAP-084 |
+| `expenses` | [ ] | [ ] | [ ] | [ ] | |
+
+### Commerce & Ventes
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `commercial` | [ ] | [ ] | [ ] | [ ] | |
+| `ecommerce` | [ ] | [ ] | [ ] | [ ] | |
+| `marketplace` | [ ] | [ ] | [ ] | [ ] | |
+| `pos` | [ ] | [ ] | [ ] | [ ] | |
+| `subscriptions` | [ ] | [ ] | [ ] | [ ] | |
+| `loyalty` | [ ] | [ ] | [ ] | [ ] | |
+| `commissions` | [ ] | [ ] | [ ] | [ ] | |
+| `referral` | [ ] | [ ] | [ ] | [ ] | GAP-070 |
+| `gamification` | [ ] | [ ] | [ ] | [ ] | |
+
+### Achats & Approvisionnement
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `purchases` | [ ] | [ ] | [ ] | [ ] | |
+| `procurement` | [ ] | [ ] | [ ] | [ ] | |
+| `rfq` | [ ] | [ ] | [ ] | [ ] | |
+| `requisition` | [ ] | [ ] | [ ] | [ ] | GAP-085 |
+| `inventory` | [ ] | [ ] | [ ] | [ ] | |
+| `shipping` | [ ] | [ ] | [ ] | [ ] | GAP-078 |
+
+### Production & Qualité
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `production` | [ ] | [ ] | [ ] | [ ] | |
+| `manufacturing` | [ ] | [ ] | [ ] | [ ] | GAP-077 |
+| `quality` | [ ] | [ ] | [ ] | [ ] | |
+| `qc` | [ ] | [ ] | [ ] | [ ] | |
+| `compliance` | [ ] | [ ] | [ ] | [ ] | |
+
+### RH & Personnel
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `hr` | [ ] | [ ] | [ ] | [ ] | |
+| `hr_vault` | [ ] | [ ] | [ ] | [ ] | |
+| `timesheet` | [ ] | [ ] | [ ] | [ ] | |
+| `timetracking` | [ ] | [ ] | [ ] | [ ] | GAP-080 |
+| `training` | [ ] | [ ] | [ ] | [ ] | |
+
+### Services & Support
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `helpdesk` | [ ] | [ ] | [ ] | [ ] | |
+| `complaints` | [ ] | [ ] | [ ] | [ ] | |
+| `sla` | [ ] | [ ] | [ ] | [ ] | GAP-074 |
+| `interventions` | [ ] | [ ] | [ ] | [ ] | |
+| `field_service` | [ ] | [ ] | [ ] | [ ] | Legacy |
+| `fieldservice` | [ ] | [ ] | [ ] | [ ] | GAP-081 |
+| `maintenance` | [ ] | [ ] | [ ] | [ ] | |
+| `warranty` | [ ] | [ ] | [ ] | [ ] | |
+
+### Projets & Ressources
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `projects` | [ ] | [ ] | [ ] | [ ] | |
+| `resources` | [ ] | [ ] | [ ] | [ ] | GAP-071 |
+| `contracts` | [ ] | [ ] | [ ] | [ ] | |
+| `rental` | [ ] | [ ] | [ ] | [ ] | |
+| `assets` | [ ] | [ ] | [ ] | [ ] | |
+| `fleet` | [ ] | [ ] | [ ] | [ ] | |
+
+### Planification
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `appointments` | [ ] | [ ] | [ ] | [ ] | |
+| `events` | [ ] | [ ] | [ ] | [ ] | |
+| `scheduler` | [ ] | [ ] | [ ] | [ ] | |
+
+### Analytics & BI
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `bi` | [ ] | [ ] | [ ] | [ ] | |
+| `dashboards` | [ ] | [ ] | [ ] | [ ] | |
+| `forecasting` | [ ] | [ ] | [ ] | [ ] | GAP-076 |
+| `risk` | [ ] | [ ] | [ ] | [ ] | GAP-075 |
+
+### Communication
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `notifications` | [ ] | [ ] | [ ] | [ ] | |
+| `email` | [ ] | [ ] | [ ] | [ ] | |
+| `broadcast` | [ ] | [ ] | [ ] | [ ] | |
+| `social_networks` | [ ] | [ ] | [ ] | [ ] | |
+
+### Documents & Workflow
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `documents` | [ ] | [ ] | [ ] | [ ] | |
+| `templates` | [ ] | [ ] | [ ] | [ ] | |
+| `esignature` | [ ] | [ ] | [ ] | [ ] | |
+| `signatures` | [ ] | [ ] | [ ] | [ ] | |
+| `workflows` | [ ] | [ ] | [ ] | [ ] | |
+| `approval` | [ ] | [ ] | [ ] | [ ] | GAP-083 |
+| `triggers` | [ ] | [ ] | [ ] | [ ] | |
+
+### Web & Mobile
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `web` | [ ] | [ ] | [ ] | [ ] | |
+| `website` | [ ] | [ ] | [ ] | [ ] | |
+| `mobile` | [ ] | [ ] | [ ] | [ ] | |
+
+### Intégrations
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `integration` | [ ] | [ ] | [ ] | [ ] | GAP-086 |
+| `integrations` | [ ] | [ ] | [ ] | [ ] | |
+| `webhooks` | [ ] | [ ] | [ ] | [ ] | |
+| `dataexchange` | [ ] | [ ] | [ ] | [ ] | |
+| `stripe_integration` | [ ] | [ ] | [ ] | [ ] | |
+| `odoo_import` | [ ] | [ ] | [ ] | [ ] | |
+
+### Spécialisés
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `survey` | [ ] | [ ] | [ ] | [ ] | GAP-082 |
+| `surveys` | [ ] | [ ] | [ ] | [ ] | |
+| `visitor` | [ ] | [ ] | [ ] | [ ] | GAP-079 |
+| `contacts` | [ ] | [ ] | [ ] | [ ] | |
+| `enrichment` | [ ] | [ ] | [ ] | [ ] | |
+| `knowledge` | [ ] | [ ] | [ ] | [ ] | |
+| `country_packs` | [ ] | [ ] | [ ] | [ ] | |
+
+### IA & Automatisation
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `ai_assistant` | [ ] | [ ] | [ ] | [ ] | |
+| `marceau` | [ ] | [ ] | [ ] | [ ] | |
+
+---
+
+### Checklist de vérification détaillée
+
+#### Backend-Frontend (B-F)
+- [ ] Routes API définies dans `/app/api/`
+- [ ] Endpoints RESTful conformes
+- [ ] Schémas Pydantic pour validation
+- [ ] Réponses JSON standardisées
+- [ ] Gestion erreurs HTTP appropriée
+- [ ] Documentation OpenAPI/Swagger
+
+#### Contrôle Qualité Code (QC)
+- [ ] Type hints Python complets
+- [ ] Docstrings pour classes/méthodes
+- [ ] Tests unitaires présents
+- [ ] Tests d'intégration
+- [ ] Pas de code dupliqué
+- [ ] Respect PEP8/conventions
+- [ ] Gestion des exceptions
+
+#### Multi-Tenant (MT)
+- [ ] `tenant_id` sur toutes les entités
+- [ ] Filtrage systématique par tenant
+- [ ] Pas de fuite de données inter-tenant
+- [ ] Indexes DB incluent tenant_id
+- [ ] Tests d'isolation tenant
+
+#### Sécurité (SEC)
+- [ ] Authentification requise
+- [ ] Autorisation par rôle/permission
+- [ ] Validation des entrées
+- [ ] Protection injection SQL
+- [ ] Protection XSS
+- [ ] Protection CSRF
+- [ ] Rate limiting
+- [ ] Audit des actions sensibles
+- [ ] Pas de secrets en clair
+- [ ] HTTPS obligatoire
+
+---
+
+### Résumé de progression
+
+| Catégorie | Total | Vérifié | % |
+|-----------|-------|---------|---|
+| Core/Infrastructure | 11 | 0 | 0% |
+| Finance/Comptabilité | 9 | 0 | 0% |
+| Commerce/Ventes | 9 | 0 | 0% |
+| Achats/Approvisionnement | 6 | 0 | 0% |
+| Production/Qualité | 5 | 0 | 0% |
+| RH/Personnel | 5 | 0 | 0% |
+| Services/Support | 8 | 0 | 0% |
+| Projets/Ressources | 6 | 0 | 0% |
+| Planification | 3 | 0 | 0% |
+| Analytics/BI | 4 | 0 | 0% |
+| Communication | 4 | 0 | 0% |
+| Documents/Workflow | 7 | 0 | 0% |
+| Web/Mobile | 3 | 0 | 0% |
+| Intégrations | 6 | 0 | 0% |
+| Spécialisés | 7 | 0 | 0% |
+| IA/Automatisation | 2 | 0 | 0% |
+| **TOTAL** | **95** | **0** | **0%** |
+
+---
+
+### Modules GAP créés récemment (à vérifier en priorité)
+
+| GAP | Module | Lignes | Priorité |
+|-----|--------|--------|----------|
+| 070 | `referral` | ~900 | Haute |
+| 071 | `resources` | ~850 | Haute |
+| 074 | `sla` | ~800 | Haute |
+| 075 | `risk` | ~900 | Haute |
+| 076 | `forecasting` | ~900 | Haute |
+| 077 | `manufacturing` | ~950 | Haute |
+| 078 | `shipping` | ~1000 | Haute |
+| 079 | `visitor` | ~900 | Haute |
+| 080 | `timetracking` | ~950 | Haute |
+| 081 | `fieldservice` | ~1000 | Haute |
+| 082 | `survey` | ~950 | Haute |
+| 083 | `approval` | ~900 | Haute |
+| 084 | `expense` | ~1000 | Haute |
+| 085 | `requisition` | ~1000 | Haute |
+| 086 | `integration` | ~1100 | Haute |
+
+**Total code GAPs:** ~14,100+ lignes
+
+---
+
+### Historique des vérifications
+
+| Date | Module | Vérificateur | Statut | Commentaires |
+|------|--------|--------------|--------|--------------|
+| | | | | |
+
+
+---
+
+## Référence: Prompts de développement
+
+**Fichier:** `/home/ubuntu/azalscore/PROMPTS_DEVELOPPEMENT_MODULES.md`
+
+Contient 2 prompts complets pour:
+1. **PROMPT 1:** Développement backend module complet
+2. **PROMPT 2:** Intégration frontend & connexion
+
+Principes fondamentaux:
+- Vérité absolue (pas de mensonge)
+- Correction immédiate
+- Référence technique
+- Sécurité & multi-tenant
+- Ne pas casser l'existant
+
+---
+
+## Prompts V4 - Exécution Parallèle Simplifiée
+
+**Fichier:** `/home/ubuntu/azalscore/PROMPTS_MODULES_PARALLELES.md`
+
+**Principe:** N agents = N modules différents (chacun complet)
+
+```
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ Agent 1         │  │ Agent 2         │  │ Agent N         │
+│ Module: survey  │  │ Module: expense │  │ Module: [autre] │
+│ Backend+Frontend│  │ Backend+Frontend│  │ Backend+Frontend│
+│ COMPLET         │  │ COMPLET         │  │ COMPLET         │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+```
+
+**Avantages:**
+- Zéro conflit (fichiers différents)
+- Pas de mocks nécessaires
+- Pas de contrat à définir
+- Pas de phase d'intégration séparée
+- Chaque agent livre un module 100% fonctionnel

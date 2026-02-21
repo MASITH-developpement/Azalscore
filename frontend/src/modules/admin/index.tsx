@@ -10,6 +10,7 @@ import { api } from '@core/api-client';
 import { useAuth } from '@core/auth';
 import { useCapabilitiesStore } from '@core/capabilities';
 import { serializeFilters } from '@core/query-keys';
+import SocialNetworksModule from '@modules/social-networks';
 import { Button, Modal } from '@ui/actions';
 import { StatCard } from '@ui/dashboards';
 import { Select, Input } from '@ui/forms';
@@ -17,8 +18,19 @@ import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
 import { DataTable } from '@ui/tables';
 import type { AvailableModule } from '@/constants/modules';
-import type { TableColumn, ApiMutationError } from '@/types';
+import type { TableColumn } from '@/types';
 import { unwrapApiResponse } from '@/types';
+import { formatDateTime } from '@/utils/formatters';
+import {
+  UserInfoTab, UserPermissionsTab, UserActivityTab,
+  UserHistoryTab, UserIATab, SequencesView, EnrichmentProvidersView
+} from './components';
+import {
+  USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
+  hasTwoFactorEnabled, mustChangePassword
+} from './types';
+import type { AdminUser, Role } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 
 // Type for Pydantic validation error
 interface ValidationErrorDetail {
@@ -36,18 +48,6 @@ interface ValidationError {
   };
   detail?: ValidationErrorDetail[];
 }
-import { formatDateTime } from '@/utils/formatters';
-import {
-  UserInfoTab, UserPermissionsTab, UserActivityTab,
-  UserHistoryTab, UserIATab, SequencesView, EnrichmentProvidersView
-} from './components';
-import SocialNetworksModule from '@modules/social-networks';
-import {
-  USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
-  hasTwoFactorEnabled, mustChangePassword
-} from './types';
-import type { AdminUser, Role } from './types';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 
 // ============================================================================
 // HOOK: Charger les modules depuis l'API (source unique de verite)
@@ -148,7 +148,7 @@ interface AuditLog {
   action: string;
   resource_type: string;
   resource_id?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
 }
@@ -461,12 +461,13 @@ const useCapabilitiesByModule = () => {
       // La réponse est directement l'objet CAPABILITIES_BY_MODULE
       const data = response as unknown;
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        const obj = data as Record<string, any>;
+        const obj = data as Record<string, unknown>;
         const keys = Object.keys(obj);
 
         // Vérifier que c'est bien le format attendu (au moins un module avec capabilities)
         const firstKey = keys[0];
-        if (firstKey && obj[firstKey]?.capabilities) {
+        const firstModule = obj[firstKey] as { capabilities?: unknown[] } | undefined;
+        if (firstKey && firstModule?.capabilities) {
           return obj as CapabilitiesByModule;
         }
       }
@@ -672,7 +673,7 @@ const UserDetailView: React.FC = () => {
     return (
       <PageWrapper title="Erreur" subtitle="Utilisateur non trouve">
         <Card>
-          <p className="text-red-600">Impossible de charger l'utilisateur</p>
+          <p className="text-red-600">Impossible de charger l&apos;utilisateur</p>
           <Button onClick={() => navigate('/admin')} className="mt-4">Retour</Button>
         </Card>
       </PageWrapper>
@@ -925,7 +926,7 @@ const UsersView: React.FC = () => {
     { id: 'role_name', header: 'Role', accessor: 'role_name', render: (v) => (v as string) || '-' },
     { id: 'last_login', header: 'Derniere connexion', accessor: 'last_login', render: (v) => (v as string) ? formatDateTimeFn(v as string) : 'Jamais' },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v, row) => (
-      <div onClick={(e) => e.stopPropagation()}>
+      <div onClick={(e) => e.stopPropagation()} role="presentation">
         <Select
           value={v as string}
           onChange={(val) => {
@@ -939,7 +940,7 @@ const UsersView: React.FC = () => {
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => {
       const u = row as User;
       return (
-        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-1" onClick={(e) => e.stopPropagation()} role="presentation">
           <Button size="sm" variant="secondary" onClick={() => handleEdit(u)}>
             <Edit3 size={14} />
           </Button>
@@ -988,8 +989,9 @@ const UsersView: React.FC = () => {
           )}
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Prenom</label>
+              <label htmlFor="admin-first-name">Prenom</label>
               <Input
+                id="admin-first-name"
                 value={formData.first_name || ''}
                 onChange={(v) => setFormData({ ...formData, first_name: v })}
                 error={!!fieldErrors.first_name}
@@ -997,8 +999,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.first_name && <span className="azals-field__error">{fieldErrors.first_name}</span>}
             </div>
             <div className="azals-field">
-              <label>Nom</label>
+              <label htmlFor="admin-last-name">Nom</label>
               <Input
+                id="admin-last-name"
                 value={formData.last_name || ''}
                 onChange={(v) => setFormData({ ...formData, last_name: v })}
                 error={!!fieldErrors.last_name}
@@ -1008,8 +1011,9 @@ const UsersView: React.FC = () => {
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Nom d'utilisateur *</label>
+              <label htmlFor="admin-username">Nom d&apos;utilisateur *</label>
               <Input
+                id="admin-username"
                 value={formData.username || ''}
                 onChange={(v) => setFormData({ ...formData, username: v })}
                 error={!!fieldErrors.username}
@@ -1017,8 +1021,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.username && <span className="azals-field__error">{fieldErrors.username}</span>}
             </div>
             <div className="azals-field">
-              <label>Email *</label>
+              <label htmlFor="admin-email">Email *</label>
               <Input
+                id="admin-email"
                 type="email"
                 value={formData.email || ''}
                 onChange={(v) => setFormData({ ...formData, email: v })}
@@ -1029,8 +1034,9 @@ const UsersView: React.FC = () => {
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Mot de passe * <span className="text-muted text-xs">(min. 12 caracteres)</span></label>
+              <label htmlFor="admin-password">Mot de passe * <span className="text-muted text-xs">(min. 12 caracteres)</span></label>
               <Input
+                id="admin-password"
                 type="password"
                 value={formData.password}
                 onChange={(v) => setFormData({ ...formData, password: v })}
@@ -1039,8 +1045,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.password && <span className="azals-field__error">{fieldErrors.password}</span>}
             </div>
             <div className="azals-field">
-              <label>Role ({roles.length} disponibles)</label>
+              <label htmlFor="admin-role">Role ({roles.length} disponibles)</label>
               <Select
+                id="admin-role"
                 value={formData.role_id || ''}
                 onChange={(val) => setFormData({ ...formData, role_id: val })}
                 options={[{ value: '', label: 'Selectionner...' }, ...roles.map(r => ({ value: r.id, label: r.name }))]}
@@ -1065,8 +1072,9 @@ const UsersView: React.FC = () => {
           )}
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Prenom</label>
+              <label htmlFor="edit-first-name">Prenom</label>
               <Input
+                id="edit-first-name"
                 value={editFormData.first_name || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, first_name: v })}
                 error={!!fieldErrors.first_name}
@@ -1074,8 +1082,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.first_name && <span className="azals-field__error">{fieldErrors.first_name}</span>}
             </div>
             <div className="azals-field">
-              <label>Nom</label>
+              <label htmlFor="edit-last-name">Nom</label>
               <Input
+                id="edit-last-name"
                 value={editFormData.last_name || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, last_name: v })}
                 error={!!fieldErrors.last_name}
@@ -1085,8 +1094,9 @@ const UsersView: React.FC = () => {
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Nom d'utilisateur *</label>
+              <label htmlFor="edit-username">Nom d&apos;utilisateur *</label>
               <Input
+                id="edit-username"
                 value={editFormData.username || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, username: v })}
                 error={!!fieldErrors.username}
@@ -1094,8 +1104,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.username && <span className="azals-field__error">{fieldErrors.username}</span>}
             </div>
             <div className="azals-field">
-              <label>Email *</label>
+              <label htmlFor="edit-email">Email *</label>
               <Input
+                id="edit-email"
                 type="email"
                 value={editFormData.email || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, email: v })}
@@ -1105,8 +1116,9 @@ const UsersView: React.FC = () => {
             </div>
           </Grid>
           <div className="azals-field mt-4">
-            <label>Vue par défaut après connexion</label>
+            <label htmlFor="edit-default-view">Vue par defaut apres connexion</label>
             <Select
+              id="edit-default-view"
               value={editFormData.default_view || ''}
               onChange={(v) => setEditFormData({ ...editFormData, default_view: v || undefined })}
               options={[
@@ -1131,7 +1143,7 @@ const UsersView: React.FC = () => {
               ]}
             />
             <span className="text-xs text-gray-500 mt-1 block">
-              Définit la première page affichée lors de la connexion de l'utilisateur
+              Definit la premiere page affichee lors de la connexion de l&apos;utilisateur
             </span>
           </div>
           <div className="flex justify-end gap-2 mt-4">
@@ -1416,6 +1428,7 @@ const UserPermissionsModal: React.FC<{
                         .map(cap => (
                           <label
                             key={cap.code}
+                            aria-label={cap.name}
                             style={{
                               display: 'flex',
                               alignItems: 'flex-start',
@@ -1446,7 +1459,7 @@ const UserPermissionsModal: React.FC<{
 
             {filteredModules.length === 0 && hasModules && (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--azals-text-muted)' }}>
-                Aucun module trouve pour "{searchTerm}"
+                Aucun module trouve pour &quot;{searchTerm}&quot;
               </div>
             )}
           </div>
@@ -1650,8 +1663,9 @@ const RoleFormModal: React.FC<{
         <div className="space-y-4">
           {/* Code */}
           <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Code *</label>
+            <label htmlFor="role-form-code" className="block text-sm font-medium mb-1">Code *</label>
             <input
+              id="role-form-code"
               type="text"
               className="azals-input w-full px-3 py-2 border rounded-md uppercase"
               value={code}
@@ -1670,8 +1684,9 @@ const RoleFormModal: React.FC<{
 
           {/* Nom */}
           <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Nom *</label>
+            <label htmlFor="role-form-name" className="block text-sm font-medium mb-1">Nom *</label>
             <input
+              id="role-form-name"
               type="text"
               className="azals-input w-full px-3 py-2 border rounded-md"
               value={name}
@@ -1684,8 +1699,9 @@ const RoleFormModal: React.FC<{
 
           {/* Description */}
           <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label htmlFor="role-form-desc" className="block text-sm font-medium mb-1">Description</label>
             <textarea
+              id="role-form-desc"
               className="azals-input w-full px-3 py-2 border rounded-md"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -1698,8 +1714,9 @@ const RoleFormModal: React.FC<{
           <div className="grid grid-cols-2 gap-4">
             {/* Niveau */}
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Niveau (0-10)</label>
+              <label htmlFor="role-form-level" className="block text-sm font-medium mb-1">Niveau (0-10)</label>
               <input
+                id="role-form-level"
                 type="number"
                 className="azals-input w-full px-3 py-2 border rounded-md"
                 value={level}
@@ -1713,8 +1730,9 @@ const RoleFormModal: React.FC<{
             {/* Role parent (creation uniquement) */}
             {!editingRole && (
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Role parent</label>
+                <label htmlFor="role-form-parent" className="block text-sm font-medium mb-1">Role parent</label>
                 <select
+                  id="role-form-parent"
                   className="azals-input w-full px-3 py-2 border rounded-md"
                   value={parentCode}
                   onChange={(e) => setParentCode(e.target.value)}
@@ -1730,8 +1748,9 @@ const RoleFormModal: React.FC<{
             {/* Actif (modification uniquement) */}
             {editingRole && (
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Statut</label>
+                <label htmlFor="role-form-status" className="block text-sm font-medium mb-1">Statut</label>
                 <select
+                  id="role-form-status"
                   className="azals-input w-full px-3 py-2 border rounded-md"
                   value={isActive ? 'true' : 'false'}
                   onChange={(e) => setIsActive(e.target.value === 'true')}
@@ -1747,8 +1766,9 @@ const RoleFormModal: React.FC<{
           <div className="grid grid-cols-2 gap-4">
             {/* Max utilisateurs */}
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Max utilisateurs</label>
+              <label htmlFor="role-form-max-users" className="block text-sm font-medium mb-1">Max utilisateurs</label>
               <input
+                id="role-form-max-users"
                 type="number"
                 className="azals-input w-full px-3 py-2 border rounded-md"
                 value={maxUsers}
@@ -2168,23 +2188,26 @@ const TenantsView: React.FC = () => {
             </h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="azals-field">
-                <label>Nom</label>
+                <label htmlFor="tenant-edit-name">Nom</label>
                 <Input
+                  id="tenant-edit-name"
                   value={editData.name || ''}
                   onChange={(v) => setEditData({ ...editData, name: v })}
                 />
               </div>
               <div className="azals-field">
-                <label>Utilisateurs max</label>
+                <label htmlFor="tenant-edit-max-users">Utilisateurs max</label>
                 <Input
+                  id="tenant-edit-max-users"
                   type="number"
                   value={String(editData.max_users || 0)}
                   onChange={(v) => setEditData({ ...editData, max_users: parseInt(v) || 0 })}
                 />
               </div>
               <div className="azals-field">
-                <label>Stockage max (Go)</label>
+                <label htmlFor="tenant-edit-storage">Stockage max (Go)</label>
                 <Input
+                  id="tenant-edit-storage"
                   type="number"
                   value={String(editData.max_storage_gb || 0)}
                   onChange={(v) => setEditData({ ...editData, max_storage_gb: parseInt(v) || 0 })}
@@ -2212,6 +2235,7 @@ const TenantsView: React.FC = () => {
                       return (
                         <label
                           key={mod.code}
+                          aria-label={mod.name}
                           className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
                             isEnabled ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-200 hover:bg-gray-100'
                           }`}
@@ -2302,7 +2326,7 @@ const AuditView: React.FC = () => {
   return (
     <Card>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Journal d'audit</h3>
+        <h3 className="text-lg font-semibold">Journal d&apos;audit</h3>
         <Select
           value={filterType}
           onChange={(val) => setFilterType(val)}

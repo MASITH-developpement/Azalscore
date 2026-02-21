@@ -614,6 +614,7 @@ async def update_kb_category(
 # ============================================================================
 
 @router.get("/kb/articles")
+@router.get("/articles")
 async def list_kb_articles(
     category_id: int | None = None,
     status: str | None = None,

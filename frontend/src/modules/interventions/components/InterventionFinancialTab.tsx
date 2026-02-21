@@ -39,7 +39,7 @@ export const InterventionFinancialTab: React.FC<TabContentProps<Intervention>> =
           <AlertTriangle size={20} />
           <div>
             <strong>Intervention non facturable</strong>
-            <p>Cette intervention n'est pas marquée comme facturable au client.</p>
+            <p>Cette intervention n&apos;est pas marquée comme facturable au client.</p>
           </div>
         </div>
       )}
@@ -74,7 +74,7 @@ export const InterventionFinancialTab: React.FC<TabContentProps<Intervention>> =
               <div>
                 <h4 className="font-medium">À facturer</h4>
                 <p className="text-sm text-muted">
-                  L'intervention est terminée et peut être facturée.
+                  L&apos;intervention est terminée et peut être facturée.
                 </p>
               </div>
               <Button

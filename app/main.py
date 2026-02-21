@@ -138,6 +138,24 @@ from app.modules.ecommerce.router_crud import router as ecommerce_router
 from app.modules.social_networks import router as social_networks_router
 
 # ===========================================================================
+# MODULES GAP HAUTE PRIORITÉ (Wave 9)
+# ===========================================================================
+# GAP-076: Forecasting - Prévisions financières
+from app.modules.forecasting.router import router as forecasting_router
+
+# GAP-081: Field Service - Service terrain et techniciens
+from app.modules.fieldservice.router import router as fieldservice_router
+
+# GAP-083: Approval - Workflow d'approbation multi-niveaux
+from app.modules.approval.router import router as approval_router
+
+# GAP-084: Expenses - Gestion des notes de frais
+from app.modules.expenses.router import router as expenses_router
+
+# GAP-086: Integrations - Connecteurs externes (Sage, Odoo, Stripe...)
+from app.modules.integrations.router import router as integrations_router
+
+# ===========================================================================
 # MODULES V3 - CRUDRouter (Migration complète)
 # ===========================================================================
 # Tous les modules sont maintenant servis via /v3/ par app.api.v3
@@ -692,6 +710,24 @@ api_v1.include_router(ecommerce_router)
 
 # Module SOCIAL NETWORKS - Administration > Réseaux Sociaux
 api_v1.include_router(social_networks_router)
+
+# ===========================================================================
+# MODULES GAP HAUTE PRIORITÉ (Wave 9) - CRUD Multi-tenant
+# ===========================================================================
+# GAP-076: Forecasting - Prévisions financières, budgets, KPIs
+api_v1.include_router(forecasting_router)
+
+# GAP-081: Field Service - Service terrain, techniciens, work orders
+api_v1.include_router(fieldservice_router)
+
+# GAP-083: Approval - Workflow d'approbation multi-niveaux
+api_v1.include_router(approval_router)
+
+# GAP-084: Expenses - Gestion des notes de frais
+api_v1.include_router(expenses_router)
+
+# GAP-086: Integrations - Connecteurs externes (Sage, Odoo, Stripe, QuickBooks...)
+api_v1.include_router(integrations_router)
 
 
 # ==================== UTILITY ENDPOINTS ====================

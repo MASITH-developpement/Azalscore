@@ -524,7 +524,7 @@ const RulesWidget: React.FC<{
         <div className="azals-empty-state azals-empty-state--small">
           <p>Aucune règle configurée</p>
           <p className="azals-text--muted">
-            Les règles permettent d'améliorer le rapprochement automatique
+            Les règles permettent d&apos;améliorer le rapprochement automatique
           </p>
         </div>
       )}
@@ -572,8 +572,9 @@ const AddRuleModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} title="Créer une règle" size="lg">
       <div className="azals-auto-accounting__rule-form">
         <div className="azals-form-group">
-          <label className="azals-form-label">Nom de la règle</label>
+          <label htmlFor="rule-name" className="azals-form-label">Nom de la règle</label>
           <Input
+            id="rule-name"
             value={name}
             onChange={(value) => setName(value)}
             placeholder="Ex: Loyer mensuel, Abonnement téléphone..."
@@ -582,8 +583,9 @@ const AddRuleModal: React.FC<{
 
         <div className="azals-form-row">
           <div className="azals-form-group">
-            <label className="azals-form-label">Champ à analyser</label>
+            <label htmlFor="rule-pattern-field" className="azals-form-label">Champ à analyser</label>
             <Select
+              id="rule-pattern-field"
               value={patternField}
               onChange={(value) => setPatternField(value)}
               options={[
@@ -595,8 +597,9 @@ const AddRuleModal: React.FC<{
           </div>
 
           <div className="azals-form-group">
-            <label className="azals-form-label">Type de correspondance</label>
+            <label htmlFor="rule-pattern-type" className="azals-form-label">Type de correspondance</label>
             <Select
+              id="rule-pattern-type"
               value={patternType}
               onChange={(value) => setPatternType(value as 'EXACT' | 'CONTAINS' | 'REGEX')}
               options={[
@@ -609,8 +612,9 @@ const AddRuleModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Valeur à rechercher</label>
+          <label htmlFor="rule-pattern-value" className="azals-form-label">Valeur à rechercher</label>
           <Input
+            id="rule-pattern-value"
             value={patternValue}
             onChange={(value) => setPatternValue(value)}
             placeholder={
@@ -623,8 +627,9 @@ const AddRuleModal: React.FC<{
 
         <div className="azals-form-row">
           <div className="azals-form-group">
-            <label className="azals-form-label">Action</label>
+            <label htmlFor="rule-target-type" className="azals-form-label">Action</label>
             <Select
+              id="rule-target-type"
               value={targetType}
               onChange={(value) => setTargetType(value as 'DOCUMENT' | 'ACCOUNT' | 'JOURNAL')}
               options={[
@@ -636,7 +641,7 @@ const AddRuleModal: React.FC<{
           </div>
 
           <div className="azals-form-group">
-            <label className="azals-form-label">
+            <label htmlFor="rule-target-value" className="azals-form-label">
               {targetType === 'ACCOUNT'
                 ? 'Code compte'
                 : targetType === 'JOURNAL'
@@ -644,6 +649,7 @@ const AddRuleModal: React.FC<{
                 : 'ID document'}
             </label>
             <Input
+              id="rule-target-value"
               value={targetValue}
               onChange={(value) => setTargetValue(value)}
               placeholder={
@@ -658,8 +664,9 @@ const AddRuleModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Priorité (1-100)</label>
+          <label htmlFor="rule-priority" className="azals-form-label">Priorité (1-100)</label>
           <Input
+            id="rule-priority"
             type="number"
             value={String(priority)}
             onChange={(value) => {
@@ -753,8 +760,9 @@ const ReconcileModal: React.FC<{
         )}
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Notes (optionnel)</label>
+          <label htmlFor="reconcile-notes" className="azals-form-label">Notes (optionnel)</label>
           <TextArea
+            id="reconcile-notes"
             value={notes}
             onChange={(value) => setNotes(value)}
             placeholder="Commentaire sur ce rapprochement..."

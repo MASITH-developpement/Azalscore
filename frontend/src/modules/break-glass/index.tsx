@@ -25,7 +25,6 @@ import { trackBreakGlassEvent } from '@core/audit-ui';
 import { useCanBreakGlass } from '@core/capabilities';
 import { Button } from '@ui/actions';
 import { PageWrapper } from '@ui/layout';
-import { ErrorState } from '../../ui-engine/components/StateViews';
 import {
   breakGlassApi,
   type BreakGlassScope,
@@ -34,6 +33,7 @@ import {
   type TenantOption,
   type ModuleOption,
 } from './api';
+import { ErrorState } from '../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES
@@ -105,8 +105,8 @@ const Level1Intention: React.FC<Level1Props> = ({ onProceed, onCancel }) => {
           <strong>AVERTISSEMENT CRITIQUE</strong>
         </p>
         <p>
-          Vous êtes sur le point d'initier une procédure Break-Glass.
-          Cette procédure est réservée aux situations d'urgence absolue
+          Vous êtes sur le point d&apos;initier une procédure Break-Glass.
+          Cette procédure est réservée aux situations d&apos;urgence absolue
           nécessitant un accès exceptionnel aux données ou fonctionnalités protégées.
         </p>
         <p>
@@ -114,15 +114,15 @@ const Level1Intention: React.FC<Level1Props> = ({ onProceed, onCancel }) => {
         </p>
         <p>
           En continuant, vous engagez votre responsabilité personnelle
-          et professionnelle sur l'utilisation de cette procédure.
+          et professionnelle sur l&apos;utilisation de cette procédure.
         </p>
       </div>
 
       <div className="azals-break-glass__rules">
-        <h3>Règles d'utilisation</h3>
+        <h3>Règles d&apos;utilisation</h3>
         <ul>
-          <li>Utilisation uniquement en cas d'urgence absolue</li>
-          <li>Justification obligatoire de l'accès</li>
+          <li>Utilisation uniquement en cas d&apos;urgence absolue</li>
+          <li>Justification obligatoire de l&apos;accès</li>
           <li>Traçabilité complète et inviolable</li>
           <li>Audit externe automatique</li>
           <li>Responsabilité personnelle engagée</li>
@@ -187,7 +187,7 @@ const Level2Confirmation: React.FC<Level2Props> = ({
 
       {/* Sélection du périmètre */}
       <div className="azals-break-glass__section">
-        <h3>Périmètre d'intervention</h3>
+        <h3>Périmètre d&apos;intervention</h3>
 
         {(tenantsError || modulesError) && (
           <ErrorState
@@ -203,8 +203,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
         )}
 
         <div className="azals-break-glass__form-group">
-          <label>Client (tenant)</label>
+          <label htmlFor="bg-scope-tenant">Client (tenant)</label>
           <select
+            id="bg-scope-tenant"
             value={scope.tenant_id || ''}
             onChange={(e) => onScopeChange({ ...scope, tenant_id: e.target.value || undefined })}
             className="azals-select"
@@ -217,8 +218,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
         </div>
 
         <div className="azals-break-glass__form-group">
-          <label>Module</label>
+          <label htmlFor="bg-scope-module">Module</label>
           <select
+            id="bg-scope-module"
             value={scope.module || ''}
             onChange={(e) => onScopeChange({ ...scope, module: e.target.value || undefined })}
             className="azals-select"
@@ -232,8 +234,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
 
         <div className="azals-break-glass__form-row">
           <div className="azals-break-glass__form-group">
-            <label>Date début</label>
+            <label htmlFor="bg-scope-start-date">Date début</label>
             <input
+              id="bg-scope-start-date"
               type="date"
               value={scope.start_date || ''}
               onChange={(e) => onScopeChange({ ...scope, start_date: e.target.value || undefined })}
@@ -241,8 +244,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
             />
           </div>
           <div className="azals-break-glass__form-group">
-            <label>Date fin</label>
+            <label htmlFor="bg-scope-end-date">Date fin</label>
             <input
+              id="bg-scope-end-date"
               type="date"
               value={scope.end_date || ''}
               onChange={(e) => onScopeChange({ ...scope, end_date: e.target.value || undefined })}
@@ -275,8 +279,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
           </div>
 
           <div className="azals-break-glass__form-group">
-            <label>Tapez la phrase ci-dessus</label>
+            <label htmlFor="bg-confirm-phrase">Tapez la phrase ci-dessus</label>
             <input
+              id="bg-confirm-phrase"
               type="text"
               value={typedPhrase}
               onChange={(e) => onTypedPhraseChange(e.target.value)}

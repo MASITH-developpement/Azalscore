@@ -5,8 +5,8 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { PageWrapper } from '@ui/layout';
 import { useCapabilities } from '@core/capabilities';
+import { PageWrapper } from '@ui/layout';
 
 // ============================================================
 // MAIN MODULE COMPONENT

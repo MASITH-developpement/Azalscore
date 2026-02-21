@@ -124,7 +124,7 @@ export const AssetIATab: React.FC<TabContentProps<Asset>> = ({ data: asset }) =>
               {formatCurrency(getTotalMaintenanceCost(asset))}
             </p>
             <p className="text-sm text-muted">
-              {formatHours(getTotalLaborHours(asset))} de main d'oeuvre
+              {formatHours(getTotalLaborHours(asset))} de main d&apos;oeuvre
             </p>
           </div>
           <div className="azals-analysis-item">

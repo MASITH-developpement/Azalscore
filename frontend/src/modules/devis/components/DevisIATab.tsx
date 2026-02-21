@@ -103,7 +103,7 @@ export const DevisIATab: React.FC<TabContentProps<Devis>> = ({ data: devis }) =>
           <div className="azals-analysis-item">
             <h4>Probabilité de conversion</h4>
             <p className="text-lg font-medium">78%</p>
-            <p className="text-sm text-muted">Basé sur l'historique client</p>
+            <p className="text-sm text-muted">Basé sur l&apos;historique client</p>
           </div>
           <div className="azals-analysis-item">
             <h4>Temps moyen de décision</h4>

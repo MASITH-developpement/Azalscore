@@ -116,7 +116,7 @@ export const UserIATab: React.FC<TabContentProps<AdminUser>> = ({ data: user }) 
             <p className={`text-lg font-medium ${isPasswordOld(user) ? 'text-orange-600' : 'text-green-600'}`}>
               {getPasswordAgeDays(user) >= 0 ? `${getPasswordAgeDays(user)}j` : '-'}
             </p>
-            <p className="text-sm text-muted">d'anciennete</p>
+            <p className="text-sm text-muted">d&apos;anciennete</p>
           </div>
           <div className="azals-analysis-item">
             <h4>2FA</h4>

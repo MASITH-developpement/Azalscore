@@ -79,7 +79,7 @@ export const PaymentDetailsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
             )}
             {payment.authorization_code && (
               <div className="azals-std-field">
-                <span>Code d'autorisation</span>
+                <span>Code d&apos;autorisation</span>
                 <div className="font-mono">{payment.authorization_code}</div>
               </div>
             )}

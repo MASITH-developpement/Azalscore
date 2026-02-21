@@ -144,7 +144,7 @@ export const OrderInfoTab: React.FC<TabContentProps<ProductionOrder>> = ({ data:
             </div>
             {order.due_date && (
               <div className="azals-field">
-                <span className="azals-field__label">Date d'echeance</span>
+                <span className="azals-field__label">Date d&apos;echeance</span>
                 <div className={`azals-field__value ${isLate(order) ? 'text-danger' : ''}`}>
                   {formatDate(order.due_date)}
                   {isLate(order) && <AlertTriangle size={14} className="ml-1 inline" />}

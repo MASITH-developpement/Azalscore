@@ -121,7 +121,7 @@ export const AuditIATab: React.FC<TabContentProps<Audit>> = ({ data: audit }) =>
             <p className="text-sm text-muted">constat(s)</p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Plan d'action</h4>
+            <h4>Plan d&apos;action</h4>
             <p className="text-lg font-medium text-blue-600">
               {formatPercent(audit.action_plan_progress || 0)}
             </p>

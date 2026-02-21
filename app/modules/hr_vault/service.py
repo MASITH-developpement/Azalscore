@@ -1,457 +1,510 @@
 """
-Coffre-fort RH Numérique - GAP-032
+AZALS MODULE HR_VAULT - Service
+=================================
 
-Stockage sécurisé et dématérialisé des documents RH:
-- Bulletins de paie électroniques (conformité décret 2016-1762)
-- Contrats de travail
-- Avenants
-- Attestations diverses
-- Documents de fin de contrat
-
-Conformité:
-- Code du travail articles L3243-2, D3243-8
-- Décret 2016-1762 du 16 décembre 2016
-- RGPD (conservation, droit d'accès, portabilité)
-- NF Z42-020 (archivage électronique)
-
-Fonctionnalités:
-- Stockage chiffré AES-256
-- Horodatage certifié
-- Signature électronique
-- Accès salarié 24/7
-- Conservation 50 ans minimum
-- Portabilité des données
-- Audit trail complet
-
-Architecture multi-tenant avec isolation stricte.
+Service metier pour le coffre-fort RH.
+Gere le chiffrement, les acces, la conformite RGPD et les signatures.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, date, timedelta
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, BinaryIO
 import hashlib
-import hmac
-import uuid
-import base64
-import json
+import io
 import os
+import uuid
+import zipfile
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
-
-
-# ============================================================================
-# ÉNUMÉRATIONS
-# ============================================================================
-
-class DocumentType(Enum):
-    """Type de document RH."""
-    # Paie
-    PAYSLIP = "payslip"  # Bulletin de paie
-    PAYSLIP_SUMMARY = "payslip_summary"  # Récapitulatif annuel
-
-    # Contrats
-    EMPLOYMENT_CONTRACT = "employment_contract"  # Contrat de travail
-    AMENDMENT = "amendment"  # Avenant
-    TEMPORARY_CONTRACT = "temporary_contract"  # CDD
-    APPRENTICESHIP_CONTRACT = "apprenticeship_contract"  # Contrat apprentissage
-
-    # Attestations
-    EMPLOYMENT_CERTIFICATE = "employment_certificate"  # Attestation employeur
-    SALARY_CERTIFICATE = "salary_certificate"  # Attestation de salaire
-    TRAINING_CERTIFICATE = "training_certificate"  # Attestation formation
-    FRANCE_TRAVAIL_CERTIFICATE = "france_travail_certificate"  # Attestation Pôle Emploi
-
-    # Fin de contrat
-    TERMINATION_LETTER = "termination_letter"  # Lettre de rupture
-    STC = "stc"  # Solde de tout compte
-    WORK_CERTIFICATE = "work_certificate"  # Certificat de travail
-    PORTABILITY_NOTICE = "portability_notice"  # Notice portabilité
-
-    # Santé/Sécurité
-    MEDICAL_APTITUDE = "medical_aptitude"  # Aptitude médicale
-    ACCIDENT_DECLARATION = "accident_declaration"  # Déclaration AT
-
-    # Autres
-    ID_DOCUMENT = "id_document"  # Pièce d'identité
-    DIPLOMA = "diploma"  # Diplôme
-    RIB = "rib"  # RIB
-    VITALE_CARD = "vitale_card"  # Carte vitale
-    OTHER = "other"  # Autre
-
-
-class DocumentStatus(Enum):
-    """Statut d'un document."""
-    DRAFT = "draft"  # Brouillon
-    PENDING_SIGNATURE = "pending_signature"  # En attente signature
-    ACTIVE = "active"  # Actif
-    ARCHIVED = "archived"  # Archivé
-    DELETED = "deleted"  # Supprimé (logique)
-
-
-class AccessType(Enum):
-    """Type d'accès au document."""
-    VIEW = "view"  # Consultation
-    DOWNLOAD = "download"  # Téléchargement
-    PRINT = "print"  # Impression
-    SHARE = "share"  # Partage
-
-
-class RetentionPeriod(Enum):
-    """Durée de conservation légale."""
-    FIVE_YEARS = 5  # 5 ans
-    TEN_YEARS = 10  # 10 ans
-    LIFETIME_PLUS_5 = -1  # Vie active + 5 ans
-    FIFTY_YEARS = 50  # 50 ans (bulletins de paie)
-    PERMANENT = 999  # Conservation permanente
-
-
-class EncryptionAlgorithm(Enum):
-    """Algorithme de chiffrement."""
-    AES_256_GCM = "aes-256-gcm"
-    AES_256_CBC = "aes-256-cbc"
-
-
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
-
-@dataclass
-class Employee:
-    """Salarié propriétaire du coffre-fort."""
-    id: str
-    tenant_id: str
-    employee_number: str
-    email: str
-    first_name: str
-    last_name: str
-
-    # Identité
-    birth_date: Optional[date] = None
-    social_security_number: Optional[str] = None  # Chiffré
-
-    # Accès
-    is_active: bool = True
-    vault_activated_at: Optional[datetime] = None
-    last_access_at: Optional[datetime] = None
-
-    # Consentement
-    consent_given: bool = False
-    consent_date: Optional[datetime] = None
-
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
-
-
-@dataclass
-class DocumentMetadata:
-    """Métadonnées d'un document."""
-    title: str
-    document_type: DocumentType
-    description: Optional[str] = None
-
-    # Dates
-    document_date: date = field(default_factory=date.today)
-    period_start: Optional[date] = None
-    period_end: Optional[date] = None
-
-    # Paie
-    pay_period: Optional[str] = None  # "2024-01" format
-    gross_salary: Optional[Decimal] = None
-    net_salary: Optional[Decimal] = None
-
-    # Contrat
-    contract_type: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-
-    # Tags et classification
-    tags: List[str] = field(default_factory=list)
-    category: Optional[str] = None
-
-    # Source
-    source_system: Optional[str] = None
-    source_reference: Optional[str] = None
-
-
-@dataclass
-class DocumentVersion:
-    """Version d'un document."""
-    version_number: int
-    created_at: datetime
-    created_by: str
-
-    # Contenu
-    file_size: int
-    file_hash: str  # SHA-256
-    encryption_key_id: str
-
-    # Stockage
-    storage_path: str
-    storage_provider: str = "local"  # local, s3, azure, gcs
-
-    # Horodatage
-    timestamp_token: Optional[str] = None
-    timestamp_authority: Optional[str] = None
-
-
-@dataclass
-class VaultDocument:
-    """Document dans le coffre-fort."""
-    id: str
-    tenant_id: str
-    employee_id: str
-
-    # Métadonnées
-    metadata: DocumentMetadata
-
-    # Versions
-    versions: List[DocumentVersion] = field(default_factory=list)
-    current_version: int = 1
-
-    # Statut
-    status: DocumentStatus = DocumentStatus.ACTIVE
-
-    # Dates système
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-    deleted_at: Optional[datetime] = None
-
-    # Conservation
-    retention_period: RetentionPeriod = RetentionPeriod.FIFTY_YEARS
-    retention_end_date: Optional[date] = None
-
-    # Signature électronique
-    is_signed: bool = False
-    signature_id: Optional[str] = None
-    signed_at: Optional[datetime] = None
-
-    # Notification
-    employee_notified: bool = False
-    notification_date: Optional[datetime] = None
-
-    @property
-    def current_file_hash(self) -> Optional[str]:
-        """Hash du fichier courant."""
-        for v in self.versions:
-            if v.version_number == self.current_version:
-                return v.file_hash
-        return None
-
-
-@dataclass
-class AccessLog:
-    """Journal d'accès."""
-    id: str
-    document_id: str
-    employee_id: str
-    accessed_by: str  # ID de l'utilisateur (employé ou RH)
-
-    # Action
-    access_type: AccessType
-    access_date: datetime = field(default_factory=datetime.now)
-
-    # Contexte
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    device_type: Optional[str] = None
-
-    # Résultat
-    success: bool = True
-    error_message: Optional[str] = None
-
-
-@dataclass
-class EncryptionKey:
-    """Clé de chiffrement."""
-    id: str
-    tenant_id: str
-    algorithm: EncryptionAlgorithm
-    key_material: bytes  # Clé chiffrée avec master key
-
-    # Gestion
-    created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
-    is_active: bool = True
-    rotated_to: Optional[str] = None  # ID nouvelle clé si rotation
-
-
-@dataclass
-class ConsentRecord:
-    """Enregistrement du consentement."""
-    id: str
-    employee_id: str
-    consent_type: str  # "vault_activation", "payslip_electronic"
-
-    # Consentement
-    given: bool
-    given_at: Optional[datetime] = None
-    revoked_at: Optional[datetime] = None
-
-    # Contexte
-    ip_address: Optional[str] = None
-    consent_text_version: str = "1.0"
-
-    # Preuve
-    signature_hash: Optional[str] = None
-
-
-@dataclass
-class DataPortabilityRequest:
-    """Demande de portabilité des données."""
-    id: str
-    employee_id: str
-    requested_at: datetime = field(default_factory=datetime.now)
-
-    # Contenu
-    document_types: List[DocumentType] = field(default_factory=list)
-    period_start: Optional[date] = None
-    period_end: Optional[date] = None
-
-    # Statut
-    status: str = "pending"  # pending, processing, ready, downloaded, expired
-    processed_at: Optional[datetime] = None
-
-    # Fichier export
-    export_file_path: Optional[str] = None
-    export_file_hash: Optional[str] = None
-    download_url: Optional[str] = None
-    expires_at: Optional[datetime] = None
-
-
-# ============================================================================
-# CONSTANTES LÉGALES
-# ============================================================================
-
-RETENTION_RULES = {
-    DocumentType.PAYSLIP: RetentionPeriod.FIFTY_YEARS,
-    DocumentType.PAYSLIP_SUMMARY: RetentionPeriod.FIFTY_YEARS,
-    DocumentType.EMPLOYMENT_CONTRACT: RetentionPeriod.LIFETIME_PLUS_5,
-    DocumentType.AMENDMENT: RetentionPeriod.LIFETIME_PLUS_5,
-    DocumentType.TEMPORARY_CONTRACT: RetentionPeriod.LIFETIME_PLUS_5,
-    DocumentType.APPRENTICESHIP_CONTRACT: RetentionPeriod.LIFETIME_PLUS_5,
-    DocumentType.EMPLOYMENT_CERTIFICATE: RetentionPeriod.FIVE_YEARS,
-    DocumentType.SALARY_CERTIFICATE: RetentionPeriod.FIVE_YEARS,
-    DocumentType.TRAINING_CERTIFICATE: RetentionPeriod.TEN_YEARS,
-    DocumentType.FRANCE_TRAVAIL_CERTIFICATE: RetentionPeriod.FIFTY_YEARS,
-    DocumentType.TERMINATION_LETTER: RetentionPeriod.FIFTY_YEARS,
-    DocumentType.STC: RetentionPeriod.FIFTY_YEARS,
-    DocumentType.WORK_CERTIFICATE: RetentionPeriod.FIFTY_YEARS,
-    DocumentType.PORTABILITY_NOTICE: RetentionPeriod.FIFTY_YEARS,
-    DocumentType.MEDICAL_APTITUDE: RetentionPeriod.TEN_YEARS,
-    DocumentType.ACCIDENT_DECLARATION: RetentionPeriod.TEN_YEARS,
-    DocumentType.ID_DOCUMENT: RetentionPeriod.FIVE_YEARS,
-    DocumentType.DIPLOMA: RetentionPeriod.PERMANENT,
-    DocumentType.RIB: RetentionPeriod.FIVE_YEARS,
-    DocumentType.VITALE_CARD: RetentionPeriod.FIVE_YEARS,
-    DocumentType.OTHER: RetentionPeriod.FIVE_YEARS,
+from typing import Any, Optional, BinaryIO
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .exceptions import (
+    AccessDeniedException,
+    ConsentRequiredException,
+    DecryptionException,
+    DocumentIntegrityException,
+    DocumentNotFoundException,
+    EncryptionException,
+    EncryptionKeyNotFoundException,
+    FileSizeLimitException,
+    GDPRExportExpiredException,
+    GDPRRequestAlreadyProcessedException,
+    GDPRRequestNotFoundException,
+    InvalidFileTypeException,
+    RetentionPeriodActiveException,
+    StorageException,
+    VaultNotActivatedException,
+)
+from .models import (
+    AlertType,
+    EncryptionAlgorithm,
+    GDPRRequestStatus,
+    GDPRRequestType,
+    RetentionPeriod,
+    SignatureStatus,
+    VaultAccessLog,
+    VaultAccessPermission,
+    VaultAccessRole,
+    VaultAccessType,
+    VaultAlert,
+    VaultConsent,
+    VaultDocument,
+    VaultDocumentCategory,
+    VaultDocumentStatus,
+    VaultDocumentType,
+    VaultDocumentVersion,
+    VaultEncryptionKey,
+    VaultGDPRRequest,
+    VaultStatistics,
+)
+from .repository import HRVaultRepository
+from .schemas import (
+    VaultCategoryCreate,
+    VaultCategoryResponse,
+    VaultCategoryUpdate,
+    VaultDashboardStats,
+    VaultDocumentFilters,
+    VaultDocumentListResponse,
+    VaultDocumentResponse,
+    VaultDocumentUpload,
+    VaultDocumentUpdate,
+    VaultEmployeeStats,
+    VaultExportRequest,
+    VaultExportResponse,
+    VaultGDPRRequestCreate,
+    VaultGDPRRequestProcess,
+    VaultGDPRRequestResponse,
+    VaultSignatureRequest,
+    VaultSignatureStatus,
+)
+
+
+# Configuration
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+ALLOWED_MIME_TYPES = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/tiff",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]
+
+# Durees de conservation par type de document
+RETENTION_RULES: dict[VaultDocumentType, RetentionPeriod] = {
+    VaultDocumentType.PAYSLIP: RetentionPeriod.FIFTY_YEARS,
+    VaultDocumentType.PAYSLIP_SUMMARY: RetentionPeriod.FIFTY_YEARS,
+    VaultDocumentType.TAX_STATEMENT: RetentionPeriod.TEN_YEARS,
+    VaultDocumentType.CONTRACT: RetentionPeriod.LIFETIME_PLUS_5,
+    VaultDocumentType.AMENDMENT: RetentionPeriod.LIFETIME_PLUS_5,
+    VaultDocumentType.TERMINATION_LETTER: RetentionPeriod.FIFTY_YEARS,
+    VaultDocumentType.STC: RetentionPeriod.FIFTY_YEARS,
+    VaultDocumentType.WORK_CERTIFICATE: RetentionPeriod.FIFTY_YEARS,
+    VaultDocumentType.MEDICAL_APTITUDE: RetentionPeriod.TEN_YEARS,
+    VaultDocumentType.ACCIDENT_DECLARATION: RetentionPeriod.TEN_YEARS,
+    VaultDocumentType.DIPLOMA: RetentionPeriod.PERMANENT,
+    VaultDocumentType.DEGREE: RetentionPeriod.PERMANENT,
+    VaultDocumentType.CERTIFICATION: RetentionPeriod.TEN_YEARS,
+    VaultDocumentType.RIB: RetentionPeriod.FIVE_YEARS,
+    VaultDocumentType.ID_DOCUMENT: RetentionPeriod.FIVE_YEARS,
 }
 
 
-# ============================================================================
-# SERVICE DE COFFRE-FORT
-# ============================================================================
-
 class HRVaultService:
     """
-    Service principal du coffre-fort RH numérique.
+    Service principal du coffre-fort RH.
 
-    Gère:
-    - Stockage sécurisé des documents
-    - Chiffrement AES-256
-    - Gestion des accès
-    - Conformité légale
-    - Portabilité des données
+    Fonctionnalites:
+    - Stockage securise et chiffre des documents
+    - Gestion des acces par role
+    - Historique complet des acces
+    - Conformite RGPD (portabilite, droit a l'oubli)
+    - Integration signature electronique
+    - Alertes et notifications
     """
 
     def __init__(
         self,
+        session: AsyncSession,
         tenant_id: str,
         storage_path: str,
         master_key: bytes,
-        timestamp_service_url: Optional[str] = None
+        current_user_id: Optional[uuid.UUID] = None,
+        current_user_role: VaultAccessRole = VaultAccessRole.EMPLOYEE,
     ):
+        self.session = session
         self.tenant_id = tenant_id
         self.storage_path = Path(storage_path)
         self.master_key = master_key
-        self.timestamp_service_url = timestamp_service_url
+        self.current_user_id = current_user_id
+        self.current_user_role = current_user_role
 
-        # Stockage en mémoire (à remplacer par DB)
-        self._employees: Dict[str, Employee] = {}
-        self._documents: Dict[str, VaultDocument] = {}
-        self._access_logs: List[AccessLog] = []
-        self._encryption_keys: Dict[str, EncryptionKey] = {}
-        self._consents: Dict[str, ConsentRecord] = {}
-        self._portability_requests: Dict[str, DataPortabilityRequest] = {}
+        self.repository = HRVaultRepository(session, tenant_id)
 
-        # Créer les répertoires
+        # Creer le repertoire de stockage
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
     # ========================================================================
-    # GESTION DES EMPLOYÉS
+    # CATEGORIES
     # ========================================================================
 
-    def register_employee(
+    async def list_categories(
         self,
-        employee_id: str,
-        employee_number: str,
-        email: str,
-        first_name: str,
-        last_name: str,
-        birth_date: Optional[date] = None,
-        social_security_number: Optional[str] = None
-    ) -> Employee:
-        """Enregistre un employé dans le coffre-fort."""
-        # Chiffrer le NIR si fourni
-        encrypted_ssn = None
-        if social_security_number:
-            encrypted_ssn = self._encrypt_sensitive_data(social_security_number)
+        include_inactive: bool = False,
+    ) -> list[VaultCategoryResponse]:
+        """Liste les categories de documents."""
+        categories = await self.repository.list_categories(include_inactive)
+        result = []
+        for cat in categories:
+            doc_count = await self.repository.count_documents_by_category(cat.id)
+            response = VaultCategoryResponse.model_validate(cat)
+            response.documents_count = doc_count
+            result.append(response)
+        return result
 
-        employee = Employee(
-            id=employee_id,
-            tenant_id=self.tenant_id,
-            employee_number=employee_number,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            birth_date=birth_date,
-            social_security_number=encrypted_ssn
+    async def get_category(
+        self,
+        category_id: uuid.UUID,
+    ) -> VaultCategoryResponse:
+        """Recupere une categorie."""
+        category = await self.repository.get_category(category_id)
+        if not category:
+            raise DocumentNotFoundException(str(category_id))
+
+        doc_count = await self.repository.count_documents_by_category(category_id)
+        response = VaultCategoryResponse.model_validate(category)
+        response.documents_count = doc_count
+        return response
+
+    async def create_category(
+        self,
+        data: VaultCategoryCreate,
+    ) -> VaultCategoryResponse:
+        """Cree une nouvelle categorie."""
+        self._check_admin_permission()
+
+        category = VaultDocumentCategory(
+            code=data.code,
+            name=data.name,
+            description=data.description,
+            icon=data.icon,
+            color=data.color,
+            default_retention=data.default_retention,
+            requires_signature=data.requires_signature,
+            is_confidential=data.is_confidential,
+            visible_to_employee=data.visible_to_employee,
+            sort_order=data.sort_order,
+            created_by=self.current_user_id,
+        )
+        category = await self.repository.create_category(category)
+        return VaultCategoryResponse.model_validate(category)
+
+    async def update_category(
+        self,
+        category_id: uuid.UUID,
+        data: VaultCategoryUpdate,
+    ) -> VaultCategoryResponse:
+        """Met a jour une categorie."""
+        self._check_admin_permission()
+
+        update_data = data.model_dump(exclude_unset=True)
+        update_data["updated_by"] = self.current_user_id
+        category = await self.repository.update_category(category_id, update_data)
+        return VaultCategoryResponse.model_validate(category)
+
+    async def delete_category(self, category_id: uuid.UUID) -> bool:
+        """Supprime une categorie."""
+        self._check_admin_permission()
+
+        doc_count = await self.repository.count_documents_by_category(category_id)
+        if doc_count > 0:
+            # Deplacer les documents vers "Autre" ou lever une erreur
+            pass
+
+        await self.repository.soft_delete_category(category_id, self.current_user_id)
+        return True
+
+    # ========================================================================
+    # DOCUMENTS
+    # ========================================================================
+
+    async def list_documents(
+        self,
+        filters: VaultDocumentFilters,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> VaultDocumentListResponse:
+        """Liste les documents avec filtres."""
+        # Verifier les permissions
+        if filters.employee_id:
+            self._check_view_permission(filters.employee_id)
+
+        skip = (page - 1) * page_size
+        documents, total = await self.repository.list_documents(
+            employee_id=filters.employee_id,
+            document_type=filters.document_type,
+            category_id=filters.category_id,
+            status=filters.status,
+            signature_status=filters.signature_status,
+            date_from=filters.date_from,
+            date_to=filters.date_to,
+            pay_period=filters.pay_period,
+            search=filters.search,
+            tags=filters.tags,
+            include_deleted=filters.include_deleted,
+            skip=skip,
+            limit=page_size,
         )
 
-        self._employees[employee_id] = employee
-        return employee
+        return VaultDocumentListResponse(
+            items=[VaultDocumentResponse.model_validate(d) for d in documents],
+            total=total,
+            page=page,
+            page_size=page_size,
+            pages=(total + page_size - 1) // page_size,
+        )
 
-    def activate_vault(
+    async def get_document(
         self,
-        employee_id: str,
-        consent_given: bool,
-        ip_address: Optional[str] = None
+        document_id: uuid.UUID,
+    ) -> VaultDocumentResponse:
+        """Recupere un document."""
+        document = await self.repository.get_document_with_relations(document_id)
+        if not document:
+            raise DocumentNotFoundException(str(document_id))
+
+        # Verifier les permissions
+        self._check_view_permission(document.employee_id)
+
+        # Logger l'acces
+        await self._log_access(
+            document_id=document_id,
+            employee_id=document.employee_id,
+            access_type=VaultAccessType.VIEW,
+        )
+
+        # Marquer comme vu si c'est l'employe
+        if self.current_user_id == document.employee_id:
+            await self.repository.mark_as_viewed(document_id)
+
+        return VaultDocumentResponse.model_validate(document)
+
+    async def upload_document(
+        self,
+        data: VaultDocumentUpload,
+        file_content: bytes,
+        file_name: str,
+        mime_type: str,
+    ) -> VaultDocumentResponse:
+        """Upload un nouveau document."""
+        self._check_upload_permission(data.employee_id)
+
+        # Validations
+        if len(file_content) > MAX_FILE_SIZE:
+            raise FileSizeLimitException(len(file_content), MAX_FILE_SIZE)
+
+        if mime_type not in ALLOWED_MIME_TYPES:
+            raise InvalidFileTypeException(mime_type, ALLOWED_MIME_TYPES)
+
+        # Determiner la retention
+        retention = RETENTION_RULES.get(
+            data.document_type,
+            RetentionPeriod.FIVE_YEARS,
+        )
+
+        # Obtenir ou creer une cle de chiffrement
+        encryption_key = await self._get_or_create_encryption_key()
+
+        # Chiffrer le fichier
+        encrypted_content, file_hash = await self._encrypt_file(
+            file_content,
+            encryption_key,
+        )
+
+        # Generer le chemin de stockage
+        doc_id = uuid.uuid4()
+        storage_subpath = self._generate_storage_path(data.employee_id, doc_id)
+        full_path = self.storage_path / storage_subpath
+
+        # Sauvegarder le fichier
+        try:
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            full_path.write_bytes(encrypted_content)
+        except Exception as e:
+            raise StorageException(str(e), "write")
+
+        # Creer le document
+        document = VaultDocument(
+            id=doc_id,
+            employee_id=data.employee_id,
+            document_type=data.document_type,
+            category_id=data.category_id,
+            title=data.title,
+            description=data.description,
+            reference=data.reference,
+            file_name=file_name,
+            file_size=len(file_content),
+            mime_type=mime_type,
+            storage_path=storage_subpath,
+            is_encrypted=True,
+            encryption_key_id=encryption_key.id,
+            file_hash=file_hash,
+            document_date=data.document_date,
+            period_start=data.period_start,
+            period_end=data.period_end,
+            pay_period=data.pay_period,
+            gross_salary=data.gross_salary,
+            net_salary=data.net_salary,
+            retention_period=retention,
+            tags=data.tags,
+            signature_status=(
+                SignatureStatus.PENDING
+                if data.requires_signature
+                else SignatureStatus.NOT_REQUIRED
+            ),
+            created_by=self.current_user_id,
+        )
+
+        document = await self.repository.create_document(document)
+
+        # Creer la version initiale
+        version = VaultDocumentVersion(
+            document_id=document.id,
+            version_number=1,
+            file_name=file_name,
+            file_size=len(file_content),
+            storage_path=storage_subpath,
+            file_hash=file_hash,
+            encryption_key_id=encryption_key.id,
+            created_by=self.current_user_id,
+        )
+        await self.repository.create_version(version)
+
+        # Logger l'acces
+        await self._log_access(
+            document_id=document.id,
+            employee_id=document.employee_id,
+            access_type=VaultAccessType.EDIT,
+        )
+
+        # Notifier l'employe si demande
+        if data.notify_employee:
+            await self._notify_employee_new_document(document)
+
+        return VaultDocumentResponse.model_validate(document)
+
+    async def download_document(
+        self,
+        document_id: uuid.UUID,
+    ) -> tuple[bytes, str, str]:
+        """Telecharge un document (dechiffre)."""
+        document = await self.repository.get_document(document_id)
+        if not document:
+            raise DocumentNotFoundException(str(document_id))
+
+        # Verifier les permissions
+        self._check_download_permission(document.employee_id)
+
+        # Lire le fichier
+        full_path = self.storage_path / document.storage_path
+        try:
+            encrypted_content = full_path.read_bytes()
+        except FileNotFoundError:
+            raise StorageException("Fichier non trouve", "read")
+
+        # Recuperer la cle
+        if not document.encryption_key_id:
+            raise EncryptionKeyNotFoundException("null")
+
+        encryption_key = await self.repository.get_encryption_key(
+            document.encryption_key_id
+        )
+        if not encryption_key:
+            raise EncryptionKeyNotFoundException(str(document.encryption_key_id))
+
+        # Dechiffrer
+        try:
+            content = await self._decrypt_file(encrypted_content, encryption_key)
+        except Exception as e:
+            raise DecryptionException(str(e))
+
+        # Verifier l'integrite
+        computed_hash = hashlib.sha256(content).hexdigest()
+        if computed_hash != document.file_hash:
+            raise DocumentIntegrityException(
+                str(document_id),
+                document.file_hash,
+                computed_hash,
+            )
+
+        # Logger l'acces
+        await self._log_access(
+            document_id=document_id,
+            employee_id=document.employee_id,
+            access_type=VaultAccessType.DOWNLOAD,
+        )
+
+        return content, document.file_name, document.mime_type
+
+    async def update_document(
+        self,
+        document_id: uuid.UUID,
+        data: VaultDocumentUpdate,
+    ) -> VaultDocumentResponse:
+        """Met a jour les metadonnees d'un document."""
+        document = await self.repository.get_document(document_id)
+        if not document:
+            raise DocumentNotFoundException(str(document_id))
+
+        self._check_edit_permission(document.employee_id)
+
+        update_data = data.model_dump(exclude_unset=True)
+        update_data["updated_by"] = self.current_user_id
+        document = await self.repository.update_document(document_id, update_data)
+
+        # Logger l'acces
+        await self._log_access(
+            document_id=document_id,
+            employee_id=document.employee_id,
+            access_type=VaultAccessType.EDIT,
+        )
+
+        return VaultDocumentResponse.model_validate(document)
+
+    async def delete_document(
+        self,
+        document_id: uuid.UUID,
+        reason: Optional[str] = None,
+        force: bool = False,
     ) -> bool:
-        """Active le coffre-fort pour un employé (avec consentement)."""
-        employee = self._employees.get(employee_id)
-        if not employee:
-            raise ValueError(f"Employé {employee_id} non trouvé")
+        """Supprime un document (soft delete)."""
+        document = await self.repository.get_document(document_id)
+        if not document:
+            raise DocumentNotFoundException(str(document_id))
 
-        if not consent_given:
-            raise ValueError("Le consentement est obligatoire pour activer le coffre-fort")
+        self._check_delete_permission(document.employee_id)
 
-        # Enregistrer le consentement
-        consent = ConsentRecord(
-            id=str(uuid.uuid4()),
-            employee_id=employee_id,
-            consent_type="vault_activation",
-            given=True,
-            given_at=datetime.now(),
-            ip_address=ip_address,
-            consent_text_version="1.0"
+        # Verifier la periode de conservation
+        if not force and document.retention_end_date:
+            if document.retention_end_date > date.today():
+                raise RetentionPeriodActiveException(
+                    str(document_id),
+                    str(document.retention_end_date),
+                )
+
+        await self.repository.soft_delete_document(
+            document_id,
+            self.current_user_id,
+            reason,
         )
-        self._consents[consent.id] = consent
 
-        # Activer le coffre
-        employee.consent_given = True
-        employee.consent_date = datetime.now()
-        employee.vault_activated_at = datetime.now()
+        # Logger l'acces
+        await self._log_access(
+            document_id=document_id,
+            employee_id=document.employee_id,
+            access_type=VaultAccessType.DELETE,
+        )
 
         return True
 
@@ -459,621 +512,563 @@ class HRVaultService:
     # CHIFFREMENT
     # ========================================================================
 
-    def _generate_encryption_key(self) -> EncryptionKey:
-        """Génère une nouvelle clé de chiffrement."""
-        # Générer une clé AES-256 (32 bytes)
-        raw_key = os.urandom(32)
+    async def _get_or_create_encryption_key(self) -> VaultEncryptionKey:
+        """Obtient ou cree une cle de chiffrement."""
+        key = await self.repository.get_active_encryption_key()
+        if key:
+            return key
 
-        # Chiffrer la clé avec la master key
+        # Generer une nouvelle cle AES-256
+        raw_key = os.urandom(32)
         encrypted_key = self._encrypt_with_master_key(raw_key)
 
-        key = EncryptionKey(
-            id=str(uuid.uuid4()),
-            tenant_id=self.tenant_id,
+        key = VaultEncryptionKey(
             algorithm=EncryptionAlgorithm.AES_256_GCM,
-            key_material=encrypted_key
+            encrypted_key=encrypted_key,
+            created_by=self.current_user_id,
         )
-
-        self._encryption_keys[key.id] = key
-        return key
+        return await self.repository.create_encryption_key(key)
 
     def _encrypt_with_master_key(self, data: bytes) -> bytes:
-        """Chiffre des données avec la master key."""
-        # Simulation - en production, utiliser une vraie implémentation AES
-        # from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        nonce = os.urandom(12)
-        # aesgcm = AESGCM(self.master_key)
-        # ciphertext = aesgcm.encrypt(nonce, data, None)
-        # return nonce + ciphertext
-
-        # Simulation simple (XOR - NE PAS UTILISER EN PRODUCTION)
-        encrypted = bytearray()
-        for i, byte in enumerate(data):
-            encrypted.append(byte ^ self.master_key[i % len(self.master_key)])
-        return nonce + bytes(encrypted)
+        """Chiffre avec la master key."""
+        try:
+            nonce = os.urandom(12)
+            aesgcm = AESGCM(self.master_key)
+            ciphertext = aesgcm.encrypt(nonce, data, None)
+            return nonce + ciphertext
+        except Exception as e:
+            raise EncryptionException(str(e))
 
     def _decrypt_with_master_key(self, encrypted_data: bytes) -> bytes:
-        """Déchiffre des données avec la master key."""
-        nonce = encrypted_data[:12]
-        ciphertext = encrypted_data[12:]
+        """Dechiffre avec la master key."""
+        try:
+            nonce = encrypted_data[:12]
+            ciphertext = encrypted_data[12:]
+            aesgcm = AESGCM(self.master_key)
+            return aesgcm.decrypt(nonce, ciphertext, None)
+        except Exception as e:
+            raise DecryptionException(str(e))
 
-        # Simulation simple (XOR inverse)
-        decrypted = bytearray()
-        for i, byte in enumerate(ciphertext):
-            decrypted.append(byte ^ self.master_key[i % len(self.master_key)])
-        return bytes(decrypted)
-
-    def _encrypt_file(
+    async def _encrypt_file(
         self,
         content: bytes,
-        key: EncryptionKey
-    ) -> Tuple[bytes, str]:
-        """Chiffre un fichier et retourne le contenu chiffré et le hash."""
-        # Calculer le hash original
+        key: VaultEncryptionKey,
+    ) -> tuple[bytes, str]:
+        """Chiffre un fichier et retourne le contenu chiffre et le hash."""
         file_hash = hashlib.sha256(content).hexdigest()
 
-        # Récupérer la clé
-        raw_key = self._decrypt_with_master_key(key.key_material)
-
-        # Chiffrer
-        nonce = os.urandom(12)
-        # aesgcm = AESGCM(raw_key)
-        # encrypted = aesgcm.encrypt(nonce, content, None)
-
-        # Simulation
-        encrypted = bytearray()
-        for i, byte in enumerate(content):
-            encrypted.append(byte ^ raw_key[i % len(raw_key)])
-
-        return nonce + bytes(encrypted), file_hash
-
-    def _decrypt_file(
-        self,
-        encrypted_content: bytes,
-        key: EncryptionKey
-    ) -> bytes:
-        """Déchiffre un fichier."""
-        nonce = encrypted_content[:12]
-        ciphertext = encrypted_content[12:]
-
-        # Récupérer la clé
-        raw_key = self._decrypt_with_master_key(key.key_material)
-
-        # Simulation
-        decrypted = bytearray()
-        for i, byte in enumerate(ciphertext):
-            decrypted.append(byte ^ raw_key[i % len(raw_key)])
-
-        return bytes(decrypted)
-
-    def _encrypt_sensitive_data(self, data: str) -> str:
-        """Chiffre des données sensibles (NIR, etc.)."""
-        encrypted = self._encrypt_with_master_key(data.encode())
-        return base64.b64encode(encrypted).decode()
-
-    def _decrypt_sensitive_data(self, encrypted_data: str) -> str:
-        """Déchiffre des données sensibles."""
-        encrypted = base64.b64decode(encrypted_data)
-        decrypted = self._decrypt_with_master_key(encrypted)
-        return decrypted.decode()
-
-    # ========================================================================
-    # GESTION DES DOCUMENTS
-    # ========================================================================
-
-    def deposit_document(
-        self,
-        employee_id: str,
-        content: bytes,
-        metadata: DocumentMetadata,
-        notify_employee: bool = True,
-        created_by: str = "system"
-    ) -> VaultDocument:
-        """
-        Dépose un document dans le coffre-fort.
-
-        Args:
-            employee_id: ID de l'employé
-            content: Contenu du fichier (PDF)
-            metadata: Métadonnées du document
-            notify_employee: Notifier l'employé par email
-            created_by: ID de l'utilisateur créateur
-
-        Returns:
-            Document créé
-        """
-        employee = self._employees.get(employee_id)
-        if not employee:
-            raise ValueError(f"Employé {employee_id} non trouvé")
-
-        if not employee.vault_activated_at:
-            raise ValueError("Le coffre-fort n'est pas activé pour cet employé")
-
-        # Générer une clé de chiffrement
-        encryption_key = self._generate_encryption_key()
+        # Recuperer la cle brute
+        raw_key = self._decrypt_with_master_key(key.encrypted_key)
 
         # Chiffrer le fichier
-        encrypted_content, file_hash = self._encrypt_file(content, encryption_key)
+        try:
+            nonce = os.urandom(12)
+            aesgcm = AESGCM(raw_key)
+            encrypted = aesgcm.encrypt(nonce, content, None)
+            return nonce + encrypted, file_hash
+        except Exception as e:
+            raise EncryptionException(str(e))
 
-        # Générer le chemin de stockage
-        doc_id = str(uuid.uuid4())
-        storage_subpath = f"{self.tenant_id}/{employee_id}/{doc_id}"
-        full_path = self.storage_path / storage_subpath
-
-        # Créer le répertoire et sauvegarder
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        full_path.write_bytes(encrypted_content)
-
-        # Horodatage certifié si configuré
-        timestamp_token = None
-        if self.timestamp_service_url:
-            timestamp_token = self._get_timestamp(file_hash)
-
-        # Créer la version
-        version = DocumentVersion(
-            version_number=1,
-            created_at=datetime.now(),
-            created_by=created_by,
-            file_size=len(content),
-            file_hash=file_hash,
-            encryption_key_id=encryption_key.id,
-            storage_path=storage_subpath,
-            timestamp_token=timestamp_token
-        )
-
-        # Déterminer la durée de conservation
-        retention = RETENTION_RULES.get(
-            metadata.document_type,
-            RetentionPeriod.FIVE_YEARS
-        )
-
-        # Calculer la date de fin de conservation
-        retention_end = None
-        if retention != RetentionPeriod.PERMANENT and retention.value > 0:
-            retention_end = date.today() + timedelta(days=retention.value * 365)
-
-        # Créer le document
-        document = VaultDocument(
-            id=doc_id,
-            tenant_id=self.tenant_id,
-            employee_id=employee_id,
-            metadata=metadata,
-            versions=[version],
-            current_version=1,
-            retention_period=retention,
-            retention_end_date=retention_end
-        )
-
-        self._documents[doc_id] = document
-
-        # Notification
-        if notify_employee:
-            self._notify_employee_new_document(employee, document)
-            document.employee_notified = True
-            document.notification_date = datetime.now()
-
-        return document
-
-    def deposit_payslip(
+    async def _decrypt_file(
         self,
-        employee_id: str,
-        content: bytes,
-        pay_period: str,
-        gross_salary: Decimal,
-        net_salary: Decimal,
-        notify_employee: bool = True
-    ) -> VaultDocument:
-        """
-        Dépose un bulletin de paie (méthode simplifiée).
+        encrypted_content: bytes,
+        key: VaultEncryptionKey,
+    ) -> bytes:
+        """Dechiffre un fichier."""
+        raw_key = self._decrypt_with_master_key(key.encrypted_key)
 
-        Args:
-            employee_id: ID de l'employé
-            content: PDF du bulletin
-            pay_period: Période de paie (format "YYYY-MM")
-            gross_salary: Salaire brut
-            net_salary: Salaire net
-            notify_employee: Notifier l'employé
+        try:
+            nonce = encrypted_content[:12]
+            ciphertext = encrypted_content[12:]
+            aesgcm = AESGCM(raw_key)
+            return aesgcm.decrypt(nonce, ciphertext, None)
+        except Exception as e:
+            raise DecryptionException(str(e))
 
-        Returns:
-            Document créé
-        """
-        # Parser la période
-        year, month = pay_period.split("-")
-        period_date = date(int(year), int(month), 1)
-
-        # Fin de période (dernier jour du mois)
-        if int(month) == 12:
-            period_end = date(int(year) + 1, 1, 1) - timedelta(days=1)
-        else:
-            period_end = date(int(year), int(month) + 1, 1) - timedelta(days=1)
-
-        metadata = DocumentMetadata(
-            title=f"Bulletin de paie - {pay_period}",
-            document_type=DocumentType.PAYSLIP,
-            document_date=period_end,
-            period_start=period_date,
-            period_end=period_end,
-            pay_period=pay_period,
-            gross_salary=gross_salary,
-            net_salary=net_salary,
-            source_system="payroll"
-        )
-
-        return self.deposit_document(
-            employee_id=employee_id,
-            content=content,
-            metadata=metadata,
-            notify_employee=notify_employee,
-            created_by="payroll_system"
-        )
-
-    def get_document(
+    def _generate_storage_path(
         self,
-        document_id: str,
-        accessed_by: str,
-        access_type: AccessType = AccessType.VIEW,
-        ip_address: Optional[str] = None
-    ) -> Tuple[VaultDocument, bytes]:
-        """
-        Récupère un document du coffre-fort.
-
-        Args:
-            document_id: ID du document
-            accessed_by: ID de l'utilisateur
-            access_type: Type d'accès
-            ip_address: Adresse IP
-
-        Returns:
-            (Document, contenu déchiffré)
-        """
-        document = self._documents.get(document_id)
-        if not document:
-            raise ValueError(f"Document {document_id} non trouvé")
-
-        if document.status == DocumentStatus.DELETED:
-            raise ValueError("Document supprimé")
-
-        # Vérifier les droits d'accès
-        employee = self._employees.get(document.employee_id)
-        if accessed_by != document.employee_id:
-            # Vérifier si c'est un RH autorisé (à implémenter)
-            pass
-
-        # Récupérer la version courante
-        version = next(
-            (v for v in document.versions if v.version_number == document.current_version),
-            None
-        )
-        if not version:
-            raise ValueError("Version non trouvée")
-
-        # Récupérer la clé
-        encryption_key = self._encryption_keys.get(version.encryption_key_id)
-        if not encryption_key:
-            raise ValueError("Clé de chiffrement non trouvée")
-
-        # Lire et déchiffrer
-        full_path = self.storage_path / version.storage_path
-        encrypted_content = full_path.read_bytes()
-        content = self._decrypt_file(encrypted_content, encryption_key)
-
-        # Vérifier le hash
-        computed_hash = hashlib.sha256(content).hexdigest()
-        if computed_hash != version.file_hash:
-            raise ValueError("Intégrité du fichier compromise")
-
-        # Logger l'accès
-        self._log_access(
-            document_id=document_id,
-            employee_id=document.employee_id,
-            accessed_by=accessed_by,
-            access_type=access_type,
-            ip_address=ip_address
-        )
-
-        # Mettre à jour last_access
-        if employee:
-            employee.last_access_at = datetime.now()
-
-        return document, content
-
-    def list_employee_documents(
-        self,
-        employee_id: str,
-        document_type: Optional[DocumentType] = None,
-        period_start: Optional[date] = None,
-        period_end: Optional[date] = None
-    ) -> List[VaultDocument]:
-        """Liste les documents d'un employé."""
-        documents = []
-
-        for doc in self._documents.values():
-            if doc.employee_id != employee_id:
-                continue
-            if doc.status == DocumentStatus.DELETED:
-                continue
-
-            if document_type and doc.metadata.document_type != document_type:
-                continue
-
-            if period_start and doc.metadata.document_date < period_start:
-                continue
-            if period_end and doc.metadata.document_date > period_end:
-                continue
-
-            documents.append(doc)
-
-        # Trier par date décroissante
-        documents.sort(key=lambda d: d.metadata.document_date, reverse=True)
-        return documents
-
-    def _log_access(
-        self,
-        document_id: str,
-        employee_id: str,
-        accessed_by: str,
-        access_type: AccessType,
-        ip_address: Optional[str] = None
-    ):
-        """Enregistre un accès au journal."""
-        log = AccessLog(
-            id=str(uuid.uuid4()),
-            document_id=document_id,
-            employee_id=employee_id,
-            accessed_by=accessed_by,
-            access_type=access_type,
-            ip_address=ip_address
-        )
-        self._access_logs.append(log)
-
-    def _notify_employee_new_document(
-        self,
-        employee: Employee,
-        document: VaultDocument
-    ):
-        """Notifie l'employé d'un nouveau document."""
-        # Envoyer un email
-        # email_service.send(
-        #     to=employee.email,
-        #     subject=f"Nouveau document disponible: {document.metadata.title}",
-        #     template="hr_vault_new_document",
-        #     context={"employee": employee, "document": document}
-        # )
-        pass
-
-    def _get_timestamp(self, data_hash: str) -> Optional[str]:
-        """Obtient un horodatage certifié."""
-        if not self.timestamp_service_url:
-            return None
-
-        # En production, appeler un service TSA (Time Stamp Authority)
-        # response = requests.post(self.timestamp_service_url, data=data_hash)
-        # return response.content.hex()
-
-        # Simulation
-        return f"TS-{datetime.now().isoformat()}-{data_hash[:16]}"
+        employee_id: uuid.UUID,
+        document_id: uuid.UUID,
+    ) -> str:
+        """Genere un chemin de stockage unique."""
+        return f"{self.tenant_id}/{employee_id}/{document_id}"
 
     # ========================================================================
-    # PORTABILITÉ DES DONNÉES (RGPD)
+    # ACCES ET PERMISSIONS
     # ========================================================================
 
-    def request_data_portability(
-        self,
-        employee_id: str,
-        document_types: Optional[List[DocumentType]] = None,
-        period_start: Optional[date] = None,
-        period_end: Optional[date] = None
-    ) -> DataPortabilityRequest:
-        """
-        Crée une demande de portabilité des données.
+    def _check_admin_permission(self):
+        """Verifie les permissions administrateur."""
+        if self.current_user_role not in [
+            VaultAccessRole.HR_ADMIN,
+            VaultAccessRole.HR_DIRECTOR,
+            VaultAccessRole.SYSTEM,
+        ]:
+            raise AccessDeniedException(
+                str(self.current_user_id),
+                "admin",
+                "Seuls les administrateurs RH peuvent effectuer cette action",
+            )
 
-        Conformité RGPD article 20: droit à la portabilité.
+    def _check_view_permission(self, employee_id: uuid.UUID):
+        """Verifie la permission de visualisation."""
+        if self.current_user_id == employee_id:
+            return  # L'employe peut voir ses propres documents
 
-        Args:
-            employee_id: ID de l'employé
-            document_types: Types de documents (tous si None)
-            period_start: Début période
-            period_end: Fin période
+        if self.current_user_role in [
+            VaultAccessRole.HR_ADMIN,
+            VaultAccessRole.HR_DIRECTOR,
+            VaultAccessRole.MANAGER,
+            VaultAccessRole.LEGAL,
+            VaultAccessRole.SYSTEM,
+        ]:
+            return
 
-        Returns:
-            Demande créée
-        """
-        employee = self._employees.get(employee_id)
-        if not employee:
-            raise ValueError(f"Employé {employee_id} non trouvé")
-
-        request = DataPortabilityRequest(
-            id=str(uuid.uuid4()),
-            employee_id=employee_id,
-            document_types=document_types or [],
-            period_start=period_start,
-            period_end=period_end
+        raise AccessDeniedException(
+            str(self.current_user_id),
+            str(employee_id),
+            "view",
         )
 
-        self._portability_requests[request.id] = request
-        return request
+    def _check_download_permission(self, employee_id: uuid.UUID):
+        """Verifie la permission de telechargement."""
+        self._check_view_permission(employee_id)
 
-    def process_portability_request(
+    def _check_upload_permission(self, employee_id: uuid.UUID):
+        """Verifie la permission d'upload."""
+        if self.current_user_role in [
+            VaultAccessRole.HR_ADMIN,
+            VaultAccessRole.HR_DIRECTOR,
+            VaultAccessRole.SYSTEM,
+        ]:
+            return
+
+        raise AccessDeniedException(
+            str(self.current_user_id),
+            str(employee_id),
+            "upload",
+        )
+
+    def _check_edit_permission(self, employee_id: uuid.UUID):
+        """Verifie la permission d'edition."""
+        if self.current_user_role in [
+            VaultAccessRole.HR_ADMIN,
+            VaultAccessRole.HR_DIRECTOR,
+            VaultAccessRole.SYSTEM,
+        ]:
+            return
+
+        raise AccessDeniedException(
+            str(self.current_user_id),
+            str(employee_id),
+            "edit",
+        )
+
+    def _check_delete_permission(self, employee_id: uuid.UUID):
+        """Verifie la permission de suppression."""
+        if self.current_user_role in [
+            VaultAccessRole.HR_ADMIN,
+            VaultAccessRole.HR_DIRECTOR,
+            VaultAccessRole.SYSTEM,
+        ]:
+            return
+
+        raise AccessDeniedException(
+            str(self.current_user_id),
+            str(employee_id),
+            "delete",
+        )
+
+    async def _log_access(
         self,
-        request_id: str
-    ) -> DataPortabilityRequest:
-        """
-        Traite une demande de portabilité.
+        document_id: uuid.UUID,
+        employee_id: uuid.UUID,
+        access_type: VaultAccessType,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        success: bool = True,
+        error_message: Optional[str] = None,
+    ):
+        """Enregistre un acces dans le journal."""
+        log = VaultAccessLog(
+            document_id=document_id,
+            employee_id=employee_id,
+            accessed_by=self.current_user_id,
+            access_role=self.current_user_role,
+            access_type=access_type,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=success,
+            error_message=error_message,
+        )
+        await self.repository.create_access_log(log)
 
-        Génère un fichier ZIP avec tous les documents.
-        """
-        request = self._portability_requests.get(request_id)
+    # ========================================================================
+    # RGPD
+    # ========================================================================
+
+    async def create_gdpr_request(
+        self,
+        data: VaultGDPRRequestCreate,
+    ) -> VaultGDPRRequestResponse:
+        """Cree une demande RGPD."""
+        request = VaultGDPRRequest(
+            employee_id=data.employee_id,
+            request_type=data.request_type,
+            request_description=data.request_description,
+            document_types=[dt.value for dt in data.document_types],
+            period_start=data.period_start,
+            period_end=data.period_end,
+        )
+        request = await self.repository.create_gdpr_request(request)
+        return VaultGDPRRequestResponse.model_validate(request)
+
+    async def process_gdpr_request(
+        self,
+        request_id: uuid.UUID,
+        process_data: VaultGDPRRequestProcess,
+    ) -> VaultGDPRRequestResponse:
+        """Traite une demande RGPD."""
+        self._check_admin_permission()
+
+        request = await self.repository.get_gdpr_request(request_id)
         if not request:
-            raise ValueError(f"Demande {request_id} non trouvée")
+            raise GDPRRequestNotFoundException(str(request_id))
 
-        request.status = "processing"
+        if request.status in [GDPRRequestStatus.COMPLETED, GDPRRequestStatus.REJECTED]:
+            raise GDPRRequestAlreadyProcessedException(
+                str(request_id),
+                str(request.processed_at),
+            )
 
-        # Collecter les documents
-        documents = self.list_employee_documents(
+        update_data = {
+            "status": process_data.status,
+            "response_details": process_data.response_details,
+            "processed_at": datetime.utcnow(),
+            "processed_by": self.current_user_id,
+        }
+
+        # Si c'est une demande de portabilite, generer l'export
+        if (
+            request.request_type == GDPRRequestType.PORTABILITY
+            and process_data.status == GDPRRequestStatus.COMPLETED
+        ):
+            export = await self._generate_gdpr_export(request)
+            update_data["export_file_path"] = export["file_path"]
+            update_data["export_file_hash"] = export["file_hash"]
+            update_data["export_expires_at"] = datetime.utcnow() + timedelta(days=7)
+
+        # Si c'est une demande d'effacement, supprimer les documents
+        if (
+            request.request_type == GDPRRequestType.ERASURE
+            and process_data.status == GDPRRequestStatus.COMPLETED
+        ):
+            await self._process_erasure_request(request)
+
+        request = await self.repository.update_gdpr_request(request_id, update_data)
+        return VaultGDPRRequestResponse.model_validate(request)
+
+    async def _generate_gdpr_export(
+        self,
+        request: VaultGDPRRequest,
+    ) -> dict[str, str]:
+        """Genere un export ZIP pour la portabilite."""
+        # Recuperer les documents
+        doc_types = [VaultDocumentType(dt) for dt in request.document_types] if request.document_types else None
+        documents, _ = await self.repository.list_documents(
             employee_id=request.employee_id,
-            period_start=request.period_start,
-            period_end=request.period_end
+            date_from=request.period_start,
+            date_to=request.period_end,
         )
 
-        if request.document_types:
-            documents = [
-                d for d in documents
-                if d.metadata.document_type in request.document_types
-            ]
+        if doc_types:
+            documents = [d for d in documents if d.document_type in doc_types]
 
-        # Créer le fichier d'export (ZIP)
-        export_id = str(uuid.uuid4())
+        # Creer le ZIP
+        export_id = uuid.uuid4()
         export_path = self.storage_path / "exports" / f"{export_id}.zip"
         export_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # En production, créer un vrai ZIP
-        # with zipfile.ZipFile(export_path, 'w') as zf:
-        #     for doc in documents:
-        #         _, content = self.get_document(doc.id, request.employee_id)
-        #         zf.writestr(f"{doc.metadata.title}.pdf", content)
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for doc in documents:
+                try:
+                    content, filename, _ = await self.download_document(doc.id)
+                    # Ajouter au ZIP avec un nom unique
+                    zip_filename = f"{doc.document_type.value}/{doc.document_date or 'unknown'}_{filename}"
+                    zf.writestr(zip_filename, content)
+                except Exception:
+                    continue
 
-        # Simulation
-        export_path.write_bytes(b"ZIP_CONTENT_PLACEHOLDER")
+        zip_content = buffer.getvalue()
+        export_path.write_bytes(zip_content)
+        file_hash = hashlib.sha256(zip_content).hexdigest()
 
-        # Calculer le hash
-        export_hash = hashlib.sha256(export_path.read_bytes()).hexdigest()
+        return {
+            "file_path": str(export_path),
+            "file_hash": file_hash,
+        }
 
-        request.status = "ready"
-        request.processed_at = datetime.now()
-        request.export_file_path = str(export_path)
-        request.export_file_hash = export_hash
-        request.expires_at = datetime.now() + timedelta(days=7)
+    async def _process_erasure_request(self, request: VaultGDPRRequest):
+        """Traite une demande d'effacement RGPD."""
+        # Recuperer les documents
+        documents, _ = await self.repository.list_documents(
+            employee_id=request.employee_id,
+        )
 
-        return request
+        for doc in documents:
+            # Verifier si le document peut etre supprime (hors conservation legale)
+            if doc.retention_end_date and doc.retention_end_date > date.today():
+                continue
+
+            await self.repository.soft_delete_document(
+                doc.id,
+                self.current_user_id,
+                f"Demande RGPD {request.request_code}",
+            )
+
+    async def download_gdpr_export(
+        self,
+        request_id: uuid.UUID,
+    ) -> tuple[bytes, str]:
+        """Telecharge un export RGPD."""
+        request = await self.repository.get_gdpr_request(request_id)
+        if not request:
+            raise GDPRRequestNotFoundException(str(request_id))
+
+        # Verifier que c'est bien l'employe ou un admin
+        if (
+            self.current_user_id != request.employee_id
+            and self.current_user_role
+            not in [VaultAccessRole.HR_ADMIN, VaultAccessRole.HR_DIRECTOR]
+        ):
+            raise AccessDeniedException(
+                str(self.current_user_id),
+                str(request_id),
+                "download_export",
+            )
+
+        if not request.export_file_path:
+            raise GDPRRequestNotFoundException(str(request_id))
+
+        if request.export_expires_at and request.export_expires_at < datetime.utcnow():
+            raise GDPRExportExpiredException(
+                str(request_id),
+                str(request.export_expires_at),
+            )
+
+        # Lire le fichier
+        export_path = Path(request.export_file_path)
+        content = export_path.read_bytes()
+
+        # Incrementer le compteur de telechargement
+        await self.repository.update_gdpr_request(
+            request_id,
+            {"download_count": request.download_count + 1},
+        )
+
+        return content, f"export_rgpd_{request.request_code}.zip"
 
     # ========================================================================
-    # AUDIT ET CONFORMITÉ
+    # SIGNATURE ELECTRONIQUE
     # ========================================================================
 
-    def get_access_history(
+    async def request_signature(
         self,
-        document_id: Optional[str] = None,
-        employee_id: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
-    ) -> List[AccessLog]:
-        """Récupère l'historique des accès."""
-        logs = self._access_logs
-
-        if document_id:
-            logs = [l for l in logs if l.document_id == document_id]
-
-        if employee_id:
-            logs = [l for l in logs if l.employee_id == employee_id]
-
-        if start_date:
-            logs = [l for l in logs if l.access_date >= start_date]
-
-        if end_date:
-            logs = [l for l in logs if l.access_date <= end_date]
-
-        return sorted(logs, key=lambda l: l.access_date, reverse=True)
-
-    def verify_document_integrity(
-        self,
-        document_id: str
-    ) -> Dict[str, Any]:
-        """Vérifie l'intégrité d'un document."""
-        document = self._documents.get(document_id)
+        data: VaultSignatureRequest,
+    ) -> VaultSignatureStatus:
+        """Demande une signature electronique pour un document."""
+        document = await self.repository.get_document(data.document_id)
         if not document:
-            raise ValueError(f"Document {document_id} non trouvé")
+            raise DocumentNotFoundException(str(data.document_id))
 
-        results = {
-            "document_id": document_id,
-            "verified_at": datetime.now().isoformat(),
-            "versions": []
-        }
+        self._check_edit_permission(document.employee_id)
 
-        for version in document.versions:
-            # Récupérer la clé
-            encryption_key = self._encryption_keys.get(version.encryption_key_id)
-            if not encryption_key:
-                results["versions"].append({
-                    "version": version.version_number,
-                    "status": "error",
-                    "message": "Clé de chiffrement non trouvée"
-                })
-                continue
+        # TODO: Integrer avec un provider de signature (Yousign, DocuSign)
+        # Pour l'instant, simuler la creation de la demande
 
-            # Lire et déchiffrer
-            full_path = self.storage_path / version.storage_path
-            if not full_path.exists():
-                results["versions"].append({
-                    "version": version.version_number,
-                    "status": "error",
-                    "message": "Fichier non trouvé"
-                })
-                continue
+        await self.repository.update_document(
+            data.document_id,
+            {
+                "signature_status": SignatureStatus.PENDING,
+                "signature_request_id": str(uuid.uuid4()),
+            },
+        )
 
-            encrypted_content = full_path.read_bytes()
-            content = self._decrypt_file(encrypted_content, encryption_key)
+        return VaultSignatureStatus(
+            document_id=data.document_id,
+            signature_status=SignatureStatus.PENDING,
+            signers=data.signers,
+        )
 
-            # Vérifier le hash
-            computed_hash = hashlib.sha256(content).hexdigest()
-            is_valid = computed_hash == version.file_hash
+    async def process_signature_webhook(
+        self,
+        signature_request_id: str,
+        event: str,
+        data: dict,
+    ):
+        """Traite un webhook de signature."""
+        # Trouver le document par signature_request_id
+        # TODO: Implementer la recherche par signature_request_id
 
-            results["versions"].append({
-                "version": version.version_number,
-                "status": "valid" if is_valid else "corrupted",
-                "stored_hash": version.file_hash,
-                "computed_hash": computed_hash,
-                "timestamp_token": version.timestamp_token
-            })
+        if event == "signature.done":
+            pass  # Mettre a jour le statut
+        elif event == "signature.refused":
+            pass
+        elif event == "signature.expired":
+            pass
 
-        results["overall_status"] = "valid" if all(
-            v["status"] == "valid" for v in results["versions"]
-        ) else "issues_found"
+    # ========================================================================
+    # STATISTIQUES ET DASHBOARD
+    # ========================================================================
 
-        return results
+    async def get_dashboard_stats(self) -> VaultDashboardStats:
+        """Recupere les statistiques du dashboard."""
+        stats = await self.repository.compute_current_stats()
 
-    def get_retention_report(self) -> Dict[str, Any]:
-        """Génère un rapport sur la conservation des documents."""
-        report = {
-            "generated_at": datetime.now().isoformat(),
-            "tenant_id": self.tenant_id,
-            "summary": {
-                "total_documents": 0,
-                "by_type": {},
-                "by_retention_period": {},
-                "documents_to_archive": [],
-                "documents_past_retention": []
-            }
-        }
+        return VaultDashboardStats(
+            total_documents=stats.get("total_documents", 0),
+            documents_by_type=stats.get("documents_by_type", {}),
+            total_storage_bytes=stats.get("total_storage_bytes", 0),
+            pending_signatures=stats.get("pending_signatures", 0),
+            expiring_documents_30d=stats.get("expiring_documents_30d", 0),
+            gdpr_requests_pending=stats.get("gdpr_requests_pending", 0),
+        )
 
-        today = date.today()
+    async def get_employee_stats(
+        self,
+        employee_id: uuid.UUID,
+    ) -> VaultEmployeeStats:
+        """Recupere les statistiques d'un employe."""
+        self._check_view_permission(employee_id)
 
-        for doc in self._documents.values():
-            if doc.status == DocumentStatus.DELETED:
-                continue
+        documents = await self.repository.list_employee_documents(employee_id)
 
-            report["summary"]["total_documents"] += 1
+        docs_by_type: dict[str, int] = {}
+        total_size = 0
+        pending_sigs = 0
+        unread = 0
 
-            # Par type
-            doc_type = doc.metadata.document_type.value
-            if doc_type not in report["summary"]["by_type"]:
-                report["summary"]["by_type"][doc_type] = 0
-            report["summary"]["by_type"][doc_type] += 1
+        for doc in documents:
+            type_key = doc.document_type.value
+            docs_by_type[type_key] = docs_by_type.get(type_key, 0) + 1
+            total_size += doc.file_size
 
-            # Par période de conservation
-            retention = doc.retention_period.name
-            if retention not in report["summary"]["by_retention_period"]:
-                report["summary"]["by_retention_period"][retention] = 0
-            report["summary"]["by_retention_period"][retention] += 1
+            if doc.signature_status == SignatureStatus.PENDING:
+                pending_sigs += 1
+            if not doc.employee_viewed:
+                unread += 1
 
-            # Documents dépassant la période de conservation
-            if doc.retention_end_date and doc.retention_end_date < today:
-                report["summary"]["documents_past_retention"].append({
-                    "id": doc.id,
-                    "title": doc.metadata.title,
-                    "retention_end": doc.retention_end_date.isoformat()
-                })
+        return VaultEmployeeStats(
+            employee_id=employee_id,
+            employee_name="",  # A remplir depuis le service HR
+            vault_activated=True,
+            total_documents=len(documents),
+            documents_by_type=docs_by_type,
+            total_storage_bytes=total_size,
+            pending_signatures=pending_sigs,
+            unread_documents=unread,
+        )
 
-        return report
+    # ========================================================================
+    # EXPORT DOSSIER SALARIE
+    # ========================================================================
+
+    async def export_employee_folder(
+        self,
+        data: VaultExportRequest,
+    ) -> VaultExportResponse:
+        """Exporte le dossier complet d'un employe."""
+        self._check_view_permission(data.employee_id)
+
+        # Recuperer les documents
+        documents, _ = await self.repository.list_documents(
+            employee_id=data.employee_id,
+            date_from=data.period_start,
+            date_to=data.period_end,
+        )
+
+        if data.document_types:
+            documents = [d for d in documents if d.document_type in data.document_types]
+
+        # Generer le ZIP
+        export_id = uuid.uuid4()
+        export_path = self.storage_path / "exports" / f"{export_id}.zip"
+        export_path.parent.mkdir(parents=True, exist_ok=True)
+
+        total_size = 0
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for doc in documents:
+                try:
+                    content, filename, _ = await self.download_document(doc.id)
+                    zip_filename = f"{doc.document_type.value}/{doc.document_date or 'unknown'}_{filename}"
+                    zf.writestr(zip_filename, content)
+                    total_size += len(content)
+                except Exception:
+                    continue
+
+        zip_content = buffer.getvalue()
+        export_path.write_bytes(zip_content)
+
+        return VaultExportResponse(
+            export_id=export_id,
+            status="ready",
+            file_path=str(export_path),
+            expires_at=datetime.utcnow() + timedelta(hours=24),
+            document_count=len(documents),
+            total_size_bytes=total_size,
+        )
+
+    # ========================================================================
+    # ALERTES ET NOTIFICATIONS
+    # ========================================================================
+
+    async def _notify_employee_new_document(self, document: VaultDocument):
+        """Notifie l'employe d'un nouveau document."""
+        # TODO: Envoyer un email/notification
+
+        # Creer une alerte
+        alert = VaultAlert(
+            employee_id=document.employee_id,
+            document_id=document.id,
+            alert_type=AlertType.MISSING_DOCUMENT,  # A changer
+            title=f"Nouveau document: {document.title}",
+            description=f"Un nouveau document a ete ajoute a votre coffre-fort.",
+            severity="INFO",
+            target_user_id=document.employee_id,
+            action_url=f"/hr-vault/documents/{document.id}",
+        )
+        await self.repository.create_alert(alert)
+
+        # Mettre a jour le document
+        await self.repository.update_document(
+            document.id,
+            {
+                "employee_notified": True,
+                "notification_sent_at": datetime.utcnow(),
+            },
+        )
+
+    async def get_alerts(
+        self,
+        unread_only: bool = False,
+    ) -> list:
+        """Recupere les alertes de l'utilisateur courant."""
+        alerts = await self.repository.list_alerts(
+            target_user_id=self.current_user_id,
+            target_role=self.current_user_role,
+            unread_only=unread_only,
+        )
+        return alerts
+
+    async def mark_alert_read(self, alert_id: uuid.UUID) -> bool:
+        """Marque une alerte comme lue."""
+        return await self.repository.mark_alert_read(alert_id)
+
+    async def dismiss_alert(self, alert_id: uuid.UUID) -> bool:
+        """Masque une alerte."""
+        return await self.repository.dismiss_alert(alert_id)
 
 
 # ============================================================================
@@ -1081,30 +1076,36 @@ class HRVaultService:
 # ============================================================================
 
 def create_hr_vault_service(
+    session: AsyncSession,
     tenant_id: str,
     storage_path: str,
     master_key: Optional[bytes] = None,
-    timestamp_service_url: Optional[str] = None
+    current_user_id: Optional[uuid.UUID] = None,
+    current_user_role: VaultAccessRole = VaultAccessRole.EMPLOYEE,
 ) -> HRVaultService:
     """
-    Crée un service de coffre-fort RH.
+    Factory pour creer le service HR Vault.
 
     Args:
+        session: Session de base de donnees
         tenant_id: ID du tenant
         storage_path: Chemin de stockage des fichiers
-        master_key: Clé maître de chiffrement (32 bytes)
-        timestamp_service_url: URL du service d'horodatage
+        master_key: Cle maitre de chiffrement (32 bytes)
+        current_user_id: ID de l'utilisateur courant
+        current_user_role: Role de l'utilisateur courant
 
     Returns:
-        Service configuré
+        Service configure
     """
     if master_key is None:
-        # En production, récupérer depuis un HSM ou service de secrets
+        # En production, recuperer depuis un HSM ou service de secrets
         master_key = os.urandom(32)
 
     return HRVaultService(
+        session=session,
         tenant_id=tenant_id,
         storage_path=storage_path,
         master_key=master_key,
-        timestamp_service_url=timestamp_service_url
+        current_user_id=current_user_id,
+        current_user_role=current_user_role,
     )

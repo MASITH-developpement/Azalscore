@@ -87,10 +87,10 @@ from app.modules.quality.schemas import (
 class QualityService:
     """Service de gestion de la qualité"""
 
-    def __init__(self, db: Session, tenant_id: int, user_id: int = None):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
-        self.tenant_id = tenant_id
-        self.user_id = user_id  # Pour CORE SaaS v2 (déjà existant, juste rendre optionnel)
+        self.tenant_id = str(tenant_id) if tenant_id else tenant_id
+        self.user_id = str(user_id) if user_id else user_id
 
     # ========================================================================
     # NON-CONFORMITÉS

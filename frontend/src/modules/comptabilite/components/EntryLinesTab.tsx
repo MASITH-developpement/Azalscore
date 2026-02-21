@@ -55,7 +55,7 @@ export const EntryLinesTab: React.FC<TabContentProps<Entry>> = ({ data: entry })
           <CheckCircle2 size={20} />
           <div>
             <strong>Ecriture equilibree</strong>
-            <p className="text-sm">L'ecriture peut etre validee</p>
+            <p className="text-sm">L&apos;ecriture peut etre validee</p>
           </div>
         </div>
       )}

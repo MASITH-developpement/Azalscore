@@ -103,7 +103,7 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
           )}
           {(doc.type === 'INVOICE' || doc.type === 'ORDER') && (
             <div className="azals-field">
-              <span className="azals-field__label">Date d'echeance</span>
+              <span className="azals-field__label">Date d&apos;echeance</span>
               <div className={`azals-field__value ${doc.is_overdue ? 'text-danger' : ''}`}>
                 {doc.due_date ? formatDate(doc.due_date) : '-'}
                 {doc.is_overdue && <span className="ml-2 text-danger">(En retard)</span>}

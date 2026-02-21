@@ -94,13 +94,14 @@ async def list_themes(
     """Liste les thèmes disponibles."""
     service = get_web_service(db, context.tenant_id, context.user_id)
 
-    themes = service.list_themes(
+    # Convertir include_inactive en is_active
+    is_active = None if include_inactive else True
+
+    themes, total = service.list_themes(
         skip=skip,
         limit=limit,
-        include_inactive=include_inactive
+        is_active=is_active
     )
-
-    total = service.count_themes(include_inactive=include_inactive)
 
     return {
         "items": themes,
@@ -211,16 +212,14 @@ async def list_widgets(
     """Liste les widgets disponibles."""
     service = get_web_service(db, context.tenant_id, context.user_id)
 
-    widgets = service.list_widgets(
+    # Convertir include_inactive en is_active
+    is_active = None if include_inactive else True
+
+    widgets, total = service.list_widgets(
         skip=skip,
         limit=limit,
         widget_type=widget_type,
-        include_inactive=include_inactive
-    )
-
-    total = service.count_widgets(
-        widget_type=widget_type,
-        include_inactive=include_inactive
+        is_active=is_active
     )
 
     return {
@@ -313,13 +312,14 @@ async def list_dashboards(
     """Liste les dashboards."""
     service = get_web_service(db, context.tenant_id, context.user_id)
 
-    dashboards = service.list_dashboards(
+    # Convertir include_inactive en is_active
+    is_active = None if include_inactive else True
+
+    dashboards, total = service.list_dashboards(
         skip=skip,
         limit=limit,
-        include_inactive=include_inactive
+        is_active=is_active
     )
-
-    total = service.count_dashboards(include_inactive=include_inactive)
 
     return {
         "items": dashboards,
@@ -485,7 +485,12 @@ async def get_user_preferences(
     if not context.user_id:
         raise HTTPException(status_code=401, detail="Utilisateur non authentifié")
 
-    preferences = service.get_user_preferences(int(context.user_id))
+    preferences = service.get_user_preferences(context.user_id)
+
+    if preferences is None:
+        # Créer des préférences par défaut si aucune n'existe
+        preferences = service.set_user_preferences(context.user_id)
+
     return preferences
 
 @router.put("/preferences", response_model=UserPreferenceResponse)
@@ -501,7 +506,7 @@ async def update_user_preferences(
         raise HTTPException(status_code=401, detail="Utilisateur non authentifié")
 
     update_data = data.model_dump(exclude_unset=True)
-    preferences = service.update_user_preferences(int(context.user_id), **update_data)
+    preferences = service.update_user_preferences(context.user_id, **update_data)
     return preferences
 
 # ============================================================================
@@ -623,7 +628,7 @@ async def get_page(
 ):
     """Récupère une page par ID."""
     service = get_web_service(db, context.tenant_id, context.user_id)
-    page = service.get_page(int(page_id))
+    page = service.get_custom_page(int(page_id))
 
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -638,7 +643,7 @@ async def get_page_by_slug(
 ):
     """Récupère une page par slug."""
     service = get_web_service(db, context.tenant_id, context.user_id)
-    page = service.get_page_by_slug(slug)
+    page = service.get_custom_page_by_slug(slug)
 
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")

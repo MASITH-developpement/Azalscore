@@ -514,7 +514,7 @@ const SequencesView: React.FC = () => {
           <strong>Legende du format:</strong> AAAA = Annee | X = Chiffres du compteur
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          <strong>Note:</strong> Le compteur n'est pas modifiable manuellement pour garantir l'integrite des sequences.
+          <strong>Note:</strong> Le compteur n&apos;est pas modifiable manuellement pour garantir l&apos;integrite des sequences.
         </div>
       </div>
     </Card>

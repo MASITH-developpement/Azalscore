@@ -154,7 +154,7 @@ export const InvoicingFinancialTab: React.FC<TabContentProps<Document>> = ({ dat
           </div>
           {doc.due_date && (
             <div className="azals-field">
-              <span className="azals-field__label">Date d'echeance</span>
+              <span className="azals-field__label">Date d&apos;echeance</span>
               <div className={`azals-field__value ${isOverdue ? 'text-danger font-medium' : ''}`}>
                 {formatDate(doc.due_date)}
               </div>

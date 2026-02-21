@@ -744,8 +744,9 @@ const ContextModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} title="Ajouter du contexte">
       <div className="azals-auto-accounting__context-form">
         <div className="azals-form-group">
-          <label className="azals-form-label">Notes / Commentaire</label>
+          <label htmlFor="context-notes" className="azals-form-label">Notes / Commentaire</label>
           <TextArea
+            id="context-notes"
             value={notes}
             onChange={(value) => setNotes(value)}
             placeholder="Ajouter des informations utiles..."
@@ -754,8 +755,9 @@ const ContextModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Tags (séparés par virgule)</label>
+          <label htmlFor="context-tags" className="azals-form-label">Tags (séparés par virgule)</label>
           <Input
+            id="context-tags"
             value={tagsInput}
             onChange={(value) => setTagsInput(value)}
             placeholder="projet-x, urgent, à vérifier..."
@@ -909,7 +911,7 @@ export const DocumentDetail: React.FC = () => {
         <Card>
           <div className="azals-empty-state">
             <AlertTriangle size={48} />
-            <p>Ce document n'existe pas ou vous n'y avez pas accès.</p>
+            <p>Ce document n&apos;existe pas ou vous n&apos;y avez pas accès.</p>
             <Button onClick={() => navigate(-1)}>Retour</Button>
           </div>
         </Card>

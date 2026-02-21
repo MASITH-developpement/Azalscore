@@ -62,7 +62,7 @@ export const CustomerInfoTab: React.FC<TabContentProps<Customer>> = ({ data: cus
             <div className="azals-std-field azals-std-field--secondary">
               <span className="azals-std-field__label">
                 <Briefcase size={14} />
-                Secteur d'activité
+                Secteur d&apos;activité
               </span>
               <div className="azals-std-field__value">{customer.industry || '-'}</div>
             </div>

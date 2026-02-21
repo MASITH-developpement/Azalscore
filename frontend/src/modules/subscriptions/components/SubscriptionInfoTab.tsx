@@ -33,7 +33,7 @@ export const SubscriptionInfoTab: React.FC<TabContentProps<Subscription>> = ({ d
           <AlertTriangle size={18} />
           <div>
             <strong>Paiement en retard</strong>
-            <p className="text-sm">Le dernier paiement n'a pas ete effectue.</p>
+            <p className="text-sm">Le dernier paiement n&apos;a pas ete effectue.</p>
           </div>
         </div>
       )}
@@ -54,7 +54,7 @@ export const SubscriptionInfoTab: React.FC<TabContentProps<Subscription>> = ({ d
         <div className="azals-alert azals-alert--info mb-4">
           <Clock size={18} />
           <div>
-            <strong>Periode d'essai</strong>
+            <strong>Periode d&apos;essai</strong>
             <p className="text-sm">
               {trialDaysRemaining > 0
                 ? `${trialDaysRemaining} jour${trialDaysRemaining > 1 ? 's' : ''} restant${trialDaysRemaining > 1 ? 's' : ''}`
@@ -158,13 +158,13 @@ export const SubscriptionInfoTab: React.FC<TabContentProps<Subscription>> = ({ d
             </div>
             {subscription.trial_end && (
               <div className="azals-std-field">
-                <span>Fin de l'essai</span>
+                <span>Fin de l&apos;essai</span>
                 <div>{formatDate(subscription.trial_end)}</div>
               </div>
             )}
             {subscription.cancelled_at && (
               <div className="azals-std-field">
-                <span>Date d'annulation</span>
+                <span>Date d&apos;annulation</span>
                 <div className="text-danger">{formatDateTime(subscription.cancelled_at)}</div>
               </div>
             )}

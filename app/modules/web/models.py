@@ -27,6 +27,13 @@ class ThemeMode(str, PyEnum):
     HIGH_CONTRAST = "HIGH_CONTRAST"
 
 
+class UIStyle(str, PyEnum):
+    """Styles visuels de l'interface"""
+    CLASSIC = "CLASSIC"
+    MODERN = "MODERN"
+    GLASS = "GLASS"
+
+
 class WidgetType(str, PyEnum):
     """Types de widgets"""
     KPI = "KPI"
@@ -353,6 +360,7 @@ class UserUIPreference(Base):
     # Thème
     theme_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("web_themes.id"), nullable=True)
     theme_mode: Mapped[str | None] = mapped_column(Enum(ThemeMode), default=ThemeMode.SYSTEM)
+    ui_style: Mapped[str | None] = mapped_column(Enum(UIStyle), default=UIStyle.CLASSIC)
 
     # Layout
     sidebar_collapsed: Mapped[bool | None] = mapped_column(Boolean, default=False)

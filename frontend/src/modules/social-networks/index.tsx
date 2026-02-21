@@ -10,9 +10,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3, Target, Search, MapPin,
   RefreshCw, CheckCircle, AlertCircle,
-  TrendingUp, DollarSign, Users, MousePointer, Calendar
+  TrendingUp, DollarSign, Users, MousePointer, Calendar,
+  Settings, PenLine
 } from 'lucide-react';
-
 import { socialNetworksApi } from './api';
 import {
   GoogleAnalyticsForm,
@@ -22,6 +22,7 @@ import {
   MetaBusinessForm,
   LinkedInForm,
   SolocalForm,
+  ConfigurationPanel,
 } from './components';
 import {
   PLATFORMS,
@@ -40,9 +41,12 @@ function unwrapResponse<T>(response: any): T | null {
   return (response.data || response) as T;
 }
 
+type TabType = 'manual' | 'config';
+
 // === Composant principal ===
 export default function SocialNetworksModule() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<TabType>('manual');
   const [selectedPlatform, setSelectedPlatform] = useState<MarketingPlatform | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -163,24 +167,54 @@ export default function SocialNetworksModule() {
             <p className="text-gray-500 mt-1">Gestion des métriques marketing digitales</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-gray-400" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <button
-              onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-              Sync Grafana
-            </button>
+            {activeTab === 'manual' && (
+              <>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <button
+                  onClick={() => syncMutation.mutate()}
+                  disabled={syncMutation.isPending}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+                  Sync Grafana
+                </button>
+              </>
+            )}
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="mt-6 flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('manual')}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+              activeTab === 'manual'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <PenLine className="w-4 h-4" />
+            Saisie Manuelle
+          </button>
+          <button
+            onClick={() => setActiveTab('config')}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+              activeTab === 'config'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Configuration & Sync Auto
+          </button>
         </div>
 
         {/* Message de succès */}
@@ -192,6 +226,14 @@ export default function SocialNetworksModule() {
         )}
       </div>
 
+      {/* Configuration Tab */}
+      {activeTab === 'config' && (
+        <ConfigurationPanel />
+      )}
+
+      {/* Manual Entry Tab */}
+      {activeTab === 'manual' && (
+        <>
       {/* KPIs Summary */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -432,6 +474,9 @@ export default function SocialNetworksModule() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
+

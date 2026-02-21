@@ -26,7 +26,7 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
           <AlertTriangle size={20} />
           <div>
             <strong>Rupture de stock</strong>
-            <p>Ce produit n'est plus disponible a la vente.</p>
+            <p>Ce produit n&apos;est plus disponible a la vente.</p>
           </div>
         </div>
       )}

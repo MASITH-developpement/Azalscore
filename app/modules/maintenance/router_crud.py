@@ -93,7 +93,7 @@ def get_maintenance_service(
     context: SaaSContext = Depends(get_context)
 ) -> MaintenanceService:
     """Factory utilisant le contexte unifié."""
-    return MaintenanceService(db, int(context.tenant_id), int(context.user_id))
+    return MaintenanceService(db, context.tenant_id, str(context.user_id))
 
 # ============================================================================
 # ACTIFS

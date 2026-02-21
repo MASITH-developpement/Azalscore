@@ -312,7 +312,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         {query.length >= 2 && results.length === 0 && !isSearching && (
           <div className="azals-global-search__empty">
-            Aucun résultat pour "{query}"
+            Aucun résultat pour &quot;{query}&quot;
           </div>
         )}
       </div>

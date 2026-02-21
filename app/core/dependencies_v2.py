@@ -205,7 +205,7 @@ def require_role(*allowed_roles: str):
                        f"Required: {', '.join(allowed_roles)}"
             )
 
-    return Depends(check_role)
+    return check_role
 
 
 def require_permission(permission: str):
@@ -239,7 +239,7 @@ def require_permission(permission: str):
                 detail=f"Permission denied: {permission}"
             )
 
-    return Depends(check_permission)
+    return check_permission
 
 
 def require_module_active(module_code: str):
@@ -271,7 +271,7 @@ def require_module_active(module_code: str):
                 detail=f"Module {module_code} is not active for this tenant"
             )
 
-    return Depends(check_module)
+    return check_module
 
 
 # ============================================================================

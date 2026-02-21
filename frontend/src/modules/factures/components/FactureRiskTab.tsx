@@ -143,7 +143,7 @@ const InternalScoreDisplay: React.FC<InternalScoreDisplayProps> = ({ customerId 
             {score.level_label}
           </div>
           <div className="text-sm text-gray-500">
-            Score base sur l'historique client
+            Score base sur l&apos;historique client
           </div>
         </div>
       </div>

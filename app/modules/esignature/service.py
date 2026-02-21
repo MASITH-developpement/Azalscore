@@ -1,1427 +1,1535 @@
 """
-Module de Signature Électronique - GAP-014
+AZALS MODULE ESIGNATURE - Service Principal
+============================================
 
-Intégration multi-providers pour signature électronique:
-- Yousign (leader français, eIDAS compliant)
-- DocuSign (leader mondial)
-- HelloSign (Dropbox)
+Service metier pour la signature electronique.
+Orchestre les repositories, providers et logique metier.
 
-Fonctionnalités:
-- Création de demandes de signature
-- Envoi multi-signataires avec ordre
-- Suivi temps réel des signatures
-- Webhooks pour notifications
-- Archivage avec preuve de signature
-- Signature qualifiée eIDAS
-
-Architecture multi-tenant avec isolation stricte.
+Architecture multi-tenant avec audit complet.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol
-from abc import ABC, abstractmethod
 import hashlib
-import hmac
-import json
-import base64
-import uuid
+import logging
+import secrets
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.core.encryption import decrypt_value, encrypt_value
+
+from .models import (
+    ESignatureConfig,
+    ProviderCredential,
+    SignatureTemplate,
+    SignatureEnvelope,
+    EnvelopeDocument,
+    EnvelopeSigner,
+    SignatureCertificate,
+    EnvelopeStatus,
+    SignerStatus,
+    AuditEventType,
+    SignatureProvider,
+    SignatureLevel,
+    FieldType,
+)
+from .repository import (
+    ESignatureConfigRepository,
+    ProviderCredentialRepository,
+    SignatureTemplateRepository,
+    SignatureEnvelopeRepository,
+    EnvelopeDocumentRepository,
+    EnvelopeSignerRepository,
+    SignatureAuditEventRepository,
+    SignatureCertificateRepository,
+    SignatureReminderRepository,
+    SignatureStatsRepository,
+)
+from .schemas import (
+    ESignatureConfigCreate,
+    ESignatureConfigUpdate,
+    ProviderCredentialCreate,
+    ProviderCredentialUpdate,
+    SignatureTemplateCreate,
+    SignatureTemplateUpdate,
+    EnvelopeCreate,
+    EnvelopeCreateFromTemplate,
+    EnvelopeUpdate,
+    SignerCreate,
+    EnvelopeFilters,
+    TemplateFilters,
+    SendReminderRequest,
+    DashboardStatsResponse,
+    SignatureStatsResponse,
+)
+from .providers import (
+    ProviderFactory,
+    SignatureProviderInterface,
+    ProviderEnvelopeInfo,
+    ProviderDocumentInfo,
+    ProviderSignerInfo,
+    ProviderFieldInfo,
+    WebhookEventInfo,
+)
+from .exceptions import (
+    ConfigNotFoundError,
+    ConfigAlreadyExistsError,
+    ProviderNotConfiguredError,
+    ProviderCredentialNotFoundError,
+    ProviderAPIError,
+    TemplateNotFoundError,
+    TemplateDuplicateCodeError,
+    TemplateLockedError,
+    EnvelopeNotFoundError,
+    EnvelopeStateError,
+    EnvelopeNotDraftError,
+    EnvelopeAlreadySentError,
+    EnvelopeNoDocumentsError,
+    EnvelopeNoSignersError,
+    EnvelopePendingApprovalError,
+    SignerNotFoundError,
+    SignerAlreadySignedError,
+    SignerNotAuthorizedError,
+    InvalidAccessTokenError,
+    MaxRemindersReachedError,
+    CertificateGenerationError,
+)
+
+logger = logging.getLogger(__name__)
 
 
-# ============================================================================
-# ÉNUMÉRATIONS
-# ============================================================================
+class ESignatureService:
+    """
+    Service principal de signature electronique.
 
-class SignatureProvider(Enum):
-    """Providers de signature électronique supportés."""
-    YOUSIGN = "yousign"
-    DOCUSIGN = "docusign"
-    HELLOSIGN = "hellosign"
+    Gere tout le cycle de vie des signatures:
+    - Configuration et providers
+    - Templates de documents
+    - Creation et envoi d'enveloppes
+    - Suivi des signatures
+    - Rappels automatiques
+    - Certificats et archivage
+    """
 
+    def __init__(self, db: Session, tenant_id: str, user_id: UUID = None):
+        self.db = db
+        self.tenant_id = tenant_id
+        self.user_id = user_id
 
-class SignatureLevel(Enum):
-    """Niveau de signature selon eIDAS."""
-    SIMPLE = "simple"  # Signature simple (email)
-    ADVANCED = "advanced"  # Signature avancée (SMS + pièce identité)
-    QUALIFIED = "qualified"  # Signature qualifiée (certificat qualifié)
+        # Repositories
+        self.config_repo = ESignatureConfigRepository(db, tenant_id)
+        self.credential_repo = ProviderCredentialRepository(db, tenant_id)
+        self.template_repo = SignatureTemplateRepository(db, tenant_id)
+        self.envelope_repo = SignatureEnvelopeRepository(db, tenant_id)
+        self.document_repo = EnvelopeDocumentRepository(db, tenant_id)
+        self.signer_repo = EnvelopeSignerRepository(db, tenant_id)
+        self.audit_repo = SignatureAuditEventRepository(db, tenant_id)
+        self.certificate_repo = SignatureCertificateRepository(db, tenant_id)
+        self.reminder_repo = SignatureReminderRepository(db, tenant_id)
+        self.stats_repo = SignatureStatsRepository(db, tenant_id)
 
+    # =========================================================================
+    # CONFIGURATION
+    # =========================================================================
 
-class SignatureStatus(Enum):
-    """Statut d'une demande de signature."""
-    DRAFT = "draft"  # Brouillon
-    PENDING = "pending"  # En attente d'envoi
-    SENT = "sent"  # Envoyée aux signataires
-    IN_PROGRESS = "in_progress"  # Signatures en cours
-    COMPLETED = "completed"  # Toutes signatures reçues
-    DECLINED = "declined"  # Refusée par un signataire
-    EXPIRED = "expired"  # Expirée
-    CANCELLED = "cancelled"  # Annulée
+    def get_config(self) -> Optional[ESignatureConfig]:
+        """Recupere la configuration signature du tenant."""
+        return self.config_repo.get()
 
+    def create_config(self, data: ESignatureConfigCreate) -> ESignatureConfig:
+        """Cree la configuration signature."""
+        if self.config_repo.exists():
+            raise ConfigAlreadyExistsError()
 
-class SignerStatus(Enum):
-    """Statut d'un signataire."""
-    PENDING = "pending"  # En attente
-    NOTIFIED = "notified"  # Notifié par email/SMS
-    OPENED = "opened"  # Document ouvert
-    SIGNED = "signed"  # Signé
-    DECLINED = "declined"  # Refusé
-    EXPIRED = "expired"  # Expiré
+        return self.config_repo.create(data.model_dump(), self.user_id)
 
+    def update_config(self, data: ESignatureConfigUpdate) -> ESignatureConfig:
+        """Met a jour la configuration."""
+        config = self.config_repo.get()
+        if not config:
+            raise ConfigNotFoundError()
 
-class DocumentType(Enum):
-    """Type de document à signer."""
-    CONTRACT = "contract"  # Contrat
-    INVOICE = "invoice"  # Facture
-    QUOTE = "quote"  # Devis
-    NDA = "nda"  # Accord de confidentialité
-    EMPLOYMENT = "employment"  # Contrat de travail
-    AMENDMENT = "amendment"  # Avenant
-    MANDATE = "mandate"  # Mandat
-    OTHER = "other"  # Autre
+        update_data = data.model_dump(exclude_unset=True)
+        return self.config_repo.update(config, update_data, self.user_id)
 
+    # =========================================================================
+    # PROVIDER CREDENTIALS
+    # =========================================================================
 
-class SignatureFieldType(Enum):
-    """Type de champ de signature."""
-    SIGNATURE = "signature"  # Signature
-    INITIALS = "initials"  # Paraphe
-    DATE = "date"  # Date
-    TEXT = "text"  # Texte libre
-    CHECKBOX = "checkbox"  # Case à cocher
+    def get_provider_credentials(self, provider: SignatureProvider) -> Optional[ProviderCredential]:
+        """Recupere les credentials d'un provider."""
+        return self.credential_repo.get_by_provider(provider)
 
+    def list_provider_credentials(self) -> List[ProviderCredential]:
+        """Liste tous les credentials configures."""
+        return self.credential_repo.list_all()
 
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
+    def create_provider_credential(self, data: ProviderCredentialCreate) -> ProviderCredential:
+        """Configure un provider."""
+        # Chiffrer les secrets
+        encrypted_data = data.model_dump()
+        if data.api_key:
+            encrypted_data["api_key_encrypted"] = encrypt_value(data.api_key)
+            del encrypted_data["api_key"]
+        if data.api_secret:
+            encrypted_data["api_secret_encrypted"] = encrypt_value(data.api_secret)
+            del encrypted_data["api_secret"]
+        if data.private_key:
+            encrypted_data["private_key_encrypted"] = encrypt_value(data.private_key)
+            del encrypted_data["private_key"]
+        if data.webhook_secret:
+            encrypted_data["webhook_secret_encrypted"] = encrypt_value(data.webhook_secret)
+            del encrypted_data["webhook_secret"]
 
-@dataclass
-class SignatureField:
-    """Champ de signature dans un document."""
-    field_type: SignatureFieldType
-    page: int
-    x: float  # Position X en %
-    y: float  # Position Y en %
-    width: float = 150  # Largeur en pixels
-    height: float = 50  # Hauteur en pixels
-    required: bool = True
-    signer_index: int = 0  # Index du signataire concerné
-    label: Optional[str] = None
+        return self.credential_repo.create(encrypted_data)
 
-
-@dataclass
-class Signer:
-    """Signataire d'un document."""
-    email: str
-    first_name: str
-    last_name: str
-    phone: Optional[str] = None
-    order: int = 1  # Ordre de signature (1 = premier)
-    signature_level: SignatureLevel = SignatureLevel.SIMPLE
-
-    # Authentification renforcée
-    require_id_verification: bool = False
-    require_sms_otp: bool = False
-
-    # Statut
-    status: SignerStatus = SignerStatus.PENDING
-    signed_at: Optional[datetime] = None
-    ip_address: Optional[str] = None
-
-    # ID externe (provider)
-    external_id: Optional[str] = None
-
-
-@dataclass
-class Document:
-    """Document à signer."""
-    name: str
-    content: bytes  # Contenu PDF
-    document_type: DocumentType = DocumentType.OTHER
-
-    # Métadonnées
-    description: Optional[str] = None
-    reference: Optional[str] = None
-
-    # Champs de signature
-    fields: List[SignatureField] = field(default_factory=list)
-
-    # ID externe (provider)
-    external_id: Optional[str] = None
-
-    # Hash du document original
-    content_hash: str = ""
-
-    def __post_init__(self):
-        if not self.content_hash:
-            self.content_hash = hashlib.sha256(self.content).hexdigest()
-
-
-@dataclass
-class SignatureRequest:
-    """Demande de signature."""
-    id: str
-    tenant_id: str
-    name: str
-
-    # Documents et signataires
-    documents: List[Document]
-    signers: List[Signer]
-
-    # Configuration
-    provider: SignatureProvider = SignatureProvider.YOUSIGN
-    signature_level: SignatureLevel = SignatureLevel.SIMPLE
-
-    # Expiration
-    expires_at: Optional[datetime] = None
-    reminder_interval_days: int = 3
-
-    # Messages personnalisés
-    email_subject: Optional[str] = None
-    email_message: Optional[str] = None
-
-    # Statut
-    status: SignatureStatus = SignatureStatus.DRAFT
-    created_at: datetime = field(default_factory=datetime.now)
-    sent_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-
-    # IDs externes
-    external_id: Optional[str] = None
-
-    # Webhook
-    webhook_url: Optional[str] = None
-
-    # Métadonnées business
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class SignatureProof:
-    """Preuve de signature (audit trail)."""
-    request_id: str
-    signer_email: str
-    signed_at: datetime
-    ip_address: str
-    user_agent: str
-
-    # Vérification
-    signature_hash: str
-    certificate_issuer: Optional[str] = None
-    certificate_serial: Optional[str] = None
-
-    # Localisation
-    country: Optional[str] = None
-    city: Optional[str] = None
-
-    # Authentification
-    authentication_method: str = "email"  # email, sms_otp, id_verification
-
-    # Document signé
-    signed_document_hash: Optional[str] = None
-
-
-@dataclass
-class WebhookEvent:
-    """Événement webhook reçu d'un provider."""
-    provider: SignatureProvider
-    event_type: str
-    request_external_id: str
-    signer_external_id: Optional[str]
-    timestamp: datetime
-    raw_payload: Dict[str, Any]
-
-
-# ============================================================================
-# INTERFACE PROVIDER
-# ============================================================================
-
-class SignatureProviderInterface(ABC):
-    """Interface commune pour tous les providers de signature."""
-
-    @abstractmethod
-    async def create_signature_request(
+    def update_provider_credential(
         self,
-        request: SignatureRequest
-    ) -> str:
-        """Crée une demande de signature. Retourne l'ID externe."""
-        pass
+        credential_id: UUID,
+        data: ProviderCredentialUpdate
+    ) -> ProviderCredential:
+        """Met a jour les credentials d'un provider."""
+        credential = self.credential_repo.get_by_id(credential_id)
+        if not credential:
+            raise ProviderCredentialNotFoundError(str(credential_id))
 
-    @abstractmethod
-    async def send_signature_request(
+        update_data = data.model_dump(exclude_unset=True)
+
+        # Chiffrer les secrets
+        if "api_key" in update_data and update_data["api_key"]:
+            update_data["api_key_encrypted"] = encrypt_value(update_data.pop("api_key"))
+        if "api_secret" in update_data and update_data["api_secret"]:
+            update_data["api_secret_encrypted"] = encrypt_value(update_data.pop("api_secret"))
+        if "private_key" in update_data and update_data["private_key"]:
+            update_data["private_key_encrypted"] = encrypt_value(update_data.pop("private_key"))
+        if "webhook_secret" in update_data and update_data["webhook_secret"]:
+            update_data["webhook_secret_encrypted"] = encrypt_value(update_data.pop("webhook_secret"))
+
+        return self.credential_repo.update(credential, update_data)
+
+    async def verify_provider_credentials(self, provider: SignatureProvider) -> Tuple[bool, str]:
+        """Verifie les credentials d'un provider."""
+        try:
+            provider_impl = self._get_provider(provider)
+            is_valid = await provider_impl.verify_credentials()
+
+            credential = self.credential_repo.get_by_provider(provider)
+            if credential:
+                credential.is_verified = is_valid
+                credential.last_verified_at = datetime.utcnow()
+                credential.last_error = None if is_valid else "Verification failed"
+                self.db.commit()
+
+            return is_valid, "Credentials valides" if is_valid else "Credentials invalides"
+
+        except Exception as e:
+            logger.exception(f"Erreur verification provider {provider}")
+            return False, str(e)
+
+    def _get_provider(self, provider: SignatureProvider) -> SignatureProviderInterface:
+        """Recupere une instance de provider avec credentials."""
+        credential = self.credential_repo.get_by_provider(provider)
+        if not credential and provider != SignatureProvider.INTERNAL:
+            raise ProviderNotConfiguredError(provider.value)
+
+        credentials = {}
+        if credential:
+            if credential.api_key_encrypted:
+                credentials["api_key"] = decrypt_value(credential.api_key_encrypted)
+            if credential.api_secret_encrypted:
+                credentials["api_secret"] = decrypt_value(credential.api_secret_encrypted)
+            if credential.account_id:
+                credentials["account_id"] = credential.account_id
+            if credential.user_id:
+                credentials["user_id"] = credential.user_id
+            if credential.private_key_encrypted:
+                credentials["private_key"] = decrypt_value(credential.private_key_encrypted)
+            if credential.webhook_secret_encrypted:
+                credentials["webhook_secret"] = decrypt_value(credential.webhook_secret_encrypted)
+            credentials["environment"] = credential.environment
+
+        return ProviderFactory.create(provider, credentials)
+
+    # =========================================================================
+    # TEMPLATES
+    # =========================================================================
+
+    def get_template(self, template_id: UUID) -> Optional[SignatureTemplate]:
+        """Recupere un template par ID."""
+        return self.template_repo.get_by_id(template_id)
+
+    def get_template_by_code(self, code: str) -> Optional[SignatureTemplate]:
+        """Recupere un template par code."""
+        return self.template_repo.get_by_code(code)
+
+    def list_templates(
         self,
-        external_id: str
-    ) -> bool:
-        """Envoie la demande aux signataires."""
-        pass
+        filters: TemplateFilters = None,
+        page: int = 1,
+        page_size: int = 20,
+        sort_by: str = "created_at",
+        sort_dir: str = "desc"
+    ) -> Tuple[List[SignatureTemplate], int]:
+        """Liste les templates avec filtres et pagination."""
+        return self.template_repo.list(filters, page, page_size, sort_by, sort_dir)
 
-    @abstractmethod
-    async def get_request_status(
+    def create_template(
         self,
-        external_id: str
-    ) -> Dict[str, Any]:
-        """Récupère le statut d'une demande."""
-        pass
+        data: SignatureTemplateCreate,
+        file_content: bytes = None,
+        file_name: str = None
+    ) -> SignatureTemplate:
+        """Cree un nouveau template."""
+        if self.template_repo.code_exists(data.code):
+            raise TemplateDuplicateCodeError(data.code)
 
-    @abstractmethod
-    async def download_signed_document(
+        template_data = data.model_dump()
+
+        # Gerer le fichier
+        if file_content:
+            template_data["file_path"] = self._store_template_file(
+                data.code, file_content, file_name
+            )
+            template_data["file_name"] = file_name
+            template_data["file_size"] = len(file_content)
+            template_data["file_hash"] = hashlib.sha256(file_content).hexdigest()
+            template_data["page_count"] = self._count_pdf_pages(file_content)
+
+        return self.template_repo.create(template_data, self.user_id)
+
+    def update_template(
         self,
-        external_id: str,
-        document_external_id: str
-    ) -> bytes:
-        """Télécharge le document signé."""
-        pass
+        template_id: UUID,
+        data: SignatureTemplateUpdate
+    ) -> SignatureTemplate:
+        """Met a jour un template."""
+        template = self.template_repo.get_by_id(template_id)
+        if not template:
+            raise TemplateNotFoundError(str(template_id))
 
-    @abstractmethod
-    async def download_audit_trail(
+        if template.is_locked:
+            raise TemplateLockedError(str(template_id))
+
+        return self.template_repo.update(template, data.model_dump(exclude_unset=True), self.user_id)
+
+    def delete_template(self, template_id: UUID) -> bool:
+        """Supprime un template (soft delete)."""
+        template = self.template_repo.get_by_id(template_id)
+        if not template:
+            raise TemplateNotFoundError(str(template_id))
+
+        return self.template_repo.soft_delete(template, self.user_id)
+
+    def _store_template_file(self, code: str, content: bytes, filename: str) -> str:
+        """Stocke le fichier template et retourne le path."""
+        # Implementation stockage (filesystem, S3, etc.)
+        # Pour l'exemple, retourne un path fictif
+        return f"/storage/esignature/templates/{self.tenant_id}/{code}/{filename}"
+
+    def _count_pdf_pages(self, content: bytes) -> int:
+        """Compte le nombre de pages d'un PDF."""
+        try:
+            # Utiliser PyPDF2 ou pdfplumber si disponible
+            import PyPDF2
+            from io import BytesIO
+            reader = PyPDF2.PdfReader(BytesIO(content))
+            return len(reader.pages)
+        except Exception:
+            return 1  # Fallback
+
+    # =========================================================================
+    # ENVELOPES - CREATION
+    # =========================================================================
+
+    def get_envelope(self, envelope_id: UUID) -> Optional[SignatureEnvelope]:
+        """Recupere une enveloppe par ID."""
+        return self.envelope_repo.get_by_id(envelope_id)
+
+    def get_envelope_by_number(self, number: str) -> Optional[SignatureEnvelope]:
+        """Recupere une enveloppe par numero."""
+        return self.envelope_repo.get_by_number(number)
+
+    def list_envelopes(
         self,
-        external_id: str
-    ) -> bytes:
-        """Télécharge la preuve de signature (audit trail PDF)."""
-        pass
+        filters: EnvelopeFilters = None,
+        page: int = 1,
+        page_size: int = 20,
+        sort_by: str = "created_at",
+        sort_dir: str = "desc"
+    ) -> Tuple[List[SignatureEnvelope], int]:
+        """Liste les enveloppes avec filtres et pagination."""
+        return self.envelope_repo.list(filters, page, page_size, sort_by, sort_dir)
 
-    @abstractmethod
-    async def cancel_request(
+    def create_envelope(
         self,
-        external_id: str
-    ) -> bool:
-        """Annule une demande de signature."""
-        pass
+        data: EnvelopeCreate,
+        documents: List[Tuple[bytes, str]] = None  # [(content, filename), ...]
+    ) -> SignatureEnvelope:
+        """
+        Cree une nouvelle enveloppe de signature.
 
-    @abstractmethod
+        Args:
+            data: Donnees de l'enveloppe
+            documents: Liste de tuples (contenu, nom_fichier)
+        """
+        config = self.get_config()
+
+        # Preparer les donnees
+        envelope_data = data.model_dump()
+        envelope_data["signers"] = [s.model_dump() for s in data.signers]
+
+        # Appliquer config par defaut
+        if not envelope_data.get("expires_at") and config:
+            envelope_data["expires_at"] = datetime.utcnow() + timedelta(
+                days=config.default_expiry_days
+            )
+
+        # Verifier approbation requise
+        if config and config.require_approval_before_send:
+            envelope_data["requires_approval"] = True
+            envelope_data["approval_status"] = "pending"
+
+        # Creer l'enveloppe
+        envelope = self.envelope_repo.create(envelope_data, self.user_id)
+
+        # Ajouter les documents
+        if documents:
+            for i, (content, filename) in enumerate(documents):
+                self._add_document_to_envelope(
+                    envelope, content, filename, i + 1
+                )
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.CREATED,
+            "user",
+            description=f"Enveloppe {envelope.envelope_number} creee"
+        )
+
+        return envelope
+
+    def create_envelope_from_template(
+        self,
+        data: EnvelopeCreateFromTemplate,
+        document_content: bytes = None
+    ) -> SignatureEnvelope:
+        """Cree une enveloppe depuis un template."""
+        template = self.template_repo.get_by_id(data.template_id)
+        if not template:
+            raise TemplateNotFoundError(str(data.template_id))
+
+        # Incrementer usage
+        self.template_repo.increment_usage(template)
+
+        # Construire les donnees depuis template
+        envelope_data = {
+            "name": data.name or template.name,
+            "template_id": template.id,
+            "document_type": template.document_type,
+            "signature_level": template.default_signature_level,
+            "email_subject": template.email_subject,
+            "email_body": template.email_body,
+            "reference_type": data.reference_type,
+            "reference_id": data.reference_id,
+            "reference_number": data.reference_number,
+            "expires_at": data.expires_at or (
+                datetime.utcnow() + timedelta(days=template.default_expiry_days)
+            ),
+            "metadata": data.metadata,
+            "signers": [s.model_dump() for s in data.signers],
+        }
+
+        envelope = self.envelope_repo.create(envelope_data, self.user_id)
+
+        # Ajouter le document du template
+        if document_content:
+            self._add_document_to_envelope(
+                envelope,
+                document_content,
+                template.file_name or "document.pdf",
+                1
+            )
+
+            # Ajouter les champs du template aux signataires
+            for field in template.fields:
+                signer = envelope.signers[field.tab_order] if field.tab_order < len(envelope.signers) else envelope.signers[0]
+                self.document_repo.add_field(
+                    envelope.documents[0].id,
+                    signer.id,
+                    {
+                        "field_type": field.field_type,
+                        "page": field.page,
+                        "x_position": field.x_position,
+                        "y_position": field.y_position,
+                        "width": field.width,
+                        "height": field.height,
+                        "label": field.label,
+                        "is_required": field.is_required,
+                    }
+                )
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.CREATED,
+            "user",
+            description=f"Enveloppe creee depuis template {template.code}",
+            event_data={"template_id": str(template.id)}
+        )
+
+        return envelope
+
+    def _add_document_to_envelope(
+        self,
+        envelope: SignatureEnvelope,
+        content: bytes,
+        filename: str,
+        order: int
+    ) -> EnvelopeDocument:
+        """Ajoute un document a une enveloppe."""
+        file_hash = hashlib.sha256(content).hexdigest()
+        file_path = self._store_document_file(envelope.envelope_number, content, filename)
+        page_count = self._count_pdf_pages(content)
+
+        document = self.document_repo.create({
+            "envelope_id": envelope.id,
+            "name": filename.rsplit(".", 1)[0],
+            "document_order": order,
+            "original_file_path": file_path,
+            "original_file_name": filename,
+            "original_file_size": len(content),
+            "original_file_hash": file_hash,
+            "page_count": page_count,
+        })
+
+        return document
+
+    def _store_document_file(self, envelope_number: str, content: bytes, filename: str) -> str:
+        """Stocke un fichier document."""
+        return f"/storage/esignature/documents/{self.tenant_id}/{envelope_number}/{filename}"
+
+    def update_envelope(self, envelope_id: UUID, data: EnvelopeUpdate) -> SignatureEnvelope:
+        """Met a jour une enveloppe (brouillon uniquement)."""
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
+
+        if envelope.status != EnvelopeStatus.DRAFT:
+            raise EnvelopeNotDraftError(str(envelope_id))
+
+        return self.envelope_repo.update(
+            envelope,
+            data.model_dump(exclude_unset=True),
+            self.user_id
+        )
+
+    # =========================================================================
+    # ENVELOPES - ENVOI
+    # =========================================================================
+
+    async def send_envelope(
+        self,
+        envelope_id: UUID,
+        custom_message: str = None
+    ) -> SignatureEnvelope:
+        """Envoie une enveloppe aux signataires."""
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
+
+        # Validations
+        if envelope.status not in [EnvelopeStatus.DRAFT, EnvelopeStatus.APPROVED]:
+            raise EnvelopeStateError(envelope.status.value, "send")
+
+        if not envelope.documents:
+            raise EnvelopeNoDocumentsError(str(envelope_id))
+
+        if not envelope.signers:
+            raise EnvelopeNoSignersError(str(envelope_id))
+
+        if envelope.requires_approval and envelope.approval_status != "approved":
+            raise EnvelopePendingApprovalError(str(envelope_id))
+
+        # Preparer pour le provider
+        provider = self._get_provider(envelope.provider)
+
+        provider_envelope = ProviderEnvelopeInfo(
+            name=envelope.name,
+            documents=[
+                ProviderDocumentInfo(
+                    name=doc.original_file_name,
+                    content=self._load_document_content(doc.original_file_path),
+                    fields=[
+                        ProviderFieldInfo(
+                            field_type=f.field_type,
+                            page=f.page,
+                            x=f.x_position,
+                            y=f.y_position,
+                            width=f.width,
+                            height=f.height,
+                            required=f.is_required,
+                            signer_index=self._get_signer_index(envelope.signers, f.signer_id),
+                            label=f.label
+                        )
+                        for f in doc.fields
+                    ]
+                )
+                for doc in envelope.documents
+            ],
+            signers=[
+                ProviderSignerInfo(
+                    email=s.email,
+                    first_name=s.first_name,
+                    last_name=s.last_name,
+                    phone=s.phone,
+                    order=s.signing_order,
+                    signature_level=envelope.signature_level,
+                    require_id_verification=s.require_id_verification,
+                    require_sms_otp=s.auth_method.value == "sms_otp" if s.auth_method else False
+                )
+                for s in envelope.signers
+            ],
+            signature_level=envelope.signature_level,
+            expires_at=envelope.expires_at,
+            email_subject=envelope.email_subject or custom_message,
+            email_message=envelope.email_body,
+            webhook_url=envelope.callback_url,
+            metadata={"envelope_id": str(envelope.id), "tenant_id": self.tenant_id}
+        )
+
+        try:
+            # Creer chez le provider
+            external_id = await provider.create_envelope(provider_envelope)
+            envelope.external_id = external_id
+
+            # Envoyer
+            await provider.send_envelope(external_id)
+
+            # Mettre a jour les IDs externes des signataires
+            for i, signer in enumerate(envelope.signers):
+                if i < len(provider_envelope.signers):
+                    signer.external_id = provider_envelope.signers[i].external_id
+                self.signer_repo.update_status(signer, SignerStatus.NOTIFIED)
+
+            # Mettre a jour statut
+            envelope = self.envelope_repo.update_status(envelope, EnvelopeStatus.SENT)
+
+            # Planifier les rappels
+            if envelope.reminder_enabled:
+                self._schedule_reminder(envelope)
+
+            # Audit
+            self._log_audit(
+                envelope.id,
+                AuditEventType.SENT,
+                "user",
+                description=f"Enveloppe envoyee aux {len(envelope.signers)} signataire(s)",
+                event_data={"external_id": external_id}
+            )
+
+        except Exception as e:
+            logger.exception(f"Erreur envoi enveloppe {envelope_id}")
+            raise ProviderAPIError(envelope.provider.value, str(e))
+
+        return envelope
+
+    def _load_document_content(self, file_path: str) -> bytes:
+        """Charge le contenu d'un document."""
+        # Implementation lecture fichier
+        # Pour l'exemple, retourne un contenu vide
+        try:
+            with open(file_path, "rb") as f:
+                return f.read()
+        except FileNotFoundError:
+            return b""
+
+    def _get_signer_index(self, signers: List[EnvelopeSigner], signer_id: UUID) -> int:
+        """Trouve l'index d'un signataire."""
+        for i, signer in enumerate(signers):
+            if signer.id == signer_id:
+                return i
+        return 0
+
+    # =========================================================================
+    # ENVELOPES - ACTIONS
+    # =========================================================================
+
+    async def cancel_envelope(
+        self,
+        envelope_id: UUID,
+        reason: str,
+        notify_signers: bool = True
+    ) -> SignatureEnvelope:
+        """Annule une enveloppe."""
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
+
+        if envelope.status in [EnvelopeStatus.COMPLETED, EnvelopeStatus.CANCELLED, EnvelopeStatus.VOIDED]:
+            raise EnvelopeStateError(envelope.status.value, "cancel")
+
+        # Annuler chez le provider si envoyee
+        if envelope.external_id:
+            try:
+                provider = self._get_provider(envelope.provider)
+                await provider.cancel_envelope(envelope.external_id, reason)
+            except Exception as e:
+                logger.warning(f"Erreur annulation provider: {e}")
+
+        # Annuler les rappels
+        self.reminder_repo.cancel_pending(envelope.id)
+
+        # Mettre a jour statut
+        envelope = self.envelope_repo.update_status(
+            envelope,
+            EnvelopeStatus.CANCELLED,
+            reason
+        )
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.CANCELLED,
+            "user",
+            description=f"Enveloppe annulee: {reason}"
+        )
+
+        return envelope
+
+    async def void_envelope(self, envelope_id: UUID, reason: str) -> SignatureEnvelope:
+        """Invalide une enveloppe completee."""
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
+
+        if envelope.status != EnvelopeStatus.COMPLETED:
+            raise EnvelopeStateError(envelope.status.value, "void")
+
+        envelope = self.envelope_repo.update_status(
+            envelope,
+            EnvelopeStatus.VOIDED,
+            reason
+        )
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.VOIDED,
+            "user",
+            description=f"Enveloppe invalidee: {reason}"
+        )
+
+        return envelope
+
     async def send_reminder(
         self,
-        external_id: str,
-        signer_external_id: Optional[str] = None
+        envelope_id: UUID,
+        signer_ids: List[UUID] = None,
+        custom_message: str = None
     ) -> bool:
         """Envoie un rappel aux signataires."""
-        pass
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
 
-    @abstractmethod
-    def parse_webhook(
-        self,
-        payload: Dict[str, Any],
-        signature: Optional[str] = None
-    ) -> WebhookEvent:
-        """Parse un webhook entrant."""
-        pass
+        if envelope.status not in [EnvelopeStatus.SENT, EnvelopeStatus.IN_PROGRESS]:
+            raise EnvelopeStateError(envelope.status.value, "remind")
 
+        config = self.get_config()
+        if config and envelope.reminder_count >= config.max_reminders:
+            raise MaxRemindersReachedError(config.max_reminders)
 
-# ============================================================================
-# PROVIDER YOUSIGN
-# ============================================================================
+        provider = self._get_provider(envelope.provider)
 
-class YousignProvider(SignatureProviderInterface):
-    """
-    Provider Yousign - Leader français de la signature électronique.
-
-    Avantages:
-    - Conforme eIDAS (signature qualifiée)
-    - Serveurs en France
-    - API moderne et bien documentée
-    - Support natif français
-
-    Documentation: https://developers.yousign.com/
-    """
-
-    def __init__(
-        self,
-        api_key: str,
-        environment: str = "production",  # production ou sandbox
-        webhook_secret: Optional[str] = None
-    ):
-        self.api_key = api_key
-        self.webhook_secret = webhook_secret
-
-        if environment == "sandbox":
-            self.base_url = "https://api-sandbox.yousign.app/v3"
+        # Determiner les signataires a rappeler
+        signers_to_remind = []
+        if signer_ids:
+            signers_to_remind = [s for s in envelope.signers if s.id in signer_ids]
         else:
-            self.base_url = "https://api.yousign.app/v3"
+            signers_to_remind = self.signer_repo.get_pending_by_envelope(envelope.id)
 
-    def _get_headers(self) -> Dict[str, str]:
-        """Headers pour les requêtes API."""
-        return {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
+        # Envoyer rappels
+        for signer in signers_to_remind:
+            try:
+                await provider.send_reminder(envelope.external_id, signer.external_id)
 
-    async def create_signature_request(
-        self,
-        request: SignatureRequest
-    ) -> str:
-        """Crée une demande de signature Yousign."""
-        # Construction du payload
-        payload = {
-            "name": request.name,
-            "delivery_mode": "email",
-            "timezone": "Europe/Paris",
-            "signers_allowed_to_decline": True
-        }
+                # Log rappel
+                self.reminder_repo.create({
+                    "envelope_id": envelope.id,
+                    "signer_id": signer.id,
+                    "reminder_type": "manual",
+                    "scheduled_at": datetime.utcnow(),
+                    "sent_at": datetime.utcnow(),
+                    "status": "sent",
+                    "recipient_email": signer.email,
+                    "message": custom_message
+                }, self.user_id)
 
-        if request.expires_at:
-            payload["expiration_date"] = request.expires_at.isoformat()
+                # Mettre a jour signataire
+                signer.notification_count += 1
+                signer.last_notification_at = datetime.utcnow()
+                self.db.commit()
 
-        if request.email_subject:
-            payload["email_custom_note"] = request.email_message or ""
+            except Exception as e:
+                logger.warning(f"Erreur rappel signataire {signer.id}: {e}")
 
-        # Métadonnées
-        if request.metadata:
-            payload["external_id"] = request.metadata.get("external_ref", request.id)
+        # Mettre a jour enveloppe
+        envelope.reminder_count += 1
+        envelope.last_reminder_at = datetime.utcnow()
+        self.db.commit()
 
-        # Webhook
-        if request.webhook_url:
-            payload["webhook_url"] = request.webhook_url
-
-        # Simulation - en production, appel HTTP réel
-        # response = await self._http_post("/signature_requests", payload)
-        external_id = f"yousign_{uuid.uuid4().hex[:16]}"
-
-        # Upload des documents
-        for doc in request.documents:
-            doc_payload = {
-                "file_name": doc.name,
-                "file_content": base64.b64encode(doc.content).decode(),
-                "content_type": "application/pdf"
-            }
-            # doc_response = await self._http_post(
-            #     f"/signature_requests/{external_id}/documents",
-            #     doc_payload
-            # )
-            doc.external_id = f"doc_{uuid.uuid4().hex[:12]}"
-
-        # Ajout des signataires
-        for i, signer in enumerate(request.signers):
-            signer_payload = {
-                "info": {
-                    "first_name": signer.first_name,
-                    "last_name": signer.last_name,
-                    "email": signer.email,
-                    "locale": "fr"
-                },
-                "signature_level": self._map_signature_level(signer.signature_level),
-                "signature_authentication_mode": self._get_auth_mode(signer)
-            }
-
-            if signer.phone:
-                signer_payload["info"]["phone_number"] = signer.phone
-
-            # signer_response = await self._http_post(
-            #     f"/signature_requests/{external_id}/signers",
-            #     signer_payload
-            # )
-            signer.external_id = f"signer_{uuid.uuid4().hex[:12]}"
-
-            # Ajout des champs de signature pour ce signataire
-            for doc in request.documents:
-                for field in doc.fields:
-                    if field.signer_index == i:
-                        field_payload = self._build_field_payload(field, doc.external_id)
-                        # await self._http_post(
-                        #     f"/signature_requests/{external_id}/signers/{signer.external_id}/fields",
-                        #     field_payload
-                        # )
-
-        return external_id
-
-    def _map_signature_level(self, level: SignatureLevel) -> str:
-        """Mappe le niveau de signature vers Yousign."""
-        mapping = {
-            SignatureLevel.SIMPLE: "electronic_signature",
-            SignatureLevel.ADVANCED: "advanced_electronic_signature",
-            SignatureLevel.QUALIFIED: "qualified_electronic_signature"
-        }
-        return mapping.get(level, "electronic_signature")
-
-    def _get_auth_mode(self, signer: Signer) -> str:
-        """Détermine le mode d'authentification."""
-        if signer.require_id_verification:
-            return "id_document"
-        elif signer.require_sms_otp:
-            return "otp_sms"
-        return "no_otp"
-
-    def _build_field_payload(
-        self,
-        field: SignatureField,
-        document_id: str
-    ) -> Dict[str, Any]:
-        """Construit le payload pour un champ de signature."""
-        type_mapping = {
-            SignatureFieldType.SIGNATURE: "signature",
-            SignatureFieldType.INITIALS: "initials",
-            SignatureFieldType.DATE: "date",
-            SignatureFieldType.TEXT: "text",
-            SignatureFieldType.CHECKBOX: "checkbox"
-        }
-
-        return {
-            "document_id": document_id,
-            "type": type_mapping.get(field.field_type, "signature"),
-            "page": field.page,
-            "x": field.x,
-            "y": field.y,
-            "width": field.width,
-            "height": field.height,
-            "optional": not field.required
-        }
-
-    async def send_signature_request(self, external_id: str) -> bool:
-        """Active et envoie la demande de signature."""
-        # response = await self._http_post(
-        #     f"/signature_requests/{external_id}/activate",
-        #     {}
-        # )
-        return True
-
-    async def get_request_status(self, external_id: str) -> Dict[str, Any]:
-        """Récupère le statut complet d'une demande."""
-        # response = await self._http_get(f"/signature_requests/{external_id}")
-
-        # Simulation
-        return {
-            "id": external_id,
-            "status": "ongoing",  # draft, ongoing, done, expired, canceled
-            "signers": [],
-            "documents": []
-        }
-
-    async def download_signed_document(
-        self,
-        external_id: str,
-        document_external_id: str
-    ) -> bytes:
-        """Télécharge le document signé."""
-        # response = await self._http_get(
-        #     f"/signature_requests/{external_id}/documents/{document_external_id}/download",
-        #     raw=True
-        # )
-        return b""  # PDF signé
-
-    async def download_audit_trail(self, external_id: str) -> bytes:
-        """Télécharge la preuve de signature."""
-        # response = await self._http_get(
-        #     f"/signature_requests/{external_id}/audit_trails/download",
-        #     raw=True
-        # )
-        return b""  # PDF audit trail
-
-    async def cancel_request(self, external_id: str) -> bool:
-        """Annule une demande de signature."""
-        # response = await self._http_post(
-        #     f"/signature_requests/{external_id}/cancel",
-        #     {"reason": "Annulée par l'utilisateur"}
-        # )
-        return True
-
-    async def send_reminder(
-        self,
-        external_id: str,
-        signer_external_id: Optional[str] = None
-    ) -> bool:
-        """Envoie un rappel."""
-        if signer_external_id:
-            # Rappel à un signataire spécifique
-            # await self._http_post(
-            #     f"/signature_requests/{external_id}/signers/{signer_external_id}/send_reminder",
-            #     {}
-            # )
-            pass
-        else:
-            # Rappel à tous les signataires en attente
-            # await self._http_post(
-            #     f"/signature_requests/{external_id}/reminders",
-            #     {}
-            # )
-            pass
-        return True
-
-    def parse_webhook(
-        self,
-        payload: Dict[str, Any],
-        signature: Optional[str] = None
-    ) -> WebhookEvent:
-        """Parse un webhook Yousign."""
-        # Vérification signature HMAC si configurée
-        if self.webhook_secret and signature:
-            expected = hmac.new(
-                self.webhook_secret.encode(),
-                json.dumps(payload).encode(),
-                hashlib.sha256
-            ).hexdigest()
-            if not hmac.compare_digest(signature, expected):
-                raise ValueError("Signature webhook invalide")
-
-        event_type = payload.get("event_name", "unknown")
-        data = payload.get("data", {})
-
-        return WebhookEvent(
-            provider=SignatureProvider.YOUSIGN,
-            event_type=event_type,
-            request_external_id=data.get("signature_request", {}).get("id", ""),
-            signer_external_id=data.get("signer", {}).get("id"),
-            timestamp=datetime.now(),
-            raw_payload=payload
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.REMINDER_SENT,
+            "user",
+            description=f"Rappel envoye a {len(signers_to_remind)} signataire(s)"
         )
 
-
-# ============================================================================
-# PROVIDER DOCUSIGN
-# ============================================================================
-
-class DocuSignProvider(SignatureProviderInterface):
-    """
-    Provider DocuSign - Leader mondial de la signature électronique.
-
-    Avantages:
-    - Présence mondiale
-    - Nombreuses intégrations
-    - PowerForms et templates avancés
-    - Signature mobile optimisée
-
-    Documentation: https://developers.docusign.com/
-    """
-
-    def __init__(
-        self,
-        integration_key: str,
-        account_id: str,
-        user_id: str,
-        private_key: str,
-        environment: str = "production",
-        webhook_secret: Optional[str] = None
-    ):
-        self.integration_key = integration_key
-        self.account_id = account_id
-        self.user_id = user_id
-        self.private_key = private_key
-        self.webhook_secret = webhook_secret
-
-        if environment == "demo":
-            self.base_url = "https://demo.docusign.net/restapi/v2.1"
-            self.auth_url = "https://account-d.docusign.com"
-        else:
-            self.base_url = "https://eu.docusign.net/restapi/v2.1"
-            self.auth_url = "https://account.docusign.com"
-
-        self._access_token: Optional[str] = None
-        self._token_expires_at: Optional[datetime] = None
-
-    async def _ensure_token(self):
-        """S'assure qu'un token d'accès valide est disponible."""
-        if self._access_token and self._token_expires_at:
-            if datetime.now() < self._token_expires_at - timedelta(minutes=5):
-                return
-
-        # JWT Grant flow
-        # claims = {
-        #     "iss": self.integration_key,
-        #     "sub": self.user_id,
-        #     "aud": self.auth_url,
-        #     "iat": int(datetime.now().timestamp()),
-        #     "exp": int((datetime.now() + timedelta(hours=1)).timestamp()),
-        #     "scope": "signature impersonation"
-        # }
-        # jwt_token = jwt.encode(claims, self.private_key, algorithm="RS256")
-        # response = await self._http_post("/oauth/token", {...})
-
-        self._access_token = "simulated_token"
-        self._token_expires_at = datetime.now() + timedelta(hours=1)
-
-    async def create_signature_request(
-        self,
-        request: SignatureRequest
-    ) -> str:
-        """Crée une enveloppe DocuSign."""
-        await self._ensure_token()
-
-        # Construction de l'enveloppe
-        envelope = {
-            "emailSubject": request.email_subject or f"Signature requise: {request.name}",
-            "status": "created",  # created = brouillon, sent = envoyé
-            "documents": [],
-            "recipients": {
-                "signers": []
-            }
-        }
-
-        # Documents
-        for i, doc in enumerate(request.documents):
-            envelope["documents"].append({
-                "documentId": str(i + 1),
-                "name": doc.name,
-                "documentBase64": base64.b64encode(doc.content).decode(),
-                "fileExtension": "pdf"
-            })
-
-        # Signataires avec routing order
-        for i, signer in enumerate(request.signers):
-            signer_data = {
-                "recipientId": str(i + 1),
-                "routingOrder": str(signer.order),
-                "email": signer.email,
-                "name": f"{signer.first_name} {signer.last_name}",
-                "tabs": self._build_tabs(request.documents, i)
-            }
-
-            # Authentification renforcée
-            if signer.require_sms_otp and signer.phone:
-                signer_data["identityVerification"] = {
-                    "workflowId": "phone_auth",
-                    "steps": [{
-                        "name": "phone",
-                        "type": "phoneAuthentication",
-                        "recipientSupplied": {
-                            "phoneNumber": signer.phone
-                        }
-                    }]
-                }
-
-            if signer.require_id_verification:
-                signer_data["identityVerification"] = {
-                    "workflowId": "id_check"
-                }
-
-            envelope["recipients"]["signers"].append(signer_data)
-            signer.external_id = str(i + 1)
-
-        # Message personnalisé
-        if request.email_message:
-            envelope["emailBlurb"] = request.email_message
-
-        # Expiration
-        if request.expires_at:
-            days_until = (request.expires_at - datetime.now()).days
-            if days_until > 0:
-                envelope["notification"] = {
-                    "expirations": {
-                        "expireEnabled": True,
-                        "expireAfter": days_until
-                    }
-                }
-
-        # Simulation - en production: appel API
-        # response = await self._http_post(
-        #     f"/accounts/{self.account_id}/envelopes",
-        #     envelope
-        # )
-
-        external_id = f"docusign_{uuid.uuid4().hex[:16]}"
-
-        for doc in request.documents:
-            doc.external_id = f"doc_{uuid.uuid4().hex[:12]}"
-
-        return external_id
-
-    def _build_tabs(
-        self,
-        documents: List[Document],
-        signer_index: int
-    ) -> Dict[str, List[Dict]]:
-        """Construit les onglets (champs) pour un signataire."""
-        tabs = {
-            "signHereTabs": [],
-            "initialHereTabs": [],
-            "dateSignedTabs": [],
-            "textTabs": [],
-            "checkboxTabs": []
-        }
-
-        for doc_index, doc in enumerate(documents):
-            for field in doc.fields:
-                if field.signer_index != signer_index:
-                    continue
-
-                tab_data = {
-                    "documentId": str(doc_index + 1),
-                    "pageNumber": str(field.page),
-                    "xPosition": str(int(field.x)),
-                    "yPosition": str(int(field.y)),
-                    "optional": not field.required
-                }
-
-                if field.field_type == SignatureFieldType.SIGNATURE:
-                    tabs["signHereTabs"].append(tab_data)
-                elif field.field_type == SignatureFieldType.INITIALS:
-                    tabs["initialHereTabs"].append(tab_data)
-                elif field.field_type == SignatureFieldType.DATE:
-                    tabs["dateSignedTabs"].append(tab_data)
-                elif field.field_type == SignatureFieldType.TEXT:
-                    tab_data["width"] = int(field.width)
-                    tab_data["height"] = int(field.height)
-                    tabs["textTabs"].append(tab_data)
-                elif field.field_type == SignatureFieldType.CHECKBOX:
-                    tabs["checkboxTabs"].append(tab_data)
-
-        return tabs
-
-    async def send_signature_request(self, external_id: str) -> bool:
-        """Envoie l'enveloppe aux signataires."""
-        await self._ensure_token()
-
-        # response = await self._http_put(
-        #     f"/accounts/{self.account_id}/envelopes/{external_id}",
-        #     {"status": "sent"}
-        # )
         return True
 
-    async def get_request_status(self, external_id: str) -> Dict[str, Any]:
-        """Récupère le statut de l'enveloppe."""
-        await self._ensure_token()
-
-        # response = await self._http_get(
-        #     f"/accounts/{self.account_id}/envelopes/{external_id}"
-        # )
-
-        return {
-            "envelopeId": external_id,
-            "status": "sent",  # created, sent, delivered, completed, declined, voided
-            "recipients": {
-                "signers": []
-            }
-        }
-
-    async def download_signed_document(
-        self,
-        external_id: str,
-        document_external_id: str
-    ) -> bytes:
-        """Télécharge le document signé."""
-        await self._ensure_token()
-
-        # response = await self._http_get(
-        #     f"/accounts/{self.account_id}/envelopes/{external_id}/documents/{document_external_id}",
-        #     raw=True
-        # )
-        return b""
-
-    async def download_audit_trail(self, external_id: str) -> bytes:
-        """Télécharge le certificate of completion."""
-        await self._ensure_token()
-
-        # response = await self._http_get(
-        #     f"/accounts/{self.account_id}/envelopes/{external_id}/documents/certificate",
-        #     raw=True
-        # )
-        return b""
-
-    async def cancel_request(self, external_id: str) -> bool:
-        """Annule (void) l'enveloppe."""
-        await self._ensure_token()
-
-        # response = await self._http_put(
-        #     f"/accounts/{self.account_id}/envelopes/{external_id}",
-        #     {"status": "voided", "voidedReason": "Annulée par l'utilisateur"}
-        # )
-        return True
-
-    async def send_reminder(
-        self,
-        external_id: str,
-        signer_external_id: Optional[str] = None
-    ) -> bool:
-        """Envoie un rappel via DocuSign."""
-        await self._ensure_token()
-
-        # response = await self._http_post(
-        #     f"/accounts/{self.account_id}/envelopes/{external_id}/recipients",
-        #     {"resend_envelope": True}
-        # )
-        return True
-
-    def parse_webhook(
-        self,
-        payload: Dict[str, Any],
-        signature: Optional[str] = None
-    ) -> WebhookEvent:
-        """Parse un webhook DocuSign Connect."""
-        # Vérification HMAC
-        if self.webhook_secret and signature:
-            computed = base64.b64encode(
-                hmac.new(
-                    self.webhook_secret.encode(),
-                    json.dumps(payload).encode(),
-                    hashlib.sha256
-                ).digest()
-            ).decode()
-            if not hmac.compare_digest(signature, computed):
-                raise ValueError("Signature webhook invalide")
-
-        envelope_status = payload.get("envelopeStatus", {})
-
-        return WebhookEvent(
-            provider=SignatureProvider.DOCUSIGN,
-            event_type=envelope_status.get("status", "unknown"),
-            request_external_id=envelope_status.get("envelopeId", ""),
-            signer_external_id=None,
-            timestamp=datetime.now(),
-            raw_payload=payload
+    def _schedule_reminder(self, envelope: SignatureEnvelope) -> None:
+        """Planifie le prochain rappel automatique."""
+        config = self.get_config()
+        interval_days = envelope.reminder_interval_days or (
+            config.reminder_interval_days if config else 3
         )
 
+        next_reminder = datetime.utcnow() + timedelta(days=interval_days)
 
-# ============================================================================
-# PROVIDER HELLOSIGN
-# ============================================================================
+        # Ne pas depasser l'expiration
+        if envelope.expires_at and next_reminder > envelope.expires_at:
+            return
 
-class HelloSignProvider(SignatureProviderInterface):
-    """
-    Provider HelloSign (Dropbox Sign) - Solution simple et élégante.
+        envelope.next_reminder_at = next_reminder
 
-    Avantages:
-    - Interface utilisateur très simple
-    - Intégration Dropbox native
-    - Prix compétitif
-    - API simple
+        # Creer le rappel planifie
+        for signer in envelope.signers:
+            if signer.status in [SignerStatus.PENDING, SignerStatus.NOTIFIED, SignerStatus.VIEWED]:
+                self.reminder_repo.create({
+                    "envelope_id": envelope.id,
+                    "signer_id": signer.id,
+                    "reminder_type": "automatic",
+                    "scheduled_at": next_reminder,
+                    "status": "pending",
+                    "recipient_email": signer.email
+                })
 
-    Documentation: https://developers.hellosign.com/
-    """
+        self.db.commit()
 
-    def __init__(
-        self,
-        api_key: str,
-        client_id: Optional[str] = None,
-        webhook_secret: Optional[str] = None
-    ):
-        self.api_key = api_key
-        self.client_id = client_id
-        self.webhook_secret = webhook_secret
-        self.base_url = "https://api.hellosign.com/v3"
+    # =========================================================================
+    # ENVELOPES - APPROBATION
+    # =========================================================================
 
-    async def create_signature_request(
-        self,
-        request: SignatureRequest
-    ) -> str:
-        """Crée une signature request HelloSign."""
+    def approve_envelope(self, envelope_id: UUID, comments: str = None) -> SignatureEnvelope:
+        """Approuve une enveloppe avant envoi."""
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
 
-        form_data = {
-            "title": request.name,
-            "subject": request.email_subject or f"Signature requise: {request.name}",
-            "message": request.email_message or "Merci de signer ce document.",
-            "test_mode": 0
-        }
+        if envelope.status != EnvelopeStatus.PENDING_APPROVAL:
+            raise EnvelopeStateError(envelope.status.value, "approve")
 
-        # Signataires
-        for i, signer in enumerate(request.signers):
-            form_data[f"signers[{i}][email_address]"] = signer.email
-            form_data[f"signers[{i}][name]"] = f"{signer.first_name} {signer.last_name}"
-            form_data[f"signers[{i}][order]"] = signer.order
-            signer.external_id = str(i)
+        envelope.approval_status = "approved"
+        envelope.approved_at = datetime.utcnow()
+        envelope.approved_by = self.user_id
+        envelope = self.envelope_repo.update_status(envelope, EnvelopeStatus.APPROVED)
 
-        # Documents (envoi en multipart)
-        # files = []
-        # for i, doc in enumerate(request.documents):
-        #     files.append((f"file[{i}]", (doc.name, doc.content, "application/pdf")))
-
-        # Expiration
-        if request.expires_at:
-            days = (request.expires_at - datetime.now()).days
-            if days > 0:
-                form_data["signing_options"] = {"expiration_days": days}
-
-        # Simulation
-        external_id = f"hellosign_{uuid.uuid4().hex[:16]}"
-
-        for doc in request.documents:
-            doc.external_id = f"doc_{uuid.uuid4().hex[:12]}"
-
-        return external_id
-
-    async def send_signature_request(self, external_id: str) -> bool:
-        """HelloSign envoie automatiquement à la création."""
-        return True
-
-    async def get_request_status(self, external_id: str) -> Dict[str, Any]:
-        """Récupère le statut de la signature request."""
-        # response = await self._http_get(f"/signature_request/{external_id}")
-
-        return {
-            "signature_request_id": external_id,
-            "is_complete": False,
-            "is_declined": False,
-            "signatures": []
-        }
-
-    async def download_signed_document(
-        self,
-        external_id: str,
-        document_external_id: str
-    ) -> bytes:
-        """Télécharge le document signé."""
-        # response = await self._http_get(
-        #     f"/signature_request/files/{external_id}",
-        #     params={"file_type": "pdf"},
-        #     raw=True
-        # )
-        return b""
-
-    async def download_audit_trail(self, external_id: str) -> bytes:
-        """Télécharge le fichier de log."""
-        # response = await self._http_get(
-        #     f"/signature_request/files/{external_id}",
-        #     params={"file_type": "pdf", "get_data_uri": True},
-        #     raw=True
-        # )
-        return b""
-
-    async def cancel_request(self, external_id: str) -> bool:
-        """Annule la signature request."""
-        # response = await self._http_post(
-        #     f"/signature_request/cancel/{external_id}",
-        #     {}
-        # )
-        return True
-
-    async def send_reminder(
-        self,
-        external_id: str,
-        signer_external_id: Optional[str] = None
-    ) -> bool:
-        """Envoie un rappel."""
-        # if signer_external_id:
-        #     response = await self._http_post(
-        #         f"/signature_request/remind/{external_id}",
-        #         {"email_address": signer_email}
-        #     )
-        return True
-
-    def parse_webhook(
-        self,
-        payload: Dict[str, Any],
-        signature: Optional[str] = None
-    ) -> WebhookEvent:
-        """Parse un webhook HelloSign."""
-        # Vérification HMAC
-        if self.webhook_secret and signature:
-            computed = hmac.new(
-                self.webhook_secret.encode(),
-                json.dumps(payload).encode(),
-                hashlib.sha256
-            ).hexdigest()
-            if not hmac.compare_digest(signature, computed):
-                raise ValueError("Signature webhook invalide")
-
-        event = payload.get("event", {})
-        signature_request = payload.get("signature_request", {})
-
-        return WebhookEvent(
-            provider=SignatureProvider.HELLOSIGN,
-            event_type=event.get("event_type", "unknown"),
-            request_external_id=signature_request.get("signature_request_id", ""),
-            signer_external_id=None,
-            timestamp=datetime.now(),
-            raw_payload=payload
+        self._log_audit(
+            envelope.id,
+            AuditEventType.APPROVAL_GRANTED,
+            "user",
+            description=f"Enveloppe approuvee{': ' + comments if comments else ''}"
         )
 
+        return envelope
 
-# ============================================================================
-# SERVICE PRINCIPAL
-# ============================================================================
+    def reject_envelope(self, envelope_id: UUID, reason: str) -> SignatureEnvelope:
+        """Rejette une enveloppe avant envoi."""
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
 
-class SignatureService:
-    """
-    Service principal de signature électronique.
+        if envelope.status != EnvelopeStatus.PENDING_APPROVAL:
+            raise EnvelopeStateError(envelope.status.value, "reject")
 
-    Orchestre les différents providers et gère:
-    - Création et envoi des demandes
-    - Suivi des signatures
-    - Téléchargement des documents signés
-    - Webhooks et notifications
-    - Archivage et preuves
-    """
-
-    def __init__(
-        self,
-        providers: Dict[SignatureProvider, SignatureProviderInterface]
-    ):
-        self.providers = providers
-        self._requests_cache: Dict[str, SignatureRequest] = {}
-
-    def get_provider(
-        self,
-        provider: SignatureProvider
-    ) -> SignatureProviderInterface:
-        """Récupère un provider configuré."""
-        if provider not in self.providers:
-            raise ValueError(f"Provider {provider.value} non configuré")
-        return self.providers[provider]
-
-    async def create_and_send_signature_request(
-        self,
-        tenant_id: str,
-        name: str,
-        documents: List[Document],
-        signers: List[Signer],
-        provider: SignatureProvider = SignatureProvider.YOUSIGN,
-        signature_level: SignatureLevel = SignatureLevel.SIMPLE,
-        expires_in_days: int = 30,
-        email_subject: Optional[str] = None,
-        email_message: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        send_immediately: bool = True
-    ) -> SignatureRequest:
-        """
-        Crée et envoie une demande de signature.
-
-        Args:
-            tenant_id: ID du tenant
-            name: Nom de la demande
-            documents: Liste des documents à signer
-            signers: Liste des signataires
-            provider: Provider à utiliser
-            signature_level: Niveau de signature eIDAS
-            expires_in_days: Jours avant expiration
-            email_subject: Sujet de l'email
-            email_message: Message personnalisé
-            webhook_url: URL webhook pour notifications
-            metadata: Métadonnées business
-            send_immediately: Envoyer immédiatement
-
-        Returns:
-            SignatureRequest créée et envoyée
-        """
-        # Validation
-        if not documents:
-            raise ValueError("Au moins un document requis")
-        if not signers:
-            raise ValueError("Au moins un signataire requis")
-
-        # Création de la demande
-        request = SignatureRequest(
-            id=str(uuid.uuid4()),
-            tenant_id=tenant_id,
-            name=name,
-            documents=documents,
-            signers=signers,
-            provider=provider,
-            signature_level=signature_level,
-            expires_at=datetime.now() + timedelta(days=expires_in_days),
-            email_subject=email_subject,
-            email_message=email_message,
-            webhook_url=webhook_url,
-            metadata=metadata or {}
+        envelope.approval_status = "rejected"
+        envelope = self.envelope_repo.update_status(
+            envelope,
+            EnvelopeStatus.DRAFT,
+            f"Rejetee: {reason}"
         )
 
-        # Appliquer le niveau de signature aux signataires
-        for signer in request.signers:
-            if signer.signature_level == SignatureLevel.SIMPLE:
-                signer.signature_level = signature_level
+        self._log_audit(
+            envelope.id,
+            AuditEventType.APPROVAL_REJECTED,
+            "user",
+            description=f"Enveloppe rejetee: {reason}"
+        )
 
-        # Créer chez le provider
-        provider_impl = self.get_provider(provider)
-        external_id = await provider_impl.create_signature_request(request)
-        request.external_id = external_id
+        return envelope
 
-        # Envoyer si demandé
-        if send_immediately:
-            success = await provider_impl.send_signature_request(external_id)
-            if success:
-                request.status = SignatureStatus.SENT
-                request.sent_at = datetime.now()
+    # =========================================================================
+    # SIGNATAIRES - SIGNATURE
+    # =========================================================================
 
-        # Cacher localement
-        self._requests_cache[request.id] = request
+    def get_signer_by_token(self, token: str) -> Optional[EnvelopeSigner]:
+        """Recupere un signataire par son token d'acces."""
+        return self.signer_repo.get_by_token(token)
 
-        return request
-
-    async def get_signature_status(
+    def view_envelope_as_signer(
         self,
-        request: SignatureRequest
-    ) -> SignatureRequest:
-        """
-        Met à jour et retourne le statut d'une demande.
+        token: str,
+        ip_address: str = None,
+        user_agent: str = None
+    ) -> Tuple[SignatureEnvelope, EnvelopeSigner]:
+        """Marque l'enveloppe comme vue par le signataire."""
+        signer = self.signer_repo.get_by_token(token)
+        if not signer:
+            raise InvalidAccessTokenError()
 
-        Args:
-            request: Demande à vérifier
+        envelope = self.envelope_repo.get_by_id(signer.envelope_id)
 
-        Returns:
-            Demande mise à jour
-        """
-        provider = self.get_provider(request.provider)
-        status_data = await provider.get_request_status(request.external_id)
-
-        # Mapper le statut provider vers notre enum
-        request.status = self._map_status(request.provider, status_data)
-
-        # Mettre à jour les signataires
-        self._update_signers_status(request, status_data)
-
-        if request.status == SignatureStatus.COMPLETED:
-            request.completed_at = datetime.now()
-
-        return request
-
-    def _map_status(
-        self,
-        provider: SignatureProvider,
-        status_data: Dict[str, Any]
-    ) -> SignatureStatus:
-        """Mappe le statut provider vers notre enum."""
-        if provider == SignatureProvider.YOUSIGN:
-            mapping = {
-                "draft": SignatureStatus.DRAFT,
-                "ongoing": SignatureStatus.IN_PROGRESS,
-                "done": SignatureStatus.COMPLETED,
-                "expired": SignatureStatus.EXPIRED,
-                "canceled": SignatureStatus.CANCELLED
-            }
-            return mapping.get(status_data.get("status", ""), SignatureStatus.PENDING)
-
-        elif provider == SignatureProvider.DOCUSIGN:
-            mapping = {
-                "created": SignatureStatus.DRAFT,
-                "sent": SignatureStatus.SENT,
-                "delivered": SignatureStatus.IN_PROGRESS,
-                "completed": SignatureStatus.COMPLETED,
-                "declined": SignatureStatus.DECLINED,
-                "voided": SignatureStatus.CANCELLED
-            }
-            return mapping.get(status_data.get("status", ""), SignatureStatus.PENDING)
-
-        elif provider == SignatureProvider.HELLOSIGN:
-            if status_data.get("is_complete"):
-                return SignatureStatus.COMPLETED
-            elif status_data.get("is_declined"):
-                return SignatureStatus.DECLINED
-            return SignatureStatus.IN_PROGRESS
-
-        return SignatureStatus.PENDING
-
-    def _update_signers_status(
-        self,
-        request: SignatureRequest,
-        status_data: Dict[str, Any]
-    ):
-        """Met à jour le statut des signataires."""
-        # Implémentation spécifique par provider
-        pass
-
-    async def download_signed_documents(
-        self,
-        request: SignatureRequest
-    ) -> Dict[str, bytes]:
-        """
-        Télécharge tous les documents signés.
-
-        Args:
-            request: Demande complétée
-
-        Returns:
-            Dict nom_document -> contenu PDF signé
-        """
-        if request.status != SignatureStatus.COMPLETED:
-            raise ValueError("La demande n'est pas encore complétée")
-
-        provider = self.get_provider(request.provider)
-        result = {}
-
-        for doc in request.documents:
-            content = await provider.download_signed_document(
-                request.external_id,
-                doc.external_id
+        if signer.status == SignerStatus.PENDING or signer.status == SignerStatus.NOTIFIED:
+            self.signer_repo.update_status(
+                signer,
+                SignerStatus.VIEWED,
+                ip_address=ip_address,
+                user_agent=user_agent
             )
-            result[doc.name] = content
+            self.signer_repo.add_action(signer, "viewed", ip_address=ip_address, user_agent=user_agent)
 
-        return result
+            # Premier view de l'enveloppe
+            if not envelope.viewed_at:
+                envelope.viewed_at = datetime.utcnow()
+                envelope.viewed_count = 1
+            else:
+                envelope.viewed_count += 1
+            self.db.commit()
 
-    async def download_audit_trail(
+            # Audit
+            self._log_audit(
+                envelope.id,
+                AuditEventType.VIEWED,
+                "signer",
+                actor_id=signer.id,
+                actor_email=signer.email,
+                signer_id=signer.id,
+                ip_address=ip_address,
+                description=f"Document consulte par {signer.email}"
+            )
+
+            # Passer en in_progress si premiere vue
+            if envelope.status == EnvelopeStatus.SENT:
+                envelope = self.envelope_repo.update_status(envelope, EnvelopeStatus.IN_PROGRESS)
+
+        return envelope, signer
+
+    async def sign_envelope(
         self,
-        request: SignatureRequest
-    ) -> bytes:
-        """
-        Télécharge la preuve de signature (audit trail).
+        token: str,
+        signatures: Dict[str, str],  # field_id -> signature_data (base64)
+        ip_address: str = None,
+        user_agent: str = None
+    ) -> Tuple[SignatureEnvelope, EnvelopeSigner]:
+        """Signe une enveloppe."""
+        signer = self.signer_repo.get_by_token(token)
+        if not signer:
+            raise InvalidAccessTokenError()
 
-        Args:
-            request: Demande complétée
+        if signer.status == SignerStatus.SIGNED:
+            raise SignerAlreadySignedError(str(signer.id))
 
-        Returns:
-            PDF de la preuve de signature
-        """
-        provider = self.get_provider(request.provider)
-        return await provider.download_audit_trail(request.external_id)
+        if signer.status in [SignerStatus.DECLINED, SignerStatus.DELEGATED, SignerStatus.EXPIRED]:
+            raise SignerNotAuthorizedError(str(signer.id))
 
-    async def cancel_signature_request(
-        self,
-        request: SignatureRequest
-    ) -> bool:
-        """
-        Annule une demande de signature.
+        envelope = self.envelope_repo.get_by_id(signer.envelope_id)
 
-        Args:
-            request: Demande à annuler
+        # Verifier l'ordre de signature
+        next_signer = self.signer_repo.get_next_signer(envelope.id)
+        if next_signer and next_signer.id != signer.id:
+            # Un autre signataire doit signer avant
+            from .exceptions import SignerOrderError
+            raise SignerOrderError(str(signer.id), next_signer.signing_order)
 
-        Returns:
-            True si annulée avec succès
-        """
-        if request.status in [SignatureStatus.COMPLETED, SignatureStatus.CANCELLED]:
-            raise ValueError(f"Impossible d'annuler une demande {request.status.value}")
+        # Remplir les champs de signature
+        for field_id, signature_data in signatures.items():
+            field = self.db.query(EnvelopeDocument).get(field_id)
+            if field and field.signer_id == signer.id:
+                field.value = signature_data
+                field.signature_data = signature_data
+                field.filled_at = datetime.utcnow()
+                field.filled_by = signer.id
+                field.signature_ip = ip_address
+                field.signature_user_agent = user_agent
 
-        provider = self.get_provider(request.provider)
-        success = await provider.cancel_request(request.external_id)
+        self.db.commit()
 
-        if success:
-            request.status = SignatureStatus.CANCELLED
-
-        return success
-
-    async def send_reminder(
-        self,
-        request: SignatureRequest,
-        signer: Optional[Signer] = None
-    ) -> bool:
-        """
-        Envoie un rappel aux signataires.
-
-        Args:
-            request: Demande en cours
-            signer: Signataire spécifique (optionnel)
-
-        Returns:
-            True si rappel envoyé
-        """
-        if request.status not in [SignatureStatus.SENT, SignatureStatus.IN_PROGRESS]:
-            raise ValueError("Rappel possible uniquement pour demandes en cours")
-
-        provider = self.get_provider(request.provider)
-        return await provider.send_reminder(
-            request.external_id,
-            signer.external_id if signer else None
+        # Marquer comme signe
+        self.signer_repo.update_status(
+            signer,
+            SignerStatus.SIGNED,
+            ip_address=ip_address,
+            user_agent=user_agent
         )
+        self.signer_repo.add_action(
+            signer, "signed",
+            details={"fields_count": len(signatures)},
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+
+        # Mettre a jour compteur
+        envelope.signed_count += 1
+        self.db.commit()
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.SIGNED,
+            "signer",
+            actor_id=signer.id,
+            actor_email=signer.email,
+            signer_id=signer.id,
+            ip_address=ip_address,
+            description=f"Document signe par {signer.email}"
+        )
+
+        # Verifier si tous ont signe
+        pending = self.signer_repo.get_pending_by_envelope(envelope.id)
+        if not pending:
+            await self._complete_envelope(envelope)
+        else:
+            # Notifier le prochain signataire
+            next_signer = pending[0]
+            # TODO: Envoyer notification
+
+        return envelope, signer
+
+    def decline_envelope(
+        self,
+        token: str,
+        reason: str,
+        ip_address: str = None
+    ) -> Tuple[SignatureEnvelope, EnvelopeSigner]:
+        """Refuse de signer une enveloppe."""
+        signer = self.signer_repo.get_by_token(token)
+        if not signer:
+            raise InvalidAccessTokenError()
+
+        envelope = self.envelope_repo.get_by_id(signer.envelope_id)
+        config = self.get_config()
+
+        if config and not config.allow_decline:
+            raise SignerNotAuthorizedError("Refus non autorise")
+
+        signer.decline_reason = reason
+        self.signer_repo.update_status(signer, SignerStatus.DECLINED, ip_address=ip_address)
+        self.signer_repo.add_action(
+            signer, "declined",
+            details={"reason": reason},
+            ip_address=ip_address
+        )
+
+        # Marquer l'enveloppe comme refusee
+        envelope = self.envelope_repo.update_status(
+            envelope,
+            EnvelopeStatus.DECLINED,
+            f"Refuse par {signer.email}: {reason}"
+        )
+
+        # Annuler les rappels
+        self.reminder_repo.cancel_pending(envelope.id)
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.DECLINED,
+            "signer",
+            actor_id=signer.id,
+            actor_email=signer.email,
+            signer_id=signer.id,
+            ip_address=ip_address,
+            description=f"Signature refusee par {signer.email}: {reason}"
+        )
+
+        return envelope, signer
+
+    def delegate_signature(
+        self,
+        token: str,
+        delegate_email: str,
+        delegate_first_name: str,
+        delegate_last_name: str,
+        reason: str = None,
+        ip_address: str = None
+    ) -> EnvelopeSigner:
+        """Delegue la signature a une autre personne."""
+        signer = self.signer_repo.get_by_token(token)
+        if not signer:
+            raise InvalidAccessTokenError()
+
+        config = self.get_config()
+        if config and not config.allow_delegation:
+            from .exceptions import SignerDelegationNotAllowedError
+            raise SignerDelegationNotAllowedError()
+
+        # Creer le nouveau signataire
+        new_signer = self.signer_repo.create({
+            "envelope_id": signer.envelope_id,
+            "email": delegate_email,
+            "first_name": delegate_first_name,
+            "last_name": delegate_last_name,
+            "signing_order": signer.signing_order,
+            "auth_method": signer.auth_method,
+            "is_required": signer.is_required,
+            "token_expires_at": signer.token_expires_at,
+        })
+
+        # Marquer l'original comme delegue
+        signer.delegated_to_id = new_signer.id
+        signer.delegated_to_email = delegate_email
+        signer.delegation_reason = reason
+        self.signer_repo.update_status(signer, SignerStatus.DELEGATED, ip_address=ip_address)
+        self.signer_repo.add_action(
+            signer, "delegated",
+            details={"delegate_email": delegate_email, "reason": reason},
+            ip_address=ip_address
+        )
+
+        # Audit
+        envelope = self.envelope_repo.get_by_id(signer.envelope_id)
+        self._log_audit(
+            envelope.id,
+            AuditEventType.DELEGATED,
+            "signer",
+            actor_id=signer.id,
+            actor_email=signer.email,
+            signer_id=new_signer.id,
+            ip_address=ip_address,
+            description=f"Signature deleguee de {signer.email} a {delegate_email}"
+        )
+
+        # Notifier le delegue
+        # TODO: Envoyer email
+
+        return new_signer
+
+    # =========================================================================
+    # COMPLETION & CERTIFICATES
+    # =========================================================================
+
+    async def _complete_envelope(self, envelope: SignatureEnvelope) -> SignatureEnvelope:
+        """Complete une enveloppe quand tous ont signe."""
+        # Mettre a jour statut
+        envelope = self.envelope_repo.update_status(envelope, EnvelopeStatus.COMPLETED)
+
+        # Annuler les rappels
+        self.reminder_repo.cancel_pending(envelope.id)
+
+        # Telecharger les documents signes du provider
+        if envelope.external_id:
+            try:
+                provider = self._get_provider(envelope.provider)
+
+                for doc in envelope.documents:
+                    signed_content = await provider.download_signed_document(
+                        envelope.external_id,
+                        doc.external_id or "1"
+                    )
+                    if signed_content:
+                        signed_path = self._store_document_file(
+                            envelope.envelope_number,
+                            signed_content,
+                            f"signed_{doc.original_file_name}"
+                        )
+                        doc.signed_file_path = signed_path
+                        doc.signed_file_hash = hashlib.sha256(signed_content).hexdigest()
+                        doc.signed_at = datetime.utcnow()
+                        doc.is_signed = True
+
+                self.db.commit()
+
+            except Exception as e:
+                logger.warning(f"Erreur telechargement documents signes: {e}")
+
+        # Generer le certificat
+        await self._generate_certificate(envelope)
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.COMPLETED,
+            "system",
+            description=f"Enveloppe completee - {envelope.signed_count} signature(s)"
+        )
+
+        return envelope
+
+    async def _generate_certificate(self, envelope: SignatureEnvelope) -> SignatureCertificate:
+        """Genere le certificat de completion."""
+        try:
+            # Telecharger l'audit trail du provider
+            audit_content = b""
+            if envelope.external_id:
+                try:
+                    provider = self._get_provider(envelope.provider)
+                    audit_content = await provider.download_audit_trail(envelope.external_id)
+                except Exception:
+                    pass
+
+            # Generer le numero de certificat
+            cert_number = f"CERT-{envelope.envelope_number}-{secrets.token_hex(4).upper()}"
+
+            # Calculer le hash
+            cert_hash = hashlib.sha256(
+                f"{envelope.id}{envelope.completed_at}{cert_number}".encode()
+            ).hexdigest()
+
+            # Stocker le fichier
+            cert_path = self._store_document_file(
+                envelope.envelope_number,
+                audit_content or self._generate_audit_pdf(envelope),
+                f"certificate_{cert_number}.pdf"
+            )
+
+            certificate = self.certificate_repo.create({
+                "envelope_id": envelope.id,
+                "certificate_number": cert_number,
+                "certificate_type": "completion",
+                "file_path": cert_path,
+                "file_hash": cert_hash,
+                "file_size": len(audit_content) if audit_content else 0,
+                "valid_from": datetime.utcnow(),
+                "is_valid": True,
+            }, self.user_id)
+
+            return certificate
+
+        except Exception as e:
+            logger.exception(f"Erreur generation certificat: {e}")
+            raise CertificateGenerationError(str(e))
+
+    def _generate_audit_pdf(self, envelope: SignatureEnvelope) -> bytes:
+        """Genere un PDF d'audit trail basique."""
+        # Implementation basique - en production utiliser une lib PDF
+        return b""  # Placeholder
+
+    # =========================================================================
+    # WEBHOOKS
+    # =========================================================================
 
     async def handle_webhook(
         self,
         provider: SignatureProvider,
-        payload: Dict[str, Any],
-        signature: Optional[str] = None
-    ) -> Optional[SignatureRequest]:
-        """
-        Traite un webhook entrant.
+        payload: bytes,
+        signature: str = None
+    ) -> Optional[SignatureEnvelope]:
+        """Traite un webhook entrant d'un provider."""
+        provider_impl = self._get_provider(provider)
 
-        Args:
-            provider: Provider source
-            payload: Payload du webhook
-            signature: Signature HMAC pour vérification
+        # Verifier la signature
+        if signature and not provider_impl.verify_webhook(payload, signature):
+            logger.warning(f"Signature webhook invalide pour {provider}")
+            from .exceptions import InvalidWebhookSignatureError
+            raise InvalidWebhookSignatureError(provider.value)
 
-        Returns:
-            SignatureRequest mise à jour si trouvée
-        """
-        provider_impl = self.get_provider(provider)
-        event = provider_impl.parse_webhook(payload, signature)
+        # Parser l'evenement
+        import json
+        event = provider_impl.parse_webhook(json.loads(payload))
 
-        # Chercher la demande correspondante
-        request = None
-        for req in self._requests_cache.values():
-            if req.external_id == event.request_external_id:
-                request = req
-                break
-
-        if not request:
-            # En production, chercher en base de données
+        # Trouver l'enveloppe
+        envelope = self.envelope_repo.get_by_external_id(event.envelope_external_id)
+        if not envelope:
+            logger.warning(f"Enveloppe non trouvee pour webhook: {event.envelope_external_id}")
             return None
 
-        # Mettre à jour selon l'événement
-        await self.get_signature_status(request)
+        # Traiter selon le type d'evenement
+        await self._process_webhook_event(envelope, event)
 
-        return request
+        return envelope
 
+    async def _process_webhook_event(
+        self,
+        envelope: SignatureEnvelope,
+        event: WebhookEventInfo
+    ) -> None:
+        """Traite un evenement webhook."""
+        event_type = event.event_type.lower()
 
-# ============================================================================
-# FACTORY
-# ============================================================================
+        if "sign" in event_type or "complete" in event_type:
+            # Rafraichir le statut depuis le provider
+            provider = self._get_provider(envelope.provider)
+            status = await provider.get_status(envelope.external_id)
 
-class SignatureServiceFactory:
-    """Factory pour créer le service de signature configuré."""
+            # Mettre a jour les signataires
+            for signer_status in status.signers_status:
+                signer = None
+                for s in envelope.signers:
+                    if s.external_id == signer_status.get("external_id"):
+                        signer = s
+                        break
 
-    @staticmethod
-    def create(
-        yousign_config: Optional[Dict[str, str]] = None,
-        docusign_config: Optional[Dict[str, str]] = None,
-        hellosign_config: Optional[Dict[str, str]] = None
-    ) -> SignatureService:
-        """
-        Crée un service de signature avec les providers configurés.
+                if signer and signer_status.get("status") == "signed":
+                    if signer.status != SignerStatus.SIGNED:
+                        self.signer_repo.update_status(signer, SignerStatus.SIGNED)
+                        envelope.signed_count += 1
 
-        Args:
-            yousign_config: {"api_key": ..., "environment": ...}
-            docusign_config: {"integration_key": ..., "account_id": ..., ...}
-            hellosign_config: {"api_key": ..., "client_id": ...}
+            # Verifier si complete
+            if status.status in ["done", "completed"]:
+                if envelope.status != EnvelopeStatus.COMPLETED:
+                    await self._complete_envelope(envelope)
 
-        Returns:
-            SignatureService configuré
-        """
-        providers = {}
+        elif "decline" in event_type or "reject" in event_type:
+            if envelope.status not in [EnvelopeStatus.DECLINED, EnvelopeStatus.COMPLETED]:
+                self.envelope_repo.update_status(envelope, EnvelopeStatus.DECLINED)
 
-        if yousign_config:
-            providers[SignatureProvider.YOUSIGN] = YousignProvider(
-                api_key=yousign_config["api_key"],
-                environment=yousign_config.get("environment", "production"),
-                webhook_secret=yousign_config.get("webhook_secret")
+        elif "expire" in event_type:
+            if envelope.status not in [EnvelopeStatus.EXPIRED, EnvelopeStatus.COMPLETED]:
+                self.envelope_repo.update_status(envelope, EnvelopeStatus.EXPIRED)
+
+        elif "view" in event_type:
+            if event.signer_external_id:
+                for signer in envelope.signers:
+                    if signer.external_id == event.signer_external_id:
+                        if signer.status in [SignerStatus.PENDING, SignerStatus.NOTIFIED]:
+                            self.signer_repo.update_status(signer, SignerStatus.VIEWED)
+                        break
+
+        self.db.commit()
+
+    # =========================================================================
+    # DOWNLOADS
+    # =========================================================================
+
+    def get_signed_document(self, envelope_id: UUID, document_id: UUID) -> Tuple[bytes, str]:
+        """Recupere un document signe."""
+        envelope = self.envelope_repo.get_by_id(envelope_id)
+        if not envelope:
+            raise EnvelopeNotFoundError(str(envelope_id))
+
+        document = self.document_repo.get_by_id(document_id)
+        if not document or document.envelope_id != envelope.id:
+            from .exceptions import DocumentNotFoundError
+            raise DocumentNotFoundError(str(document_id))
+
+        file_path = document.signed_file_path or document.original_file_path
+        content = self._load_document_content(file_path)
+
+        # Audit
+        self._log_audit(
+            envelope.id,
+            AuditEventType.DOWNLOADED,
+            "user",
+            document_id=document.id,
+            description=f"Document telecharge: {document.name}"
+        )
+
+        return content, document.original_file_name
+
+    def get_certificate(self, envelope_id: UUID) -> Tuple[bytes, str]:
+        """Recupere le certificat d'une enveloppe."""
+        certificates = self.certificate_repo.get_by_envelope(envelope_id)
+        if not certificates:
+            from .exceptions import CertificateNotFoundError
+            raise CertificateNotFoundError(envelope_id=str(envelope_id))
+
+        cert = certificates[-1]  # Le plus recent
+        content = self._load_document_content(cert.file_path)
+
+        return content, f"certificate_{cert.certificate_number}.pdf"
+
+    # =========================================================================
+    # STATISTICS
+    # =========================================================================
+
+    def get_dashboard_stats(self) -> DashboardStatsResponse:
+        """Recupere les stats pour le tableau de bord."""
+        now = datetime.utcnow()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Stats aujourd'hui
+        today_stats = self._calculate_stats(today_start, now, "daily")
+
+        # Stats ce mois
+        month_stats = self._calculate_stats(month_start, now, "monthly")
+
+        # Comptages
+        status_counts = self.envelope_repo.count_by_status()
+        pending = status_counts.get("sent", 0) + status_counts.get("in_progress", 0)
+
+        # Signatures en attente
+        pending_signatures = 0
+        pending_envelopes, _ = self.envelope_repo.list(
+            EnvelopeFilters(status=[EnvelopeStatus.SENT, EnvelopeStatus.IN_PROGRESS]),
+            page_size=1000
+        )
+        for env in pending_envelopes:
+            pending_signatures += env.total_signers - env.signed_count
+
+        # Expirant bientot
+        expiring = len(self.envelope_repo.get_expiring_soon(3))
+
+        # Completions recentes
+        recent, _ = self.envelope_repo.list(
+            EnvelopeFilters(status=[EnvelopeStatus.COMPLETED]),
+            page_size=5,
+            sort_by="completed_at",
+            sort_dir="desc"
+        )
+
+        return DashboardStatsResponse(
+            tenant_id=self.tenant_id,
+            today=today_stats,
+            this_month=month_stats,
+            pending_envelopes=pending,
+            pending_signatures=pending_signatures,
+            expiring_soon=expiring,
+            recent_completions=[
+                {
+                    "id": e.id,
+                    "envelope_number": e.envelope_number,
+                    "name": e.name,
+                    "status": e.status,
+                    "completed_at": e.completed_at
+                }
+                for e in recent
+            ]
+        )
+
+    def _calculate_stats(
+        self,
+        start: datetime,
+        end: datetime,
+        period_type: str
+    ) -> SignatureStatsResponse:
+        """Calcule les statistiques pour une periode."""
+        filters = EnvelopeFilters(
+            date_from=start.date(),
+            date_to=end.date(),
+            include_archived=True
+        )
+        envelopes, total = self.envelope_repo.list(filters, page_size=10000)
+
+        stats = {
+            "tenant_id": self.tenant_id,
+            "period_type": period_type,
+            "period_start": start.date(),
+            "period_end": end.date(),
+            "envelopes_created": total,
+            "envelopes_sent": 0,
+            "envelopes_completed": 0,
+            "envelopes_declined": 0,
+            "envelopes_expired": 0,
+            "envelopes_cancelled": 0,
+            "total_signers": 0,
+            "signers_signed": 0,
+            "signers_declined": 0,
+            "by_provider": {},
+            "by_document_type": {},
+            "by_signature_level": {},
+        }
+
+        for env in envelopes:
+            if env.sent_at:
+                stats["envelopes_sent"] += 1
+            if env.status == EnvelopeStatus.COMPLETED:
+                stats["envelopes_completed"] += 1
+            elif env.status == EnvelopeStatus.DECLINED:
+                stats["envelopes_declined"] += 1
+            elif env.status == EnvelopeStatus.EXPIRED:
+                stats["envelopes_expired"] += 1
+            elif env.status == EnvelopeStatus.CANCELLED:
+                stats["envelopes_cancelled"] += 1
+
+            stats["total_signers"] += env.total_signers
+            stats["signers_signed"] += env.signed_count
+
+            # Par provider
+            provider_key = env.provider.value
+            stats["by_provider"][provider_key] = stats["by_provider"].get(provider_key, 0) + 1
+
+            # Par type document
+            doc_key = env.document_type.value
+            stats["by_document_type"][doc_key] = stats["by_document_type"].get(doc_key, 0) + 1
+
+            # Par niveau signature
+            level_key = env.signature_level.value
+            stats["by_signature_level"][level_key] = stats["by_signature_level"].get(level_key, 0) + 1
+
+        # Taux de completion
+        if stats["envelopes_sent"] > 0:
+            stats["completion_rate"] = round(
+                stats["envelopes_completed"] / stats["envelopes_sent"] * 100, 2
             )
+        else:
+            stats["completion_rate"] = 0.0
 
-        if docusign_config:
-            providers[SignatureProvider.DOCUSIGN] = DocuSignProvider(
-                integration_key=docusign_config["integration_key"],
-                account_id=docusign_config["account_id"],
-                user_id=docusign_config["user_id"],
-                private_key=docusign_config["private_key"],
-                environment=docusign_config.get("environment", "production"),
-                webhook_secret=docusign_config.get("webhook_secret")
-            )
+        return SignatureStatsResponse(**stats)
 
-        if hellosign_config:
-            providers[SignatureProvider.HELLOSIGN] = HelloSignProvider(
-                api_key=hellosign_config["api_key"],
-                client_id=hellosign_config.get("client_id"),
-                webhook_secret=hellosign_config.get("webhook_secret")
-            )
+    # =========================================================================
+    # AUDIT
+    # =========================================================================
 
-        return SignatureService(providers)
+    def _log_audit(
+        self,
+        envelope_id: UUID,
+        event_type: AuditEventType,
+        actor_type: str,
+        actor_id: UUID = None,
+        actor_email: str = None,
+        description: str = None,
+        event_data: Dict[str, Any] = None,
+        document_id: UUID = None,
+        signer_id: UUID = None,
+        field_id: UUID = None,
+        ip_address: str = None,
+        user_agent: str = None
+    ) -> None:
+        """Enregistre un evenement d'audit."""
+        self.audit_repo.create(
+            envelope_id=envelope_id,
+            event_type=event_type,
+            actor_type=actor_type,
+            actor_id=actor_id or self.user_id,
+            actor_email=actor_email,
+            event_description=description,
+            event_data=event_data,
+            document_id=document_id,
+            signer_id=signer_id,
+            field_id=field_id,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
 
-
-# ============================================================================
-# HELPERS
-# ============================================================================
-
-def create_simple_signature_request(
-    tenant_id: str,
-    document_name: str,
-    document_content: bytes,
-    signer_email: str,
-    signer_name: str,
-    signature_page: int = 1,
-    signature_position: tuple = (70, 80)  # % x, y
-) -> SignatureRequest:
-    """
-    Crée une demande de signature simple (1 document, 1 signataire).
-
-    Helper pour les cas courants.
-    """
-    first_name, *last_parts = signer_name.split()
-    last_name = " ".join(last_parts) if last_parts else ""
-
-    document = Document(
-        name=document_name,
-        content=document_content,
-        fields=[
-            SignatureField(
-                field_type=SignatureFieldType.SIGNATURE,
-                page=signature_page,
-                x=signature_position[0],
-                y=signature_position[1],
-                signer_index=0
-            )
+    def get_audit_trail(self, envelope_id: UUID) -> List[Dict[str, Any]]:
+        """Recupere l'historique d'audit d'une enveloppe."""
+        events = self.audit_repo.get_by_envelope(envelope_id)
+        return [
+            {
+                "id": str(e.id),
+                "event_type": e.event_type.value,
+                "event_description": e.event_description,
+                "actor_type": e.actor_type,
+                "actor_email": e.actor_email,
+                "ip_address": e.ip_address,
+                "event_at": e.event_at.isoformat()
+            }
+            for e in events
         ]
-    )
 
-    signer = Signer(
-        email=signer_email,
-        first_name=first_name,
-        last_name=last_name
-    )
 
-    return SignatureRequest(
-        id=str(uuid.uuid4()),
-        tenant_id=tenant_id,
-        name=f"Signature - {document_name}",
-        documents=[document],
-        signers=[signer]
-    )
+# =============================================================================
+# FACTORY
+# =============================================================================
+
+def get_esignature_service(
+    db: Session,
+    tenant_id: str,
+    user_id: UUID = None
+) -> ESignatureService:
+    """Factory pour le service signature."""
+    return ESignatureService(db, tenant_id, user_id)

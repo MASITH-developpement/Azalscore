@@ -257,6 +257,11 @@ class PermissionCheckResult(BaseModel):
     source: str | None = None  # "role:ADMIN" ou "group:MANAGERS"
 
 
+class UserPermissionsUpdate(BaseModel):
+    """Mise à jour des permissions utilisateur."""
+    capabilities: list[str] = Field(..., description="Liste des codes de permission à attribuer")
+
+
 # ============================================================================
 # SCHÉMAS GROUPE
 # ============================================================================

@@ -103,6 +103,50 @@ try:
 except ImportError:
     pass  # Module may not exist
 
+# ===========================================================================
+# GAP HIGH PRIORITY MODULES (Wave 9)
+# ===========================================================================
+
+# GAP-076: Forecasting - Prévisions financières
+try:
+    from app.modules.forecasting.models import (
+        Forecast, ForecastLine, Budget, BudgetLine, KPI, KPIValue
+    )
+except ImportError:
+    pass
+
+# GAP-081: Field Service - Service terrain
+try:
+    from app.modules.fieldservice.models import (
+        FSTechnician, FSServiceZone, FSCustomerSite, FSWorkOrder, FSSkill
+    )
+except ImportError:
+    pass
+
+# GAP-083: Approval - Workflow d'approbation
+try:
+    from app.modules.approval.models import (
+        Workflow, WorkflowStep, ApprovalRequest, ApprovalAction, Delegation
+    )
+except ImportError:
+    pass
+
+# GAP-084: Expenses - Notes de frais
+try:
+    from app.modules.expenses.models import (
+        ExpenseReport, ExpenseLine, ExpensePolicy, MileageRate, EmployeeVehicle
+    )
+except ImportError:
+    pass
+
+# GAP-086: Integrations - Connecteurs externes
+try:
+    from app.modules.integrations.models import (
+        Connection, EntityMapping, SyncJob, SyncLog, Conflict, Webhook
+    )
+except ImportError:
+    pass
+
 # Add metadata for autogenerate support
 target_metadata = Base.metadata
 

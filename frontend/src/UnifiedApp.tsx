@@ -11,8 +11,8 @@
 
 import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { HelmetProvider } from 'react-helmet-async';
 import { ShieldX } from 'lucide-react';
+import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
@@ -93,31 +93,62 @@ const VIEW_CAPABILITY_MAP: Partial<Record<ViewKey, string>> = {
   'gestion-paiements': 'invoicing.view',
   'gestion-interventions': 'interventions.view',
   'affaires': 'invoicing.view',
-  'crm': 'partners.view',
-  'stock': 'inventory.view',
-  'achats': 'purchases.view',
-  'projets': 'projects.view',
-  'rh': 'hr.view',
-  'vehicules': 'inventory.view',
+  'crm': 'crm.view',
+  'partners': 'partners.view',
+  'inventory': 'inventory.view',
+  'purchases': 'purchases.view',
+  'projects': 'projects.view',
+  'hr': 'hr.view',
   'production': 'production.view',
   'maintenance': 'maintenance.view',
   'quality': 'quality.view',
+  'qc': 'qc.view',
   'pos': 'pos.view',
   'ecommerce': 'ecommerce.view',
   'marketplace': 'marketplace.view',
   'subscriptions': 'subscriptions.view',
+  'commercial': 'commercial.view',
   'helpdesk': 'helpdesk.view',
   'web': 'web.view',
+  'website': 'website.view',
   'bi': 'bi.view',
   'compliance': 'compliance.view',
-  'compta': 'accounting.view',
-  'tresorerie': 'treasury.view',
+  'broadcast': 'broadcast.view',
+  'social-networks': 'social_networks.view',
+  'accounting': 'accounting.view',
+  'treasury': 'treasury.view',
+  'assets': 'assets.view',
+  'expenses': 'expenses.view',
+  'finance': 'finance.view',
+  'consolidation': 'consolidation.view',
+  'automated-accounting': 'automated_accounting.view',
+  'contracts': 'contracts.view',
+  'timesheet': 'timesheet.view',
+  'field-service': 'field_service.view',
+  'complaints': 'complaints.view',
+  'warranty': 'warranty.view',
+  'rfq': 'rfq.view',
+  'procurement': 'procurement.view',
+  'esignature': 'esignature.view',
+  'email': 'email.view',
+  'ai-assistant': 'ai_assistant.view',
+  'marceau': 'marceau.view',
   'admin': 'admin.view',
-  'import-odoo': 'import.odoo.config',
-  'import-axonaut': 'import.axonaut.config',
-  'import-pennylane': 'import.pennylane.config',
-  'import-sage': 'import.sage.config',
-  'import-chorus': 'import.chorus.config',
+  'audit': 'audit.view',
+  'backup': 'backup.view',
+  'guardian': 'guardian.view',
+  'iam': 'iam.view',
+  'tenants': 'tenants.view',
+  'triggers': 'triggers.view',
+  'autoconfig': 'autoconfig.view',
+  'hr-vault': 'hr_vault.view',
+  'stripe-integration': 'stripe_integration.view',
+  'country-packs': 'country_packs.view',
+  'import-odoo': 'import_data.odoo',
+  'import-axonaut': 'import_data.axonaut',
+  'import-pennylane': 'import_data.pennylane',
+  'import-sage': 'import_data.sage',
+  'import-chorus': 'import_data.chorus',
 };
 
 // ============================================================
@@ -130,9 +161,25 @@ const UnauthorizedView: React.FC = () => (
     <ShieldX size={48} className="azals-unauthorized__icon" />
     <h2 className="azals-unauthorized__title">Acces non autorise</h2>
     <p className="azals-unauthorized__message">
-      Vous n'avez pas les permissions necessaires pour acceder a ce module.
-      Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur.
+      Vous n&apos;avez pas les permissions necessaires pour acceder a ce module.
+      Contactez votre administrateur si vous pensez qu&apos;il s&apos;agit d&apos;une erreur.
     </p>
+  </div>
+);
+
+// ============================================================
+// PLACEHOLDER MODULE
+// Shown for modules that are not yet implemented.
+// ============================================================
+
+const PlaceholderModule: React.FC<{ name: string }> = ({ name }) => (
+  <div className="azals-placeholder">
+    <div className="azals-placeholder__content">
+      <h2 className="azals-placeholder__title">{name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</h2>
+      <p className="azals-placeholder__message">
+        Ce module est en cours de développement. Il sera disponible prochainement.
+      </p>
+    </div>
   </div>
 );
 
@@ -174,16 +221,16 @@ class ErrorBoundary extends React.Component<
           <div className="azals-error-boundary__card">
             <h1 className="azals-error-boundary__brand">AZALSCORE</h1>
             <h2 className="azals-error-boundary__title">
-              Une erreur inattendue s'est produite
+              Une erreur inattendue s&apos;est produite
             </h2>
             <p className="azals-error-boundary__message">
-              {this.state.error?.message || "L'application a rencontre un probleme."}
+              {this.state.error?.message || "L&apos;application a rencontre un probleme."}
             </p>
             <button
               className="azals-error-boundary__button"
               onClick={this.handleReload}
             >
-              Recharger l'application
+              Recharger l&apos;application
             </button>
           </div>
         </div>
@@ -339,38 +386,71 @@ const VIEW_BASE_PATH: Partial<Record<ViewKey, string>> = {
   'affaires': '/affaires',
 
   // Modules métier
-  'crm': '/partners',
-  'stock': '/inventory',
-  'achats': '/purchases',
-  'projets': '/projects',
-  'rh': '/hr',
-  'vehicules': '/vehicles',
+  'partners': '/partners',
+  'crm': '/crm',
+  'inventory': '/inventory',
+  'purchases': '/purchases',
+  'projects': '/projects',
+  'hr': '/hr',
+  'contracts': '/contracts',
+  'timesheet': '/timesheet',
+  'field-service': '/field-service',
+  'complaints': '/complaints',
+  'warranty': '/warranty',
+  'rfq': '/rfq',
+  'procurement': '/procurement',
 
   // Logistique & Production
   'production': '/production',
   'maintenance': '/maintenance',
   'quality': '/quality',
+  'qc': '/qc',
 
   // Commerce
   'pos': '/pos',
   'ecommerce': '/ecommerce',
   'marketplace': '/marketplace',
   'subscriptions': '/subscriptions',
+  'commercial': '/commercial',
 
   // Services
   'helpdesk': '/helpdesk',
 
   // Digital
   'web': '/web',
+  'website': '/website',
   'bi': '/bi',
   'compliance': '/compliance',
+  'broadcast': '/broadcast',
+  'social-networks': '/social-networks',
+
+  // Communication
+  'esignature': '/esignature',
+  'email': '/email',
 
   // Finance
-  'compta': '/accounting',
-  'tresorerie': '/treasury',
+  'accounting': '/accounting',
+  'treasury': '/treasury',
+  'assets': '/assets',
+  'expenses': '/expenses',
+  'finance': '/finance',
+  'consolidation': '/consolidation',
+  'automated-accounting': '/automated-accounting',
 
   // Direction
   'cockpit': '/cockpit',
+
+  // Système
+  'audit': '/audit',
+  'backup': '/backup',
+  'guardian': '/guardian',
+  'iam': '/iam',
+  'tenants': '/tenants',
+  'triggers': '/triggers',
+  'autoconfig': '/autoconfig',
+  'hr-vault': '/hr-vault',
+  'stripe-integration': '/stripe-integration',
+  'country-packs': '/country-packs',
 
   // IA
   'marceau': '/marceau',
@@ -474,18 +554,26 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
         return <AffairesModule />;
 
       // Modules métier
-      case 'crm':
+      case 'partners':
         return <PartnersModule />;
-      case 'stock':
+      case 'crm':
+        return <PartnersModule />; // CRM avancé utilise le même module
+      case 'inventory':
         return <InventoryModule />;
-      case 'achats':
+      case 'purchases':
         return <PurchasesModule />;
-      case 'projets':
+      case 'projects':
         return <ProjectsModule />;
-      case 'rh':
+      case 'hr':
         return <HRModule />;
-      case 'vehicules':
-        return <VehiculesModule />;
+      case 'contracts':
+      case 'timesheet':
+      case 'field-service':
+      case 'complaints':
+      case 'warranty':
+      case 'rfq':
+      case 'procurement':
+        return <PlaceholderModule name={viewKey} />;
 
       // Logistique & Production
       case 'production':
@@ -493,6 +581,7 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
       case 'maintenance':
         return <MaintenanceModule />;
       case 'quality':
+      case 'qc':
         return <QualityModule />;
 
       // Commerce
@@ -504,6 +593,8 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
         return <MarketplaceModule />;
       case 'subscriptions':
         return <SubscriptionsModule />;
+      case 'commercial':
+        return <PlaceholderModule name="Commercial" />;
 
       // Services
       case 'helpdesk':
@@ -511,17 +602,32 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
 
       // Digital
       case 'web':
+      case 'website':
         return <WebModule />;
       case 'bi':
         return <BIModule />;
       case 'compliance':
         return <ComplianceModule />;
+      case 'broadcast':
+      case 'social-networks':
+        return <PlaceholderModule name={viewKey} />;
+
+      // Communication
+      case 'esignature':
+      case 'email':
+        return <PlaceholderModule name={viewKey} />;
 
       // Finance
-      case 'compta':
+      case 'accounting':
         return <AccountingModule />;
-      case 'tresorerie':
+      case 'treasury':
         return <TreasuryModule />;
+      case 'assets':
+      case 'expenses':
+      case 'finance':
+      case 'consolidation':
+      case 'automated-accounting':
+        return <PlaceholderModule name={viewKey} />;
 
       // Direction
       case 'cockpit':
@@ -529,6 +635,7 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
 
       // IA
       case 'marceau':
+      case 'ai-assistant':
         return <MarceauModule />;
 
       // Import
@@ -546,6 +653,17 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
       // Système
       case 'admin':
         return <AdminModule />;
+      case 'audit':
+      case 'backup':
+      case 'guardian':
+      case 'iam':
+      case 'tenants':
+      case 'triggers':
+      case 'autoconfig':
+      case 'hr-vault':
+      case 'stripe-integration':
+      case 'country-packs':
+        return <PlaceholderModule name={viewKey} />;
 
       // Utilisateur
       case 'profile':

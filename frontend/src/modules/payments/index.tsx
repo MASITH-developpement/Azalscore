@@ -19,6 +19,7 @@ import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/st
 import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
+import { paymentsApi, type RefundCreate } from './api';
 import {
   PaymentInfoTab,
   PaymentDetailsTab,
@@ -35,7 +36,6 @@ import type {
   Payment, Refund, SavedPaymentMethod, PaymentStats,
   PaymentMethod as PaymentMethodType, PaymentStatus
 } from './types';
-import { paymentsApi, type RefundCreate } from './api';
 
 // ============================================================================
 // LOCAL COMPONENTS

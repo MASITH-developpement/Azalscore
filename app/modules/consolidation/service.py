@@ -1,350 +1,128 @@
 """
-Module de Consolidation Comptable - GAP-026
+AZALS MODULE - CONSOLIDATION: Service
+=======================================
 
-Fonctionnalités de consolidation pour groupes de sociétés:
-- Consolidation par intégration globale
-- Consolidation par intégration proportionnelle
-- Consolidation par mise en équivalence
-- Élimination des opérations intra-groupe
-- Écarts d'acquisition (goodwill)
-- Conversion des devises (méthode du cours de clôture)
-- Tableaux de variation des capitaux propres
+Service metier principal pour le module de consolidation
+comptable multi-entites.
 
-Normes supportées:
-- Règlement ANC 2020-01 (France)
+Fonctionnalites:
+- Gestion du perimetre de consolidation
+- Collecte des paquets de consolidation
+- Eliminations intra-groupe automatiques
+- Conversion des devises
+- Calcul des interets minoritaires
+- Calcul des ecarts d'acquisition (goodwill)
+- Generation des etats consolides
+- Reconciliation inter-societes
+- Retraitements de consolidation
+
+Normes supportees:
+- Reglement ANC 2020-01 (France)
 - IFRS 10, 11, 12 (international)
-- US GAAP ASC 810 (États-Unis)
+- US GAAP ASC 810 (Etats-Unis)
 
-Architecture multi-tenant avec isolation stricte.
+REGLES CRITIQUES:
+- tenant_id obligatoire
+- Isolation multi-tenant stricte
+
+Auteur: AZALSCORE Team
+Version: 2.0.0
 """
 
-from dataclasses import dataclass, field
 from datetime import datetime, date
 from decimal import Decimal, ROUND_HALF_UP
-from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 import uuid
 
-
-# ============================================================================
-# ÉNUMÉRATIONS
-# ============================================================================
-
-class ConsolidationMethod(Enum):
-    """Méthode de consolidation."""
-    FULL_INTEGRATION = "full_integration"  # Intégration globale (>50% contrôle)
-    PROPORTIONAL = "proportional"  # Intégration proportionnelle (co-entreprises)
-    EQUITY_METHOD = "equity_method"  # Mise en équivalence (20-50% influence notable)
-    NOT_CONSOLIDATED = "not_consolidated"  # Non consolidé (<20%)
-
-
-class ControlType(Enum):
-    """Type de contrôle."""
-    EXCLUSIVE = "exclusive"  # Contrôle exclusif
-    JOINT = "joint"  # Contrôle conjoint
-    SIGNIFICANT_INFLUENCE = "significant_influence"  # Influence notable
-    NONE = "none"  # Pas de contrôle
-
-
-class CurrencyConversionMethod(Enum):
-    """Méthode de conversion des devises."""
-    CLOSING_RATE = "closing_rate"  # Cours de clôture (actifs/passifs)
-    AVERAGE_RATE = "average_rate"  # Cours moyen (compte de résultat)
-    HISTORICAL_RATE = "historical_rate"  # Cours historique (capitaux propres)
-
-
-class EliminationType(Enum):
-    """Type d'élimination intra-groupe."""
-    INTERCOMPANY_SALES = "intercompany_sales"  # Ventes intra-groupe
-    INTERCOMPANY_RECEIVABLES = "intercompany_receivables"  # Créances/dettes
-    INTERCOMPANY_DIVIDENDS = "intercompany_dividends"  # Dividendes
-    INTERCOMPANY_PROVISIONS = "intercompany_provisions"  # Provisions
-    INTERNAL_MARGIN = "internal_margin"  # Marges sur stocks
-    INTERNAL_FIXED_ASSETS = "internal_fixed_assets"  # Plus-values immos
-
-
-class AccountingStandard(Enum):
-    """Référentiel comptable."""
-    FRENCH_GAAP = "french_gaap"  # PCG / Règlement ANC
-    IFRS = "ifrs"  # Normes internationales
-    US_GAAP = "us_gaap"  # Normes américaines
-
-
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
-
-@dataclass
-class Entity:
-    """Entité juridique du groupe."""
-    id: str
-    code: str
-    name: str
-    country: str
-    currency: str
-    tenant_id: str  # Lien vers le tenant AZALSCORE
-
-    # Dates
-    fiscal_year_end_month: int = 12  # Mois de clôture
-    acquisition_date: Optional[date] = None
-    disposal_date: Optional[date] = None
-
-    # Classification
-    is_parent: bool = False
-    parent_id: Optional[str] = None
-    consolidation_method: ConsolidationMethod = ConsolidationMethod.NOT_CONSOLIDATED
-
-    # Participation
-    ownership_percentage: Decimal = Decimal("0")  # % détention directe
-    voting_rights_percentage: Decimal = Decimal("0")  # % droits de vote
-    control_type: ControlType = ControlType.NONE
-
-    # Métadonnées
-    sector: Optional[str] = None
-    registration_number: Optional[str] = None  # SIREN, etc.
-    is_active: bool = True
-
-
-@dataclass
-class Participation:
-    """Lien de participation entre entités."""
-    id: str
-    parent_entity_id: str
-    subsidiary_entity_id: str
-
-    # Pourcentages
-    direct_ownership: Decimal  # Détention directe
-    indirect_ownership: Decimal = Decimal("0")  # Via autres filiales
-    total_ownership: Decimal = Decimal("0")  # Total
-
-    voting_rights: Decimal = Decimal("0")
-
-    # Acquisition
-    acquisition_date: date = field(default_factory=date.today)
-    acquisition_cost: Decimal = Decimal("0")
-    fair_value_at_acquisition: Decimal = Decimal("0")
-
-    # Goodwill
-    goodwill_amount: Decimal = Decimal("0")
-    goodwill_impairment: Decimal = Decimal("0")
-
-    def __post_init__(self):
-        if self.total_ownership == 0:
-            self.total_ownership = self.direct_ownership + self.indirect_ownership
-
-
-@dataclass
-class ExchangeRate:
-    """Cours de change."""
-    from_currency: str
-    to_currency: str
-    rate_date: date
-    closing_rate: Decimal  # Cours de clôture
-    average_rate: Decimal  # Cours moyen période
-    historical_rate: Optional[Decimal] = None  # Cours historique si pertinent
-
-
-@dataclass
-class TrialBalanceEntry:
-    """Ligne de balance."""
-    account_code: str
-    account_name: str
-    debit: Decimal
-    credit: Decimal
-    balance: Decimal
-    currency: str
-
-
-@dataclass
-class EntityTrialBalance:
-    """Balance d'une entité."""
-    entity_id: str
-    period_start: date
-    period_end: date
-    entries: List[TrialBalanceEntry]
-    currency: str
-    is_audited: bool = False
-
-
-@dataclass
-class IntercompanyTransaction:
-    """Transaction intra-groupe."""
-    id: str
-    entity1_id: str
-    entity2_id: str
-    transaction_date: date
-
-    # Montants
-    amount_entity1: Decimal  # Montant chez entité 1
-    amount_entity2: Decimal  # Montant chez entité 2
-    currency: str
-
-    # Type
-    elimination_type: EliminationType
-    description: str
-
-    # Comptes
-    account_code_entity1: str
-    account_code_entity2: str
-
-    # Écart éventuel (doit être 0 si correctement rapproché)
-    difference: Decimal = Decimal("0")
-    is_reconciled: bool = False
-
-
-@dataclass
-class EliminationEntry:
-    """Écriture d'élimination."""
-    id: str
-    consolidation_id: str
-    elimination_type: EliminationType
-
-    # Journal
-    description: str
-    entries: List[Dict[str, Any]]  # [{account, debit, credit, entity_id}, ...]
-
-    # Traçabilité
-    source_transaction_id: Optional[str] = None
-    is_automatic: bool = True
-    created_at: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class GoodwillCalculation:
-    """Calcul de l'écart d'acquisition."""
-    participation_id: str
-    calculation_date: date
-
-    # Coût d'acquisition
-    acquisition_cost: Decimal
-
-    # Quote-part actif net à la juste valeur
-    net_assets_fair_value: Decimal
-    ownership_percentage: Decimal
-    group_share_net_assets: Decimal
-
-    # Goodwill
-    goodwill: Decimal
-
-    # Détails actif net
-    assets_fair_value: Decimal = Decimal("0")
-    liabilities_fair_value: Decimal = Decimal("0")
-    revaluation_adjustments: List[Dict[str, Decimal]] = field(default_factory=list)
-
-
-@dataclass
-class MinorityInterest:
-    """Intérêts minoritaires."""
-    entity_id: str
-    period_end: date
-
-    # Capitaux propres
-    total_equity: Decimal
-    minority_percentage: Decimal
-    minority_share: Decimal
-
-    # Résultat
-    net_income: Decimal
-    minority_income: Decimal
-
-
-@dataclass
-class CurrencyTranslation:
-    """Conversion d'une balance en devise de consolidation."""
-    entity_id: str
-    source_currency: str
-    target_currency: str
-    period_end: date
-
-    # Cours utilisés
-    closing_rate: Decimal
-    average_rate: Decimal
-
-    # Montants
-    assets_original: Decimal
-    assets_converted: Decimal
-    liabilities_original: Decimal
-    liabilities_converted: Decimal
-    equity_original: Decimal
-    equity_converted: Decimal
-    income_original: Decimal
-    income_converted: Decimal
-
-    # Écart de conversion
-    translation_difference: Decimal
-
-
-@dataclass
-class ConsolidationPackage:
-    """Paquet de consolidation (données d'une entité)."""
-    entity_id: str
-    period_start: date
-    period_end: date
-
-    # Données comptables
-    trial_balance: EntityTrialBalance
-
-    # Transactions intra-groupe
-    intercompany_transactions: List[IntercompanyTransaction] = field(default_factory=list)
-
-    # Informations complémentaires
-    goodwill_impairment: Decimal = Decimal("0")
-    dividend_paid_to_parent: Decimal = Decimal("0")
-
-    # Statut
-    is_submitted: bool = False
-    submitted_at: Optional[datetime] = None
-    is_validated: bool = False
-    validated_at: Optional[datetime] = None
-
-
-@dataclass
-class ConsolidationResult:
-    """Résultat d'une consolidation."""
-    id: str
-    tenant_id: str
-    period_start: date
-    period_end: date
-    consolidation_currency: str
-    accounting_standard: AccountingStandard
-
-    # Entités incluses
-    entities: List[Entity]
-    participations: List[Participation]
-
-    # Balances
-    entity_balances: Dict[str, EntityTrialBalance]
-    currency_translations: Dict[str, CurrencyTranslation]
-
-    # Éliminations
-    elimination_entries: List[EliminationEntry]
-
-    # Résultats
-    consolidated_trial_balance: List[TrialBalanceEntry]
-    minority_interests: List[MinorityInterest]
-    goodwill_calculations: List[GoodwillCalculation]
-
-    # Écart de conversion
-    total_translation_difference: Decimal = Decimal("0")
-
-    # Métadonnées
-    created_at: datetime = field(default_factory=datetime.now)
-    is_final: bool = False
+from sqlalchemy.orm import Session
+
+from .models import (
+    AccountingStandard,
+    ConsolidationMethod,
+    ConsolidationStatus,
+    ControlType,
+    CurrencyConversionMethod,
+    EliminationType,
+    PackageStatus,
+    ReportType,
+    RestatementType,
+    ConsolidationPerimeter,
+    ConsolidationEntity,
+    Participation,
+    ExchangeRate,
+    Consolidation,
+    ConsolidationPackage,
+    EliminationEntry,
+    Restatement,
+    IntercompanyReconciliation,
+    GoodwillCalculation,
+    MinorityInterest,
+    ConsolidatedReport,
+)
+from .repository import (
+    ConsolidationPerimeterRepository,
+    ConsolidationEntityRepository,
+    ParticipationRepository,
+    ExchangeRateRepository,
+    ConsolidationRepository,
+    ConsolidationPackageRepository,
+    EliminationRepository,
+    IntercompanyReconciliationRepository,
+    ConsolidatedReportRepository,
+    ConsolidationAuditLogRepository,
+)
+from .schemas import (
+    ConsolidationPerimeterCreate,
+    ConsolidationPerimeterUpdate,
+    ConsolidationEntityCreate,
+    ConsolidationEntityUpdate,
+    ConsolidationCreate,
+    ConsolidationUpdate,
+    ConsolidationPackageCreate,
+    ConsolidationPackageUpdate,
+    EliminationEntryCreate,
+    RestatementCreate,
+    GenerateReportRequest,
+    ConsolidationFilters,
+    EntityFilters,
+    PackageFilters,
+    ReconciliationFilters,
+    TrialBalanceEntry,
+)
+from .exceptions import (
+    PerimeterNotFoundError,
+    PerimeterDuplicateError,
+    EntityNotFoundError,
+    EntityDuplicateError,
+    EntityCircularReferenceError,
+    ParentEntityRequiredError,
+    ConsolidationNotFoundError,
+    ConsolidationDuplicateError,
+    ConsolidationStatusError,
+    ConsolidationIncompleteError,
+    PackageNotFoundError,
+    PackageDuplicateError,
+    PackageStatusError,
+    ExchangeRateNotFoundError,
+    MissingExchangeRatesError,
+    EliminationImbalanceError,
+    ReconciliationMismatchError,
+)
 
 
 # ============================================================================
-# MAPPING COMPTES PCG -> POSTES CONSOLIDÉS
+# MAPPING COMPTES PCG -> POSTES CONSOLIDES
 # ============================================================================
 
 ACCOUNT_MAPPING_PCG = {
-    # Actif immobilisé
+    # Actif immobilise
     "20": "immobilisations_incorporelles",
     "21": "immobilisations_corporelles",
     "22": "immobilisations_mises_en_concession",
     "23": "immobilisations_en_cours",
     "26": "participations",
     "27": "autres_immobilisations_financieres",
-
     # Actif circulant
     "31": "matieres_premieres",
     "33": "en_cours_production",
@@ -357,13 +135,9 @@ ACCOUNT_MAPPING_PCG = {
     "44": "etat",
     "45": "groupe_associes",
     "46": "debiteurs_divers",
-    "47": "comptes_attente",
-    "48": "charges_repartir",
-    "49": "provisions_depreciation_comptes_tiers",
     "50": "valeurs_mobilieres_placement",
     "51": "banques",
     "53": "caisse",
-
     # Capitaux propres
     "10": "capital",
     "11": "report_nouveau",
@@ -371,13 +145,9 @@ ACCOUNT_MAPPING_PCG = {
     "13": "subventions_investissement",
     "14": "provisions_reglementees",
     "15": "provisions_risques_charges",
-
     # Dettes
     "16": "emprunts",
     "17": "dettes_rattachees_participations",
-    "18": "comptes_liaison",
-    "19": "ecarts_conversion_passif",
-
     # Charges
     "60": "achats",
     "61": "services_exterieurs",
@@ -389,151 +159,293 @@ ACCOUNT_MAPPING_PCG = {
     "67": "charges_exceptionnelles",
     "68": "dotations_amortissements",
     "69": "participation_impots",
-
     # Produits
     "70": "ventes_produits",
     "71": "production_stockee",
     "72": "production_immobilisee",
-    "73": "produits_nets_partiels",
     "74": "subventions_exploitation",
     "75": "autres_produits_gestion",
     "76": "produits_financiers",
     "77": "produits_exceptionnels",
     "78": "reprises_provisions",
-    "79": "transferts_charges",
 }
 
 
 # ============================================================================
-# SERVICE DE CONSOLIDATION
+# SERVICE PRINCIPAL
 # ============================================================================
 
 class ConsolidationService:
     """
     Service principal de consolidation comptable.
 
-    Gère:
-    - Structure du groupe
+    Gere l'ensemble du processus de consolidation multi-entites:
+    - Structure du groupe et perimetre
     - Collecte des paquets de consolidation
-    - Éliminations intra-groupe
+    - Eliminations intra-groupe
     - Conversion des devises
-    - Calcul des minoritaires
-    - Production des états consolidés
+    - Calcul des minoritaires et goodwill
+    - Production des etats consolides
     """
 
     def __init__(
         self,
+        db: Session,
         tenant_id: str,
-        consolidation_currency: str = "EUR",
-        accounting_standard: AccountingStandard = AccountingStandard.FRENCH_GAAP
+        user_id: str = None
     ):
+        """
+        Initialise le service de consolidation.
+
+        Args:
+            db: Session SQLAlchemy
+            tenant_id: ID du tenant (isolation multi-tenant)
+            user_id: ID de l'utilisateur (pour audit trail)
+        """
+        self.db = db
         self.tenant_id = tenant_id
-        self.consolidation_currency = consolidation_currency
-        self.accounting_standard = accounting_standard
+        self.user_id = user_id
 
-        # Données du groupe
-        self.entities: Dict[str, Entity] = {}
-        self.participations: Dict[str, Participation] = {}
-        self.exchange_rates: Dict[Tuple[str, str, date], ExchangeRate] = {}
+        # Repositories
+        self.perimeter_repo = ConsolidationPerimeterRepository(db, tenant_id)
+        self.entity_repo = ConsolidationEntityRepository(db, tenant_id)
+        self.participation_repo = ParticipationRepository(db, tenant_id)
+        self.exchange_rate_repo = ExchangeRateRepository(db, tenant_id)
+        self.consolidation_repo = ConsolidationRepository(db, tenant_id)
+        self.package_repo = ConsolidationPackageRepository(db, tenant_id)
+        self.elimination_repo = EliminationRepository(db, tenant_id)
+        self.reconciliation_repo = IntercompanyReconciliationRepository(db, tenant_id)
+        self.report_repo = ConsolidatedReportRepository(db, tenant_id)
+        self.audit_repo = ConsolidationAuditLogRepository(db, tenant_id)
 
     # ========================================================================
-    # GESTION DE LA STRUCTURE DU GROUPE
+    # PERIMETRE DE CONSOLIDATION
     # ========================================================================
 
-    def add_entity(self, entity: Entity) -> Entity:
-        """Ajoute une entité au groupe."""
-        self.entities[entity.id] = entity
-        return entity
-
-    def add_participation(self, participation: Participation) -> Participation:
-        """Ajoute un lien de participation."""
-        self.participations[participation.id] = participation
-
-        # Mettre à jour l'entité filiale
-        subsidiary = self.entities.get(participation.subsidiary_entity_id)
-        if subsidiary:
-            subsidiary.parent_id = participation.parent_entity_id
-            subsidiary.ownership_percentage = participation.total_ownership
-            subsidiary.consolidation_method = self._determine_method(
-                participation.total_ownership,
-                participation.voting_rights
-            )
-
-        return participation
-
-    def _determine_method(
+    def create_perimeter(
         self,
-        ownership: Decimal,
-        voting_rights: Decimal
-    ) -> ConsolidationMethod:
-        """Détermine la méthode de consolidation selon les participations."""
-        # Contrôle effectif (plus de 50% ou contrôle de fait)
-        if voting_rights > Decimal("50") or ownership > Decimal("50"):
-            return ConsolidationMethod.FULL_INTEGRATION
+        data: ConsolidationPerimeterCreate,
+        created_by: UUID = None
+    ) -> ConsolidationPerimeter:
+        """Creer un nouveau perimetre de consolidation."""
+        # Verifier unicite
+        if self.perimeter_repo.code_exists(data.code, data.fiscal_year):
+            raise PerimeterDuplicateError(data.code, data.fiscal_year)
 
-        # Influence notable (20-50%)
-        if ownership >= Decimal("20"):
-            return ConsolidationMethod.EQUITY_METHOD
+        perimeter = self.perimeter_repo.create(
+            data.model_dump(),
+            created_by=created_by or (UUID(self.user_id) if self.user_id else None)
+        )
 
-        # Participation simple
-        return ConsolidationMethod.NOT_CONSOLIDATED
-
-    def get_consolidation_perimeter(
-        self,
-        as_of_date: date
-    ) -> List[Entity]:
-        """Retourne les entités à consolider à une date donnée."""
-        perimeter = []
-
-        for entity in self.entities.values():
-            if not entity.is_active:
-                continue
-
-            # Vérifier dates d'acquisition/cession
-            if entity.acquisition_date and entity.acquisition_date > as_of_date:
-                continue
-            if entity.disposal_date and entity.disposal_date <= as_of_date:
-                continue
-
-            # Vérifier méthode de consolidation
-            if entity.consolidation_method != ConsolidationMethod.NOT_CONSOLIDATED:
-                perimeter.append(entity)
-            elif entity.is_parent:
-                perimeter.append(entity)
+        # Audit
+        self._log_action(
+            "create_perimeter",
+            target_type="ConsolidationPerimeter",
+            target_id=perimeter.id,
+            new_values=data.model_dump()
+        )
 
         return perimeter
 
-    def calculate_indirect_ownership(self) -> Dict[str, Decimal]:
-        """Calcule les pourcentages de détention indirecte."""
-        result = {}
+    def get_perimeter(self, perimeter_id: UUID) -> ConsolidationPerimeter:
+        """Recuperer un perimetre par ID."""
+        perimeter = self.perimeter_repo.get_by_id(perimeter_id)
+        if not perimeter:
+            raise PerimeterNotFoundError(str(perimeter_id))
+        return perimeter
 
-        # Trouver la société mère
-        parent = next(
-            (e for e in self.entities.values() if e.is_parent),
-            None
+    def update_perimeter(
+        self,
+        perimeter_id: UUID,
+        data: ConsolidationPerimeterUpdate,
+        updated_by: UUID = None
+    ) -> ConsolidationPerimeter:
+        """Mettre a jour un perimetre."""
+        perimeter = self.get_perimeter(perimeter_id)
+
+        old_values = {"name": perimeter.name, "status": perimeter.status.value}
+
+        perimeter = self.perimeter_repo.update(
+            perimeter,
+            data.model_dump(exclude_unset=True),
+            updated_by=updated_by or (UUID(self.user_id) if self.user_id else None)
         )
-        if not parent:
-            return result
 
-        # Algorithme de propagation
+        self._log_action(
+            "update_perimeter",
+            target_type="ConsolidationPerimeter",
+            target_id=perimeter.id,
+            old_values=old_values,
+            new_values=data.model_dump(exclude_unset=True)
+        )
+
+        return perimeter
+
+    def list_perimeters(
+        self,
+        fiscal_year: int = None,
+        status: List[ConsolidationStatus] = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[ConsolidationPerimeter], int]:
+        """Lister les perimetres de consolidation."""
+        return self.perimeter_repo.list(
+            fiscal_year=fiscal_year,
+            status=status,
+            page=page,
+            page_size=page_size
+        )
+
+    def delete_perimeter(self, perimeter_id: UUID, deleted_by: UUID = None) -> bool:
+        """Supprimer un perimetre (soft delete)."""
+        perimeter = self.get_perimeter(perimeter_id)
+        return self.perimeter_repo.soft_delete(
+            perimeter,
+            deleted_by=deleted_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    # ========================================================================
+    # ENTITES DU GROUPE
+    # ========================================================================
+
+    def create_entity(
+        self,
+        data: ConsolidationEntityCreate,
+        created_by: UUID = None
+    ) -> ConsolidationEntity:
+        """Creer une nouvelle entite dans le perimetre."""
+        # Verifier que le perimetre existe
+        perimeter = self.get_perimeter(data.perimeter_id)
+
+        # Verifier unicite du code
+        if self.entity_repo.code_exists(data.code, data.perimeter_id):
+            raise EntityDuplicateError(data.code, str(data.perimeter_id))
+
+        # Verifier parent si specifie
+        if data.parent_entity_id:
+            parent = self.entity_repo.get_by_id(data.parent_entity_id)
+            if not parent:
+                raise EntityNotFoundError(str(data.parent_entity_id))
+            if parent.perimeter_id != data.perimeter_id:
+                raise EntityCircularReferenceError(data.code, str(data.parent_entity_id))
+
+        entity = self.entity_repo.create(
+            data.model_dump(),
+            created_by=created_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+        self._log_action(
+            "create_entity",
+            target_type="ConsolidationEntity",
+            target_id=entity.id,
+            entity_id=entity.id,
+            new_values=data.model_dump()
+        )
+
+        return entity
+
+    def get_entity(self, entity_id: UUID) -> ConsolidationEntity:
+        """Recuperer une entite par ID."""
+        entity = self.entity_repo.get_by_id(entity_id)
+        if not entity:
+            raise EntityNotFoundError(str(entity_id))
+        return entity
+
+    def update_entity(
+        self,
+        entity_id: UUID,
+        data: ConsolidationEntityUpdate,
+        updated_by: UUID = None
+    ) -> ConsolidationEntity:
+        """Mettre a jour une entite."""
+        entity = self.get_entity(entity_id)
+
+        # Verifier reference circulaire si parent change
+        if data.parent_entity_id:
+            if str(data.parent_entity_id) == str(entity_id):
+                raise EntityCircularReferenceError(entity.code, str(data.parent_entity_id))
+
+        return self.entity_repo.update(
+            entity,
+            data.model_dump(exclude_unset=True),
+            updated_by=updated_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def list_entities(
+        self,
+        filters: EntityFilters = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[ConsolidationEntity], int]:
+        """Lister les entites."""
+        return self.entity_repo.list(filters=filters, page=page, page_size=page_size)
+
+    def get_entities_by_perimeter(
+        self,
+        perimeter_id: UUID,
+        include_inactive: bool = False
+    ) -> List[ConsolidationEntity]:
+        """Recuperer les entites d'un perimetre."""
+        return self.entity_repo.get_by_perimeter(perimeter_id, include_inactive)
+
+    def get_consolidation_scope(
+        self,
+        perimeter_id: UUID,
+        as_of_date: date
+    ) -> List[ConsolidationEntity]:
+        """Obtenir le perimetre de consolidation effectif a une date."""
+        return self.entity_repo.get_entities_to_consolidate(perimeter_id, as_of_date)
+
+    def calculate_indirect_ownership(
+        self,
+        perimeter_id: UUID
+    ) -> Dict[str, Decimal]:
+        """Calculer les pourcentages de detention indirecte."""
+        entities = self.entity_repo.get_by_perimeter(perimeter_id)
+        parent = self.entity_repo.get_parent_entity(perimeter_id)
+
+        if not parent:
+            raise ParentEntityRequiredError(str(perimeter_id))
+
+        result = {}
         visited = set()
-        stack = [(parent.id, Decimal("100"))]
+        stack = [(parent.id, Decimal("100.000"))]
 
         while stack:
             entity_id, cumulative_pct = stack.pop()
             if entity_id in visited:
                 continue
             visited.add(entity_id)
-
-            result[entity_id] = cumulative_pct
+            result[str(entity_id)] = cumulative_pct
 
             # Trouver les participations directes
-            for part in self.participations.values():
-                if part.parent_entity_id == entity_id:
-                    child_pct = cumulative_pct * part.direct_ownership / Decimal("100")
-                    stack.append((part.subsidiary_entity_id, child_pct))
+            participations = self.participation_repo.get_by_parent(entity_id)
+            for part in participations:
+                child_pct = cumulative_pct * part.direct_ownership / Decimal("100")
+                stack.append((part.subsidiary_id, child_pct))
 
         return result
+
+    def determine_consolidation_method(
+        self,
+        ownership_pct: Decimal,
+        voting_rights_pct: Decimal,
+        control_type: ControlType = None
+    ) -> ConsolidationMethod:
+        """Determiner la methode de consolidation selon les participations."""
+        # Controle conjoint explicite
+        if control_type == ControlType.JOINT:
+            return ConsolidationMethod.PROPORTIONAL
+
+        # Controle exclusif (plus de 50% ou controle de fait)
+        if voting_rights_pct > Decimal("50") or ownership_pct > Decimal("50"):
+            return ConsolidationMethod.FULL_INTEGRATION
+
+        # Influence notable (20-50%)
+        if ownership_pct >= Decimal("20"):
+            return ConsolidationMethod.EQUITY_METHOD
+
+        return ConsolidationMethod.NOT_CONSOLIDATED
 
     # ========================================================================
     # COURS DE CHANGE
@@ -546,420 +458,761 @@ class ConsolidationService:
         rate_date: date,
         closing_rate: Decimal,
         average_rate: Decimal,
-        historical_rate: Optional[Decimal] = None
-    ):
-        """Définit un cours de change."""
-        rate = ExchangeRate(
-            from_currency=from_currency,
-            to_currency=to_currency,
-            rate_date=rate_date,
-            closing_rate=closing_rate,
-            average_rate=average_rate,
-            historical_rate=historical_rate
-        )
-        key = (from_currency, to_currency, rate_date)
-        self.exchange_rates[key] = rate
+        historical_rate: Decimal = None,
+        source: str = None
+    ) -> ExchangeRate:
+        """Definir ou mettre a jour un cours de change."""
+        return self.exchange_rate_repo.create({
+            "from_currency": from_currency,
+            "to_currency": to_currency,
+            "rate_date": rate_date,
+            "closing_rate": closing_rate,
+            "average_rate": average_rate,
+            "historical_rate": historical_rate,
+            "source": source
+        })
 
     def get_exchange_rate(
         self,
         from_currency: str,
         to_currency: str,
         rate_date: date
-    ) -> Optional[ExchangeRate]:
-        """Récupère un cours de change."""
-        if from_currency == to_currency:
-            return ExchangeRate(
-                from_currency=from_currency,
-                to_currency=to_currency,
-                rate_date=rate_date,
-                closing_rate=Decimal("1"),
-                average_rate=Decimal("1"),
-                historical_rate=Decimal("1")
-            )
+    ) -> ExchangeRate:
+        """Recuperer un cours de change."""
+        rate = self.exchange_rate_repo.get_rate(from_currency, to_currency, rate_date)
+        if not rate:
+            raise ExchangeRateNotFoundError(from_currency, to_currency, str(rate_date))
+        return rate
 
-        key = (from_currency, to_currency, rate_date)
-        return self.exchange_rates.get(key)
-
-    # ========================================================================
-    # CONVERSION MONETAIRE
-    # ========================================================================
-
-    def convert_trial_balance(
+    def check_required_exchange_rates(
         self,
-        balance: EntityTrialBalance,
-        target_currency: str,
-        exchange_rate: ExchangeRate
-    ) -> Tuple[EntityTrialBalance, CurrencyTranslation]:
-        """Convertit une balance dans la devise de consolidation."""
-        if balance.currency == target_currency:
-            return balance, None
+        perimeter_id: UUID,
+        rate_date: date,
+        target_currency: str
+    ) -> List[str]:
+        """Verifier la disponibilite des cours de change requis."""
+        entities = self.entity_repo.get_by_perimeter(perimeter_id)
+        currencies = set(e.currency for e in entities if e.currency != target_currency)
 
-        converted_entries = []
-        assets_orig = Decimal("0")
-        assets_conv = Decimal("0")
-        liabilities_orig = Decimal("0")
-        liabilities_conv = Decimal("0")
-        equity_orig = Decimal("0")
-        equity_conv = Decimal("0")
-        income_orig = Decimal("0")
-        income_conv = Decimal("0")
+        missing = []
+        for currency in currencies:
+            rate = self.exchange_rate_repo.get_rate(currency, target_currency, rate_date)
+            if not rate:
+                missing.append(f"{currency}/{target_currency}")
 
-        for entry in balance.entries:
-            # Déterminer le type de compte et le cours applicable
-            account_class = entry.account_code[0] if entry.account_code else "0"
-
-            if account_class in ["1"]:  # Capitaux propres
-                rate = exchange_rate.historical_rate or exchange_rate.closing_rate
-                equity_orig += entry.balance
-            elif account_class in ["6", "7"]:  # Résultat
-                rate = exchange_rate.average_rate
-                income_orig += entry.balance
-            elif account_class in ["2", "3", "4", "5"]:  # Actif/Passif
-                rate = exchange_rate.closing_rate
-                if account_class in ["2", "3", "5"] or entry.balance >= 0:
-                    assets_orig += abs(entry.balance)
-                else:
-                    liabilities_orig += abs(entry.balance)
-            else:
-                rate = exchange_rate.closing_rate
-
-            # Conversion
-            converted_balance = (entry.balance * rate).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
-            converted_debit = (entry.debit * rate).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
-            converted_credit = (entry.credit * rate).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
-
-            # Cumuls convertis
-            if account_class in ["1"]:
-                equity_conv += converted_balance
-            elif account_class in ["6", "7"]:
-                income_conv += converted_balance
-            elif account_class in ["2", "3", "5"] or entry.balance >= 0:
-                assets_conv += abs(converted_balance)
-            else:
-                liabilities_conv += abs(converted_balance)
-
-            converted_entries.append(TrialBalanceEntry(
-                account_code=entry.account_code,
-                account_name=entry.account_name,
-                debit=converted_debit,
-                credit=converted_credit,
-                balance=converted_balance,
-                currency=target_currency
-            ))
-
-        # Calcul écart de conversion
-        translation_diff = (
-            assets_conv - liabilities_conv - equity_conv - income_conv
-        )
-
-        converted_balance = EntityTrialBalance(
-            entity_id=balance.entity_id,
-            period_start=balance.period_start,
-            period_end=balance.period_end,
-            entries=converted_entries,
-            currency=target_currency,
-            is_audited=balance.is_audited
-        )
-
-        translation = CurrencyTranslation(
-            entity_id=balance.entity_id,
-            source_currency=balance.currency,
-            target_currency=target_currency,
-            period_end=balance.period_end,
-            closing_rate=exchange_rate.closing_rate,
-            average_rate=exchange_rate.average_rate,
-            assets_original=assets_orig,
-            assets_converted=assets_conv,
-            liabilities_original=liabilities_orig,
-            liabilities_converted=liabilities_conv,
-            equity_original=equity_orig,
-            equity_converted=equity_conv,
-            income_original=income_orig,
-            income_converted=income_conv,
-            translation_difference=translation_diff
-        )
-
-        return converted_balance, translation
+        return missing
 
     # ========================================================================
-    # ÉLIMINATIONS INTRA-GROUPE
+    # CONSOLIDATION
+    # ========================================================================
+
+    def create_consolidation(
+        self,
+        data: ConsolidationCreate,
+        created_by: UUID = None
+    ) -> Consolidation:
+        """Creer une nouvelle consolidation."""
+        # Verifier que le perimetre existe
+        perimeter = self.get_perimeter(data.perimeter_id)
+
+        # Verifier unicite du code
+        if self.consolidation_repo.code_exists(data.code):
+            raise ConsolidationDuplicateError(data.code)
+
+        consolidation = self.consolidation_repo.create(
+            data.model_dump(),
+            created_by=created_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+        self._log_action(
+            "create_consolidation",
+            consolidation_id=consolidation.id,
+            target_type="Consolidation",
+            target_id=consolidation.id,
+            new_values=data.model_dump()
+        )
+
+        return consolidation
+
+    def get_consolidation(self, consolidation_id: UUID) -> Consolidation:
+        """Recuperer une consolidation par ID."""
+        consolidation = self.consolidation_repo.get_by_id(consolidation_id)
+        if not consolidation:
+            raise ConsolidationNotFoundError(str(consolidation_id))
+        return consolidation
+
+    def update_consolidation(
+        self,
+        consolidation_id: UUID,
+        data: ConsolidationUpdate,
+        updated_by: UUID = None
+    ) -> Consolidation:
+        """Mettre a jour une consolidation."""
+        consolidation = self.get_consolidation(consolidation_id)
+
+        # Verifier le statut permet la modification
+        if consolidation.status in [ConsolidationStatus.PUBLISHED, ConsolidationStatus.ARCHIVED]:
+            raise ConsolidationStatusError(
+                consolidation.status.value,
+                action="update"
+            )
+
+        return self.consolidation_repo.update(
+            consolidation,
+            data.model_dump(exclude_unset=True),
+            updated_by=updated_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def list_consolidations(
+        self,
+        filters: ConsolidationFilters = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[Consolidation], int]:
+        """Lister les consolidations."""
+        return self.consolidation_repo.list(filters=filters, page=page, page_size=page_size)
+
+    def submit_consolidation(
+        self,
+        consolidation_id: UUID,
+        submitted_by: UUID = None
+    ) -> Consolidation:
+        """Soumettre une consolidation pour revue."""
+        consolidation = self.get_consolidation(consolidation_id)
+
+        if consolidation.status != ConsolidationStatus.DRAFT:
+            raise ConsolidationStatusError(
+                consolidation.status.value,
+                ConsolidationStatus.DRAFT.value,
+                "submit"
+            )
+
+        # Verifier que tous les paquets sont valides
+        packages = self.package_repo.get_by_consolidation(consolidation_id)
+        pending = [p for p in packages if p.status != PackageStatus.VALIDATED]
+        if pending:
+            raise ConsolidationIncompleteError(
+                f"{len(pending)} paquets non valides",
+                [str(p.entity_id) for p in pending]
+            )
+
+        return self.consolidation_repo.change_status(
+            consolidation,
+            ConsolidationStatus.PENDING_REVIEW,
+            submitted_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def validate_consolidation(
+        self,
+        consolidation_id: UUID,
+        validated_by: UUID = None
+    ) -> Consolidation:
+        """Valider une consolidation."""
+        consolidation = self.get_consolidation(consolidation_id)
+
+        if consolidation.status != ConsolidationStatus.PENDING_REVIEW:
+            raise ConsolidationStatusError(
+                consolidation.status.value,
+                ConsolidationStatus.PENDING_REVIEW.value,
+                "validate"
+            )
+
+        return self.consolidation_repo.change_status(
+            consolidation,
+            ConsolidationStatus.VALIDATED,
+            validated_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def publish_consolidation(
+        self,
+        consolidation_id: UUID,
+        published_by: UUID = None
+    ) -> Consolidation:
+        """Publier une consolidation."""
+        consolidation = self.get_consolidation(consolidation_id)
+
+        if consolidation.status != ConsolidationStatus.VALIDATED:
+            raise ConsolidationStatusError(
+                consolidation.status.value,
+                ConsolidationStatus.VALIDATED.value,
+                "publish"
+            )
+
+        return self.consolidation_repo.change_status(
+            consolidation,
+            ConsolidationStatus.PUBLISHED,
+            published_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    # ========================================================================
+    # PAQUETS DE CONSOLIDATION
+    # ========================================================================
+
+    def create_package(
+        self,
+        data: ConsolidationPackageCreate,
+        created_by: UUID = None
+    ) -> ConsolidationPackage:
+        """Creer un paquet de consolidation pour une entite."""
+        # Verifier que la consolidation et l'entite existent
+        consolidation = self.get_consolidation(data.consolidation_id)
+        entity = self.get_entity(data.entity_id)
+
+        # Verifier qu'un paquet n'existe pas deja
+        if self.package_repo.exists(data.consolidation_id, data.entity_id):
+            raise PackageDuplicateError(str(data.consolidation_id), str(data.entity_id))
+
+        # Ajouter la devise de reporting
+        package_data = data.model_dump()
+        package_data["reporting_currency"] = consolidation.consolidation_currency
+
+        # Recuperer les cours de change si devise differente
+        if entity.currency != consolidation.consolidation_currency:
+            rate = self.exchange_rate_repo.get_rate(
+                entity.currency,
+                consolidation.consolidation_currency,
+                consolidation.period_end
+            )
+            if rate:
+                package_data["closing_rate"] = rate.closing_rate
+                package_data["average_rate"] = rate.average_rate
+
+        return self.package_repo.create(
+            package_data,
+            created_by=created_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def get_package(self, package_id: UUID) -> ConsolidationPackage:
+        """Recuperer un paquet par ID."""
+        package = self.package_repo.get_by_id(package_id)
+        if not package:
+            raise PackageNotFoundError(str(package_id))
+        return package
+
+    def update_package(
+        self,
+        package_id: UUID,
+        data: ConsolidationPackageUpdate,
+        updated_by: UUID = None
+    ) -> ConsolidationPackage:
+        """Mettre a jour un paquet."""
+        package = self.get_package(package_id)
+
+        if package.status in [PackageStatus.VALIDATED]:
+            raise PackageStatusError(package.status.value, "update")
+
+        return self.package_repo.update(
+            package,
+            data.model_dump(exclude_unset=True),
+            updated_by=updated_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def submit_package(
+        self,
+        package_id: UUID,
+        submitted_by: UUID = None
+    ) -> ConsolidationPackage:
+        """Soumettre un paquet pour validation."""
+        package = self.get_package(package_id)
+
+        if package.status not in [PackageStatus.NOT_STARTED, PackageStatus.IN_PROGRESS, PackageStatus.REJECTED]:
+            raise PackageStatusError(package.status.value, "submit")
+
+        return self.package_repo.submit(
+            package,
+            submitted_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def validate_package(
+        self,
+        package_id: UUID,
+        validated_by: UUID = None
+    ) -> ConsolidationPackage:
+        """Valider un paquet."""
+        package = self.get_package(package_id)
+
+        if package.status != PackageStatus.SUBMITTED:
+            raise PackageStatusError(package.status.value, "validate")
+
+        # Convertir les montants si necessaire
+        package = self._convert_package_amounts(package)
+
+        return self.package_repo.validate(
+            package,
+            validated_by or (UUID(self.user_id) if self.user_id else None)
+        )
+
+    def reject_package(
+        self,
+        package_id: UUID,
+        reason: str,
+        rejected_by: UUID = None
+    ) -> ConsolidationPackage:
+        """Rejeter un paquet."""
+        package = self.get_package(package_id)
+
+        if package.status != PackageStatus.SUBMITTED:
+            raise PackageStatusError(package.status.value, "reject")
+
+        return self.package_repo.reject(
+            package,
+            rejected_by or (UUID(self.user_id) if self.user_id else None),
+            reason
+        )
+
+    def _convert_package_amounts(
+        self,
+        package: ConsolidationPackage
+    ) -> ConsolidationPackage:
+        """Convertir les montants d'un paquet en devise de consolidation."""
+        if package.local_currency == package.reporting_currency:
+            package.total_assets_converted = package.total_assets_local
+            package.total_liabilities_converted = package.total_liabilities_local
+            package.total_equity_converted = package.total_equity_local
+            package.net_income_converted = package.net_income_local
+            package.translation_difference = Decimal("0.00")
+            return package
+
+        if not package.closing_rate or not package.average_rate:
+            raise ExchangeRateNotFoundError(
+                package.local_currency,
+                package.reporting_currency,
+                "periode"
+            )
+
+        # Conversion bilan au cours de cloture
+        package.total_assets_converted = (
+            package.total_assets_local * package.closing_rate
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        package.total_liabilities_converted = (
+            package.total_liabilities_local * package.closing_rate
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        # Conversion resultat au cours moyen
+        package.net_income_converted = (
+            package.net_income_local * package.average_rate
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        # Conversion capitaux propres (simplifiee - cours historique)
+        package.total_equity_converted = (
+            package.total_equity_local * package.closing_rate
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        # Ecart de conversion
+        package.translation_difference = (
+            package.total_assets_converted -
+            package.total_liabilities_converted -
+            package.total_equity_converted
+        )
+
+        self.db.commit()
+        self.db.refresh(package)
+        return package
+
+    # ========================================================================
+    # ELIMINATIONS INTRA-GROUPE
     # ========================================================================
 
     def generate_eliminations(
         self,
-        packages: List[ConsolidationPackage],
-        consolidation_id: str
+        consolidation_id: UUID,
+        elimination_types: List[EliminationType] = None
     ) -> List[EliminationEntry]:
-        """Génère toutes les écritures d'élimination."""
+        """Generer les ecritures d'elimination automatiques."""
+        consolidation = self.get_consolidation(consolidation_id)
+        packages = self.package_repo.get_by_consolidation(
+            consolidation_id,
+            status=[PackageStatus.VALIDATED]
+        )
+
         eliminations = []
 
-        # 1. Élimination des titres de participation et capitaux propres
-        eliminations.extend(
-            self._eliminate_investments(packages, consolidation_id)
-        )
+        # Types a traiter
+        types_to_process = elimination_types or [
+            EliminationType.CAPITAL_ELIMINATION,
+            EliminationType.INTERCOMPANY_RECEIVABLES,
+            EliminationType.INTERCOMPANY_SALES,
+            EliminationType.INTERCOMPANY_DIVIDENDS,
+            EliminationType.INTERNAL_MARGIN,
+        ]
 
-        # 2. Élimination des créances/dettes intra-groupe
-        eliminations.extend(
-            self._eliminate_intercompany_balances(packages, consolidation_id)
-        )
+        # 1. Eliminations titres/capitaux propres
+        if EliminationType.CAPITAL_ELIMINATION in types_to_process:
+            eliminations.extend(
+                self._generate_capital_eliminations(consolidation, packages)
+            )
 
-        # 3. Élimination des ventes/achats intra-groupe
-        eliminations.extend(
-            self._eliminate_intercompany_sales(packages, consolidation_id)
-        )
+        # 2. Eliminations creances/dettes
+        if EliminationType.INTERCOMPANY_RECEIVABLES in types_to_process:
+            eliminations.extend(
+                self._generate_intercompany_balance_eliminations(consolidation, packages)
+            )
 
-        # 4. Élimination des dividendes intra-groupe
-        eliminations.extend(
-            self._eliminate_dividends(packages, consolidation_id)
-        )
+        # 3. Eliminations ventes/achats
+        if EliminationType.INTERCOMPANY_SALES in types_to_process:
+            eliminations.extend(
+                self._generate_intercompany_sales_eliminations(consolidation, packages)
+            )
 
-        # 5. Élimination des marges sur stocks
-        eliminations.extend(
-            self._eliminate_internal_margins(packages, consolidation_id)
-        )
+        # 4. Eliminations dividendes
+        if EliminationType.INTERCOMPANY_DIVIDENDS in types_to_process:
+            eliminations.extend(
+                self._generate_dividend_eliminations(consolidation, packages)
+            )
+
+        # 5. Eliminations marges internes
+        if EliminationType.INTERNAL_MARGIN in types_to_process:
+            eliminations.extend(
+                self._generate_margin_eliminations(consolidation, packages)
+            )
 
         return eliminations
 
-    def _eliminate_investments(
+    def _generate_capital_eliminations(
         self,
-        packages: List[ConsolidationPackage],
-        consolidation_id: str
+        consolidation: Consolidation,
+        packages: List[ConsolidationPackage]
     ) -> List[EliminationEntry]:
-        """Élimine les titres de participation contre les capitaux propres."""
+        """Generer les eliminations titres vs capitaux propres."""
         eliminations = []
+        perimeter_id = consolidation.perimeter_id
+        entities = {str(e.id): e for e in self.entity_repo.get_by_perimeter(perimeter_id)}
+        participations = self.participation_repo._base_query().all()
 
-        for participation in self.participations.values():
-            parent = self.entities.get(participation.parent_entity_id)
-            subsidiary = self.entities.get(participation.subsidiary_entity_id)
+        for part in participations:
+            parent = entities.get(str(part.parent_id))
+            subsidiary = entities.get(str(part.subsidiary_id))
 
             if not parent or not subsidiary:
                 continue
 
-            # Intégration globale uniquement
             if subsidiary.consolidation_method != ConsolidationMethod.FULL_INTEGRATION:
                 continue
 
-            # Trouver les capitaux propres de la filiale
-            subsidiary_package = next(
-                (p for p in packages if p.entity_id == subsidiary.id),
+            # Trouver le paquet de la filiale
+            sub_package = next(
+                (p for p in packages if str(p.entity_id) == str(subsidiary.id)),
                 None
             )
-            if not subsidiary_package:
+            if not sub_package:
                 continue
 
-            # Calculer les capitaux propres
-            equity = Decimal("0")
-            for entry in subsidiary_package.trial_balance.entries:
-                if entry.account_code.startswith("1"):
-                    equity += entry.balance
+            # Calculer les capitaux propres de la filiale
+            equity = sub_package.total_equity_converted
 
             # Quote-part groupe
-            group_share = equity * participation.total_ownership / Decimal("100")
+            group_share = (equity * part.total_ownership / Decimal("100")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
 
             # Quote-part minoritaires
             minority_share = equity - group_share
 
-            # Écart d'acquisition (goodwill)
-            goodwill = participation.acquisition_cost - group_share
+            # Goodwill
+            goodwill = part.acquisition_cost - group_share
 
-            entries = [
-                # Annulation capital filiale
-                {"account": "101_ELIM", "debit": equity, "credit": Decimal("0"),
-                 "entity_id": subsidiary.id, "label": "Élimination capital filiale"},
-                # Annulation titres chez parent
-                {"account": "261_ELIM", "debit": Decimal("0"),
-                 "credit": participation.acquisition_cost,
-                 "entity_id": parent.id, "label": "Élimination titres participation"},
+            journal_entries = [
+                {
+                    "account": "101_ELIM",
+                    "debit": float(equity),
+                    "credit": 0,
+                    "label": f"Elimination capital {subsidiary.name}",
+                    "entity_id": str(subsidiary.id)
+                },
+                {
+                    "account": "261_ELIM",
+                    "debit": 0,
+                    "credit": float(part.acquisition_cost),
+                    "label": f"Elimination titres {subsidiary.name}",
+                    "entity_id": str(parent.id)
+                }
             ]
 
-            # Goodwill positif
             if goodwill > 0:
-                entries.append({
-                    "account": "207_GOODWILL", "debit": goodwill, "credit": Decimal("0"),
-                    "entity_id": "CONSO", "label": "Écart d'acquisition"
+                journal_entries.append({
+                    "account": "207_GOODWILL",
+                    "debit": float(goodwill),
+                    "credit": 0,
+                    "label": "Ecart d'acquisition",
+                    "entity_id": "CONSO"
                 })
 
-            # Intérêts minoritaires
             if minority_share > 0:
-                entries.append({
-                    "account": "105_MINORITAIRES", "debit": Decimal("0"),
-                    "credit": minority_share,
-                    "entity_id": "CONSO", "label": "Intérêts minoritaires"
+                journal_entries.append({
+                    "account": "105_MINORITAIRES",
+                    "debit": 0,
+                    "credit": float(minority_share),
+                    "label": "Interets minoritaires",
+                    "entity_id": "CONSO"
                 })
 
-            eliminations.append(EliminationEntry(
-                id=str(uuid.uuid4()),
-                consolidation_id=consolidation_id,
-                elimination_type=EliminationType.INTERCOMPANY_PROVISIONS,
-                description=f"Élimination titres {subsidiary.name}",
-                entries=entries,
-                is_automatic=True
-            ))
+            elim = self.elimination_repo.create({
+                "consolidation_id": consolidation.id,
+                "elimination_type": EliminationType.CAPITAL_ELIMINATION,
+                "description": f"Elimination titres/capitaux {subsidiary.name}",
+                "amount": equity,
+                "currency": consolidation.consolidation_currency,
+                "entity1_id": parent.id,
+                "entity2_id": subsidiary.id,
+                "journal_entries": journal_entries,
+                "is_automatic": True
+            })
+            eliminations.append(elim)
 
         return eliminations
 
-    def _eliminate_intercompany_balances(
+    def _generate_intercompany_balance_eliminations(
         self,
-        packages: List[ConsolidationPackage],
-        consolidation_id: str
+        consolidation: Consolidation,
+        packages: List[ConsolidationPackage]
     ) -> List[EliminationEntry]:
-        """Élimine les créances et dettes intra-groupe."""
+        """Generer les eliminations creances/dettes intercompany."""
         eliminations = []
 
-        # Collecter toutes les transactions intra-groupe
-        transactions_by_pair = {}
+        # Collecter les soldes intercompany
+        interco_balances = {}
         for package in packages:
-            for tx in package.intercompany_transactions:
-                if tx.elimination_type == EliminationType.INTERCOMPANY_RECEIVABLES:
-                    key = tuple(sorted([tx.entity1_id, tx.entity2_id]))
-                    if key not in transactions_by_pair:
-                        transactions_by_pair[key] = []
-                    transactions_by_pair[key].append(tx)
+            for detail in (package.intercompany_details or []):
+                key = tuple(sorted([str(package.entity_id), str(detail.get("counterparty_entity_id"))]))
+                if key not in interco_balances:
+                    interco_balances[key] = {"receivables": Decimal("0"), "payables": Decimal("0")}
 
-        # Créer les éliminations
-        for (entity1_id, entity2_id), transactions in transactions_by_pair.items():
-            total_amount = sum(tx.amount_entity1 for tx in transactions)
+                if detail.get("transaction_type") == "receivable":
+                    interco_balances[key]["receivables"] += Decimal(str(detail.get("amount", 0)))
+                elif detail.get("transaction_type") == "payable":
+                    interco_balances[key]["payables"] += Decimal(str(detail.get("amount", 0)))
 
-            if total_amount == 0:
+        for (entity1_id, entity2_id), balances in interco_balances.items():
+            amount = min(balances["receivables"], balances["payables"])
+            if amount <= 0:
                 continue
 
-            entries = [
-                {"account": "401_ELIM", "debit": total_amount, "credit": Decimal("0"),
-                 "entity_id": entity2_id, "label": "Élimination dette intra-groupe"},
-                {"account": "411_ELIM", "debit": Decimal("0"), "credit": total_amount,
-                 "entity_id": entity1_id, "label": "Élimination créance intra-groupe"},
+            journal_entries = [
+                {
+                    "account": "401_ELIM",
+                    "debit": float(amount),
+                    "credit": 0,
+                    "label": "Elimination dette IG",
+                    "entity_id": entity2_id
+                },
+                {
+                    "account": "411_ELIM",
+                    "debit": 0,
+                    "credit": float(amount),
+                    "label": "Elimination creance IG",
+                    "entity_id": entity1_id
+                }
             ]
 
-            eliminations.append(EliminationEntry(
-                id=str(uuid.uuid4()),
-                consolidation_id=consolidation_id,
-                elimination_type=EliminationType.INTERCOMPANY_RECEIVABLES,
-                description=f"Élimination créances/dettes {entity1_id} - {entity2_id}",
-                entries=entries,
-                is_automatic=True
-            ))
+            elim = self.elimination_repo.create({
+                "consolidation_id": consolidation.id,
+                "elimination_type": EliminationType.INTERCOMPANY_RECEIVABLES,
+                "description": f"Elimination creances/dettes {entity1_id} - {entity2_id}",
+                "amount": amount,
+                "currency": consolidation.consolidation_currency,
+                "entity1_id": UUID(entity1_id),
+                "entity2_id": UUID(entity2_id),
+                "journal_entries": journal_entries,
+                "is_automatic": True
+            })
+            eliminations.append(elim)
 
         return eliminations
 
-    def _eliminate_intercompany_sales(
+    def _generate_intercompany_sales_eliminations(
         self,
-        packages: List[ConsolidationPackage],
-        consolidation_id: str
+        consolidation: Consolidation,
+        packages: List[ConsolidationPackage]
     ) -> List[EliminationEntry]:
-        """Élimine les ventes et achats intra-groupe."""
+        """Generer les eliminations ventes/achats intercompany."""
         eliminations = []
 
         for package in packages:
-            for tx in package.intercompany_transactions:
-                if tx.elimination_type != EliminationType.INTERCOMPANY_SALES:
-                    continue
-
-                entries = [
-                    {"account": "707_ELIM", "debit": tx.amount_entity1,
-                     "credit": Decimal("0"),
-                     "entity_id": tx.entity1_id, "label": "Élimination ventes IG"},
-                    {"account": "607_ELIM", "debit": Decimal("0"),
-                     "credit": tx.amount_entity2,
-                     "entity_id": tx.entity2_id, "label": "Élimination achats IG"},
+            if package.intercompany_sales > 0:
+                # Elimination simplifiee basee sur les totaux declares
+                journal_entries = [
+                    {
+                        "account": "707_ELIM",
+                        "debit": float(package.intercompany_sales),
+                        "credit": 0,
+                        "label": "Elimination ventes IG",
+                        "entity_id": str(package.entity_id)
+                    },
+                    {
+                        "account": "607_ELIM",
+                        "debit": 0,
+                        "credit": float(package.intercompany_sales),
+                        "label": "Elimination achats IG",
+                        "entity_id": "CONSO"
+                    }
                 ]
 
-                eliminations.append(EliminationEntry(
-                    id=str(uuid.uuid4()),
-                    consolidation_id=consolidation_id,
-                    elimination_type=EliminationType.INTERCOMPANY_SALES,
-                    description=f"Élimination CA/achats {tx.entity1_id} - {tx.entity2_id}",
-                    entries=entries,
-                    source_transaction_id=tx.id,
-                    is_automatic=True
-                ))
+                elim = self.elimination_repo.create({
+                    "consolidation_id": consolidation.id,
+                    "elimination_type": EliminationType.INTERCOMPANY_SALES,
+                    "description": f"Elimination CA IG entite {package.entity_id}",
+                    "amount": package.intercompany_sales,
+                    "currency": consolidation.consolidation_currency,
+                    "entity1_id": package.entity_id,
+                    "journal_entries": journal_entries,
+                    "is_automatic": True
+                })
+                eliminations.append(elim)
 
         return eliminations
 
-    def _eliminate_dividends(
+    def _generate_dividend_eliminations(
         self,
-        packages: List[ConsolidationPackage],
-        consolidation_id: str
+        consolidation: Consolidation,
+        packages: List[ConsolidationPackage]
     ) -> List[EliminationEntry]:
-        """Élimine les dividendes intra-groupe."""
+        """Generer les eliminations de dividendes intercompany."""
         eliminations = []
 
         for package in packages:
-            if package.dividend_paid_to_parent == 0:
-                continue
-
-            entity = self.entities.get(package.entity_id)
-            if not entity or not entity.parent_id:
-                continue
-
-            entries = [
-                # Annulation produit chez le parent
-                {"account": "761_ELIM", "debit": package.dividend_paid_to_parent,
-                 "credit": Decimal("0"),
-                 "entity_id": entity.parent_id,
-                 "label": "Élimination dividendes reçus"},
-                # Reconstitution des réserves filiale
-                {"account": "110_ELIM", "debit": Decimal("0"),
-                 "credit": package.dividend_paid_to_parent,
-                 "entity_id": package.entity_id,
-                 "label": "Reconstitution réserves"},
-            ]
-
-            eliminations.append(EliminationEntry(
-                id=str(uuid.uuid4()),
-                consolidation_id=consolidation_id,
-                elimination_type=EliminationType.INTERCOMPANY_DIVIDENDS,
-                description=f"Élimination dividendes {entity.name}",
-                entries=entries,
-                is_automatic=True
-            ))
-
-        return eliminations
-
-    def _eliminate_internal_margins(
-        self,
-        packages: List[ConsolidationPackage],
-        consolidation_id: str
-    ) -> List[EliminationEntry]:
-        """Élimine les marges internes sur stocks."""
-        eliminations = []
-
-        for package in packages:
-            for tx in package.intercompany_transactions:
-                if tx.elimination_type != EliminationType.INTERNAL_MARGIN:
+            if package.dividends_to_parent > 0:
+                entity = self.entity_repo.get_by_id(package.entity_id)
+                if not entity or not entity.parent_entity_id:
                     continue
 
-                # La marge est la différence entre prix de vente IG et coût
-                margin = tx.amount_entity1 - tx.amount_entity2
-
-                if margin <= 0:
-                    continue
-
-                entries = [
-                    # Diminution du stock
-                    {"account": "37_ELIM", "debit": Decimal("0"), "credit": margin,
-                     "entity_id": tx.entity2_id, "label": "Élimination marge stock"},
-                    # Impact résultat
-                    {"account": "603_ELIM", "debit": margin, "credit": Decimal("0"),
-                     "entity_id": "CONSO", "label": "Variation stocks marge IG"},
+                journal_entries = [
+                    {
+                        "account": "761_ELIM",
+                        "debit": float(package.dividends_to_parent),
+                        "credit": 0,
+                        "label": "Elimination dividendes recus",
+                        "entity_id": str(entity.parent_entity_id)
+                    },
+                    {
+                        "account": "110_ELIM",
+                        "debit": 0,
+                        "credit": float(package.dividends_to_parent),
+                        "label": "Reconstitution reserves",
+                        "entity_id": str(package.entity_id)
+                    }
                 ]
 
-                eliminations.append(EliminationEntry(
-                    id=str(uuid.uuid4()),
-                    consolidation_id=consolidation_id,
-                    elimination_type=EliminationType.INTERNAL_MARGIN,
-                    description=f"Élimination marge stocks {tx.entity1_id} -> {tx.entity2_id}",
-                    entries=entries,
-                    source_transaction_id=tx.id,
-                    is_automatic=True
-                ))
+                elim = self.elimination_repo.create({
+                    "consolidation_id": consolidation.id,
+                    "elimination_type": EliminationType.INTERCOMPANY_DIVIDENDS,
+                    "description": f"Elimination dividendes {entity.name}",
+                    "amount": package.dividends_to_parent,
+                    "currency": consolidation.consolidation_currency,
+                    "entity1_id": entity.parent_entity_id,
+                    "entity2_id": package.entity_id,
+                    "journal_entries": journal_entries,
+                    "is_automatic": True
+                })
+                eliminations.append(elim)
 
         return eliminations
+
+    def _generate_margin_eliminations(
+        self,
+        consolidation: Consolidation,
+        packages: List[ConsolidationPackage]
+    ) -> List[EliminationEntry]:
+        """Generer les eliminations de marges internes sur stocks."""
+        # Implementation simplifiee - a enrichir selon les besoins metier
+        return []
+
+    # ========================================================================
+    # RECONCILIATION INTER-SOCIETES
+    # ========================================================================
+
+    def create_reconciliation(
+        self,
+        consolidation_id: UUID,
+        entity1_id: UUID,
+        entity2_id: UUID,
+        transaction_type: str,
+        amount_entity1: Decimal,
+        amount_entity2: Decimal,
+        tolerance_amount: Decimal = Decimal("0"),
+        tolerance_pct: Decimal = Decimal("0"),
+        created_by: UUID = None
+    ) -> IntercompanyReconciliation:
+        """Creer une reconciliation intercompany."""
+        return self.reconciliation_repo.create({
+            "consolidation_id": consolidation_id,
+            "entity1_id": entity1_id,
+            "entity2_id": entity2_id,
+            "transaction_type": transaction_type,
+            "amount_entity1": amount_entity1,
+            "amount_entity2": amount_entity2,
+            "tolerance_amount": tolerance_amount,
+            "tolerance_pct": tolerance_pct,
+            "currency": "EUR"
+        }, created_by=created_by or (UUID(self.user_id) if self.user_id else None))
+
+    def auto_reconcile_intercompany(
+        self,
+        consolidation_id: UUID
+    ) -> Dict[str, Any]:
+        """Reconcilier automatiquement les soldes intercompany."""
+        packages = self.package_repo.get_by_consolidation(
+            consolidation_id,
+            status=[PackageStatus.VALIDATED]
+        )
+
+        reconciliations_created = 0
+        warnings = []
+
+        # Construire une matrice des soldes intercompany
+        interco_matrix = {}
+        for package in packages:
+            for detail in (package.intercompany_details or []):
+                key = (str(package.entity_id), str(detail.get("counterparty_entity_id")), detail.get("transaction_type"))
+                if key not in interco_matrix:
+                    interco_matrix[key] = Decimal("0")
+                interco_matrix[key] += Decimal(str(detail.get("amount", 0)))
+
+        # Identifier les paires et reconcilier
+        processed = set()
+        for key, amount in interco_matrix.items():
+            entity1, entity2, tx_type = key
+            pair_key = tuple(sorted([entity1, entity2]))
+
+            if pair_key in processed:
+                continue
+
+            # Trouver le montant inverse
+            reverse_type = "payable" if tx_type == "receivable" else "receivable"
+            reverse_key = (entity2, entity1, reverse_type)
+            reverse_amount = interco_matrix.get(reverse_key, Decimal("0"))
+
+            recon = self.reconciliation_repo.create({
+                "consolidation_id": consolidation_id,
+                "entity1_id": UUID(entity1),
+                "entity2_id": UUID(entity2),
+                "transaction_type": tx_type,
+                "amount_entity1": amount,
+                "amount_entity2": reverse_amount,
+                "currency": "EUR",
+                "tolerance_amount": Decimal("1.00"),
+                "tolerance_pct": Decimal("0.01")
+            })
+
+            reconciliations_created += 1
+            processed.add(pair_key)
+
+            if not recon.is_within_tolerance:
+                warnings.append(
+                    f"Ecart hors tolerance entre {entity1} et {entity2}: {recon.difference}"
+                )
+
+        return {
+            "reconciliations_created": reconciliations_created,
+            "warnings": warnings
+        }
+
+    def get_reconciliation_summary(
+        self,
+        consolidation_id: UUID
+    ) -> Dict[str, Any]:
+        """Obtenir le resume des reconciliations."""
+        return self.reconciliation_repo.get_summary(consolidation_id)
 
     # ========================================================================
     # CALCUL DES MINORITAIRES
@@ -967,247 +1220,473 @@ class ConsolidationService:
 
     def calculate_minority_interests(
         self,
-        packages: List[ConsolidationPackage]
+        consolidation_id: UUID
     ) -> List[MinorityInterest]:
-        """Calcule les intérêts minoritaires."""
+        """Calculer les interets minoritaires."""
+        consolidation = self.get_consolidation(consolidation_id)
+        perimeter_id = consolidation.perimeter_id
+        packages = self.package_repo.get_by_consolidation(
+            consolidation_id,
+            status=[PackageStatus.VALIDATED]
+        )
+
         interests = []
+        entities = {str(e.id): e for e in self.entity_repo.get_by_perimeter(perimeter_id)}
 
         for package in packages:
-            entity = self.entities.get(package.entity_id)
+            entity = entities.get(str(package.entity_id))
             if not entity:
                 continue
 
-            # Seulement pour les filiales non détenues à 100%
-            if entity.ownership_percentage >= Decimal("100"):
+            # Seulement pour les filiales non detenues a 100%
+            if entity.total_ownership_pct >= Decimal("100"):
                 continue
 
-            minority_pct = Decimal("100") - entity.ownership_percentage
+            group_pct = entity.total_ownership_pct
+            minority_pct = Decimal("100") - group_pct
 
-            # Calculer les capitaux propres et le résultat
-            equity = Decimal("0")
-            net_income = Decimal("0")
+            equity = package.total_equity_converted
+            net_income = package.net_income_converted
 
-            for entry in package.trial_balance.entries:
-                if entry.account_code.startswith("1"):
-                    equity += entry.balance
-                elif entry.account_code.startswith("12"):
-                    net_income = entry.balance
-
-            interests.append(MinorityInterest(
+            minority = MinorityInterest(
+                tenant_id=self.tenant_id,
+                consolidation_id=consolidation_id,
                 entity_id=entity.id,
-                period_end=package.period_end,
+                period_end=consolidation.period_end,
+                group_ownership_pct=group_pct,
+                minority_pct=minority_pct,
                 total_equity=equity,
-                minority_percentage=minority_pct,
-                minority_share=equity * minority_pct / Decimal("100"),
+                group_share_equity=(equity * group_pct / Decimal("100")).quantize(Decimal("0.01")),
+                minority_share_equity=(equity * minority_pct / Decimal("100")).quantize(Decimal("0.01")),
                 net_income=net_income,
-                minority_income=net_income * minority_pct / Decimal("100")
-            ))
+                group_share_income=(net_income * group_pct / Decimal("100")).quantize(Decimal("0.01")),
+                minority_share_income=(net_income * minority_pct / Decimal("100")).quantize(Decimal("0.01")),
+                currency=consolidation.consolidation_currency
+            )
+            self.db.add(minority)
+            interests.append(minority)
 
+        self.db.commit()
         return interests
 
     # ========================================================================
-    # CONSOLIDATION PRINCIPALE
+    # EXECUTION DE LA CONSOLIDATION
     # ========================================================================
 
-    def consolidate(
+    def execute_consolidation(
         self,
-        period_start: date,
-        period_end: date,
-        packages: List[ConsolidationPackage]
-    ) -> ConsolidationResult:
+        consolidation_id: UUID
+    ) -> Dict[str, Any]:
         """
-        Effectue la consolidation complète.
+        Executer le processus de consolidation complet.
 
-        Args:
-            period_start: Début de période
-            period_end: Fin de période
-            packages: Paquets de consolidation des entités
-
-        Returns:
-            Résultat de la consolidation
+        1. Verifier les prerequis (paquets, cours de change)
+        2. Convertir les devises
+        3. Generer les eliminations
+        4. Calculer les minoritaires
+        5. Agreger les soldes
+        6. Mettre a jour les totaux
         """
-        consolidation_id = str(uuid.uuid4())
+        consolidation = self.get_consolidation(consolidation_id)
 
-        # 1. Déterminer le périmètre
-        perimeter = self.get_consolidation_perimeter(period_end)
-        entity_ids = {e.id for e in perimeter}
+        if consolidation.status not in [ConsolidationStatus.DRAFT, ConsolidationStatus.IN_PROGRESS]:
+            raise ConsolidationStatusError(consolidation.status.value, action="execute")
 
-        # Filtrer les packages
-        valid_packages = [
-            p for p in packages
-            if p.entity_id in entity_ids
-        ]
-
-        # 2. Conversion des devises
-        converted_balances = {}
-        currency_translations = {}
-
-        for package in valid_packages:
-            entity = self.entities.get(package.entity_id)
-            if not entity:
-                continue
-
-            if entity.currency == self.consolidation_currency:
-                converted_balances[entity.id] = package.trial_balance
-            else:
-                rate = self.get_exchange_rate(
-                    entity.currency,
-                    self.consolidation_currency,
-                    period_end
-                )
-                if rate:
-                    converted, translation = self.convert_trial_balance(
-                        package.trial_balance,
-                        self.consolidation_currency,
-                        rate
-                    )
-                    converted_balances[entity.id] = converted
-                    if translation:
-                        currency_translations[entity.id] = translation
-
-        # 3. Génération des éliminations
-        eliminations = self.generate_eliminations(valid_packages, consolidation_id)
-
-        # 4. Calcul des minoritaires
-        minority_interests = self.calculate_minority_interests(valid_packages)
-
-        # 5. Calcul des goodwills
-        goodwill_calculations = self._calculate_goodwills(valid_packages, period_end)
-
-        # 6. Agrégation de la balance consolidée
-        consolidated_balance = self._aggregate_balances(
-            converted_balances,
-            eliminations
+        # Passer en statut IN_PROGRESS
+        self.consolidation_repo.change_status(
+            consolidation,
+            ConsolidationStatus.IN_PROGRESS,
+            UUID(self.user_id) if self.user_id else None
         )
 
-        # 7. Calcul de l'écart de conversion total
-        total_translation_diff = sum(
-            t.translation_difference for t in currency_translations.values()
-        )
+        results = {
+            "packages_processed": 0,
+            "eliminations_generated": 0,
+            "minority_interests": 0,
+            "warnings": [],
+            "errors": []
+        }
 
-        return ConsolidationResult(
-            id=consolidation_id,
-            tenant_id=self.tenant_id,
-            period_start=period_start,
-            period_end=period_end,
-            consolidation_currency=self.consolidation_currency,
-            accounting_standard=self.accounting_standard,
-            entities=perimeter,
-            participations=list(self.participations.values()),
-            entity_balances=converted_balances,
-            currency_translations=currency_translations,
-            elimination_entries=eliminations,
-            consolidated_trial_balance=consolidated_balance,
-            minority_interests=minority_interests,
-            goodwill_calculations=goodwill_calculations,
-            total_translation_difference=total_translation_diff
-        )
-
-    def _calculate_goodwills(
-        self,
-        packages: List[ConsolidationPackage],
-        period_end: date
-    ) -> List[GoodwillCalculation]:
-        """Calcule les écarts d'acquisition."""
-        calculations = []
-
-        for participation in self.participations.values():
-            subsidiary = self.entities.get(participation.subsidiary_entity_id)
-            if not subsidiary:
-                continue
-
-            if subsidiary.consolidation_method != ConsolidationMethod.FULL_INTEGRATION:
-                continue
-
-            # Trouver le package de la filiale
-            package = next(
-                (p for p in packages if p.entity_id == subsidiary.id),
-                None
+        try:
+            # 1. Verifier les cours de change
+            missing_rates = self.check_required_exchange_rates(
+                consolidation.perimeter_id,
+                consolidation.period_end,
+                consolidation.consolidation_currency
             )
-            if not package:
-                continue
+            if missing_rates:
+                results["warnings"].append(f"Cours manquants: {', '.join(missing_rates)}")
 
-            # Calculer l'actif net
-            assets = Decimal("0")
-            liabilities = Decimal("0")
+            # 2. Traiter les paquets
+            packages = self.package_repo.get_by_consolidation(
+                consolidation_id,
+                status=[PackageStatus.VALIDATED]
+            )
+            results["packages_processed"] = len(packages)
 
-            for entry in package.trial_balance.entries:
-                account_class = entry.account_code[0] if entry.account_code else "0"
-                if account_class in ["2", "3", "4", "5"]:
-                    if entry.balance >= 0:
-                        assets += entry.balance
-                    else:
-                        liabilities += abs(entry.balance)
-                elif account_class == "1":
-                    # Capitaux propres
-                    pass
+            # 3. Generer les eliminations
+            eliminations = self.generate_eliminations(consolidation_id)
+            results["eliminations_generated"] = len(eliminations)
 
-            net_assets = assets - liabilities
-            group_share = net_assets * participation.total_ownership / Decimal("100")
-            goodwill = participation.acquisition_cost - group_share
+            # 4. Calculer les minoritaires
+            minorities = self.calculate_minority_interests(consolidation_id)
+            results["minority_interests"] = len(minorities)
 
-            calculations.append(GoodwillCalculation(
-                participation_id=participation.id,
-                calculation_date=period_end,
-                acquisition_cost=participation.acquisition_cost,
-                net_assets_fair_value=net_assets,
-                ownership_percentage=participation.total_ownership,
-                group_share_net_assets=group_share,
-                goodwill=goodwill,
-                assets_fair_value=assets,
-                liabilities_fair_value=liabilities
-            ))
+            # 5. Calculer les totaux
+            totals = self._calculate_consolidated_totals(consolidation_id)
 
-        return calculations
+            # 6. Mettre a jour la consolidation
+            self.consolidation_repo.update_totals(
+                consolidation,
+                totals,
+                UUID(self.user_id) if self.user_id else None
+            )
 
-    def _aggregate_balances(
+            # Log
+            self._log_action(
+                "execute_consolidation",
+                consolidation_id=consolidation_id,
+                target_type="Consolidation",
+                target_id=consolidation_id,
+                new_values=results
+            )
+
+        except Exception as e:
+            results["errors"].append(str(e))
+            # Remettre en DRAFT en cas d'erreur
+            self.consolidation_repo.change_status(
+                consolidation,
+                ConsolidationStatus.DRAFT,
+                UUID(self.user_id) if self.user_id else None
+            )
+
+        return results
+
+    def _calculate_consolidated_totals(
         self,
-        converted_balances: Dict[str, EntityTrialBalance],
-        eliminations: List[EliminationEntry]
-    ) -> List[TrialBalanceEntry]:
-        """Agrège les balances avec les éliminations."""
-        # Accumulateur par compte
-        accounts: Dict[str, Dict[str, Decimal]] = {}
+        consolidation_id: UUID
+    ) -> Dict[str, Decimal]:
+        """Calculer les totaux consolides."""
+        packages = self.package_repo.get_by_consolidation(
+            consolidation_id,
+            status=[PackageStatus.VALIDATED]
+        )
+        eliminations = self.elimination_repo.list_by_consolidation(consolidation_id)
+        minorities = self.db.query(MinorityInterest).filter(
+            MinorityInterest.tenant_id == self.tenant_id,
+            MinorityInterest.consolidation_id == consolidation_id
+        ).all()
 
-        # Ajouter les balances des entités
-        for entity_id, balance in converted_balances.items():
-            for entry in balance.entries:
-                if entry.account_code not in accounts:
-                    accounts[entry.account_code] = {
-                        "name": entry.account_name,
-                        "debit": Decimal("0"),
-                        "credit": Decimal("0")
-                    }
-                accounts[entry.account_code]["debit"] += entry.debit
-                accounts[entry.account_code]["credit"] += entry.credit
+        # Sommes brutes
+        total_assets = sum(p.total_assets_converted for p in packages)
+        total_liabilities = sum(p.total_liabilities_converted for p in packages)
+        total_equity = sum(p.total_equity_converted for p in packages)
+        total_revenue = Decimal("0")  # A calculer depuis les balances
+        net_income = sum(p.net_income_converted for p in packages)
+        translation_diff = sum(p.translation_difference for p in packages)
 
-        # Appliquer les éliminations
+        # Appliquer les eliminations
         for elim in eliminations:
-            for entry in elim.entries:
-                account_code = entry.get("account", "")
-                if account_code not in accounts:
-                    accounts[account_code] = {
-                        "name": entry.get("label", ""),
-                        "debit": Decimal("0"),
-                        "credit": Decimal("0")
-                    }
-                accounts[account_code]["debit"] += Decimal(str(entry.get("debit", 0)))
-                accounts[account_code]["credit"] += Decimal(str(entry.get("credit", 0)))
+            for entry in (elim.journal_entries or []):
+                amount = Decimal(str(entry.get("debit", 0))) - Decimal(str(entry.get("credit", 0)))
+                account = entry.get("account", "")
 
-        # Construire le résultat
-        result = []
-        for code, data in sorted(accounts.items()):
-            balance = data["debit"] - data["credit"]
-            result.append(TrialBalanceEntry(
-                account_code=code,
-                account_name=data["name"],
-                debit=data["debit"],
-                credit=data["credit"],
-                balance=balance,
-                currency=self.consolidation_currency
-            ))
+                if account.startswith("1"):  # Capitaux propres
+                    total_equity -= amount
+                elif account.startswith(("2", "3", "5")):  # Actifs
+                    total_assets -= amount
+                elif account.startswith("4"):  # Dettes
+                    total_liabilities -= amount
+                elif account.startswith("7"):  # Produits
+                    total_revenue -= amount
+                elif account.startswith("6"):  # Charges
+                    net_income += amount
 
-        return result
+        # Calcul des parts
+        minority_equity = sum(m.minority_share_equity for m in minorities)
+        minority_income = sum(m.minority_share_income for m in minorities)
+        group_equity = total_equity - minority_equity
+        group_income = net_income - minority_income
+
+        # Goodwill
+        goodwill_query = self.db.query(GoodwillCalculation).filter(
+            GoodwillCalculation.tenant_id == self.tenant_id,
+            GoodwillCalculation.consolidation_id == consolidation_id
+        )
+        total_goodwill = sum(g.carrying_value for g in goodwill_query.all())
+
+        return {
+            "total_assets": total_assets,
+            "total_liabilities": total_liabilities,
+            "total_equity": total_equity,
+            "group_equity": group_equity,
+            "minority_interests": minority_equity,
+            "consolidated_revenue": total_revenue,
+            "consolidated_net_income": net_income,
+            "group_net_income": group_income,
+            "minority_net_income": minority_income,
+            "translation_difference": translation_diff,
+            "total_goodwill": total_goodwill
+        }
+
+    # ========================================================================
+    # RAPPORTS CONSOLIDES
+    # ========================================================================
+
+    def generate_report(
+        self,
+        request: GenerateReportRequest
+    ) -> ConsolidatedReport:
+        """Generer un rapport consolide."""
+        consolidation = self.get_consolidation(request.consolidation_id)
+
+        # Construire les donnees du rapport
+        report_data = {}
+
+        if request.report_type == ReportType.BALANCE_SHEET:
+            report_data = self._build_balance_sheet(consolidation)
+        elif request.report_type == ReportType.INCOME_STATEMENT:
+            report_data = self._build_income_statement(consolidation)
+        elif request.report_type == ReportType.EQUITY_VARIATION:
+            report_data = self._build_equity_variation(consolidation)
+        elif request.report_type == ReportType.CONSOLIDATION_PACKAGE:
+            report_data = self._build_consolidation_package(consolidation)
+
+        # Donnees comparatives
+        comparative_data = {}
+        if request.include_comparative and request.comparative_consolidation_id:
+            comparative = self.consolidation_repo.get_by_id(request.comparative_consolidation_id)
+            if comparative:
+                if request.report_type == ReportType.BALANCE_SHEET:
+                    comparative_data = self._build_balance_sheet(comparative)
+                elif request.report_type == ReportType.INCOME_STATEMENT:
+                    comparative_data = self._build_income_statement(comparative)
+
+        return self.report_repo.create({
+            "consolidation_id": consolidation.id,
+            "report_type": request.report_type,
+            "name": f"{request.report_type.value} - {consolidation.name}",
+            "period_start": consolidation.period_start,
+            "period_end": consolidation.period_end,
+            "report_data": report_data,
+            "comparative_data": comparative_data,
+            "parameters": request.parameters
+        }, created_by=UUID(self.user_id) if self.user_id else None)
+
+    def _build_balance_sheet(self, consolidation: Consolidation) -> Dict[str, Any]:
+        """Construire les donnees du bilan consolide."""
+        return {
+            "assets": {
+                "non_current": {
+                    "goodwill": str(consolidation.total_goodwill),
+                    "intangible_assets": "0.00",
+                    "tangible_assets": "0.00",
+                    "financial_assets": "0.00",
+                    "total": str(consolidation.total_goodwill)
+                },
+                "current": {
+                    "inventories": "0.00",
+                    "receivables": "0.00",
+                    "cash": "0.00",
+                    "total": str(consolidation.total_assets - consolidation.total_goodwill)
+                },
+                "total": str(consolidation.total_assets)
+            },
+            "liabilities": {
+                "equity": {
+                    "share_capital": "0.00",
+                    "reserves": "0.00",
+                    "retained_earnings": "0.00",
+                    "net_income_group": str(consolidation.group_net_income),
+                    "translation_reserve": str(consolidation.translation_difference),
+                    "group_equity": str(consolidation.group_equity),
+                    "minority_interests": str(consolidation.minority_interests),
+                    "total": str(consolidation.total_equity)
+                },
+                "non_current": {
+                    "long_term_debt": "0.00",
+                    "provisions": "0.00",
+                    "total": "0.00"
+                },
+                "current": {
+                    "short_term_debt": "0.00",
+                    "payables": "0.00",
+                    "total": str(consolidation.total_liabilities)
+                },
+                "total": str(consolidation.total_liabilities + consolidation.total_equity)
+            },
+            "currency": consolidation.consolidation_currency,
+            "period_end": str(consolidation.period_end)
+        }
+
+    def _build_income_statement(self, consolidation: Consolidation) -> Dict[str, Any]:
+        """Construire les donnees du compte de resultat consolide."""
+        return {
+            "revenue": str(consolidation.consolidated_revenue),
+            "cost_of_sales": "0.00",
+            "gross_profit": "0.00",
+            "operating_expenses": "0.00",
+            "operating_income": "0.00",
+            "financial_result": "0.00",
+            "income_before_tax": "0.00",
+            "income_tax": "0.00",
+            "net_income": str(consolidation.consolidated_net_income),
+            "attributable_to": {
+                "owners_of_parent": str(consolidation.group_net_income),
+                "minority_interests": str(consolidation.minority_net_income)
+            },
+            "currency": consolidation.consolidation_currency,
+            "period": {
+                "start": str(consolidation.period_start),
+                "end": str(consolidation.period_end)
+            }
+        }
+
+    def _build_equity_variation(self, consolidation: Consolidation) -> Dict[str, Any]:
+        """Construire le tableau de variation des capitaux propres."""
+        return {
+            "opening_balance": {
+                "group_equity": "0.00",
+                "minority_interests": "0.00",
+                "total": "0.00"
+            },
+            "movements": {
+                "net_income": {
+                    "group": str(consolidation.group_net_income),
+                    "minority": str(consolidation.minority_net_income)
+                },
+                "dividends": "0.00",
+                "scope_changes": "0.00",
+                "translation_differences": str(consolidation.translation_difference),
+                "other": "0.00"
+            },
+            "closing_balance": {
+                "group_equity": str(consolidation.group_equity),
+                "minority_interests": str(consolidation.minority_interests),
+                "total": str(consolidation.total_equity)
+            },
+            "currency": consolidation.consolidation_currency
+        }
+
+    def _build_consolidation_package(self, consolidation: Consolidation) -> Dict[str, Any]:
+        """Construire la liasse de consolidation."""
+        packages = self.package_repo.get_by_consolidation(consolidation.id)
+        eliminations = self.elimination_repo.list_by_consolidation(consolidation.id)
+
+        return {
+            "perimeter": {
+                "entities_count": len(packages),
+                "consolidation_currency": consolidation.consolidation_currency,
+                "accounting_standard": consolidation.accounting_standard.value
+            },
+            "packages": [
+                {
+                    "entity_id": str(p.entity_id),
+                    "status": p.status.value,
+                    "local_currency": p.local_currency,
+                    "total_assets": str(p.total_assets_converted),
+                    "total_equity": str(p.total_equity_converted),
+                    "net_income": str(p.net_income_converted)
+                }
+                for p in packages
+            ],
+            "eliminations": {
+                "count": len(eliminations),
+                "total_amount": str(sum(e.amount for e in eliminations)),
+                "by_type": {}
+            },
+            "consolidated_totals": {
+                "total_assets": str(consolidation.total_assets),
+                "total_equity": str(consolidation.total_equity),
+                "group_equity": str(consolidation.group_equity),
+                "minority_interests": str(consolidation.minority_interests),
+                "net_income": str(consolidation.consolidated_net_income)
+            }
+        }
+
+    # ========================================================================
+    # DASHBOARD
+    # ========================================================================
+
+    def get_dashboard(self) -> Dict[str, Any]:
+        """Obtenir les statistiques du dashboard."""
+        # Perimetres actifs
+        perimeters, _ = self.perimeter_repo.list(is_active=True, page_size=1000)
+
+        # Entites par methode
+        entities, _ = self.entity_repo.list(page_size=1000)
+        entities_by_method = {}
+        for e in entities:
+            method = e.consolidation_method.value
+            entities_by_method[method] = entities_by_method.get(method, 0) + 1
+
+        # Consolidations en cours
+        consos_progress, _ = self.consolidation_repo.list(
+            ConsolidationFilters(status=[ConsolidationStatus.DRAFT, ConsolidationStatus.IN_PROGRESS]),
+            page_size=1000
+        )
+        consos_validated, _ = self.consolidation_repo.list(
+            ConsolidationFilters(status=[ConsolidationStatus.VALIDATED, ConsolidationStatus.PUBLISHED]),
+            page_size=1000
+        )
+
+        # Paquets
+        packages_pending, _ = self.package_repo.list(
+            PackageFilters(status=[PackageStatus.SUBMITTED]),
+            page_size=1000
+        )
+        packages_validated, _ = self.package_repo.list(
+            PackageFilters(status=[PackageStatus.VALIDATED]),
+            page_size=1000
+        )
+
+        return {
+            "active_perimeters": len(perimeters),
+            "total_entities": len(entities),
+            "entities_by_method": entities_by_method,
+            "consolidations_in_progress": len(consos_progress),
+            "consolidations_validated": len(consos_validated),
+            "packages_pending": len(packages_pending),
+            "packages_validated": len(packages_validated),
+            "packages_rejected": 0,  # A calculer
+            "total_intercompany_balance": Decimal("0"),  # A calculer
+            "unreconciled_items": 0,  # A calculer
+            "reconciliation_rate": Decimal("0"),
+            "total_eliminations": 0,
+            "elimination_amount": Decimal("0"),
+            "total_goodwill": Decimal("0"),
+            "total_impairment": Decimal("0")
+        }
+
+    # ========================================================================
+    # AUDIT
+    # ========================================================================
+
+    def _log_action(
+        self,
+        action: str,
+        consolidation_id: UUID = None,
+        entity_id: UUID = None,
+        target_type: str = None,
+        target_id: UUID = None,
+        old_values: Dict = None,
+        new_values: Dict = None,
+        description: str = None
+    ):
+        """Enregistrer une action dans le journal d'audit."""
+        if self.user_id:
+            self.audit_repo.create(
+                action=action,
+                user_id=UUID(self.user_id),
+                consolidation_id=consolidation_id,
+                entity_id=entity_id,
+                target_type=target_type,
+                target_id=target_id,
+                old_values=old_values,
+                new_values=new_values,
+                description=description,
+                action_category="consolidation"
+            )
 
 
 # ============================================================================
@@ -1215,13 +1694,13 @@ class ConsolidationService:
 # ============================================================================
 
 def create_consolidation_service(
+    db: Session,
     tenant_id: str,
-    consolidation_currency: str = "EUR",
-    accounting_standard: AccountingStandard = AccountingStandard.FRENCH_GAAP
+    user_id: str = None
 ) -> ConsolidationService:
-    """Crée un service de consolidation configuré."""
+    """Creer un service de consolidation configure."""
     return ConsolidationService(
+        db=db,
         tenant_id=tenant_id,
-        consolidation_currency=consolidation_currency,
-        accounting_standard=accounting_standard
+        user_id=user_id
     )

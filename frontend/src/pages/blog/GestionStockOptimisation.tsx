@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Calendar, Clock, User, ArrowLeft, ArrowRight, Share2, Bookmark, Package, TrendingDown, AlertTriangle, CheckCircle, BarChart3 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 
 const GestionStockOptimisation: React.FC = () => {
   const publishDate = '2026-01-15';

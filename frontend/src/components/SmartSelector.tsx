@@ -130,12 +130,12 @@ export function SmartSelector<T extends SelectorItem>({
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (data: Record<string, any>) => {
-      const payload: Record<string, any> = { ...data };
+    mutationFn: async (data: Record<string, unknown>) => {
+      const payload: Record<string, unknown> = { ...data };
       // Convert number fields
       createFields.forEach(field => {
         if (field.type === 'number' && data[field.key]) {
-          payload[field.key] = parseFloat(data[field.key]);
+          payload[field.key] = parseFloat(String(data[field.key]));
         }
       });
       const response = await api.post<T>(createEndpoint, payload);

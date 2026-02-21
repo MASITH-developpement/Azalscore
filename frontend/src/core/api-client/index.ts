@@ -103,12 +103,12 @@ const createApiClient = (): AxiosInstance => {
   // Intercepteur requêtes - Auth gate + Ajout du token
   // RÈGLE : Aucune requête métier ne part sans token valide.
   // Les endpoints /auth/* sont exemptés (login, refresh, register).
+  // Note: CSRF non nécessaire car le backend bypasse CSRF pour les requêtes Bearer token
   client.interceptors.request.use(
     (config) => {
       const token = tokenManager.getAccessToken();
 
       // Auth gate : bloquer les requêtes métier si pas de token
-      // Note: /auth/capabilities nécessite un token (c'est un endpoint authentifié)
       const isPublicAuthEndpoint = (
         config.url?.includes('/auth/login') ||
         config.url?.includes('/auth/register') ||

@@ -130,7 +130,7 @@ export const UserPermissionsTab: React.FC<TabContentProps<AdminUser>> = ({ data:
         ) : (
           <div className="azals-empty azals-empty--sm">
             <Search size={32} className="text-muted" />
-            <p className="text-muted">Aucune permission trouvee pour "{searchTerm}"</p>
+            <p className="text-muted">Aucune permission trouvee pour &quot;{searchTerm}&quot;</p>
           </div>
         )}
       </Card>

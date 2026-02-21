@@ -32,7 +32,7 @@ export const AuditDocumentsTab: React.FC<TabContentProps<Audit>> = ({ data: audi
           <div className="flex items-center gap-4 p-4 bg-green-50 rounded border border-green-200">
             <FileText size={32} className="text-green-500" />
             <div className="flex-1">
-              <div className="font-medium">Rapport d'audit - {audit.code}</div>
+              <div className="font-medium">Rapport d&apos;audit - {audit.code}</div>
               <div className="text-sm text-muted">
                 {audit.report_date ? `Emis le ${formatDate(audit.report_date)}` : 'Rapport disponible'}
               </div>

@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Share2, Bookmark, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 
 // Composant pour les callouts
 const Callout: React.FC<{ type: 'info' | 'warning' | 'success'; title: string; children: React.ReactNode }> = ({

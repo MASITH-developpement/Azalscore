@@ -784,11 +784,12 @@ def get_export(
 # ============================================================================
 
 @router.get("/overview", response_model=BIOverview)
+@router.get("/stats", response_model=BIOverview)
 def get_overview(
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_context)
 ):
-    """Vue d'ensemble BI."""
+    """Vue d'ensemble BI (alias: /stats)."""
     service = get_bi_service(db, context.tenant_id, str(context.user_id))
     data = service.get_overview()
 

@@ -235,7 +235,7 @@ export const TicketInfoTab: React.FC<TabContentProps<Ticket>> = ({ data: ticket 
               )}
             </div>
           ) : (
-            <p className="text-muted">En attente d'evaluation</p>
+            <p className="text-muted">En attente d&apos;evaluation</p>
           )}
         </Card>
       )}

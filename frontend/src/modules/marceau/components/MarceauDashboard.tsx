@@ -97,7 +97,7 @@ export function MarceauDashboard() {
         <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Actions aujourd'hui</p>
+              <p className="text-sm text-gray-500">Actions aujourd&apos;hui</p>
               <p className="text-2xl font-bold">{data.total_actions_today}</p>
             </div>
             <div className="flex items-center gap-1">

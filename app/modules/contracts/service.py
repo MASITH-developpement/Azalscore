@@ -1,1147 +1,1473 @@
 """
-Module de Gestion des Contrats (CLM) - GAP-035
+AZALS MODULE CONTRACTS - Service
+=================================
 
-Contract Lifecycle Management complet:
-- Création et rédaction de contrats
-- Templates et clauses réutilisables
-- Workflow de négociation et approbation
-- Signature électronique intégrée
-- Suivi des obligations et jalons
-- Alertes de renouvellement/échéance
-- Gestion des avenants
-- Archivage et recherche
+Service de gestion des contrats (CLM - Contract Lifecycle Management).
+Logique metier complete integrant les meilleures pratiques de:
+Sage, Odoo, Microsoft Dynamics 365, Axonaut, Pennylane.
 
-Fonctionnalités:
-- Multi-parties (clients, fournisseurs, partenaires)
-- Versioning et historique
-- Conformité RGPD
-- Extraction IA des clauses clés
-
-Architecture multi-tenant avec isolation stricte.
+Fonctionnalites:
+- CRUD contrats client/fournisseur
+- Types de contrats configurables
+- Lignes avec facturation recurrente
+- Avenants et modifications
+- Renouvellements automatiques
+- Workflow de validation multi-niveaux
+- Alertes et echeances
+- Dashboard et rapports
 """
 
-from dataclasses import dataclass, field
 from datetime import datetime, date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
-from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
-import uuid
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
+import uuid as uuid_lib
+
+from sqlalchemy.orm import Session
+
+from .models import (
+    Contract, ContractParty, ContractLine, ContractClause,
+    ContractObligation, ContractMilestone, ContractAmendment,
+    ContractRenewal, ContractDocument, ContractAlert,
+    ContractApproval, ContractHistory, ContractCategory,
+    ContractTemplate, ClauseTemplate, ContractMetrics,
+    ContractStatus, ContractType, PartyRole, RenewalType,
+    BillingFrequency, AmendmentType, ObligationType,
+    ObligationStatus, AlertType, AlertPriority, ApprovalStatus
+)
+from .repository import (
+    ContractRepository, ContractPartyRepository, ContractLineRepository,
+    ContractObligationRepository, ContractMilestoneRepository,
+    ContractAmendmentRepository, ContractAlertRepository,
+    ContractApprovalRepository, ContractCategoryRepository,
+    ContractTemplateRepository, ContractMetricsRepository
+)
+from .schemas import (
+    ContractCreate, ContractUpdate, ContractResponse, ContractSummaryResponse,
+    ContractFilters, ContractListResponse, ContractStatsResponse,
+    ContractDashboardResponse, ContractPartyCreate, ContractPartyUpdate,
+    ContractLineCreate, ContractLineUpdate, ContractClauseCreate,
+    ContractObligationCreate, ContractObligationUpdate,
+    ContractMilestoneCreate, ContractMilestoneUpdate,
+    ContractAmendmentCreate, ContractAmendmentUpdate,
+    ContractAlertCreate, ContractAlertUpdate,
+    ContractCategoryCreate, ContractCategoryUpdate,
+    ContractTemplateCreate, ContractTemplateUpdate,
+    ContractSubmitForApprovalRequest, ContractTerminateRequest,
+    ContractRenewRequest, ApprovalDecisionRequest
+)
+from .exceptions import (
+    ContractNotFoundError, ContractDuplicateError, ContractValidationError,
+    ContractStateError, ContractNotEditableError, ContractExpiredError,
+    PartyNotFoundError, PartyAlreadySignedError, MissingPartyError,
+    ContractLineNotFoundError, ObligationNotFoundError,
+    MilestoneNotFoundError, MilestoneDependencyError,
+    AmendmentNotFoundError, AmendmentNotAllowedError,
+    RenewalNotAllowedError, MaxRenewalsReachedError,
+    ApprovalNotFoundError, ApprovalNotAuthorizedError,
+    ApprovalAlreadyProcessedError, ApprovalRequiredError,
+    TemplateNotFoundError, CategoryNotFoundError,
+    AlertNotFoundError, ContractVersionConflictError
+)
 
-
-# ============================================================================
-# ÉNUMÉRATIONS
-# ============================================================================
-
-class ContractType(Enum):
-    """Type de contrat."""
-    # Commercial
-    SALES = "sales"  # Vente
-    PURCHASE = "purchase"  # Achat
-    SERVICE = "service"  # Prestation de services
-    SUBSCRIPTION = "subscription"  # Abonnement
-    LICENSE = "license"  # Licence logicielle
-    DISTRIBUTION = "distribution"  # Distribution
-    FRANCHISE = "franchise"  # Franchise
-    AGENCY = "agency"  # Agent commercial
-
-    # Partenariats
-    PARTNERSHIP = "partnership"  # Partenariat
-    JOINT_VENTURE = "joint_venture"  # Coentreprise
-    CONSORTIUM = "consortium"  # Consortium
-
-    # Confidentialité
-    NDA = "nda"  # Accord de confidentialité
-    NON_COMPETE = "non_compete"  # Non-concurrence
-
-    # Immobilier
-    LEASE = "lease"  # Bail commercial
-    SUBLEASE = "sublease"  # Sous-location
-
-    # RH
-    EMPLOYMENT = "employment"  # Contrat de travail
-    CONSULTING = "consulting"  # Consultant
-    INTERNSHIP = "internship"  # Stage
-
-    # Autres
-    MAINTENANCE = "maintenance"  # Maintenance
-    SLA = "sla"  # Accord de niveau de service
-    OTHER = "other"  # Autre
-
-
-class ContractStatus(Enum):
-    """Statut du contrat."""
-    DRAFT = "draft"  # Brouillon
-    IN_NEGOTIATION = "in_negotiation"  # En négociation
-    PENDING_APPROVAL = "pending_approval"  # En attente approbation
-    PENDING_SIGNATURE = "pending_signature"  # En attente signature
-    ACTIVE = "active"  # Actif
-    SUSPENDED = "suspended"  # Suspendu
-    EXPIRED = "expired"  # Expiré
-    TERMINATED = "terminated"  # Résilié
-    RENEWED = "renewed"  # Renouvelé
-    ARCHIVED = "archived"  # Archivé
-
-
-class PartyRole(Enum):
-    """Rôle d'une partie dans le contrat."""
-    CONTRACTOR = "contractor"  # Prestataire
-    CLIENT = "client"  # Client
-    SUPPLIER = "supplier"  # Fournisseur
-    PARTNER = "partner"  # Partenaire
-    EMPLOYER = "employer"  # Employeur
-    EMPLOYEE = "employee"  # Employé
-    LICENSOR = "licensor"  # Concédant
-    LICENSEE = "licensee"  # Licencié
-    LANDLORD = "landlord"  # Bailleur
-    TENANT = "tenant"  # Locataire
-
-
-class ObligationType(Enum):
-    """Type d'obligation contractuelle."""
-    PAYMENT = "payment"  # Paiement
-    DELIVERY = "delivery"  # Livraison
-    PERFORMANCE = "performance"  # Exécution
-    REPORTING = "reporting"  # Reporting
-    COMPLIANCE = "compliance"  # Conformité
-    AUDIT = "audit"  # Audit
-    RENEWAL = "renewal"  # Renouvellement
-    NOTICE = "notice"  # Préavis
-    CONFIDENTIALITY = "confidentiality"  # Confidentialité
-    OTHER = "other"  # Autre
-
-
-class RenewalType(Enum):
-    """Type de renouvellement."""
-    MANUAL = "manual"  # Manuel
-    AUTOMATIC = "automatic"  # Tacite reconduction
-    NEGOTIATED = "negotiated"  # Renégocié
-
-
-class AmendmentType(Enum):
-    """Type d'avenant."""
-    EXTENSION = "extension"  # Prolongation
-    MODIFICATION = "modification"  # Modification
-    PRICING = "pricing"  # Révision tarifaire
-    SCOPE = "scope"  # Périmètre
-    TERMINATION = "termination"  # Résiliation anticipée
-    OTHER = "other"  # Autre
-
-
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
-
-@dataclass
-class ContractParty:
-    """Partie au contrat."""
-    id: str
-    role: PartyRole
-    name: str
-
-    # Identification
-    entity_type: str = "company"  # company, individual
-    entity_id: Optional[str] = None  # ID dans le système (client, fournisseur...)
-    registration_number: Optional[str] = None  # SIRET, etc.
-    vat_number: Optional[str] = None
-
-    # Contact
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
-
-    # Représentant
-    representative_name: Optional[str] = None
-    representative_title: Optional[str] = None
-
-    # Signature
-    has_signed: bool = False
-    signed_at: Optional[datetime] = None
-    signature_id: Optional[str] = None
-
-
-@dataclass
-class ContractClause:
-    """Clause contractuelle."""
-    id: str
-    title: str
-    content: str
-    clause_type: str = "standard"  # standard, custom, legal, optional
-    section: Optional[str] = None
-
-    # Template
-    is_from_template: bool = False
-    template_id: Optional[str] = None
-
-    # Négociation
-    is_negotiable: bool = False
-    negotiation_status: str = "accepted"  # accepted, pending, rejected
-    original_content: Optional[str] = None
-    modification_history: List[Dict[str, Any]] = field(default_factory=list)
-
-    # Importance
-    is_mandatory: bool = True
-    risk_level: str = "low"  # low, medium, high, critical
-
-
-@dataclass
-class ContractObligation:
-    """Obligation contractuelle."""
-    id: str
-    contract_id: str
-    obligation_type: ObligationType
-    description: str
-
-    # Partie responsable
-    responsible_party_id: str
-
-    # Échéances
-    due_date: Optional[date] = None
-    recurrence: Optional[str] = None  # daily, weekly, monthly, quarterly, yearly
-    next_due_date: Optional[date] = None
-
-    # Montant (si applicable)
-    amount: Optional[Decimal] = None
-    currency: str = "EUR"
-
-    # Statut
-    status: str = "pending"  # pending, completed, overdue, waived
-    completed_at: Optional[datetime] = None
-
-    # Alertes
-    alert_days_before: int = 30
-    alert_sent: bool = False
-
-
-@dataclass
-class ContractMilestone:
-    """Jalon contractuel."""
-    id: str
-    contract_id: str
-    name: str
-    description: Optional[str] = None
-
-    # Date
-    target_date: date = field(default_factory=date.today)
-    actual_date: Optional[date] = None
-
-    # Deliverables
-    deliverables: List[str] = field(default_factory=list)
-
-    # Paiement associé
-    payment_amount: Optional[Decimal] = None
-    payment_triggered: bool = False
-
-    # Statut
-    status: str = "pending"  # pending, in_progress, completed, delayed
-
-
-@dataclass
-class ContractFinancials:
-    """Informations financières du contrat."""
-    total_value: Decimal = Decimal("0")
-    currency: str = "EUR"
-
-    # Paiement
-    payment_terms: str = "30_days"  # 30_days, 45_days, 60_days, end_of_month
-    payment_method: str = "bank_transfer"
-
-    # Récurrence
-    is_recurring: bool = False
-    recurring_amount: Optional[Decimal] = None
-    recurring_frequency: Optional[str] = None  # monthly, quarterly, yearly
-
-    # Révision
-    price_revision_clause: bool = False
-    price_revision_index: Optional[str] = None  # INSEE, SYNTEC, etc.
-    price_revision_cap: Optional[Decimal] = None
-
-    # Pénalités
-    late_payment_rate: Decimal = Decimal("0.05")  # 5%
-    penalty_clause: bool = False
-    penalty_amount: Optional[Decimal] = None
-
-
-@dataclass
-class ContractDocument:
-    """Document attaché au contrat."""
-    id: str
-    name: str
-    file_path: str
-    file_size: int
-    mime_type: str
-    document_type: str = "contract"  # contract, annex, amendment, other
-    version: int = 1
-    uploaded_at: datetime = field(default_factory=datetime.now)
-    uploaded_by: str = ""
-
-    # Signature
-    is_signed: bool = False
-    signature_request_id: Optional[str] = None
-
-
-@dataclass
-class ContractAmendment:
-    """Avenant au contrat."""
-    id: str
-    contract_id: str
-    amendment_number: int
-    amendment_type: AmendmentType
-    title: str
-    description: str
-
-    # Dates
-    effective_date: date = field(default_factory=date.today)
-    created_at: datetime = field(default_factory=datetime.now)
-
-    # Changements
-    changes: List[Dict[str, Any]] = field(default_factory=list)
-
-    # Financier
-    value_change: Optional[Decimal] = None
-    new_end_date: Optional[date] = None
-
-    # Statut
-    status: ContractStatus = ContractStatus.DRAFT
-    signed_at: Optional[datetime] = None
-
-    # Document
-    document_id: Optional[str] = None
-
-
-@dataclass
-class ContractTemplate:
-    """Modèle de contrat."""
-    id: str
-    tenant_id: str
-    name: str
-    contract_type: ContractType
-    description: Optional[str] = None
-
-    # Structure
-    clauses: List[ContractClause] = field(default_factory=list)
-    sections: List[str] = field(default_factory=list)
-
-    # Variables
-    variables: List[Dict[str, str]] = field(default_factory=list)
-
-    # Métadonnées
-    language: str = "fr"
-    version: str = "1.0"
-    is_active: bool = True
-    created_at: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class Contract:
-    """Contrat principal."""
-    id: str
-    tenant_id: str
-    contract_number: str
-    title: str
-    contract_type: ContractType
-
-    # Parties
-    parties: List[ContractParty] = field(default_factory=list)
-
-    # Contenu
-    clauses: List[ContractClause] = field(default_factory=list)
-    description: Optional[str] = None
-
-    # Dates
-    created_date: date = field(default_factory=date.today)
-    effective_date: Optional[date] = None
-    end_date: Optional[date] = None
-    signed_date: Optional[datetime] = None
-
-    # Renouvellement
-    renewal_type: RenewalType = RenewalType.MANUAL
-    renewal_notice_days: int = 90
-    auto_renewal_term_months: int = 12
-
-    # Financier
-    financials: ContractFinancials = field(default_factory=ContractFinancials)
-
-    # Obligations et jalons
-    obligations: List[ContractObligation] = field(default_factory=list)
-    milestones: List[ContractMilestone] = field(default_factory=list)
-
-    # Documents
-    documents: List[ContractDocument] = field(default_factory=list)
-    amendments: List[ContractAmendment] = field(default_factory=list)
-
-    # Template
-    template_id: Optional[str] = None
-
-    # Statut
-    status: ContractStatus = ContractStatus.DRAFT
-    status_history: List[Dict[str, Any]] = field(default_factory=list)
-
-    # Workflow
-    current_approver_id: Optional[str] = None
-    approval_history: List[Dict[str, Any]] = field(default_factory=list)
-
-    # Métadonnées
-    tags: List[str] = field(default_factory=list)
-    custom_fields: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-    created_by: str = ""
-
-    def get_primary_party(self, role: PartyRole) -> Optional[ContractParty]:
-        """Récupère la partie principale d'un rôle donné."""
-        for party in self.parties:
-            if party.role == role:
-                return party
-        return None
-
-    def is_fully_signed(self) -> bool:
-        """Vérifie si toutes les parties ont signé."""
-        return all(party.has_signed for party in self.parties)
-
-    def days_until_expiry(self) -> Optional[int]:
-        """Jours avant expiration."""
-        if not self.end_date:
-            return None
-        delta = self.end_date - date.today()
-        return delta.days
-
-    def days_until_renewal_notice(self) -> Optional[int]:
-        """Jours avant la date limite de préavis de renouvellement."""
-        if not self.end_date:
-            return None
-        notice_date = self.end_date - timedelta(days=self.renewal_notice_days)
-        delta = notice_date - date.today()
-        return delta.days
-
-
-@dataclass
-class ContractAlert:
-    """Alerte liée à un contrat."""
-    id: str
-    contract_id: str
-    alert_type: str  # expiry, renewal, obligation, milestone
-    title: str
-    message: str
-
-    # Dates
-    due_date: date
-    created_at: datetime = field(default_factory=datetime.now)
-
-    # Destinataires
-    recipients: List[str] = field(default_factory=list)
-
-    # Statut
-    is_sent: bool = False
-    sent_at: Optional[datetime] = None
-    is_acknowledged: bool = False
-    acknowledged_by: Optional[str] = None
-
-
-# ============================================================================
-# SERVICE PRINCIPAL
-# ============================================================================
 
 class ContractService:
     """
-    Service de gestion des contrats (CLM).
+    Service principal de gestion des contrats.
 
-    Gère:
-    - Création et modification des contrats
-    - Templates et clauses
-    - Workflow d'approbation
-    - Suivi des obligations
+    Gere le cycle de vie complet des contrats:
+    - Creation a partir de templates ou from scratch
+    - Workflow d'approbation multi-niveaux
+    - Signature electronique
+    - Suivi des obligations et jalons
+    - Renouvellements automatiques/manuels
+    - Avenants et modifications
     - Alertes et notifications
-    - Recherche et reporting
+    - Reporting et analytics
     """
 
-    def __init__(
-        self,
-        tenant_id: str,
-        signature_service: Optional[Any] = None
-    ):
+    def __init__(self, db: Session, tenant_id: str):
+        self.db = db
         self.tenant_id = tenant_id
-        self.signature_service = signature_service
 
-        # Stockage (à remplacer par DB)
-        self._contracts: Dict[str, Contract] = {}
-        self._templates: Dict[str, ContractTemplate] = {}
-        self._alerts: Dict[str, ContractAlert] = {}
-        self._contract_counter = 0
-
-    # ========================================================================
-    # GESTION DES TEMPLATES
-    # ========================================================================
-
-    def create_template(
-        self,
-        name: str,
-        contract_type: ContractType,
-        clauses: List[ContractClause],
-        description: Optional[str] = None,
-        variables: Optional[List[Dict[str, str]]] = None
-    ) -> ContractTemplate:
-        """Crée un modèle de contrat."""
-        template = ContractTemplate(
-            id=str(uuid.uuid4()),
-            tenant_id=self.tenant_id,
-            name=name,
-            contract_type=contract_type,
-            description=description,
-            clauses=clauses,
-            variables=variables or []
-        )
-
-        self._templates[template.id] = template
-        return template
-
-    def get_template(self, template_id: str) -> Optional[ContractTemplate]:
-        """Récupère un modèle."""
-        return self._templates.get(template_id)
-
-    def list_templates(
-        self,
-        contract_type: Optional[ContractType] = None
-    ) -> List[ContractTemplate]:
-        """Liste les modèles disponibles."""
-        templates = list(self._templates.values())
-
-        if contract_type:
-            templates = [t for t in templates if t.contract_type == contract_type]
-
-        return sorted(templates, key=lambda t: t.name)
+        # Repositories
+        self.contracts = ContractRepository(db, UUID(tenant_id))
+        self.parties = ContractPartyRepository(db, UUID(tenant_id))
+        self.lines = ContractLineRepository(db, UUID(tenant_id))
+        self.obligations = ContractObligationRepository(db, UUID(tenant_id))
+        self.milestones = ContractMilestoneRepository(db, UUID(tenant_id))
+        self.amendments = ContractAmendmentRepository(db, UUID(tenant_id))
+        self.alerts = ContractAlertRepository(db, UUID(tenant_id))
+        self.approvals = ContractApprovalRepository(db, UUID(tenant_id))
+        self.categories = ContractCategoryRepository(db, UUID(tenant_id))
+        self.templates = ContractTemplateRepository(db, UUID(tenant_id))
+        self.metrics = ContractMetricsRepository(db, UUID(tenant_id))
 
     # ========================================================================
-    # CRÉATION DE CONTRATS
+    # CONTRACTS - CRUD
     # ========================================================================
 
     def create_contract(
         self,
-        title: str,
-        contract_type: ContractType,
-        parties: List[ContractParty],
-        template_id: Optional[str] = None,
-        effective_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-        total_value: Optional[Decimal] = None,
-        created_by: str = ""
+        data: ContractCreate,
+        created_by: UUID = None
     ) -> Contract:
-        """Crée un nouveau contrat."""
-        # Générer le numéro de contrat
-        self._contract_counter += 1
-        contract_number = f"CTR-{date.today().year}-{self._contract_counter:05d}"
+        """Creer un nouveau contrat."""
+        contract_data = data.model_dump(exclude_unset=True)
 
-        contract = Contract(
-            id=str(uuid.uuid4()),
-            tenant_id=self.tenant_id,
-            contract_number=contract_number,
-            title=title,
-            contract_type=contract_type,
-            parties=parties,
-            effective_date=effective_date,
-            end_date=end_date,
-            template_id=template_id,
-            created_by=created_by
-        )
+        # Verifier si numero existe deja
+        if contract_data.get("contract_number"):
+            if self.contracts.number_exists(contract_data["contract_number"]):
+                raise ContractDuplicateError(contract_data["contract_number"])
 
-        # Appliquer le template si fourni
-        if template_id:
-            template = self._templates.get(template_id)
+        # Appliquer template si specifie
+        if data.template_id:
+            template = self.templates.get_by_id(data.template_id)
             if template:
-                contract.clauses = [
-                    ContractClause(
-                        id=str(uuid.uuid4()),
-                        title=c.title,
-                        content=c.content,
-                        clause_type=c.clause_type,
-                        section=c.section,
-                        is_from_template=True,
-                        template_id=template_id,
-                        is_negotiable=c.is_negotiable,
-                        is_mandatory=c.is_mandatory
-                    )
-                    for c in template.clauses
-                ]
+                contract_data = self._apply_template(contract_data, template)
 
-        # Initialiser les financials
-        if total_value:
-            contract.financials.total_value = total_value
+        contract = self.contracts.create(contract_data, created_by)
 
-        # Enregistrer l'historique
-        contract.status_history.append({
-            "status": ContractStatus.DRAFT.value,
-            "timestamp": datetime.now().isoformat(),
-            "by": created_by
-        })
+        # Creer alertes automatiques si dates definies
+        self._create_automatic_alerts(contract, created_by)
 
-        self._contracts[contract.id] = contract
         return contract
 
-    def create_from_template(
+    def get_contract(
         self,
-        template_id: str,
-        title: str,
-        parties: List[ContractParty],
-        variables: Dict[str, str],
-        created_by: str = ""
+        contract_id: UUID,
+        with_relations: bool = True
     ) -> Contract:
-        """Crée un contrat à partir d'un template avec variables."""
-        template = self._templates.get(template_id)
-        if not template:
-            raise ValueError(f"Template {template_id} non trouvé")
+        """Recuperer un contrat par ID."""
+        contract = self.contracts.get_by_id(contract_id, with_relations)
+        if not contract:
+            raise ContractNotFoundError(str(contract_id))
+        return contract
 
-        contract = self.create_contract(
-            title=title,
-            contract_type=template.contract_type,
-            parties=parties,
-            template_id=template_id,
-            created_by=created_by
-        )
+    def get_contract_by_number(self, contract_number: str) -> Contract:
+        """Recuperer un contrat par numero."""
+        contract = self.contracts.get_by_number(contract_number)
+        if not contract:
+            raise ContractNotFoundError(message=f"Contrat {contract_number} non trouve")
+        return contract
 
-        # Remplacer les variables dans les clauses
-        for clause in contract.clauses:
-            for var_name, var_value in variables.items():
-                clause.content = clause.content.replace(
-                    f"{{{{{var_name}}}}}",  # {{variable}}
-                    var_value
-                )
+    def update_contract(
+        self,
+        contract_id: UUID,
+        data: ContractUpdate,
+        updated_by: UUID = None,
+        expected_version: int = None
+    ) -> Contract:
+        """Mettre a jour un contrat."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        # Verifier que le contrat est modifiable
+        if contract.status not in [
+            ContractStatus.DRAFT.value,
+            ContractStatus.IN_REVIEW.value,
+            ContractStatus.IN_NEGOTIATION.value
+        ]:
+            raise ContractNotEditableError(contract.status)
+
+        # Optimistic locking
+        if expected_version is not None and contract.version != expected_version:
+            raise ContractVersionConflictError(expected_version, contract.version)
+
+        update_data = data.model_dump(exclude_unset=True)
+        contract = self.contracts.update(contract, update_data, updated_by)
+
+        # Mettre a jour les alertes si dates changent
+        if "end_date" in update_data or "renewal_notice_days" in update_data:
+            self._update_automatic_alerts(contract, updated_by)
 
         return contract
 
-    # ========================================================================
-    # MODIFICATION DE CONTRATS
-    # ========================================================================
-
-    def add_clause(
+    def delete_contract(
         self,
-        contract_id: str,
-        title: str,
-        content: str,
-        clause_type: str = "custom",
-        section: Optional[str] = None,
-        is_negotiable: bool = False
-    ) -> ContractClause:
-        """Ajoute une clause à un contrat."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
+        contract_id: UUID,
+        deleted_by: UUID = None
+    ) -> bool:
+        """Supprimer un contrat (soft delete)."""
+        contract = self.get_contract(contract_id, with_relations=False)
 
-        if contract.status not in [ContractStatus.DRAFT, ContractStatus.IN_NEGOTIATION]:
-            raise ValueError("Contrat non modifiable")
+        # Seuls les brouillons peuvent etre supprimes
+        if contract.status not in [
+            ContractStatus.DRAFT.value,
+            ContractStatus.CANCELLED.value
+        ]:
+            raise ContractNotEditableError(
+                contract.status,
+                "Seuls les brouillons ou contrats annules peuvent etre supprimes"
+            )
 
-        clause = ContractClause(
-            id=str(uuid.uuid4()),
-            title=title,
-            content=content,
-            clause_type=clause_type,
-            section=section,
-            is_negotiable=is_negotiable
+        return self.contracts.soft_delete(contract, deleted_by)
+
+    def list_contracts(
+        self,
+        filters: ContractFilters = None,
+        page: int = 1,
+        page_size: int = 20,
+        sort_by: str = "created_at",
+        sort_dir: str = "desc"
+    ) -> Tuple[List[Contract], int]:
+        """Lister les contrats avec filtres."""
+        return self.contracts.list(filters, page, page_size, sort_by, sort_dir)
+
+    def search_contracts(self, query: str, limit: int = 10) -> List[Contract]:
+        """Recherche rapide de contrats."""
+        return self.contracts.search_contracts(query, limit)
+
+    # ========================================================================
+    # WORKFLOW - Statuts
+    # ========================================================================
+
+    def submit_for_review(
+        self,
+        contract_id: UUID,
+        submitted_by: UUID
+    ) -> Contract:
+        """Soumettre un contrat pour revision interne."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        if contract.status != ContractStatus.DRAFT.value:
+            raise ContractStateError(
+                contract.status,
+                ContractStatus.IN_REVIEW.value
+            )
+
+        return self.contracts.update_status(
+            contract,
+            ContractStatus.IN_REVIEW.value,
+            submitted_by
         )
 
-        contract.clauses.append(clause)
-        contract.updated_at = datetime.now()
-
-        return clause
-
-    def add_obligation(
+    def start_negotiation(
         self,
-        contract_id: str,
-        obligation_type: ObligationType,
-        description: str,
-        responsible_party_id: str,
-        due_date: Optional[date] = None,
-        recurrence: Optional[str] = None,
-        amount: Optional[Decimal] = None
-    ) -> ContractObligation:
-        """Ajoute une obligation contractuelle."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
+        contract_id: UUID,
+        started_by: UUID
+    ) -> Contract:
+        """Passer un contrat en negociation."""
+        contract = self.get_contract(contract_id, with_relations=False)
 
-        obligation = ContractObligation(
-            id=str(uuid.uuid4()),
-            contract_id=contract_id,
-            obligation_type=obligation_type,
-            description=description,
-            responsible_party_id=responsible_party_id,
-            due_date=due_date,
-            recurrence=recurrence,
-            next_due_date=due_date,
-            amount=amount
+        allowed_from = [
+            ContractStatus.DRAFT.value,
+            ContractStatus.IN_REVIEW.value
+        ]
+        if contract.status not in allowed_from:
+            raise ContractStateError(
+                contract.status,
+                ContractStatus.IN_NEGOTIATION.value
+            )
+
+        return self.contracts.update_status(
+            contract,
+            ContractStatus.IN_NEGOTIATION.value,
+            started_by
         )
-
-        contract.obligations.append(obligation)
-        contract.updated_at = datetime.now()
-
-        return obligation
-
-    def add_milestone(
-        self,
-        contract_id: str,
-        name: str,
-        target_date: date,
-        description: Optional[str] = None,
-        deliverables: Optional[List[str]] = None,
-        payment_amount: Optional[Decimal] = None
-    ) -> ContractMilestone:
-        """Ajoute un jalon au contrat."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
-
-        milestone = ContractMilestone(
-            id=str(uuid.uuid4()),
-            contract_id=contract_id,
-            name=name,
-            target_date=target_date,
-            description=description,
-            deliverables=deliverables or [],
-            payment_amount=payment_amount
-        )
-
-        contract.milestones.append(milestone)
-        contract.updated_at = datetime.now()
-
-        return milestone
-
-    # ========================================================================
-    # WORKFLOW
-    # ========================================================================
 
     def submit_for_approval(
         self,
-        contract_id: str,
-        approver_id: str,
-        submitted_by: str
+        contract_id: UUID,
+        request: ContractSubmitForApprovalRequest,
+        submitted_by: UUID
     ) -> Contract:
-        """Soumet un contrat pour approbation."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
+        """Soumettre un contrat pour approbation."""
+        contract = self.get_contract(contract_id, with_relations=True)
 
-        if contract.status != ContractStatus.DRAFT:
-            raise ValueError("Seuls les brouillons peuvent être soumis")
+        # Valider que le contrat est pret
+        self._validate_contract_for_approval(contract)
 
-        contract.status = ContractStatus.PENDING_APPROVAL
-        contract.current_approver_id = approver_id
-        contract.updated_at = datetime.now()
+        # Verifier les parties
+        if not contract.parties or len(contract.parties) < 2:
+            raise MissingPartyError("Au moins 2 parties sont requises")
 
-        contract.status_history.append({
-            "status": ContractStatus.PENDING_APPROVAL.value,
-            "timestamp": datetime.now().isoformat(),
-            "by": submitted_by,
-            "approver": approver_id
-        })
+        # Creer la demande d'approbation
+        approval = self.approvals.create(
+            contract_id,
+            {
+                "level": 1,
+                "level_name": "Niveau 1",
+                "approver_id": request.approver_id,
+                "due_date": datetime.utcnow() + timedelta(days=7)
+            },
+            submitted_by
+        )
 
-        return contract
+        # Mettre a jour le statut
+        contract.current_approver_id = request.approver_id
+        contract.approval_level = 1
+
+        return self.contracts.update_status(
+            contract,
+            ContractStatus.PENDING_APPROVAL.value,
+            submitted_by
+        )
 
     def approve_contract(
         self,
-        contract_id: str,
-        approver_id: str,
-        comments: Optional[str] = None
+        contract_id: UUID,
+        decision: ApprovalDecisionRequest,
+        approver_id: UUID
     ) -> Contract:
-        """Approuve un contrat."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
+        """Approuver ou rejeter un contrat."""
+        contract = self.get_contract(contract_id, with_relations=False)
 
-        if contract.current_approver_id != approver_id:
-            raise ValueError("Vous n'êtes pas l'approbateur désigné")
+        if contract.status != ContractStatus.PENDING_APPROVAL.value:
+            raise ContractStateError(
+                contract.status,
+                "approval"
+            )
 
-        contract.approval_history.append({
-            "approver_id": approver_id,
-            "action": "approved",
-            "comments": comments,
-            "timestamp": datetime.now().isoformat()
-        })
+        # Verifier que l'utilisateur est l'approbateur
+        approval = self.approvals.get_current_approval(contract_id)
+        if not approval or approval.approver_id != approver_id:
+            raise ApprovalNotAuthorizedError(str(approver_id))
 
-        contract.status = ContractStatus.PENDING_SIGNATURE
-        contract.current_approver_id = None
-        contract.updated_at = datetime.now()
+        if approval.status != ApprovalStatus.PENDING.value:
+            raise ApprovalAlreadyProcessedError(approval.status)
 
-        contract.status_history.append({
-            "status": ContractStatus.PENDING_SIGNATURE.value,
-            "timestamp": datetime.now().isoformat(),
-            "by": approver_id
-        })
-
-        return contract
-
-    def reject_contract(
-        self,
-        contract_id: str,
-        approver_id: str,
-        reason: str
-    ) -> Contract:
-        """Rejette un contrat."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
-
-        contract.approval_history.append({
-            "approver_id": approver_id,
-            "action": "rejected",
-            "reason": reason,
-            "timestamp": datetime.now().isoformat()
-        })
-
-        contract.status = ContractStatus.DRAFT
-        contract.current_approver_id = None
-        contract.updated_at = datetime.now()
-
-        return contract
-
-    # ========================================================================
-    # SIGNATURE
-    # ========================================================================
-
-    def request_signatures(
-        self,
-        contract_id: str,
-        document_content: bytes,
-        document_name: str = "contrat.pdf"
-    ) -> str:
-        """Demande les signatures de toutes les parties."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
-
-        if contract.status != ContractStatus.PENDING_SIGNATURE:
-            raise ValueError("Contrat non prêt pour signature")
-
-        if not self.signature_service:
-            raise ValueError("Service de signature non configuré")
-
-        # Créer le document
-        doc = ContractDocument(
-            id=str(uuid.uuid4()),
-            name=document_name,
-            file_path=f"contracts/{contract_id}/{document_name}",
-            file_size=len(document_content),
-            mime_type="application/pdf",
-            document_type="contract"
+        # Enregistrer la decision
+        self.approvals.record_decision(
+            approval,
+            decision.decision,
+            decision.comments,
+            decision.rejection_reason,
+            decision.conditions
         )
-        contract.documents.append(doc)
 
-        # Demander les signatures via le service de signature électronique
-        # signature_request = self.signature_service.create_signature_request(...)
-        signature_request_id = f"SIG-{uuid.uuid4().hex[:8]}"
-        doc.signature_request_id = signature_request_id
+        if decision.decision == "approved":
+            # Passer au niveau suivant ou finaliser
+            contract.approved_at = datetime.utcnow()
+            contract.approved_by = approver_id
+            contract.current_approver_id = None
 
-        contract.updated_at = datetime.now()
+            new_status = ContractStatus.APPROVED.value
+            if contract.requires_signature:
+                new_status = ContractStatus.PENDING_SIGNATURE.value
 
-        return signature_request_id
+            return self.contracts.update_status(
+                contract, new_status, approver_id
+            )
+        else:
+            # Rejete - retour en brouillon
+            contract.current_approver_id = None
+            return self.contracts.update_status(
+                contract,
+                ContractStatus.DRAFT.value,
+                approver_id,
+                reason=decision.rejection_reason
+            )
+
+    def activate_contract(
+        self,
+        contract_id: UUID,
+        activated_by: UUID
+    ) -> Contract:
+        """Activer un contrat (apres signature complete)."""
+        contract = self.get_contract(contract_id, with_relations=True)
+
+        allowed_from = [
+            ContractStatus.APPROVED.value,
+            ContractStatus.PENDING_SIGNATURE.value,
+            ContractStatus.PARTIALLY_SIGNED.value
+        ]
+        if contract.status not in allowed_from:
+            raise ContractStateError(contract.status, ContractStatus.ACTIVE.value)
+
+        # Verifier que toutes les parties ont signe si requis
+        if contract.requires_signature:
+            unsigned = [p for p in contract.parties if p.is_signatory and not p.has_signed]
+            if unsigned:
+                raise ContractStateError(
+                    contract.status,
+                    ContractStatus.ACTIVE.value,
+                    f"{len(unsigned)} signature(s) manquante(s)"
+                )
+
+        contract.all_parties_signed = True
+        contract.signed_date = datetime.utcnow()
+
+        # Calculer la date de renouvellement
+        if contract.end_date and contract.renewal_type != RenewalType.NONE.value:
+            notice_days = contract.renewal_notice_days or 90
+            contract.next_renewal_date = contract.end_date - timedelta(days=notice_days)
+
+        contract = self.contracts.update_status(
+            contract,
+            ContractStatus.ACTIVE.value,
+            activated_by
+        )
+
+        # Activer les lignes recurrentes
+        self._activate_recurring_lines(contract)
+
+        # Creer les alertes d'echeance
+        self._create_automatic_alerts(contract, activated_by)
+
+        return contract
+
+    def suspend_contract(
+        self,
+        contract_id: UUID,
+        reason: str,
+        suspended_by: UUID
+    ) -> Contract:
+        """Suspendre un contrat actif."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        if contract.status != ContractStatus.ACTIVE.value:
+            raise ContractStateError(contract.status, ContractStatus.SUSPENDED.value)
+
+        return self.contracts.update_status(
+            contract,
+            ContractStatus.SUSPENDED.value,
+            suspended_by,
+            reason=reason
+        )
+
+    def resume_contract(
+        self,
+        contract_id: UUID,
+        resumed_by: UUID
+    ) -> Contract:
+        """Reprendre un contrat suspendu."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        if contract.status not in [
+            ContractStatus.SUSPENDED.value,
+            ContractStatus.ON_HOLD.value
+        ]:
+            raise ContractStateError(contract.status, ContractStatus.ACTIVE.value)
+
+        return self.contracts.update_status(
+            contract,
+            ContractStatus.ACTIVE.value,
+            resumed_by
+        )
+
+    def terminate_contract(
+        self,
+        contract_id: UUID,
+        request: ContractTerminateRequest,
+        terminated_by: UUID
+    ) -> Contract:
+        """Resilier un contrat."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        if contract.status not in [
+            ContractStatus.ACTIVE.value,
+            ContractStatus.SUSPENDED.value
+        ]:
+            raise ContractStateError(contract.status, ContractStatus.TERMINATED.value)
+
+        contract.termination_date = request.termination_date
+        contract.termination_reason = request.reason
+        contract.termination_by = terminated_by
+
+        if request.penalty_amount:
+            contract.early_termination_penalty = request.penalty_amount
+
+        return self.contracts.update_status(
+            contract,
+            ContractStatus.TERMINATED.value,
+            terminated_by,
+            reason=request.reason
+        )
+
+    def expire_contract(
+        self,
+        contract_id: UUID,
+        expired_by: UUID = None
+    ) -> Contract:
+        """Marquer un contrat comme expire."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        if contract.status != ContractStatus.ACTIVE.value:
+            raise ContractStateError(contract.status, ContractStatus.EXPIRED.value)
+
+        return self.contracts.update_status(
+            contract,
+            ContractStatus.EXPIRED.value,
+            expired_by
+        )
+
+    # ========================================================================
+    # PARTIES
+    # ========================================================================
+
+    def add_party(
+        self,
+        contract_id: UUID,
+        data: ContractPartyCreate,
+        created_by: UUID = None
+    ) -> ContractParty:
+        """Ajouter une partie au contrat."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        if contract.status not in [
+            ContractStatus.DRAFT.value,
+            ContractStatus.IN_REVIEW.value,
+            ContractStatus.IN_NEGOTIATION.value
+        ]:
+            raise ContractNotEditableError(contract.status)
+
+        party_data = data.model_dump(exclude_unset=True)
+        return self.parties.create(contract_id, party_data, created_by)
+
+    def update_party(
+        self,
+        party_id: UUID,
+        data: ContractPartyUpdate,
+        updated_by: UUID = None
+    ) -> ContractParty:
+        """Mettre a jour une partie."""
+        party = self.parties.get_by_id(party_id)
+        if not party:
+            raise PartyNotFoundError(str(party_id))
+
+        # Verifier que le contrat est modifiable
+        contract = self.contracts.get_by_id(party.contract_id)
+        if contract.status not in [
+            ContractStatus.DRAFT.value,
+            ContractStatus.IN_REVIEW.value,
+            ContractStatus.IN_NEGOTIATION.value
+        ]:
+            raise ContractNotEditableError(contract.status)
+
+        update_data = data.model_dump(exclude_unset=True)
+        return self.parties.update(party, update_data, updated_by)
 
     def record_signature(
         self,
-        contract_id: str,
-        party_id: str,
-        signature_id: str
+        contract_id: UUID,
+        party_id: UUID,
+        signature_id: str,
+        signature_ip: str = None
     ) -> ContractParty:
-        """Enregistre la signature d'une partie."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
+        """Enregistrer la signature d'une partie."""
+        contract = self.get_contract(contract_id, with_relations=True)
 
-        party = next((p for p in contract.parties if p.id == party_id), None)
-        if not party:
-            raise ValueError(f"Partie {party_id} non trouvée")
+        if contract.status not in [
+            ContractStatus.PENDING_SIGNATURE.value,
+            ContractStatus.PARTIALLY_SIGNED.value
+        ]:
+            raise ContractStateError(
+                contract.status,
+                "signature",
+                "Le contrat n'est pas en attente de signature"
+            )
 
-        party.has_signed = True
-        party.signed_at = datetime.now()
-        party.signature_id = signature_id
+        party = self.parties.get_by_id(party_id)
+        if not party or party.contract_id != contract_id:
+            raise PartyNotFoundError(str(party_id))
 
-        # Vérifier si toutes les parties ont signé
-        if contract.is_fully_signed():
-            contract.status = ContractStatus.ACTIVE
-            contract.signed_date = datetime.now()
+        if party.has_signed:
+            raise PartyAlreadySignedError(str(party_id))
 
-            contract.status_history.append({
-                "status": ContractStatus.ACTIVE.value,
-                "timestamp": datetime.now().isoformat(),
-                "event": "all_signatures_received"
-            })
+        party = self.parties.record_signature(party, signature_id, signature_ip)
 
-        contract.updated_at = datetime.now()
+        # Verifier si toutes les parties ont signe
+        unsigned = self.parties.get_unsigned_parties(contract_id)
+        if not unsigned:
+            # Toutes les signatures obtenues - activer le contrat
+            self.activate_contract(contract_id, party_id)
+        elif contract.status == ContractStatus.PENDING_SIGNATURE.value:
+            # Au moins une signature - passer en partiellement signe
+            self.contracts.update_status(
+                contract,
+                ContractStatus.PARTIALLY_SIGNED.value,
+                party_id
+            )
 
         return party
 
     # ========================================================================
-    # AVENANTS
+    # LINES
+    # ========================================================================
+
+    def add_line(
+        self,
+        contract_id: UUID,
+        data: ContractLineCreate,
+        created_by: UUID = None
+    ) -> ContractLine:
+        """Ajouter une ligne au contrat."""
+        contract = self.get_contract(contract_id, with_relations=False)
+
+        if contract.status not in [
+            ContractStatus.DRAFT.value,
+            ContractStatus.IN_REVIEW.value,
+            ContractStatus.IN_NEGOTIATION.value
+        ]:
+            raise ContractNotEditableError(contract.status)
+
+        line_data = data.model_dump(exclude_unset=True)
+        line = self.lines.create(contract_id, line_data, created_by)
+
+        # Recalculer la valeur totale du contrat
+        self._recalculate_contract_total(contract_id)
+
+        return line
+
+    def update_line(
+        self,
+        line_id: UUID,
+        data: ContractLineUpdate,
+        updated_by: UUID = None
+    ) -> ContractLine:
+        """Mettre a jour une ligne de contrat."""
+        line = self.lines.get_by_id(line_id)
+        if not line:
+            raise ContractLineNotFoundError(str(line_id))
+
+        contract = self.contracts.get_by_id(line.contract_id)
+        if contract.status not in [
+            ContractStatus.DRAFT.value,
+            ContractStatus.IN_REVIEW.value,
+            ContractStatus.IN_NEGOTIATION.value
+        ]:
+            raise ContractNotEditableError(contract.status)
+
+        update_data = data.model_dump(exclude_unset=True)
+        line = self.lines.update(line, update_data, updated_by)
+
+        # Recalculer la valeur totale
+        self._recalculate_contract_total(line.contract_id)
+
+        return line
+
+    def delete_line(
+        self,
+        line_id: UUID,
+        deleted_by: UUID = None
+    ) -> bool:
+        """Supprimer une ligne de contrat."""
+        line = self.lines.get_by_id(line_id)
+        if not line:
+            raise ContractLineNotFoundError(str(line_id))
+
+        contract = self.contracts.get_by_id(line.contract_id)
+        if contract.status not in [
+            ContractStatus.DRAFT.value,
+            ContractStatus.IN_REVIEW.value,
+            ContractStatus.IN_NEGOTIATION.value
+        ]:
+            raise ContractNotEditableError(contract.status)
+
+        contract_id = line.contract_id
+        result = self.lines.soft_delete(line, deleted_by)
+
+        # Recalculer la valeur totale
+        self._recalculate_contract_total(contract_id)
+
+        return result
+
+    # ========================================================================
+    # OBLIGATIONS
+    # ========================================================================
+
+    def add_obligation(
+        self,
+        contract_id: UUID,
+        data: ContractObligationCreate,
+        created_by: UUID = None
+    ) -> ContractObligation:
+        """Ajouter une obligation contractuelle."""
+        self.get_contract(contract_id, with_relations=False)
+
+        obligation_data = data.model_dump(exclude_unset=True)
+        obligation = self.obligations.create(contract_id, obligation_data, created_by)
+
+        # Creer alerte si date d'echeance
+        if obligation.due_date:
+            self._create_obligation_alert(obligation, created_by)
+
+        return obligation
+
+    def complete_obligation(
+        self,
+        obligation_id: UUID,
+        completed_by: UUID,
+        notes: str = None,
+        evidence_document_id: UUID = None
+    ) -> ContractObligation:
+        """Marquer une obligation comme completee."""
+        obligation = self.obligations.get_by_id(obligation_id)
+        if not obligation:
+            raise ObligationNotFoundError(str(obligation_id))
+
+        obligation = self.obligations.mark_completed(obligation, completed_by, notes)
+
+        if evidence_document_id:
+            obligation.evidence_document_id = evidence_document_id
+            self.db.commit()
+
+        return obligation
+
+    def get_overdue_obligations(self) -> List[ContractObligation]:
+        """Recuperer toutes les obligations en retard."""
+        return self.obligations.get_overdue_obligations()
+
+    def get_upcoming_obligations(self, days: int = 30) -> List[ContractObligation]:
+        """Recuperer les obligations a venir."""
+        return self.obligations.get_upcoming_obligations(days)
+
+    # ========================================================================
+    # MILESTONES
+    # ========================================================================
+
+    def add_milestone(
+        self,
+        contract_id: UUID,
+        data: ContractMilestoneCreate,
+        created_by: UUID = None
+    ) -> ContractMilestone:
+        """Ajouter un jalon au contrat."""
+        self.get_contract(contract_id, with_relations=False)
+
+        # Verifier dependance si specifiee
+        if data.depends_on_milestone_id:
+            depends_on = self.milestones.get_by_id(data.depends_on_milestone_id)
+            if not depends_on:
+                raise MilestoneNotFoundError(str(data.depends_on_milestone_id))
+
+        milestone_data = data.model_dump(exclude_unset=True)
+        return self.milestones.create(contract_id, milestone_data, created_by)
+
+    def complete_milestone(
+        self,
+        milestone_id: UUID,
+        completed_by: UUID,
+        actual_date: date = None,
+        notes: str = None,
+        trigger_payment: bool = False
+    ) -> ContractMilestone:
+        """Marquer un jalon comme complete."""
+        milestone = self.milestones.get_by_id(milestone_id)
+        if not milestone:
+            raise MilestoneNotFoundError(str(milestone_id))
+
+        # Verifier dependances
+        if milestone.depends_on_milestone_id:
+            depends_on = self.milestones.get_by_id(milestone.depends_on_milestone_id)
+            if depends_on and depends_on.status != "completed":
+                raise MilestoneDependencyError(
+                    str(milestone_id),
+                    str(milestone.depends_on_milestone_id)
+                )
+
+        milestone = self.milestones.mark_completed(
+            milestone, completed_by, actual_date, notes
+        )
+
+        if trigger_payment and milestone.payment_amount:
+            milestone.payment_triggered = True
+            self.db.commit()
+            # TODO: Integrer avec module facturation
+
+        return milestone
+
+    def get_upcoming_milestones(self, days: int = 30) -> List[ContractMilestone]:
+        """Recuperer les jalons a venir."""
+        return self.milestones.get_upcoming_milestones(days)
+
+    # ========================================================================
+    # AMENDMENTS
     # ========================================================================
 
     def create_amendment(
         self,
-        contract_id: str,
-        amendment_type: AmendmentType,
-        title: str,
-        description: str,
-        changes: List[Dict[str, Any]],
-        effective_date: Optional[date] = None,
-        value_change: Optional[Decimal] = None,
-        new_end_date: Optional[date] = None
+        contract_id: UUID,
+        data: ContractAmendmentCreate,
+        created_by: UUID = None
     ) -> ContractAmendment:
-        """Crée un avenant au contrat."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
+        """Creer un avenant au contrat."""
+        contract = self.get_contract(contract_id, with_relations=False)
 
-        if contract.status not in [ContractStatus.ACTIVE, ContractStatus.SUSPENDED]:
-            raise ValueError("Avenant possible uniquement sur contrat actif")
+        # Verifier que le contrat peut avoir un avenant
+        if contract.status not in [
+            ContractStatus.ACTIVE.value,
+            ContractStatus.SUSPENDED.value
+        ]:
+            raise AmendmentNotAllowedError(contract.status)
 
-        amendment_number = len(contract.amendments) + 1
+        amendment_data = data.model_dump(exclude_unset=True)
+        amendment = self.amendments.create(contract_id, amendment_data, created_by)
 
-        amendment = ContractAmendment(
-            id=str(uuid.uuid4()),
-            contract_id=contract_id,
-            amendment_number=amendment_number,
-            amendment_type=amendment_type,
-            title=title,
-            description=description,
-            effective_date=effective_date or date.today(),
-            changes=changes,
-            value_change=value_change,
-            new_end_date=new_end_date
-        )
-
-        contract.amendments.append(amendment)
-        contract.updated_at = datetime.now()
+        # Incrementer le compteur d'avenants
+        contract.amendment_count += 1
+        self.db.commit()
 
         return amendment
 
     def apply_amendment(
         self,
-        contract_id: str,
-        amendment_id: str
+        amendment_id: UUID,
+        applied_by: UUID
     ) -> Contract:
-        """Applique un avenant signé au contrat."""
-        contract = self._contracts.get(contract_id)
-        if not contract:
-            raise ValueError(f"Contrat {contract_id} non trouvé")
-
-        amendment = next(
-            (a for a in contract.amendments if a.id == amendment_id),
-            None
-        )
+        """Appliquer un avenant signe au contrat."""
+        amendment = self.amendments.get_by_id(amendment_id)
         if not amendment:
-            raise ValueError(f"Avenant {amendment_id} non trouvé")
+            raise AmendmentNotFoundError(str(amendment_id))
 
-        if amendment.status != ContractStatus.ACTIVE:
-            raise ValueError("Avenant non signé")
+        if amendment.status != ContractStatus.ACTIVE.value:
+            raise AmendmentNotAllowedError(
+                f"L'avenant doit etre actif pour etre applique (statut: {amendment.status})"
+            )
+
+        contract = self.get_contract(amendment.contract_id, with_relations=False)
 
         # Appliquer les changements
         if amendment.value_change:
-            contract.financials.total_value += amendment.value_change
+            contract.total_value += amendment.value_change
 
         if amendment.new_end_date:
             contract.end_date = amendment.new_end_date
 
-        # Type spécifique
-        if amendment.amendment_type == AmendmentType.TERMINATION:
-            contract.status = ContractStatus.TERMINATED
-            contract.end_date = amendment.effective_date
+        if amendment.new_duration_months:
+            contract.duration_months = amendment.new_duration_months
 
-        contract.updated_at = datetime.now()
+        if amendment.amendment_type == AmendmentType.TERMINATION.value:
+            return self.terminate_contract(
+                contract.id,
+                ContractTerminateRequest(
+                    termination_date=amendment.effective_date,
+                    reason=f"Resiliation par avenant #{amendment.amendment_number}"
+                ),
+                applied_by
+            )
+
+        contract.updated_by = applied_by
+        contract.version += 1
+        self.db.commit()
+        self.db.refresh(contract)
 
         return contract
 
     # ========================================================================
-    # ALERTES ET NOTIFICATIONS
+    # RENEWALS
     # ========================================================================
 
-    def check_and_create_alerts(self) -> List[ContractAlert]:
-        """Vérifie les contrats et crée les alertes nécessaires."""
-        alerts = []
-        today = date.today()
-
-        for contract in self._contracts.values():
-            if contract.status != ContractStatus.ACTIVE:
-                continue
-
-            # Alerte d'expiration
-            days_to_expiry = contract.days_until_expiry()
-            if days_to_expiry is not None:
-                if days_to_expiry <= 30 and days_to_expiry > 0:
-                    alert = self._create_alert(
-                        contract_id=contract.id,
-                        alert_type="expiry",
-                        title=f"Contrat {contract.contract_number} expire bientôt",
-                        message=f"Le contrat expire dans {days_to_expiry} jours",
-                        due_date=contract.end_date
-                    )
-                    if alert:
-                        alerts.append(alert)
-
-            # Alerte de renouvellement
-            days_to_renewal = contract.days_until_renewal_notice()
-            if days_to_renewal is not None:
-                if days_to_renewal <= 30 and days_to_renewal > 0:
-                    if contract.renewal_type == RenewalType.AUTOMATIC:
-                        alert = self._create_alert(
-                            contract_id=contract.id,
-                            alert_type="renewal",
-                            title=f"Préavis renouvellement {contract.contract_number}",
-                            message=f"Date limite de préavis dans {days_to_renewal} jours",
-                            due_date=contract.end_date - timedelta(
-                                days=contract.renewal_notice_days
-                            )
-                        )
-                        if alert:
-                            alerts.append(alert)
-
-            # Alertes obligations
-            for obligation in contract.obligations:
-                if obligation.status != "pending":
-                    continue
-                if obligation.due_date:
-                    days_to_due = (obligation.due_date - today).days
-                    if days_to_due <= obligation.alert_days_before and not obligation.alert_sent:
-                        alert = self._create_alert(
-                            contract_id=contract.id,
-                            alert_type="obligation",
-                            title=f"Obligation à venir: {obligation.description[:50]}",
-                            message=f"Échéance dans {days_to_due} jours",
-                            due_date=obligation.due_date
-                        )
-                        if alert:
-                            alerts.append(alert)
-                            obligation.alert_sent = True
-
-        return alerts
-
-    def _create_alert(
+    def renew_contract(
         self,
-        contract_id: str,
-        alert_type: str,
-        title: str,
-        message: str,
-        due_date: date
-    ) -> Optional[ContractAlert]:
-        """Crée une alerte si elle n'existe pas déjà."""
-        # Vérifier si alerte similaire existe
-        for alert in self._alerts.values():
-            if (alert.contract_id == contract_id and
-                alert.alert_type == alert_type and
-                alert.due_date == due_date):
-                return None
+        contract_id: UUID,
+        request: ContractRenewRequest,
+        renewed_by: UUID
+    ) -> Contract:
+        """Renouveler un contrat."""
+        contract = self.get_contract(contract_id, with_relations=False)
 
-        alert = ContractAlert(
-            id=str(uuid.uuid4()),
+        # Verifier que le renouvellement est possible
+        if contract.status not in [
+            ContractStatus.ACTIVE.value,
+            ContractStatus.EXPIRED.value
+        ]:
+            raise RenewalNotAllowedError(f"Statut invalide: {contract.status}")
+
+        if contract.max_renewals and contract.renewal_count >= contract.max_renewals:
+            raise MaxRenewalsReachedError(contract.max_renewals)
+
+        # Creer l'enregistrement de renouvellement
+        renewal = ContractRenewal(
+            tenant_id=self.tenant_id,
             contract_id=contract_id,
-            alert_type=alert_type,
-            title=title,
-            message=message,
-            due_date=due_date
+            renewal_number=contract.renewal_count + 1,
+            original_end_date=contract.end_date,
+            new_end_date=request.new_end_date,
+            renewal_date=date.today(),
+            effective_date=contract.end_date or date.today(),
+            renewal_type=contract.renewal_type,
+            is_automatic=contract.renewal_type == RenewalType.AUTOMATIC.value,
+            previous_value=contract.total_value,
+            new_value=request.new_value or contract.total_value,
+            status="confirmed",
+            approved_by=renewed_by,
+            approved_at=datetime.utcnow(),
+            created_by=renewed_by
         )
 
-        self._alerts[alert.id] = alert
-        return alert
+        if request.price_increase_percent:
+            renewal.price_increase_percent = request.price_increase_percent
+            renewal.new_value = contract.total_value * (1 + request.price_increase_percent / 100)
+
+        self.db.add(renewal)
+
+        # Mettre a jour le contrat
+        contract.end_date = request.new_end_date
+        contract.renewal_count += 1
+
+        if renewal.new_value:
+            contract.total_value = renewal.new_value
+
+        if request.new_terms:
+            # Appliquer les nouvelles conditions
+            for key, value in request.new_terms.items():
+                if hasattr(contract, key):
+                    setattr(contract, key, value)
+
+        # Calculer la prochaine date de renouvellement
+        if contract.renewal_type != RenewalType.NONE.value:
+            notice_days = contract.renewal_notice_days or 90
+            contract.next_renewal_date = contract.end_date - timedelta(days=notice_days)
+
+        contract.updated_by = renewed_by
+        contract.version += 1
+
+        # Mettre a jour le statut si necessaire
+        if contract.status == ContractStatus.EXPIRED.value:
+            contract.status = ContractStatus.ACTIVE.value
+
+        self.db.commit()
+        self.db.refresh(contract)
+
+        # Mettre a jour les alertes
+        self._update_automatic_alerts(contract, renewed_by)
+
+        return contract
+
+    def process_automatic_renewals(self) -> List[Contract]:
+        """Traiter les renouvellements automatiques."""
+        # Trouver les contrats a renouveler automatiquement
+        contracts_to_renew = self.contracts._base_query().filter(
+            Contract.status == ContractStatus.ACTIVE.value,
+            Contract.renewal_type == RenewalType.AUTOMATIC.value,
+            Contract.end_date <= date.today() + timedelta(days=1)
+        ).all()
+
+        renewed = []
+        for contract in contracts_to_renew:
+            if contract.max_renewals and contract.renewal_count >= contract.max_renewals:
+                continue
+
+            new_duration = contract.auto_renewal_term_months or 12
+            new_end_date = contract.end_date + timedelta(days=new_duration * 30)
+
+            price_increase = contract.renewal_price_increase_percent
+
+            self.renew_contract(
+                contract.id,
+                ContractRenewRequest(
+                    new_end_date=new_end_date,
+                    price_increase_percent=price_increase
+                ),
+                None  # Systeme
+            )
+            renewed.append(contract)
+
+        return renewed
 
     # ========================================================================
-    # RECHERCHE ET REPORTING
+    # ALERTS
     # ========================================================================
 
-    def search_contracts(
+    def create_alert(
         self,
-        query: Optional[str] = None,
-        contract_type: Optional[ContractType] = None,
-        status: Optional[ContractStatus] = None,
-        party_name: Optional[str] = None,
-        expiring_within_days: Optional[int] = None
-    ) -> List[Contract]:
-        """Recherche des contrats."""
-        contracts = list(self._contracts.values())
+        contract_id: UUID,
+        data: ContractAlertCreate,
+        created_by: UUID = None
+    ) -> ContractAlert:
+        """Creer une alerte manuelle."""
+        self.get_contract(contract_id, with_relations=False)
 
-        if query:
-            query_lower = query.lower()
-            contracts = [
-                c for c in contracts
-                if query_lower in c.title.lower() or
-                query_lower in c.contract_number.lower()
-            ]
+        alert_data = data.model_dump(exclude_unset=True)
 
-        if contract_type:
-            contracts = [c for c in contracts if c.contract_type == contract_type]
+        # Definir la date de declenchement
+        if not alert_data.get("trigger_date"):
+            days_before = 7 if alert_data.get("priority") == AlertPriority.CRITICAL.value else 14
+            alert_data["trigger_date"] = alert_data["due_date"] - timedelta(days=days_before)
 
-        if status:
-            contracts = [c for c in contracts if c.status == status]
+        return self.alerts.create(contract_id, alert_data, created_by)
 
-        if party_name:
-            party_lower = party_name.lower()
-            contracts = [
-                c for c in contracts
-                if any(party_lower in p.name.lower() for p in c.parties)
-            ]
+    def acknowledge_alert(
+        self,
+        alert_id: UUID,
+        acknowledged_by: UUID,
+        notes: str = None,
+        action_taken: str = None
+    ) -> ContractAlert:
+        """Acquitter une alerte."""
+        alert = self.alerts.get_by_id(alert_id)
+        if not alert:
+            raise AlertNotFoundError(str(alert_id))
 
-        if expiring_within_days:
-            today = date.today()
-            contracts = [
-                c for c in contracts
-                if c.end_date and 0 <= (c.end_date - today).days <= expiring_within_days
-            ]
+        return self.alerts.acknowledge(alert, acknowledged_by, notes, action_taken)
 
-        return sorted(contracts, key=lambda c: c.created_at, reverse=True)
+    def get_active_alerts(self, contract_id: UUID = None) -> List[ContractAlert]:
+        """Recuperer les alertes actives."""
+        return self.alerts.get_active_alerts(contract_id)
 
-    def get_contract_statistics(self) -> Dict[str, Any]:
-        """Statistiques sur les contrats."""
-        contracts = list(self._contracts.values())
+    def process_pending_alerts(self) -> List[ContractAlert]:
+        """Traiter et envoyer les alertes en attente."""
+        pending = self.alerts.get_pending_alerts(date.today())
+        sent = []
 
-        by_status = {}
-        by_type = {}
-        total_value = Decimal("0")
-        expiring_30_days = 0
-        expiring_90_days = 0
+        for alert in pending:
+            # TODO: Integrer avec service de notification
+            self.alerts.mark_sent(alert)
+            sent.append(alert)
 
+        return sent
+
+    def check_and_create_alerts(self) -> List[ContractAlert]:
+        """Verifier les contrats et creer les alertes necessaires."""
+        created_alerts = []
         today = date.today()
 
-        for contract in contracts:
+        # Contrats actifs
+        active_contracts = self.contracts.get_active_contracts()
+
+        for contract in active_contracts:
+            # Alerte expiration
+            if contract.end_date:
+                days_to_expiry = (contract.end_date - today).days
+                if 0 < days_to_expiry <= 30:
+                    existing = self._alert_exists(
+                        contract.id, AlertType.EXPIRY.value, contract.end_date
+                    )
+                    if not existing:
+                        alert = self.alerts.create(contract.id, {
+                            "alert_type": AlertType.EXPIRY.value,
+                            "priority": AlertPriority.HIGH.value if days_to_expiry <= 7 else AlertPriority.MEDIUM.value,
+                            "title": f"Contrat {contract.contract_number} expire bientot",
+                            "message": f"Le contrat expire dans {days_to_expiry} jours",
+                            "due_date": contract.end_date,
+                            "trigger_date": today
+                        })
+                        created_alerts.append(alert)
+
+            # Alerte renouvellement
+            if contract.next_renewal_date:
+                days_to_renewal = (contract.next_renewal_date - today).days
+                if 0 < days_to_renewal <= 30:
+                    existing = self._alert_exists(
+                        contract.id, AlertType.RENEWAL_NOTICE.value, contract.next_renewal_date
+                    )
+                    if not existing:
+                        alert = self.alerts.create(contract.id, {
+                            "alert_type": AlertType.RENEWAL_NOTICE.value,
+                            "priority": AlertPriority.HIGH.value,
+                            "title": f"Preavis renouvellement {contract.contract_number}",
+                            "message": f"Date limite de preavis dans {days_to_renewal} jours",
+                            "due_date": contract.next_renewal_date,
+                            "trigger_date": today
+                        })
+                        created_alerts.append(alert)
+
+        return created_alerts
+
+    # ========================================================================
+    # TEMPLATES & CATEGORIES
+    # ========================================================================
+
+    def create_template(
+        self,
+        data: ContractTemplateCreate,
+        created_by: UUID = None
+    ) -> ContractTemplate:
+        """Creer un template de contrat."""
+        template_data = data.model_dump(exclude_unset=True)
+        return self.templates.create(template_data, created_by)
+
+    def update_template(
+        self,
+        template_id: UUID,
+        data: ContractTemplateUpdate,
+        updated_by: UUID = None
+    ) -> ContractTemplate:
+        """Mettre a jour un template."""
+        template = self.templates.get_by_id(template_id)
+        if not template:
+            raise TemplateNotFoundError(str(template_id))
+
+        update_data = data.model_dump(exclude_unset=True)
+        return self.templates.update(template, update_data, updated_by)
+
+    def list_templates(
+        self,
+        contract_type: str = None,
+        active_only: bool = True
+    ) -> List[ContractTemplate]:
+        """Lister les templates disponibles."""
+        return self.templates.list_all(contract_type, active_only)
+
+    def create_category(
+        self,
+        data: ContractCategoryCreate,
+        created_by: UUID = None
+    ) -> ContractCategory:
+        """Creer une categorie de contrat."""
+        category_data = data.model_dump(exclude_unset=True)
+        return self.categories.create(category_data, created_by)
+
+    def list_categories(self, active_only: bool = True) -> List[ContractCategory]:
+        """Lister les categories."""
+        return self.categories.list_all(active_only)
+
+    # ========================================================================
+    # STATISTICS & DASHBOARD
+    # ========================================================================
+
+    def get_statistics(self) -> ContractStatsResponse:
+        """Calculer les statistiques des contrats."""
+        all_contracts = self.contracts._base_query().all()
+
+        stats = {
+            "total_contracts": len(all_contracts),
+            "active_contracts": 0,
+            "draft_contracts": 0,
+            "pending_signature": 0,
+            "pending_approval": 0,
+            "expired_contracts": 0,
+            "terminated_contracts": 0,
+            "total_active_value": Decimal("0"),
+            "expiring_30_days": 0,
+            "expiring_60_days": 0,
+            "expiring_90_days": 0,
+            "by_type": {},
+            "by_status": {},
+            "overdue_obligations": 0,
+            "pending_approvals": 0
+        }
+
+        today = date.today()
+        mrr = Decimal("0")
+
+        for contract in all_contracts:
             # Par statut
-            status = contract.status.value
-            if status not in by_status:
-                by_status[status] = 0
-            by_status[status] += 1
+            status = contract.status
+            stats["by_status"][status] = stats["by_status"].get(status, 0) + 1
+
+            if status == ContractStatus.DRAFT.value:
+                stats["draft_contracts"] += 1
+            elif status == ContractStatus.ACTIVE.value:
+                stats["active_contracts"] += 1
+                stats["total_active_value"] += contract.total_value or Decimal("0")
+
+                # Calcul MRR
+                if contract.billing_frequency == BillingFrequency.MONTHLY.value:
+                    mrr += contract.total_value or Decimal("0")
+                elif contract.billing_frequency == BillingFrequency.ANNUAL.value:
+                    mrr += (contract.total_value or Decimal("0")) / 12
+                elif contract.billing_frequency == BillingFrequency.QUARTERLY.value:
+                    mrr += (contract.total_value or Decimal("0")) / 3
+
+                # Echeances
+                if contract.end_date:
+                    days = (contract.end_date - today).days
+                    if 0 <= days <= 30:
+                        stats["expiring_30_days"] += 1
+                    if 0 <= days <= 60:
+                        stats["expiring_60_days"] += 1
+                    if 0 <= days <= 90:
+                        stats["expiring_90_days"] += 1
+
+            elif status == ContractStatus.PENDING_SIGNATURE.value:
+                stats["pending_signature"] += 1
+            elif status == ContractStatus.PENDING_APPROVAL.value:
+                stats["pending_approval"] += 1
+            elif status == ContractStatus.EXPIRED.value:
+                stats["expired_contracts"] += 1
+            elif status == ContractStatus.TERMINATED.value:
+                stats["terminated_contracts"] += 1
 
             # Par type
-            ctype = contract.contract_type.value
-            if ctype not in by_type:
-                by_type[ctype] = 0
-            by_type[ctype] += 1
+            ctype = contract.contract_type
+            stats["by_type"][ctype] = stats["by_type"].get(ctype, 0) + 1
 
-            # Valeur totale
-            if contract.status == ContractStatus.ACTIVE:
-                total_value += contract.financials.total_value
+        stats["mrr"] = mrr
+        stats["arr"] = mrr * 12
 
-            # Expiration
-            if contract.end_date and contract.status == ContractStatus.ACTIVE:
-                days = (contract.end_date - today).days
-                if 0 <= days <= 30:
-                    expiring_30_days += 1
-                if 0 <= days <= 90:
-                    expiring_90_days += 1
+        if stats["active_contracts"] > 0:
+            stats["average_contract_value"] = (
+                stats["total_active_value"] / stats["active_contracts"]
+            ).quantize(Decimal("0.01"))
 
-        return {
-            "total_contracts": len(contracts),
-            "active_contracts": by_status.get("active", 0),
-            "draft_contracts": by_status.get("draft", 0),
-            "pending_signature": by_status.get("pending_signature", 0),
-            "by_status": by_status,
-            "by_type": by_type,
-            "total_active_value": float(total_value),
-            "expiring_30_days": expiring_30_days,
-            "expiring_90_days": expiring_90_days
+        # Obligations en retard
+        stats["overdue_obligations"] = len(self.obligations.get_overdue_obligations())
+
+        # Approbations en attente
+        pending_approvals = self.approvals._base_query().filter(
+            ContractApproval.status == ApprovalStatus.PENDING.value
+        ).count()
+        stats["pending_approvals"] = pending_approvals
+
+        return ContractStatsResponse(**stats)
+
+    def get_dashboard(self) -> ContractDashboardResponse:
+        """Recuperer les donnees du dashboard."""
+        stats = self.get_statistics()
+
+        # Renouvellements a venir
+        upcoming_renewals = self.contracts._base_query().filter(
+            Contract.status == ContractStatus.ACTIVE.value,
+            Contract.next_renewal_date != None,
+            Contract.next_renewal_date <= date.today() + timedelta(days=30)
+        ).order_by(Contract.next_renewal_date).limit(10).all()
+
+        # Contrats expirant bientot
+        expiring_soon = self.contracts.get_expiring_contracts(30)[:10]
+
+        # Approbations en attente
+        pending_approvals_contracts = self.contracts.get_pending_approvals()[:10]
+
+        # Signatures en attente
+        pending_signatures = self.contracts.get_pending_signatures()[:10]
+
+        # Contrats recents
+        recent = self.contracts._base_query().order_by(
+            Contract.created_at.desc()
+        ).limit(10).all()
+
+        # Obligations en retard
+        overdue = self.obligations.get_overdue_obligations()[:10]
+
+        # Jalons a venir
+        upcoming_milestones = self.milestones.get_upcoming_milestones(14)[:10]
+
+        # Alertes actives
+        active_alerts = self.alerts.get_active_alerts()[:10]
+
+        def to_summary(c: Contract) -> ContractSummaryResponse:
+            days_expiry = None
+            days_renewal = None
+            if c.end_date:
+                days_expiry = (c.end_date - date.today()).days
+            if c.next_renewal_date:
+                days_renewal = (c.next_renewal_date - date.today()).days
+
+            party_names = [p.name for p in (c.parties or [])]
+
+            return ContractSummaryResponse(
+                id=c.id,
+                contract_number=c.contract_number,
+                title=c.title,
+                contract_type=c.contract_type,
+                status=c.status,
+                total_value=c.total_value or Decimal("0"),
+                currency=c.currency,
+                start_date=c.start_date,
+                end_date=c.end_date,
+                owner_name=c.owner_name,
+                party_names=party_names,
+                days_until_expiry=days_expiry,
+                days_until_renewal=days_renewal,
+                created_at=c.created_at
+            )
+
+        return ContractDashboardResponse(
+            stats=stats,
+            upcoming_renewals=[to_summary(c) for c in upcoming_renewals],
+            expiring_soon=[to_summary(c) for c in expiring_soon],
+            pending_approvals=[to_summary(c) for c in pending_approvals_contracts],
+            pending_signatures=[to_summary(c) for c in pending_signatures],
+            recent_contracts=[to_summary(c) for c in recent],
+            overdue_obligations=overdue,
+            upcoming_milestones=upcoming_milestones,
+            active_alerts=active_alerts
+        )
+
+    def calculate_metrics(self, metric_date: date = None) -> ContractMetrics:
+        """Calculer et sauvegarder les metriques."""
+        if not metric_date:
+            metric_date = date.today()
+
+        stats = self.get_statistics()
+
+        metrics_data = {
+            "metric_date": metric_date,
+            "total_contracts": stats.total_contracts,
+            "active_contracts": stats.active_contracts,
+            "draft_contracts": stats.draft_contracts,
+            "pending_signature": stats.pending_signature,
+            "expired_contracts": stats.expired_contracts,
+            "terminated_contracts": stats.terminated_contracts,
+            "total_active_value": stats.total_active_value,
+            "average_contract_value": stats.average_contract_value,
+            "mrr": stats.mrr,
+            "arr": stats.arr,
+            "expiring_30_days": stats.expiring_30_days,
+            "expiring_60_days": stats.expiring_60_days,
+            "expiring_90_days": stats.expiring_90_days,
+            "by_type": stats.by_type,
+            "by_status": stats.by_status,
+            "overdue_obligations": stats.overdue_obligations,
+            "pending_approvals": stats.pending_approvals
         }
+
+        return self.metrics.save(metrics_data)
+
+    # ========================================================================
+    # HELPER METHODS
+    # ========================================================================
+
+    def _validate_contract_for_approval(self, contract: Contract):
+        """Valider qu'un contrat est pret pour approbation."""
+        errors = []
+
+        if not contract.title:
+            errors.append("Le titre est requis")
+
+        if not contract.contract_type:
+            errors.append("Le type de contrat est requis")
+
+        if contract.total_value and contract.total_value < 0:
+            errors.append("La valeur ne peut pas etre negative")
+
+        if errors:
+            raise ContractValidationError(
+                "Le contrat n'est pas valide pour approbation",
+                errors=errors
+            )
+
+    def _apply_template(
+        self,
+        contract_data: Dict[str, Any],
+        template: ContractTemplate
+    ) -> Dict[str, Any]:
+        """Appliquer un template a un contrat."""
+        # Copier les valeurs par defaut du template
+        if template.default_duration_months and "duration_months" not in contract_data:
+            contract_data["duration_months"] = template.default_duration_months
+
+        if template.default_renewal_type and "renewal_type" not in contract_data:
+            contract_data["renewal_type"] = template.default_renewal_type
+
+        if template.default_payment_terms_days and "payment_terms_days" not in contract_data:
+            contract_data["payment_terms_days"] = template.default_payment_terms_days
+
+        if template.content and "content" not in contract_data:
+            contract_data["content"] = template.content
+
+        # Ajouter les clauses par defaut
+        if template.clause_templates and "clauses" not in contract_data:
+            contract_data["clauses"] = [
+                {
+                    "title": ct.title,
+                    "content": ct.content,
+                    "clause_type": ct.clause_type,
+                    "section": ct.section,
+                    "is_from_template": True,
+                    "template_id": ct.id,
+                    "is_mandatory": ct.is_mandatory,
+                    "is_negotiable": ct.is_negotiable,
+                    "risk_level": ct.risk_level,
+                    "sort_order": ct.sort_order
+                }
+                for ct in template.clause_templates
+                if ct.is_active
+            ]
+
+        return contract_data
+
+    def _recalculate_contract_total(self, contract_id: UUID):
+        """Recalculer la valeur totale d'un contrat."""
+        lines = self.lines.get_by_contract(contract_id)
+        total = sum(line.total or Decimal("0") for line in lines if line.is_active)
+
+        contract = self.contracts.get_by_id(contract_id)
+        if contract:
+            contract.total_value = total
+            self.db.commit()
+
+    def _activate_recurring_lines(self, contract: Contract):
+        """Activer les lignes recurrentes apres activation du contrat."""
+        lines = self.lines.get_recurring_lines(contract.id)
+        today = date.today()
+
+        for line in lines:
+            if line.is_recurring and not line.next_billing_date:
+                line.next_billing_date = line.billing_start_date or today
+                line.original_price = line.unit_price
+
+        self.db.commit()
+
+    def _create_automatic_alerts(self, contract: Contract, created_by: UUID = None):
+        """Creer les alertes automatiques pour un contrat."""
+        # Alerte expiration
+        if contract.end_date:
+            alert_date = contract.end_date - timedelta(days=30)
+            if alert_date > date.today():
+                self.alerts.create(contract.id, {
+                    "alert_type": AlertType.EXPIRY.value,
+                    "priority": AlertPriority.HIGH.value,
+                    "title": f"Contrat {contract.contract_number} arrive a echeance",
+                    "message": f"Le contrat expire le {contract.end_date}",
+                    "due_date": contract.end_date,
+                    "trigger_date": alert_date,
+                    "notify_owner": True
+                }, created_by)
+
+        # Alerte renouvellement
+        if contract.next_renewal_date:
+            alert_date = contract.next_renewal_date - timedelta(days=14)
+            if alert_date > date.today():
+                self.alerts.create(contract.id, {
+                    "alert_type": AlertType.RENEWAL_NOTICE.value,
+                    "priority": AlertPriority.HIGH.value,
+                    "title": f"Preavis renouvellement {contract.contract_number}",
+                    "message": f"Date limite de preavis: {contract.next_renewal_date}",
+                    "due_date": contract.next_renewal_date,
+                    "trigger_date": alert_date,
+                    "notify_owner": True
+                }, created_by)
+
+    def _update_automatic_alerts(self, contract: Contract, updated_by: UUID = None):
+        """Mettre a jour les alertes automatiques."""
+        # Desactiver les anciennes alertes automatiques
+        existing_alerts = self.alerts.get_by_contract(contract.id)
+        for alert in existing_alerts:
+            if alert.alert_type in [AlertType.EXPIRY.value, AlertType.RENEWAL_NOTICE.value]:
+                if not alert.is_acknowledged:
+                    self.alerts.dismiss(alert)
+
+        # Recreer les alertes
+        self._create_automatic_alerts(contract, updated_by)
+
+    def _create_obligation_alert(
+        self,
+        obligation: ContractObligation,
+        created_by: UUID = None
+    ):
+        """Creer une alerte pour une obligation."""
+        if not obligation.due_date:
+            return
+
+        alert_date = obligation.due_date - timedelta(days=obligation.alert_days_before)
+        if alert_date <= date.today():
+            alert_date = date.today()
+
+        self.alerts.create(obligation.contract_id, {
+            "alert_type": AlertType.OBLIGATION_DUE.value,
+            "priority": AlertPriority.HIGH.value if obligation.is_critical else AlertPriority.MEDIUM.value,
+            "title": f"Obligation: {obligation.title}",
+            "message": obligation.description,
+            "reference_type": "obligation",
+            "reference_id": obligation.id,
+            "due_date": obligation.due_date,
+            "trigger_date": alert_date,
+            "notify_owner": True
+        }, created_by)
+
+    def _alert_exists(
+        self,
+        contract_id: UUID,
+        alert_type: str,
+        due_date: date
+    ) -> bool:
+        """Verifier si une alerte similaire existe deja."""
+        existing = self.alerts._base_query().filter(
+            ContractAlert.contract_id == contract_id,
+            ContractAlert.alert_type == alert_type,
+            ContractAlert.due_date == due_date,
+            ContractAlert.is_active == True
+        ).first()
+        return existing is not None
 
 
 # ============================================================================
 # FACTORY
 # ============================================================================
 
-def create_contract_service(
-    tenant_id: str,
-    signature_service: Optional[Any] = None
-) -> ContractService:
-    """Crée un service de gestion des contrats."""
-    return ContractService(
-        tenant_id=tenant_id,
-        signature_service=signature_service
-    )
+def create_contract_service(db: Session, tenant_id: str) -> ContractService:
+    """Factory pour creer un service de gestion des contrats."""
+    return ContractService(db, tenant_id)

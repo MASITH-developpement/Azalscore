@@ -263,7 +263,7 @@ export function MarceauMemory() {
 
           {searchQuery && memories.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              Aucun resultat pour "{searchQuery}"
+              Aucun resultat pour &quot;{searchQuery}&quot;
             </div>
           )}
         </div>

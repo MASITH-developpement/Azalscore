@@ -94,7 +94,7 @@ export const OrderOperationsTab: React.FC<TabContentProps<ProductionOrder>> = ({
         <div className="azals-empty">
           <Settings size={48} className="text-muted" />
           <h3>Aucune operation</h3>
-          <p className="text-muted">Cet ordre n'a pas encore d'operations definies.</p>
+          <p className="text-muted">Cet ordre n&apos;a pas encore d&apos;operations definies.</p>
         </div>
       )}
 

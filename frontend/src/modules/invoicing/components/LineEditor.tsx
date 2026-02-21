@@ -128,10 +128,10 @@ export function LineEditor({
     <div className="line-editor__form">
       {/* Recherche produit */}
       <div className="line-editor__section">
-        <label className="line-editor__label">
+        <span className="line-editor__label" aria-label="Recherche produit">
           <Package size={14} className="mr-1" />
           Produit (optionnel)
-        </label>
+        </span>
         <ProductAutocomplete
           value={searchValue}
           onChange={setSearchValue}

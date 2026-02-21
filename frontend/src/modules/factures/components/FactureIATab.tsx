@@ -114,7 +114,7 @@ export const FactureIATab: React.FC<TabContentProps<Facture>> = ({ data: facture
           <div className="azals-analysis-item">
             <h4>Risque client</h4>
             <p className="text-lg font-medium text-success">Faible</p>
-            <p className="text-sm text-muted">Basé sur l'historique</p>
+            <p className="text-sm text-muted">Basé sur l&apos;historique</p>
           </div>
           <div className="azals-analysis-item">
             <h4>Encours client</h4>

@@ -385,7 +385,7 @@ const ResultWidget: React.FC<{ data: ResultSummary }> = ({ data }) => {
         <div className="azals-auto-accounting__result-details">
           <div className="azals-auto-accounting__result-row">
             <span className="azals-auto-accounting__result-row-label">
-              Chiffre d'affaires
+              Chiffre d&apos;affaires
             </span>
             <span className="azals-auto-accounting__result-row-value azals-auto-accounting__result-row-value--positive">
               {formatCurrency(data.revenue)}

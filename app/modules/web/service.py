@@ -499,8 +499,8 @@ class WebService:
     # PRÉFÉRENCES UTILISATEUR
     # ========================================================================
 
-    def get_user_preferences(self, user_id: int) -> UserUIPreference | None:
-        """Récupérer les préférences d'un utilisateur."""
+    def get_user_preferences(self, user_id) -> UserUIPreference | None:
+        """Récupérer les préférences d'un utilisateur (user_id peut être UUID ou string)."""
         return self.db.query(UserUIPreference).filter(
             and_(
                 UserUIPreference.tenant_id == self.tenant_id,
@@ -510,10 +510,10 @@ class WebService:
 
     def set_user_preferences(
         self,
-        user_id: int,
+        user_id,
         **preferences
     ) -> UserUIPreference:
-        """Définir les préférences d'un utilisateur."""
+        """Définir les préférences d'un utilisateur (user_id peut être UUID ou string)."""
         pref = self.get_user_preferences(user_id)
 
         if not pref:
@@ -535,6 +535,11 @@ class WebService:
         self.db.commit()
         self.db.refresh(pref)
         return pref
+
+    # Alias pour compatibilité avec les routers
+    def update_user_preferences(self, user_id, **preferences) -> UserUIPreference:
+        """Alias de set_user_preferences pour les routers."""
+        return self.set_user_preferences(user_id, **preferences)
 
     # ========================================================================
     # RACCOURCIS

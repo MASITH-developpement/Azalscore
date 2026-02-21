@@ -96,7 +96,8 @@ async def list_work_centers(
 ):
     """Lister les centres de travail."""
     service = get_production_service(db, context.tenant_id)
-    return service.list_work_centers(status=wc_status)
+    items, _ = service.list_work_centers(status=wc_status)
+    return items
 
 @router.get("/work-centers/{wc_id}", response_model=WorkCenterResponse)
 async def get_work_center(
@@ -570,4 +571,4 @@ async def get_production_dashboard(
 ):
     """Récupérer le dashboard de production."""
     service = get_production_service(db, context.tenant_id)
-    return service.get_production_dashboard()
+    return service.get_dashboard()

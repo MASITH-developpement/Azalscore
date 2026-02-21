@@ -530,15 +530,17 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Code</label>
+              <label htmlFor="asset-form-code">Code</label>
               <Input
+                id="asset-form-code"
                 value={formData.code || ''}
                 onChange={(v) => setFormData({ ...formData, code: v })}
               />
             </div>
             <div className="azals-field">
-              <label>Nom</label>
+              <label htmlFor="asset-form-name">Nom</label>
               <Input
+                id="asset-form-name"
                 value={formData.name || ''}
                 onChange={(v) => setFormData({ ...formData, name: v })}
               />
@@ -546,16 +548,18 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Type</label>
+              <label htmlFor="asset-form-type">Type</label>
               <Select
+                id="asset-form-type"
                 value={formData.type || ''}
                 onChange={(v) => setFormData({ ...formData, type: v as Asset['type'] })}
                 options={ASSET_TYPES}
               />
             </div>
             <div className="azals-field">
-              <label>Criticite</label>
+              <label htmlFor="asset-form-criticality">Criticite</label>
               <Select
+                id="asset-form-criticality"
                 value={formData.criticality || ''}
                 onChange={(v) => setFormData({ ...formData, criticality: v as Asset['criticality'] })}
                 options={CRITICALITIES}
@@ -564,15 +568,17 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Emplacement</label>
+              <label htmlFor="asset-form-location">Emplacement</label>
               <Input
+                id="asset-form-location"
                 value={formData.location || ''}
                 onChange={(v) => setFormData({ ...formData, location: v })}
               />
             </div>
             <div className="azals-field">
-              <label>N de serie</label>
+              <label htmlFor="asset-form-serial">N de serie</label>
               <Input
+                id="asset-form-serial"
                 value={formData.serial_number || ''}
                 onChange={(v) => setFormData({ ...formData, serial_number: v })}
               />
@@ -580,15 +586,17 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Fabricant</label>
+              <label htmlFor="asset-form-manufacturer">Fabricant</label>
               <Input
+                id="asset-form-manufacturer"
                 value={formData.manufacturer || ''}
                 onChange={(v) => setFormData({ ...formData, manufacturer: v })}
               />
             </div>
             <div className="azals-field">
-              <label>Modele</label>
+              <label htmlFor="asset-form-model">Modele</label>
               <Input
+                id="asset-form-model"
                 value={formData.model || ''}
                 onChange={(v) => setFormData({ ...formData, model: v })}
               />
@@ -596,8 +604,9 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Date d'achat</label>
+              <label htmlFor="asset-form-purchase-date">Date d&apos;achat</label>
               <input
+                id="asset-form-purchase-date"
                 type="date"
                 className="azals-input"
                 value={formData.purchase_date || ''}
@@ -605,8 +614,9 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
               />
             </div>
             <div className="azals-field">
-              <label>Fin de garantie</label>
+              <label htmlFor="asset-form-warranty">Fin de garantie</label>
               <input
+                id="asset-form-warranty"
                 type="date"
                 className="azals-input"
                 value={formData.warranty_end_date || ''}
@@ -704,8 +714,9 @@ const MaintenanceOrdersView: React.FC = () => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel ordre de maintenance" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           <div className="azals-field">
-            <label>Equipement</label>
+            <label htmlFor="order-form-asset">Equipement</label>
             <Select
+              id="order-form-asset"
               value={formData.asset_id || ''}
               onChange={(v) => setFormData({ ...formData, asset_id: v })}
               options={assets.map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }))}
@@ -713,16 +724,18 @@ const MaintenanceOrdersView: React.FC = () => {
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Type</label>
+              <label htmlFor="order-form-type">Type</label>
               <Select
+                id="order-form-type"
                 value={formData.type || ''}
                 onChange={(v) => setFormData({ ...formData, type: v as MaintenanceOrder['type'] })}
                 options={ORDER_TYPES}
               />
             </div>
             <div className="azals-field">
-              <label>Priorite</label>
+              <label htmlFor="order-form-priority">Priorite</label>
               <Select
+                id="order-form-priority"
                 value={formData.priority || 'NORMAL'}
                 onChange={(v) => setFormData({ ...formData, priority: v as MaintenanceOrder['priority'] })}
                 options={ORDER_PRIORITIES}
@@ -730,8 +743,9 @@ const MaintenanceOrdersView: React.FC = () => {
             </div>
           </Grid>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label htmlFor="order-form-description" className="block text-sm font-medium mb-1">Description</label>
             <textarea
+              id="order-form-description"
               className="w-full border rounded px-3 py-2"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -741,8 +755,9 @@ const MaintenanceOrdersView: React.FC = () => {
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Date de debut prevue</label>
+              <label htmlFor="order-form-start-date">Date de debut prevue</label>
               <input
+                id="order-form-start-date"
                 type="date"
                 className="azals-input"
                 value={formData.planned_start_date || ''}
@@ -750,8 +765,9 @@ const MaintenanceOrdersView: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label>Date de fin prevue</label>
+              <label htmlFor="order-form-end-date">Date de fin prevue</label>
               <input
+                id="order-form-end-date"
                 type="date"
                 className="azals-input"
                 value={formData.planned_end_date || ''}

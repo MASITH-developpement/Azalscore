@@ -154,7 +154,7 @@ export const InterventionDocsTab: React.FC<TabContentProps<Intervention>> = ({ d
             <div className="azals-empty azals-empty--sm">
               <FileText size={32} className="text-warning" />
               <p className="text-muted">Aucun rapport enregistré</p>
-              <p className="text-sm text-muted">L'intervention est terminée mais le rapport n'a pas été saisi.</p>
+              <p className="text-sm text-muted">L&apos;intervention est terminée mais le rapport n&apos;a pas été saisi.</p>
             </div>
           ) : intervention.statut === 'EN_COURS' ? (
             <div className="azals-empty azals-empty--sm">

@@ -57,7 +57,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
             )}
             {employee.probation_end_date && (
               <div className="azals-field">
-                <span className="azals-field__label">Fin de periode d'essai</span>
+                <span className="azals-field__label">Fin de periode d&apos;essai</span>
                 <div className="azals-field__value">
                   {formatDate(employee.probation_end_date)}
                   {isOnProbation(employee) ? (
@@ -128,7 +128,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
                   <Clock size={16} className={isOnProbation(employee) ? 'text-orange' : 'text-success'} />
                 </div>
                 <div className="azals-timeline__content">
-                  <span className="font-medium">Fin periode d'essai</span>
+                  <span className="font-medium">Fin periode d&apos;essai</span>
                   <span className="text-muted ml-2">{formatDate(employee.probation_end_date)}</span>
                 </div>
               </div>
@@ -139,7 +139,7 @@ export const EmployeeContractTab: React.FC<TabContentProps<Employee>> = ({ data:
                   <Calendar size={16} className="text-purple" />
                 </div>
                 <div className="azals-timeline__content">
-                  <span className="font-medium">Date d'anciennete</span>
+                  <span className="font-medium">Date d&apos;anciennete</span>
                   <span className="text-muted ml-2">{formatDate(employee.seniority_date)}</span>
                 </div>
               </div>

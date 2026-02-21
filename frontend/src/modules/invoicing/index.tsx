@@ -690,8 +690,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onExport, isEx
       {showFilters && (
         <div className="azals-filter-bar__panel">
           <div className="azals-filter-bar__field">
-            <label>Statut</label>
+            <label htmlFor="inv-filter-status">Statut</label>
             <select
+              id="inv-filter-status"
               value={filters.status || ''}
               onChange={(e) => onChange({
                 ...filters,
@@ -706,8 +707,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onExport, isEx
           </div>
 
           <div className="azals-filter-bar__field">
-            <label>Date début</label>
+            <label htmlFor="inv-filter-date-from">Date début</label>
             <input
+              id="inv-filter-date-from"
               type="date"
               value={filters.date_from || ''}
               onChange={(e) => onChange({ ...filters, date_from: e.target.value })}
@@ -716,8 +718,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onExport, isEx
           </div>
 
           <div className="azals-filter-bar__field">
-            <label>Date fin</label>
+            <label htmlFor="inv-filter-date-to">Date fin</label>
             <input
+              id="inv-filter-date-to"
               type="date"
               value={filters.date_to || ''}
               onChange={(e) => onChange({ ...filters, date_to: e.target.value })}

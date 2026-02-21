@@ -77,15 +77,15 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
 
       // Handle all possible response formats
       let capabilities: string[] = [];
-      const r = response as any;
+      const r = response as { capabilities?: unknown[]; data?: { capabilities?: unknown[] } };
 
       // Format 1: { capabilities: [...] }
       if (r && Array.isArray(r.capabilities)) {
-        capabilities = r.capabilities;
+        capabilities = r.capabilities.filter((c): c is string => typeof c === 'string');
       }
       // Format 2: { data: { capabilities: [...] } }
       else if (r && r.data && Array.isArray(r.data.capabilities)) {
-        capabilities = r.data.capabilities;
+        capabilities = r.data.capabilities.filter((c): c is string => typeof c === 'string');
       }
       // Format 3: direct array
       else if (Array.isArray(r)) {

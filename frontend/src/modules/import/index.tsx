@@ -8,10 +8,10 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Download, Settings, Play, CheckCircle, AlertCircle, Clock, Save, Trash2 } from 'lucide-react';
 import { api } from '@core/api-client';
-import type { ApiMutationError } from '@/types';
 import { Button } from '@ui/actions';
 import { Input } from '@ui/forms';
 import { PageWrapper, Card, Grid } from '@ui/layout';
+import type { ApiMutationError } from '@/types';
 
 // ============================================================
 // TYPES
@@ -366,32 +366,36 @@ export const OdooImportModule: React.FC = () => {
         <Card title="Configuration" icon={<Settings size={20} />}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">URL du serveur Odoo</label>
+              <label htmlFor="odoo-url" className="block text-sm font-medium mb-1">URL du serveur Odoo</label>
               <Input
+                id="odoo-url"
                 placeholder="https://mon-instance.odoo.com"
                 value={config.odoo_url}
                 onChange={(value) => setConfig({ ...config, odoo_url: value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Base de donnees</label>
+              <label htmlFor="odoo-database" className="block text-sm font-medium mb-1">Base de donnees</label>
               <Input
+                id="odoo-database"
                 placeholder="nom_base"
                 value={config.database}
                 onChange={(value) => setConfig({ ...config, database: value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Nom d'utilisateur (email)</label>
+              <label htmlFor="odoo-username" className="block text-sm font-medium mb-1">Nom d&apos;utilisateur (email)</label>
               <Input
+                id="odoo-username"
                 placeholder="admin@example.com"
                 value={config.username}
                 onChange={(value) => setConfig({ ...config, username: value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Cle API (ou mot de passe)</label>
+              <label htmlFor="odoo-api-key" className="block text-sm font-medium mb-1">Cle API (ou mot de passe)</label>
               <Input
+                id="odoo-api-key"
                 type="password"
                 placeholder="Votre cle API Odoo"
                 value={config.api_key}

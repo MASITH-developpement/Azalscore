@@ -394,16 +394,18 @@ const SessionsView: React.FC = () => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Ouvrir une session">
         <div className="space-y-4">
           <div className="azals-field">
-            <label>Terminal</label>
+            <label htmlFor="pos-session-terminal">Terminal</label>
             <Select
+              id="pos-session-terminal"
               value={formData.terminal_id}
               onChange={(v) => setFormData({ ...formData, terminal_id: v })}
               options={terminals.filter(t => t.status === 'ONLINE').map(t => ({ value: t.id, label: `${t.code} - ${t.name}` }))}
             />
           </div>
           <div className="azals-field">
-            <label>Fond de caisse</label>
+            <label htmlFor="pos-opening-balance">Fond de caisse</label>
             <Input
+              id="pos-opening-balance"
               type="number"
               value={formData.opening_balance}
               onChange={(v) => setFormData({ ...formData, opening_balance: parseFloat(v) || 0 })}

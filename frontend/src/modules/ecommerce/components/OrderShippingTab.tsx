@@ -53,7 +53,7 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
           </div>
           {readyToShip && (
             <Button onClick={handleCreateShipment}>
-              Creer l'expedition
+              Creer l&apos;expedition
             </Button>
           )}
         </div>

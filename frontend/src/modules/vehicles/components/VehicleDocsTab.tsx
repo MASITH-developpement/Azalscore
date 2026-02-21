@@ -109,7 +109,7 @@ export const VehicleDocsTab: React.FC<TabContentProps<Vehicule>> = ({ data: vehi
           ) : (
             <div className="azals-empty azals-empty--sm">
               <Shield size={32} className="text-muted" />
-              <p className="text-muted">Aucun document d'assurance</p>
+              <p className="text-muted">Aucun document d&apos;assurance</p>
               <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>

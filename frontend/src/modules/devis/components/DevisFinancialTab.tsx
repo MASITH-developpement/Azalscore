@@ -116,7 +116,7 @@ export const DevisFinancialTab: React.FC<TabContentProps<Devis>> = ({ data: devi
         >
           <div className="azals-financial-summary">
             <div className="azals-financial-summary__row">
-              <span>Chiffre d'affaires HT</span>
+              <span>Chiffre d&apos;affaires HT</span>
               <span>{formatCurrency(devis.subtotal, devis.currency)}</span>
             </div>
             <div className="azals-financial-summary__row">

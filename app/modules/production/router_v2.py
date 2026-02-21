@@ -102,7 +102,8 @@ async def list_work_centers(
 ):
     """✅ MIGRÉ CORE SaaS: Lister les centres de travail"""
     service = get_production_service(db, context.tenant_id)
-    return service.list_work_centers(status=status)
+    items, _ = service.list_work_centers(status=status)
+    return items
 
 
 @router.get("/work-centers/{wc_id}", response_model=WorkCenterResponse)
@@ -614,4 +615,4 @@ async def get_production_dashboard(
 ):
     """✅ MIGRÉ CORE SaaS: Récupérer le dashboard de production"""
     service = get_production_service(db, context.tenant_id)
-    return service.get_production_dashboard()
+    return service.get_dashboard()

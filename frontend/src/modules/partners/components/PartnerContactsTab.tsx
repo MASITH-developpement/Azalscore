@@ -72,12 +72,12 @@ export const PartnerContactsTab: React.FC<TabContentProps<Partner>> = ({ data: p
             Ils peuvent etre utilises pour:
           </p>
           <ul className="list-disc list-inside ml-2">
-            <li>L'envoi de documents (devis, factures, etc.)</li>
+            <li>L&apos;envoi de documents (devis, factures, etc.)</li>
             <li>Les communications commerciales</li>
             <li>Le suivi des interactions</li>
           </ul>
           <p className="mt-3">
-            Le contact principal est marque d'une etoile et recoit par defaut
+            Le contact principal est marque d&apos;une etoile et recoit par defaut
             les communications du partenaire.
           </p>
         </div>

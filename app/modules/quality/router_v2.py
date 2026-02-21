@@ -108,7 +108,7 @@ def _get_service(
     Cette fonction wrapper permet de facilement remplacer le service
     dans les tests via app.dependency_overrides[_get_service].
     """
-    return get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    return get_quality_service(db, context.tenant_id, str(context.user_id))
 
 
 router = APIRouter(prefix="/v2/quality", tags=["Quality v2 - CORE SaaS"])
@@ -125,7 +125,7 @@ def create_non_conformance(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée une nouvelle non-conformité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_non_conformance(data)
 
 
@@ -143,7 +143,7 @@ def list_non_conformances(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les non-conformités"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_non_conformances(
         skip=skip,
         limit=limit,
@@ -164,7 +164,7 @@ def get_non_conformance(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère une non-conformité par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_non_conformance(nc_id), "Non-conformité", nc_id)
 
 
@@ -176,7 +176,7 @@ def update_non_conformance(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour une non-conformité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_non_conformance(nc_id, data), "Non-conformité", nc_id)
 
 
@@ -187,7 +187,7 @@ def open_non_conformance(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ouvre une non-conformité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(
         service.open_non_conformance(nc_id), "Non-conformité", nc_id, status_code=400
     )
@@ -201,7 +201,7 @@ def close_non_conformance(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Clôture une non-conformité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.close_non_conformance(nc_id, data), "Non-conformité", nc_id)
 
 
@@ -213,7 +213,7 @@ def add_nc_action(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ajoute une action à une non-conformité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.add_nc_action(nc_id, data), "Non-conformité", nc_id)
 
 
@@ -225,7 +225,7 @@ def update_nc_action(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour une action de non-conformité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_nc_action(action_id, data), "Action NC", action_id)
 
 
@@ -240,7 +240,7 @@ def create_control_template(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée un template de contrôle qualité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_control_template(data)
 
 
@@ -255,7 +255,7 @@ def list_control_templates(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les templates de contrôle"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_control_templates(
         skip=skip,
         limit=limit,
@@ -273,7 +273,7 @@ def get_control_template(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère un template par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_control_template(template_id), "Template", template_id)
 
 
@@ -285,7 +285,7 @@ def update_control_template(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour un template"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_control_template(template_id, data), "Template", template_id)
 
 
@@ -297,7 +297,7 @@ def add_template_item(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ajoute un item à un template"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.add_template_item(template_id, data), "Template", template_id)
 
 
@@ -312,7 +312,7 @@ def create_control(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée un contrôle qualité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_control(data)
 
 
@@ -330,7 +330,7 @@ def list_controls(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les contrôles qualité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_controls(
         skip=skip,
         limit=limit,
@@ -351,7 +351,7 @@ def get_control(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère un contrôle par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_control(control_id), "Contrôle", control_id)
 
 
@@ -363,7 +363,7 @@ def update_control(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour un contrôle"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_control(control_id, data), "Contrôle", control_id)
 
 
@@ -374,7 +374,7 @@ def start_control(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Démarre un contrôle"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.start_control(control_id), "Contrôle", control_id)
 
 
@@ -386,7 +386,7 @@ def update_control_line(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour une ligne de contrôle"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     line = require_entity(service.update_control_line(line_id, data), "Ligne contrôle", line_id)
     # Retourner le contrôle complet
     return service.get_control(line.control_id)
@@ -401,7 +401,7 @@ def complete_control(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Termine un contrôle qualité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.complete_control(control_id, decision, comments), "Contrôle", control_id)
 
 
@@ -416,7 +416,7 @@ def create_audit(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée un audit"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_audit(data)
 
 
@@ -433,7 +433,7 @@ def list_audits(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les audits"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_audits(
         skip=skip,
         limit=limit,
@@ -453,7 +453,7 @@ def get_audit(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère un audit par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_audit(audit_id), "Audit", audit_id)
 
 
@@ -465,7 +465,7 @@ def update_audit(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour un audit"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_audit(audit_id, data), "Audit", audit_id)
 
 
@@ -476,7 +476,7 @@ def start_audit(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Démarre un audit"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.start_audit(audit_id), "Audit", audit_id)
 
 
@@ -488,7 +488,7 @@ def add_finding(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ajoute un constat à un audit"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.add_finding(audit_id, data), "Audit", audit_id)
 
 
@@ -500,7 +500,7 @@ def update_finding(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour un constat"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_finding(finding_id, data), "Constat", finding_id)
 
 
@@ -512,7 +512,7 @@ def close_audit(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Clôture un audit"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.close_audit(audit_id, data), "Audit", audit_id)
 
 
@@ -527,7 +527,7 @@ def create_capa(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée un CAPA"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_capa(data)
 
 
@@ -544,7 +544,7 @@ def list_capas(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les CAPA"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_capas(
         skip=skip,
         limit=limit,
@@ -564,7 +564,7 @@ def get_capa(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère un CAPA par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_capa(capa_id), "CAPA", capa_id)
 
 
@@ -576,7 +576,7 @@ def update_capa(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour un CAPA"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_capa(capa_id, data), "CAPA", capa_id)
 
 
@@ -588,7 +588,7 @@ def add_capa_action(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ajoute une action à un CAPA"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.add_capa_action(capa_id, data), "CAPA", capa_id)
 
 
@@ -600,7 +600,7 @@ def update_capa_action(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour une action CAPA"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_capa_action(action_id, data), "Action CAPA", action_id)
 
 
@@ -612,7 +612,7 @@ def close_capa(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Clôture un CAPA"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.close_capa(capa_id, data), "CAPA", capa_id)
 
 
@@ -627,7 +627,7 @@ def create_claim(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée une réclamation client"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_claim(data)
 
 
@@ -644,7 +644,7 @@ def list_claims(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les réclamations"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_claims(
         skip=skip,
         limit=limit,
@@ -664,7 +664,7 @@ def get_claim(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère une réclamation par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_claim(claim_id), "Réclamation", claim_id)
 
 
@@ -676,7 +676,7 @@ def update_claim(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour une réclamation"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_claim(claim_id, data), "Réclamation", claim_id)
 
 
@@ -687,7 +687,7 @@ def acknowledge_claim(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Accuse réception d'une réclamation"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.acknowledge_claim(claim_id), "Réclamation", claim_id)
 
 
@@ -699,7 +699,7 @@ def respond_claim(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Répond à une réclamation"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.respond_claim(claim_id, data), "Réclamation", claim_id)
 
 
@@ -711,7 +711,7 @@ def resolve_claim(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Résout une réclamation"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.resolve_claim(claim_id, data), "Réclamation", claim_id)
 
 
@@ -723,7 +723,7 @@ def close_claim(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Clôture une réclamation"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.close_claim(claim_id, data), "Réclamation", claim_id)
 
 
@@ -735,7 +735,7 @@ def add_claim_action(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ajoute une action à une réclamation"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.add_claim_action(claim_id, data), "Réclamation", claim_id)
 
 
@@ -750,7 +750,7 @@ def create_indicator(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée un indicateur qualité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_indicator(data)
 
 
@@ -765,7 +765,7 @@ def list_indicators(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les indicateurs"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_indicators(
         skip=skip,
         limit=limit,
@@ -783,7 +783,7 @@ def get_indicator(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère un indicateur par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_indicator(indicator_id), "Indicateur", indicator_id)
 
 
@@ -795,7 +795,7 @@ def update_indicator(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour un indicateur"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_indicator(indicator_id, data), "Indicateur", indicator_id)
 
 
@@ -807,7 +807,7 @@ def add_measurement(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ajoute une mesure à un indicateur"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.add_measurement(indicator_id, data), "Indicateur", indicator_id)
 
 
@@ -822,7 +822,7 @@ def create_certification(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Crée une certification"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.create_certification(data)
 
 
@@ -836,7 +836,7 @@ def list_certifications(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Liste les certifications"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     items, total = service.list_certifications(
         skip=skip,
         limit=limit,
@@ -853,7 +853,7 @@ def get_certification(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère une certification par ID"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.get_certification(cert_id), "Certification", cert_id)
 
 
@@ -865,7 +865,7 @@ def update_certification(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour une certification"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_certification(cert_id, data), "Certification", cert_id)
 
 
@@ -877,7 +877,7 @@ def add_certification_audit(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Ajoute un audit à une certification"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.add_certification_audit(cert_id, data), "Certification", cert_id)
 
 
@@ -889,7 +889,7 @@ def update_certification_audit(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Met à jour un audit de certification"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return require_entity(service.update_certification_audit(audit_id, data), "Audit certification", audit_id)
 
 
@@ -903,5 +903,5 @@ def get_dashboard(
     context: SaaSContext = Depends(get_saas_context),
 ):
     """Récupère les statistiques du dashboard qualité"""
-    service = get_quality_service(db, int(context.tenant_id), int(context.user_id))
+    service = get_quality_service(db, context.tenant_id, str(context.user_id))
     return service.get_dashboard()

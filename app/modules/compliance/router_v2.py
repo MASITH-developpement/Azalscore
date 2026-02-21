@@ -810,3 +810,182 @@ def get_compliance_metrics(
     """Récupérer les métriques de conformité."""
     service = get_compliance_service(db, context.tenant_id, context.user_id)
     return service.get_compliance_metrics()
+
+@router.get("/stats", response_model=ComplianceMetrics)
+def get_compliance_stats(
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """Alias pour /metrics - Récupérer les statistiques de conformité."""
+    service = get_compliance_service(db, context.tenant_id, context.user_id)
+    return service.get_compliance_metrics()
+
+# =============================================================================
+# GDPR REQUESTS (Demandes RGPD)
+# =============================================================================
+
+@router.get("/gdpr-requests")
+def list_gdpr_requests(
+    request_type: str | None = None,
+    status: str | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """Lister les demandes RGPD (droit d'accès, suppression, etc.)."""
+    from app.modules.country_packs.france.models import RGPDRequest
+
+    query = db.query(RGPDRequest).filter(
+        RGPDRequest.tenant_id == context.tenant_id
+    )
+
+    if request_type:
+        query = query.filter(RGPDRequest.request_type == request_type)
+    if status:
+        query = query.filter(RGPDRequest.status == status)
+
+    total = query.count()
+    items = query.order_by(RGPDRequest.created_at.desc()).offset(skip).limit(limit).all()
+
+    return {
+        "items": [
+            {
+                "id": r.id,
+                "request_code": r.request_code,
+                "request_type": r.request_type,
+                "data_subject_type": r.data_subject_type,
+                "requester_name": r.requester_name,
+                "requester_email": r.requester_email,
+                "status": r.status,
+                "received_at": r.received_at,
+                "due_date": r.due_date,
+                "processed_at": r.processed_at,
+                "created_at": r.created_at
+            }
+            for r in items
+        ],
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+@router.get("/gdpr-requests/{request_id}")
+def get_gdpr_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """Récupérer une demande RGPD."""
+    from app.modules.country_packs.france.models import RGPDRequest
+
+    request = db.query(RGPDRequest).filter(
+        RGPDRequest.tenant_id == context.tenant_id,
+        RGPDRequest.id == request_id
+    ).first()
+
+    if not request:
+        raise HTTPException(status_code=404, detail="Demande RGPD non trouvée")
+
+    return {
+        "id": request.id,
+        "request_code": request.request_code,
+        "request_type": request.request_type,
+        "data_subject_type": request.data_subject_type,
+        "data_subject_id": request.data_subject_id,
+        "requester_name": request.requester_name,
+        "requester_email": request.requester_email,
+        "requester_phone": request.requester_phone,
+        "request_details": request.request_details,
+        "status": request.status,
+        "received_at": request.received_at,
+        "due_date": request.due_date,
+        "processed_at": request.processed_at,
+        "processed_by": request.processed_by,
+        "response_details": request.response_details,
+        "created_at": request.created_at
+    }
+
+# =============================================================================
+# CONSENTS (Consentements RGPD)
+# =============================================================================
+
+@router.get("/consents")
+def list_consents(
+    status: str | None = None,
+    purpose: str | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """Lister les consentements RGPD."""
+    from app.modules.country_packs.france.models import RGPDConsent
+
+    query = db.query(RGPDConsent).filter(
+        RGPDConsent.tenant_id == context.tenant_id
+    )
+
+    if status:
+        query = query.filter(RGPDConsent.status == status)
+    if purpose:
+        query = query.filter(RGPDConsent.purpose == purpose)
+
+    total = query.count()
+    items = query.order_by(RGPDConsent.created_at.desc()).offset(skip).limit(limit).all()
+
+    return {
+        "items": [
+            {
+                "id": c.id,
+                "data_subject_type": c.data_subject_type,
+                "data_subject_id": c.data_subject_id,
+                "purpose": c.purpose,
+                "legal_basis": c.legal_basis,
+                "status": c.status,
+                "consent_given_at": c.consent_given_at,
+                "withdrawn_at": c.withdrawn_at,
+                "valid_until": c.valid_until,
+                "created_at": c.created_at
+            }
+            for c in items
+        ],
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+@router.get("/consents/{consent_id}")
+def get_consent(
+    consent_id: int,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """Récupérer un consentement RGPD."""
+    from app.modules.country_packs.france.models import RGPDConsent
+
+    consent = db.query(RGPDConsent).filter(
+        RGPDConsent.tenant_id == context.tenant_id,
+        RGPDConsent.id == consent_id
+    ).first()
+
+    if not consent:
+        raise HTTPException(status_code=404, detail="Consentement non trouvé")
+
+    return {
+        "id": consent.id,
+        "data_subject_type": consent.data_subject_type,
+        "data_subject_id": consent.data_subject_id,
+        "data_subject_email": consent.data_subject_email,
+        "purpose": consent.purpose,
+        "purpose_description": consent.purpose_description,
+        "legal_basis": consent.legal_basis,
+        "consent_method": consent.consent_method,
+        "consent_proof": consent.consent_proof,
+        "status": consent.status,
+        "consent_given_at": consent.consent_given_at,
+        "withdrawn_at": consent.withdrawn_at,
+        "withdrawal_reason": consent.withdrawal_reason,
+        "valid_until": consent.valid_until,
+        "created_at": consent.created_at
+    }

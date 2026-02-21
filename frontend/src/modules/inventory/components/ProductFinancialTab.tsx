@@ -45,7 +45,7 @@ export const ProductFinancialTab: React.FC<TabContentProps<Product>> = ({ data: 
             <Euro size={24} />
           </div>
           <div className="azals-kpi-card__content">
-            <span className="azals-kpi-card__label">Prix d'achat</span>
+            <span className="azals-kpi-card__label">Prix d&apos;achat</span>
             <span className="azals-kpi-card__value">{formatCurrency(product.cost_price)}</span>
           </div>
         </Card>
@@ -86,7 +86,7 @@ export const ProductFinancialTab: React.FC<TabContentProps<Product>> = ({ data: 
         <Card title="Détail des prix" icon={<Calculator size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <span className="azals-std-field__label">Prix d'achat HT</span>
+              <span className="azals-std-field__label">Prix d&apos;achat HT</span>
               <div className="azals-std-field__value">{formatCurrency(product.cost_price)}</div>
             </div>
             <div className="azals-std-field">

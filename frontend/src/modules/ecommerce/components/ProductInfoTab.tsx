@@ -81,7 +81,7 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
             </div>
           )}
           <div className="azals-field azals-std-field--secondary">
-            <span className="azals-field__label">Prix d'achat</span>
+            <span className="azals-field__label">Prix d&apos;achat</span>
             <div className="azals-field__value">
               {product.cost ? formatCurrency(product.cost, product.currency) : '-'}
             </div>

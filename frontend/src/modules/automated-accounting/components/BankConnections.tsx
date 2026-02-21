@@ -556,8 +556,9 @@ const AddConnectionModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Rechercher une banque</label>
+          <label htmlFor="bank-search" className="azals-form-label">Rechercher une banque</label>
           <Input
+            id="bank-search"
             value={searchTerm}
             onChange={(value) => setSearchTerm(value)}
             placeholder="Nom de la banque ou pays..."
@@ -687,7 +688,7 @@ export const BankConnections: React.FC = () => {
         <Card>
           <div className="azals-empty-state">
             <XCircle size={48} className="azals-text--danger" />
-            <p>Vous n'avez pas accès à cette section.</p>
+            <p>Vous n&apos;avez pas accès à cette section.</p>
             <Button onClick={() => navigate('/auto-accounting')}>Retour</Button>
           </div>
         </Card>

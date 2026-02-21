@@ -15,7 +15,15 @@ import type {
   GoogleMyBusinessInput,
   MetaBusinessInput,
   LinkedInInput,
-  SolocalInput
+  SolocalInput,
+  PlatformStatus,
+  AllPlatformsStatus,
+  PlatformConfigInput,
+  OAuthInitResponse,
+  OAuthCallbackRequest,
+  OAuthCallbackResponse,
+  SyncRequest,
+  SyncResponse
 } from './types';
 
 const BASE_URL = '/admin/social-networks';
@@ -135,7 +143,84 @@ export const socialNetworksApi = {
   syncToPrometheus: (date?: string) => {
     const params = date ? `?metrics_date=${date}` : '';
     return api.post<{ status: string; message: string }>(`${BASE_URL}/sync-prometheus${params}`, {});
-  }
+  },
+
+  // === Configuration des plateformes ===
+
+  /**
+   * Récupère le statut de toutes les plateformes
+   */
+  getAllPlatformsStatus: () =>
+    api.get<AllPlatformsStatus>(`${BASE_URL}/config/status`),
+
+  /**
+   * Récupère le statut d'une plateforme
+   */
+  getPlatformStatus: (platform: MarketingPlatform) =>
+    api.get<PlatformStatus>(`${BASE_URL}/config/${platform}`),
+
+  /**
+   * Crée ou met à jour la configuration d'une plateforme
+   */
+  savePlatformConfig: (platform: MarketingPlatform, data: PlatformConfigInput) =>
+    api.post<PlatformStatus>(`${BASE_URL}/config/${platform}`, data),
+
+  /**
+   * Met à jour la configuration d'une plateforme
+   */
+  updatePlatformConfig: (platform: MarketingPlatform, data: Partial<PlatformConfigInput>) =>
+    api.put<PlatformStatus>(`${BASE_URL}/config/${platform}`, data),
+
+  /**
+   * Supprime la configuration d'une plateforme
+   */
+  deletePlatformConfig: (platform: MarketingPlatform) =>
+    api.delete<{ status: string; platform: string }>(`${BASE_URL}/config/${platform}`),
+
+  // === OAuth ===
+
+  /**
+   * Initialise le flux OAuth pour une plateforme
+   */
+  initOAuth: (platform: MarketingPlatform, redirectUri?: string) =>
+    api.post<OAuthInitResponse>(`${BASE_URL}/config/oauth/init`, {
+      platform,
+      redirect_uri: redirectUri
+    }),
+
+  /**
+   * Traite le callback OAuth
+   */
+  handleOAuthCallback: (data: OAuthCallbackRequest) =>
+    api.post<OAuthCallbackResponse>(`${BASE_URL}/config/oauth/callback`, data),
+
+  // === Synchronisation automatique ===
+
+  /**
+   * Synchronise les métriques depuis les APIs
+   */
+  syncPlatforms: (data: SyncRequest) =>
+    api.post<SyncResponse>(`${BASE_URL}/sync`, data),
+
+  /**
+   * Synchronise une plateforme spécifique
+   */
+  syncPlatform: (platform: MarketingPlatform, dateFrom?: string, dateTo?: string) => {
+    const params = new URLSearchParams();
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+    const queryString = params.toString();
+    return api.post<SyncResponse>(`${BASE_URL}/sync/${platform}${queryString ? `?${queryString}` : ''}`, {});
+  },
+
+  /**
+   * Teste la connexion à une plateforme
+   */
+  testConnection: (platform: MarketingPlatform) =>
+    api.post<{ status: string; platform: string; account_info?: Record<string, unknown> }>(
+      `${BASE_URL}/test-connection/${platform}`,
+      {}
+    )
 };
 
 export default socialNetworksApi;

@@ -986,8 +986,6 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
     const filtered = section.items.filter((item) => {
       if (!item.capability) return true;
       const hasCapability = capabilities.includes(item.capability);
-      if (item.id === 'accounting') {
-      }
       return hasCapability;
     });
     return filtered;

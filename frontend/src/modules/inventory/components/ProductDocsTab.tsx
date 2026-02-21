@@ -169,7 +169,7 @@ export const ProductDocsTab: React.FC<TabContentProps<Product>> = ({ data: produ
           </button>
           <button className="azals-linked-doc azals-linked-doc--info" onClick={() => { handleOpenTechnicalDoc('notice'); }}>
             <FileText size={16} />
-            <span>Notice d'utilisation</span>
+            <span>Notice d&apos;utilisation</span>
           </button>
           <button className="azals-linked-doc azals-linked-doc--info" onClick={() => { handleOpenTechnicalDoc('certificat'); }}>
             <FileText size={16} />

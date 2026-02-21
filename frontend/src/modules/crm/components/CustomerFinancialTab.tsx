@@ -71,7 +71,7 @@ export const CustomerFinancialTab: React.FC<TabContentProps<Customer>> = ({ data
         <Card title="Synthèse financière" icon={<PieChart size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <span className="azals-std-field__label">Chiffre d'affaires total</span>
+              <span className="azals-std-field__label">Chiffre d&apos;affaires total</span>
               <div className="azals-std-field__value text-lg font-semibold text-success">
                 {formatCurrency(totalRevenue)}
               </div>
@@ -129,13 +129,13 @@ export const CustomerFinancialTab: React.FC<TabContentProps<Customer>> = ({ data
 
       {/* Évolution CA (ERP only) */}
       <Card
-        title="Évolution du chiffre d'affaires"
+        title="Évolution du chiffre d&apos;affaires"
         icon={<TrendingUp size={18} />}
         className="mt-4 azals-std-field--secondary"
       >
         <div className="azals-chart-placeholder">
           <BarChart3 size={48} className="text-muted" />
-          <p className="text-muted">Graphique d'évolution du CA</p>
+          <p className="text-muted">Graphique d&apos;évolution du CA</p>
           <p className="text-sm text-muted">Données sur les 12 derniers mois</p>
         </div>
       </Card>

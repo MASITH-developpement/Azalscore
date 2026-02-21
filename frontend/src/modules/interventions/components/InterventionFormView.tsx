@@ -346,8 +346,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">N° donneur d'ordre</label>
+                <label htmlFor="interv-ref-externe" className="block text-sm font-medium mb-1">N° donneur d&apos;ordre</label>
                 <Input
+                  id="interv-ref-externe"
                   value={formData.reference_externe || ''}
                   onChange={(v) => updateField('reference_externe', v)}
                   placeholder="Ex: REF-2025-001, CMD-12345..."
@@ -374,8 +375,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Facturer à</label>
+                <label htmlFor="interv-facturer-a" className="block text-sm font-medium mb-1">Facturer à</label>
                 <Select
+                  id="interv-facturer-a"
                   value={formData.facturer_a}
                   onChange={(v) => updateField('facturer_a', v)}
                   options={FACTURATION_OPTIONS}
@@ -422,8 +424,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
           <FormSection title="Intervention" icon={<Wrench size={20} />}>
             <Grid cols={2} gap="md">
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Type d'intervention</label>
+                <label htmlFor="interv-type" className="block text-sm font-medium mb-1">Type d&apos;intervention</label>
                 <Select
+                  id="interv-type"
                   value={formData.type_intervention}
                   onChange={(v) => updateField('type_intervention', v)}
                   options={TYPES_INTERVENTION}
@@ -431,8 +434,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Priorité</label>
+                <label htmlFor="interv-priority" className="block text-sm font-medium mb-1">Priorité</label>
                 <Select
+                  id="interv-priority"
                   value={formData.priorite}
                   onChange={(v) => updateField('priorite', v)}
                   options={PRIORITES}
@@ -440,8 +444,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Corps d'état</label>
+                <label htmlFor="interv-corps-etat" className="block text-sm font-medium mb-1">Corps d&apos;état</label>
                 <Select
+                  id="interv-corps-etat"
                   value={formData.corps_etat || ''}
                   onChange={(v) => updateField('corps_etat', v || undefined)}
                   options={CORPS_ETAT_OPTIONS}
@@ -450,8 +455,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
             </Grid>
 
             <div className="azals-field" style={{ marginTop: '12px' }}>
-              <label className="block text-sm font-medium mb-1">Titre</label>
+              <label htmlFor="interv-titre" className="block text-sm font-medium mb-1">Titre</label>
               <Input
+                id="interv-titre"
                 value={formData.titre || ''}
                 onChange={(v) => updateField('titre', v)}
                 placeholder="Titre de l'intervention"
@@ -460,8 +466,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
 
             <Grid cols={3} gap="md">
               <div className="azals-field" style={{ marginTop: '12px' }}>
-                <label className="block text-sm font-medium mb-1">Date prévue</label>
+                <label htmlFor="interv-date" className="block text-sm font-medium mb-1">Date prévue</label>
                 <input
+                  id="interv-date"
                   type="datetime-local"
                   className="azals-input"
                   value={formData.date_prevue_debut || ''}
@@ -470,8 +477,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field" style={{ marginTop: '12px' }}>
-                <label className="block text-sm font-medium mb-1">Durée prévue (h)</label>
+                <label htmlFor="interv-duree" className="block text-sm font-medium mb-1">Durée prévue (h)</label>
                 <input
+                  id="interv-duree"
                   type="number"
                   className="azals-input"
                   step="0.25"
@@ -483,8 +491,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field" style={{ marginTop: '12px' }}>
-                <label className="block text-sm font-medium mb-1">Intervenant</label>
+                <label htmlFor="interv-intervenant" className="block text-sm font-medium mb-1">Intervenant</label>
                 <Select
+                  id="interv-intervenant"
                   value={formData.intervenant_id || ''}
                   onChange={(v) => updateField('intervenant_id', v)}
                   options={[
@@ -503,8 +512,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
           <FormSection title="Travaux" icon={<FileText size={20} />}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Description du problème</label>
+                <label htmlFor="interv-description" className="block text-sm font-medium mb-1">Description du problème</label>
                 <TextArea
+                  id="interv-description"
                   value={formData.description || ''}
                   onChange={(v) => updateField('description', v)}
                   rows={3}

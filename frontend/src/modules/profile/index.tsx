@@ -54,30 +54,32 @@ export default function ProfileModule() {
 
             <div style={{ display: 'grid', gap: 'var(--azals-spacing-md)' }}>
               <div className="azals-form-field">
-                <label>Nom complet</label>
+                <label htmlFor="profile-name">Nom complet</label>
                 {editing ? (
                   <input
+                    id="profile-name"
                     type="text"
                     className="azals-input"
                     value={user.name}
                     onChange={(e) => setUser({ ...user, name: e.target.value })}
                   />
                 ) : (
-                  <p>{user.name}</p>
+                  <p id="profile-name">{user.name}</p>
                 )}
               </div>
 
               <div className="azals-form-field">
-                <label>Email</label>
+                <label htmlFor="profile-email">Email</label>
                 {editing ? (
                   <input
+                    id="profile-email"
                     type="email"
                     className="azals-input"
                     value={user.email}
                     onChange={(e) => setUser({ ...user, email: e.target.value })}
                   />
                 ) : (
-                  <p>{user.email}</p>
+                  <p id="profile-email">{user.email}</p>
                 )}
               </div>
 

@@ -18,7 +18,7 @@ export default function NotFoundPage() {
         <h2 className="azals-not-found__title">Page non trouvee</h2>
 
         <p className="azals-not-found__message">
-          La page <code style={{ fontSize: '0.875rem', background: 'var(--azals-gray-100)', padding: '2px 6px', borderRadius: '4px' }}>{location.pathname}</code> n'existe pas ou a ete deplacee.
+          La page <code style={{ fontSize: '0.875rem', background: 'var(--azals-gray-100)', padding: '2px 6px', borderRadius: '4px' }}>{location.pathname}</code> n&apos;existe pas ou a ete deplacee.
         </p>
 
         <div className="azals-not-found__actions">

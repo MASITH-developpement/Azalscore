@@ -95,7 +95,7 @@ export const DevisInfoTab: React.FC<TabContentProps<Devis>> = ({ data: devis }) 
                 <dt>Opportunité CRM</dt>
                 <dd>
                   <a href={`/crm/opportunities/${devis.opportunity_id}`} className="azals-link">
-                    Voir l'opportunité
+                    Voir l&apos;opportunité
                   </a>
                 </dd>
               </div>

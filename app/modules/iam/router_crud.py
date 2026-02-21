@@ -34,6 +34,7 @@ from .schemas import (
     RoleAssignment, RoleCreate, RoleListResponse, RoleResponse, RoleUpdate,
     SessionListResponse, SessionResponse, SessionRevoke,
     UserCreate, UserListResponse, UserResponse, UserUpdate,
+    UserPermissionsUpdate,
 )
 from .service import IAMService, get_iam_service
 
@@ -534,6 +535,22 @@ async def get_user_permissions(
 ):
     """Recupere toutes les permissions d'un utilisateur."""
     return service.get_user_permissions(user_id)
+
+
+@router.put("/users/{user_id}/permissions", response_model=List[str])
+@require_permission("iam.permission.admin")
+async def update_user_permissions(
+    user_id: UUID,
+    data: UserPermissionsUpdate,
+    context: SaaSContext = Depends(get_context),
+    service: IAMService = Depends(get_service_protected)
+):
+    """Met a jour les permissions d'un utilisateur."""
+    try:
+        service.update_user_permissions(user_id, data.capabilities)
+        return service.get_user_permissions(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # =============================================================================

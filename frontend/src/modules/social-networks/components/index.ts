@@ -11,3 +11,5 @@ export {
   LinkedInForm,
   SolocalForm,
 } from './PlatformForms';
+
+export { ConfigurationPanel } from './ConfigurationPanel';

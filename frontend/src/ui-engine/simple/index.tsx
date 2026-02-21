@@ -138,6 +138,7 @@ interface SimpleTableProps<T> {
   emptyMessage?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function SimpleTable<T extends Record<string, any>>({
   columns,
   data,

@@ -90,7 +90,7 @@ const Header: React.FC<{
                 <span>Paramètres</span>
               </a>
               <hr className="azals-header__dropdown-divider" />
-              <div className="azals-header__dropdown-label">Mode d'interface</div>
+              <div className="azals-header__dropdown-label">Mode d&apos;interface</div>
               <button
                 className={clsx('azals-header__dropdown-item', { 'azals-header__dropdown-item--active': isAzalscore })}
                 onClick={() => setMode('azalscore')}

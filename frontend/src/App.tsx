@@ -171,7 +171,7 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
         <div className="azals-app-loading__content">
           <div className="azals-app-loading__logo">AZALSCORE</div>
           <div className="azals-spinner azals-spinner--lg" />
-          <p>Chargement de l'application...</p>
+          <p>Chargement de l&apos;application...</p>
           <small className="azals-app-loading__status">
             Auth: {authStatus} | Capabilities: {capabilitiesStatus}
           </small>

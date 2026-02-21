@@ -1571,7 +1571,7 @@ export const SupplierDetailPage: React.FC = () => {
     return (
       <PageWrapper title="Fournisseur introuvable">
         <Card>
-          <p>Ce fournisseur n'existe pas ou a été supprimé.</p>
+          <p>Ce fournisseur n&apos;existe pas ou a ete supprime.</p>
           <Button onClick={() => navigate('/purchases/suppliers')}>Retour à la liste</Button>
         </Card>
       </PageWrapper>
@@ -2041,7 +2041,7 @@ export const OrderDetailPage: React.FC = () => {
     return (
       <PageWrapper title="Commande introuvable">
         <Card>
-          <p>Cette commande n'existe pas ou a été supprimée.</p>
+          <p>Cette commande n&apos;existe pas ou a ete supprimee.</p>
           <Button onClick={() => navigate('/purchases/orders')}>Retour à la liste</Button>
         </Card>
       </PageWrapper>
@@ -2441,7 +2441,7 @@ export const InvoiceFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Date d'échéance</label>
+              <label className="azals-field__label">Date d&apos;echeance</label>
               <input
                 type="date"
                 className="azals-input"
@@ -2547,7 +2547,7 @@ export const InvoiceDetailPage: React.FC = () => {
     return (
       <PageWrapper title="Facture introuvable">
         <Card>
-          <p>Cette facture n'existe pas ou a été supprimée.</p>
+          <p>Cette facture n&apos;existe pas ou a ete supprimee.</p>
           <Button onClick={() => navigate('/purchases/invoices')}>Retour à la liste</Button>
         </Card>
       </PageWrapper>

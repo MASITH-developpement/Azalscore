@@ -33,17 +33,72 @@ import { setInterfaceMode, getCurrentMode, type InterfaceMode } from '../utils/i
 
 export type ViewKey =
   | 'saisie'
-  | 'gestion-devis' | 'gestion-commandes' | 'gestion-interventions' | 'gestion-factures' | 'gestion-paiements'
+  | 'gestion-devis'
+  | 'gestion-commandes'
+  | 'gestion-interventions'
+  | 'gestion-factures'
+  | 'gestion-paiements'
   | 'affaires'
-  | 'crm' | 'stock' | 'achats' | 'projets' | 'rh' | 'vehicules'
-  | 'production' | 'maintenance' | 'quality'
-  | 'pos' | 'ecommerce' | 'marketplace' | 'subscriptions'
-  | 'helpdesk' | 'bi' | 'compliance' | 'web'
-  | 'compta' | 'tresorerie'
-  | 'cockpit' | 'marceau'
-  | 'import-odoo' | 'import-axonaut' | 'import-pennylane' | 'import-sage' | 'import-chorus'
+  | 'accounting'
+  | 'treasury'
+  | 'partners'
+  | 'projects'
+  | 'inventory'
+  | 'purchases'
+  | 'hr'
+  | 'production'
+  | 'maintenance'
+  | 'quality'
+  | 'pos'
+  | 'ecommerce'
+  | 'helpdesk'
+  | 'bi'
+  | 'compliance'
+  | 'ai-assistant'
+  | 'assets'
+  | 'contracts'
+  | 'expenses'
+  | 'timesheet'
+  | 'field-service'
+  | 'complaints'
+  | 'warranty'
+  | 'rfq'
+  | 'procurement'
+  | 'subscriptions'
+  | 'marketplace'
+  | 'esignature'
+  | 'email'
+  | 'broadcast'
+  | 'web'
+  | 'website'
+  | 'crm'
+  | 'commercial'
+  | 'finance'
+  | 'consolidation'
+  | 'qc'
+  | 'automated-accounting'
+  | 'social-networks'
+  | 'marceau'
+  | 'cockpit'
   | 'admin'
-  | 'profile' | 'settings';
+  | 'audit'
+  | 'backup'
+  | 'guardian'
+  | 'iam'
+  | 'tenants'
+  | 'triggers'
+  | 'autoconfig'
+  | 'hr-vault'
+  | 'stripe-integration'
+  | 'country-packs'
+  | 'odoo-import'
+  | 'import-odoo'
+  | 'import-axonaut'
+  | 'import-pennylane'
+  | 'import-sage'
+  | 'import-chorus'
+  | 'profile'
+  | 'settings';
 
 interface MenuItem {
   key: ViewKey;
@@ -71,32 +126,63 @@ const MENU_ITEMS: MenuItem[] = [
   { key: 'gestion-factures', label: 'Factures', group: 'Gestion', capability: 'invoicing.view' },
   { key: 'gestion-paiements', label: 'Paiements', group: 'Gestion', capability: 'payments.view' },
   { key: 'affaires', label: 'Suivi Affaires', group: 'Affaires', capability: 'projects.view' },
-  { key: 'crm', label: 'CRM / Clients', group: 'Modules', capability: 'partners.view' },
-  { key: 'stock', label: 'Stock', group: 'Modules', capability: 'inventory.view' },
-  { key: 'achats', label: 'Achats', group: 'Modules', capability: 'purchases.view' },
-  { key: 'projets', label: 'Projets', group: 'Modules', capability: 'projects.view' },
-  { key: 'rh', label: 'RH', group: 'Modules', capability: 'hr.view' },
+  { key: 'partners', label: 'CRM / Clients', group: 'Modules', capability: 'partners.view' },
+  { key: 'projects', label: 'Projets', group: 'Modules', capability: 'projects.view' },
+  { key: 'inventory', label: 'Stock', group: 'Modules', capability: 'inventory.view' },
+  { key: 'purchases', label: 'Achats', group: 'Modules', capability: 'purchases.view' },
+  { key: 'hr', label: 'Ressources Humaines', group: 'Modules', capability: 'hr.view' },
+  { key: 'contracts', label: 'Contrats', group: 'Modules', capability: 'contracts.view' },
+  { key: 'timesheet', label: 'Feuilles de Temps', group: 'Modules', capability: 'timesheet.view' },
+  { key: 'field-service', label: 'Service Terrain', group: 'Modules', capability: 'field_service.view' },
+  { key: 'complaints', label: 'Réclamations', group: 'Modules', capability: 'complaints.view' },
+  { key: 'warranty', label: 'Garanties', group: 'Modules', capability: 'warranty.view' },
+  { key: 'rfq', label: 'Appels d\'Offres', group: 'Modules', capability: 'rfq.view' },
+  { key: 'procurement', label: 'Approvisionnement', group: 'Modules', capability: 'procurement.view' },
+  { key: 'crm', label: 'CRM Avancé', group: 'Modules', capability: 'crm.view' },
   { key: 'production', label: 'Production', group: 'Logistique', capability: 'production.view' },
   { key: 'maintenance', label: 'Maintenance', group: 'Logistique', capability: 'maintenance.view' },
   { key: 'quality', label: 'Qualité', group: 'Logistique', capability: 'quality.view' },
+  { key: 'qc', label: 'Contrôle Qualité', group: 'Logistique', capability: 'qc.view' },
   { key: 'pos', label: 'Point de Vente', group: 'Commerce', capability: 'pos.view' },
   { key: 'ecommerce', label: 'E-commerce', group: 'Commerce', capability: 'ecommerce.view' },
-  { key: 'marketplace', label: 'Marketplace', group: 'Commerce', capability: 'marketplace.view' },
   { key: 'subscriptions', label: 'Abonnements', group: 'Commerce', capability: 'subscriptions.view' },
+  { key: 'marketplace', label: 'Marketplace', group: 'Commerce', capability: 'marketplace.view' },
+  { key: 'commercial', label: 'Commercial', group: 'Commerce', capability: 'commercial.view' },
   { key: 'helpdesk', label: 'Support Client', group: 'Services', capability: 'helpdesk.view' },
-  { key: 'web', label: 'Site Web', group: 'Digital', capability: 'web.view' },
   { key: 'bi', label: 'Reporting & BI', group: 'Digital', capability: 'bi.view' },
   { key: 'compliance', label: 'Conformité', group: 'Digital', capability: 'compliance.view' },
-  { key: 'compta', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },
-  { key: 'tresorerie', label: 'Trésorerie', group: 'Finance', capability: 'treasury.view' },
+  { key: 'broadcast', label: 'Diffusion', group: 'Digital', capability: 'broadcast.view' },
+  { key: 'web', label: 'Site Web', group: 'Digital', capability: 'web.view' },
+  { key: 'website', label: 'Site Web Builder', group: 'Digital', capability: 'website.view' },
+  { key: 'social-networks', label: 'Réseaux Sociaux', group: 'Digital', capability: 'social_networks.view' },
+  { key: 'esignature', label: 'Signature Électronique', group: 'Communication', capability: 'esignature.view' },
+  { key: 'email', label: 'Emails', group: 'Communication', capability: 'email.view' },
+  { key: 'accounting', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },
+  { key: 'treasury', label: 'Trésorerie', group: 'Finance', capability: 'treasury.view' },
+  { key: 'assets', label: 'Immobilisations', group: 'Finance', capability: 'assets.view' },
+  { key: 'expenses', label: 'Notes de Frais', group: 'Finance', capability: 'expenses.view' },
+  { key: 'finance', label: 'Finance', group: 'Finance', capability: 'finance.view' },
+  { key: 'consolidation', label: 'Consolidation', group: 'Finance', capability: 'consolidation.view' },
+  { key: 'automated-accounting', label: 'Comptabilité Auto', group: 'Finance', capability: 'automated_accounting.view' },
   { key: 'cockpit', label: 'Cockpit Dirigeant', group: 'Direction', capability: 'cockpit.view' },
+  { key: 'ai-assistant', label: 'Assistant IA', group: 'IA', capability: 'ai_assistant.view' },
   { key: 'marceau', label: 'Marceau IA', group: 'IA', capability: 'marceau.view' },
-  { key: 'import-odoo', label: 'Import Odoo', group: 'Import', capability: 'import.odoo.config' },
-  { key: 'import-axonaut', label: 'Import Axonaut', group: 'Import', capability: 'import.axonaut.config' },
-  { key: 'import-pennylane', label: 'Import Pennylane', group: 'Import', capability: 'import.pennylane.config' },
-  { key: 'import-sage', label: 'Import Sage', group: 'Import', capability: 'import.sage.config' },
-  { key: 'import-chorus', label: 'Import Chorus', group: 'Import', capability: 'import.chorus.config' },
   { key: 'admin', label: 'Administration', group: 'Système', capability: 'admin.view' },
+  { key: 'audit', label: 'Audit & Logs', group: 'Système', capability: 'audit.view' },
+  { key: 'backup', label: 'Sauvegardes', group: 'Système', capability: 'backup.view' },
+  { key: 'guardian', label: 'Sécurité', group: 'Système', capability: 'guardian.view' },
+  { key: 'iam', label: 'Gestion des Accès', group: 'Système', capability: 'iam.view' },
+  { key: 'tenants', label: 'Multi-Tenants', group: 'Système', capability: 'tenants.view' },
+  { key: 'triggers', label: 'Automatisations', group: 'Système', capability: 'triggers.view' },
+  { key: 'autoconfig', label: 'Configuration Auto', group: 'Système', capability: 'autoconfig.view' },
+  { key: 'hr-vault', label: 'Coffre-fort RH', group: 'Système', capability: 'hr_vault.view' },
+  { key: 'stripe-integration', label: 'Intégration Stripe', group: 'Système', capability: 'stripe_integration.view' },
+  { key: 'country-packs', label: 'Packs Pays', group: 'Système', capability: 'country_packs.view' },
+  { key: 'import-odoo', label: 'Import Odoo', group: 'Import', capability: 'import_data.odoo' },
+  { key: 'import-axonaut', label: 'Import Axonaut', group: 'Import', capability: 'import_data.axonaut' },
+  { key: 'import-pennylane', label: 'Import Pennylane', group: 'Import', capability: 'import_data.pennylane' },
+  { key: 'import-sage', label: 'Import Sage', group: 'Import', capability: 'import_data.sage' },
+  { key: 'import-chorus', label: 'Import Chorus', group: 'Import', capability: 'import_data.chorus' },
 ];
 
 // ============================================================

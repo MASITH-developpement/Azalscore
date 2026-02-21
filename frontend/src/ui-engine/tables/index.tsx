@@ -238,7 +238,7 @@ function TableHeader<T>({
     sorting.onSort(columnId, newOrder);
   };
 
-  const handleFilterClick = (e: React.MouseEvent, columnId: string) => {
+  const handleFilterClick = (e: React.MouseEvent | React.KeyboardEvent, columnId: string) => {
     e.stopPropagation();
     setOpenFilterId(openFilterId === columnId ? null : columnId);
   };
@@ -282,12 +282,18 @@ function TableHeader<T>({
               <div
                 className="azals-table__th-content"
                 onClick={() => column.sortable && handleSort(column)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && column.sortable) handleSort(column); }}
+                role={column.sortable ? 'button' : undefined}
+                tabIndex={column.sortable ? 0 : undefined}
               >
                 <span
                   className={clsx('azals-table__th-label', {
                     'azals-table__th-label--clickable': isFilterable,
                   })}
                   onClick={isFilterable ? (e) => handleFilterClick(e, columnId) : undefined}
+                  onKeyDown={isFilterable ? (e) => { if (e.key === 'Enter') handleFilterClick(e, columnId); } : undefined}
+                  role={isFilterable ? 'button' : undefined}
+                  tabIndex={isFilterable ? 0 : undefined}
                 >
                   {column.header}
                   {isFilterable && (
@@ -419,6 +425,8 @@ function TableRow<T>({
                 <div
                   className="azals-table__actions-overlay"
                   onClick={() => setActionsOpen(false)}
+                  onKeyDown={(e) => { if (e.key === 'Escape') setActionsOpen(false); }}
+                  role="presentation"
                 />
                 <div className="azals-table__actions-menu">
                   {visibleActions.map((action) => (

@@ -84,6 +84,7 @@ from app.core.saas_context import Result, SaaSContext, TenantScope, UserRole
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 
 
 @compiles(PG_UUID, "sqlite")
@@ -102,6 +103,12 @@ def compile_jsonb_sqlite(element, compiler, **kw):
 def compile_enum_sqlite(element, compiler, **kw):
     """Compile PostgreSQL ENUM as VARCHAR for SQLite."""
     return "VARCHAR(50)"
+
+
+@compiles(PG_ARRAY, "sqlite")
+def compile_array_sqlite(element, compiler, **kw):
+    """Compile PostgreSQL ARRAY as TEXT for SQLite (stored as JSON)."""
+    return "TEXT"
 
 
 # ============================================================================
@@ -271,10 +278,12 @@ def mock_auth_global(tenant_id, user_id):
     3. get_db dependency - retourne session de test ou mock
     """
     # Creer le SaaSContext mock
+    # Supporter user_id comme UUID ou string
+    user_uuid = user_id if isinstance(user_id, UUID) else UUID(user_id)
     mock_context = SaaSContext(
         tenant_id=tenant_id,
-        user_id=UUID(user_id),
-        role=UserRole.ADMIN,
+        user_id=user_uuid,
+        role=UserRole.SUPERADMIN,  # Use SUPERADMIN to bypass permission checks in tests
         permissions={"*"},
         scope=TenantScope.TENANT,
         ip_address="127.0.0.1",
@@ -285,9 +294,9 @@ def mock_auth_global(tenant_id, user_id):
 
     # Creer le mock user pour le middleware
     mock_user_obj = MockUser(
-        id=UUID(user_id),
+        id=user_uuid,
         tenant_id=tenant_id,
-        role="ADMIN"
+        role="SUPERADMIN"
     )
 
     # Mock SaaSCore.authenticate pour retourner succes

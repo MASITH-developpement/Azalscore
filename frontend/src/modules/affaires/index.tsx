@@ -259,7 +259,7 @@ const FormView: React.FC<FormViewProps> = ({ id, onBack, onSaved, contextMode })
     return (
       <Page>
         <PageHeader title="Affaire non trouvée" onBack={onBack} />
-        <Section><p>Cette affaire n'existe pas.</p></Section>
+        <Section><p>Cette affaire n&apos;existe pas.</p></Section>
       </Page>
     );
   }

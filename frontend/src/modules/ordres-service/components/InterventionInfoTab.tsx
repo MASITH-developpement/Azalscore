@@ -35,7 +35,7 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
 
       <Grid cols={2} gap="lg">
         {/* Client / Donneur d'ordre */}
-        <Card title="Client / Donneur d'ordre" icon={<Building2 size={18} />}>
+        <Card title="Client / Donneur d&apos;ordre" icon={<Building2 size={18} />}>
           <dl className="azals-dl">
             {intervention.client_name && (
               <>
@@ -45,7 +45,7 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
             )}
             {intervention.donneur_ordre_name && (
               <>
-                <dt><User size={14} /> Donneur d'ordre</dt>
+                <dt><User size={14} /> Donneur d&apos;ordre</dt>
                 <dd>{intervention.donneur_ordre_name}</dd>
               </>
             )}
@@ -62,7 +62,7 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
         </Card>
 
         {/* Lieu d'intervention */}
-        <Card title="Lieu d'intervention" icon={<MapPin size={18} />}>
+        <Card title="Lieu d&apos;intervention" icon={<MapPin size={18} />}>
           {fullAddress ? (
             <dl className="azals-dl">
               <dt><MapPin size={14} /> Adresse</dt>

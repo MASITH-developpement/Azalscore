@@ -55,7 +55,7 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
             </div>
             {partner.industry && (
               <div className="azals-std-field azals-std-field--secondary">
-                <span>Secteur d'activite</span>
+                <span>Secteur d&apos;activite</span>
                 <div>{partner.industry}</div>
               </div>
             )}

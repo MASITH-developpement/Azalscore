@@ -716,8 +716,9 @@ const FECView: React.FC = () => {
       <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} title="Generer un FEC" size="md">
         <div className="space-y-4">
           <div className="azals-field">
-            <label className="azals-field__label">Exercice fiscal</label>
+            <label htmlFor="fec-fiscal-year" className="azals-field__label">Exercice fiscal</label>
             <Input
+              id="fec-fiscal-year"
               type="number"
               value={String(formData.fiscal_year)}
               onChange={(v) => setFormData({ ...formData, fiscal_year: parseInt(v) })}
@@ -725,8 +726,9 @@ const FECView: React.FC = () => {
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label className="azals-field__label">Date debut</label>
+              <label htmlFor="fec-period-start" className="azals-field__label">Date debut</label>
               <input
+                id="fec-period-start"
                 type="date"
                 className="azals-input"
                 value={formData.period_start}
@@ -734,8 +736,9 @@ const FECView: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Date fin</label>
+              <label htmlFor="fec-period-end" className="azals-field__label">Date fin</label>
               <input
+                id="fec-period-end"
                 type="date"
                 className="azals-input"
                 value={formData.period_end}
