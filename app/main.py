@@ -1092,6 +1092,9 @@ app.include_router(health_router)
 app.include_router(health_business_router)
 app.include_router(metrics_router)
 
+# Module MARCEAU - Agent IA polyvalent (telephonie, commercial, support, etc.)
+app.include_router(marceau_router)
+
 
 # Fallback routes for health/metrics if routers don't work
 # These are simple inline routes to diagnose routing issues

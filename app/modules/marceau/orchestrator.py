@@ -501,6 +501,17 @@ MARCEAU:"""
         # Tendance
         trend = ((actions_today - actions_yesterday) / max(actions_yesterday, 1)) * 100
 
+        # Check LLM status
+        llm_configured = False
+        llm_provider = None
+        try:
+            llm = await get_llm_client_for_tenant(self.tenant_id, self.db)
+            if await llm.is_available() and llm.provider_name != "mock":
+                llm_configured = True
+                llm_provider = llm.provider_name
+        except Exception:
+            pass
+
         return {
             "total_actions_today": actions_today,
             "total_conversations_today": 0,  # A implementer
@@ -517,4 +528,6 @@ MARCEAU:"""
             "avg_confidence_score": float(avg_confidence) if avg_confidence else 1.0,
             "avg_response_time_seconds": 0,
             "tokens_used_today": 0,
+            "llm_configured": llm_configured,
+            "llm_provider": llm_provider,
         }

@@ -373,6 +373,10 @@ class MarceauDashboardResponse(BaseModel):
     avg_response_time_seconds: float
     tokens_used_today: int
 
+    # Statut LLM
+    llm_configured: bool = False
+    llm_provider: str | None = None
+
 
 class ModuleStatsResponse(BaseModel):
     """Statistiques par module."""

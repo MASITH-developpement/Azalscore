@@ -384,7 +384,7 @@ class LLMClientFactory:
     Supporte la configuration par tenant via integrations.
     """
 
-    PROVIDER_ORDER = ["ollama", "anthropic", "openai", "mock"]
+    PROVIDER_ORDER = ["ollama", "openai", "anthropic", "mock"]
 
     _instance: BaseLLMClient | None = None
     _provider_cache: dict[str, BaseLLMClient] = {}

@@ -71,8 +71,8 @@ export function MarceauMemory() {
         api.get<MemoryStats>('/marceau/memory/stats'),
         api.get<KnowledgeDocument[]>('/marceau/knowledge'),
       ]);
-      setStats(statsRes.data);
-      setDocuments(docsRes.data);
+      setStats(statsRes.data || null);
+      setDocuments(docsRes.data || []);
       setError(null);
     } catch (e: unknown) {
       setError((e as ApiMutationError).message || 'Erreur chargement');
@@ -242,7 +242,7 @@ export function MarceauMemory() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-700">{memory.content}</p>
-                      {memory.tags.length > 0 && (
+                      {memory.tags?.length > 0 && (
                         <div className="flex gap-1 mt-2">
                           {memory.tags.map((tag, i) => (
                             <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">

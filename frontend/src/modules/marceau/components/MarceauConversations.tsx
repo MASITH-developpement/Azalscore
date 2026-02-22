@@ -62,8 +62,8 @@ export function MarceauConversations() {
       const response = await api.get<{ items: MarceauConversation[]; total: number }>(
         `/marceau/conversations?${params}`
       );
-      setConversations(response.data.items || []);
-      setTotal(response.data.total || 0);
+      setConversations(response.data?.items || []);
+      setTotal(response.data?.total || 0);
       setError(null);
     } catch (e: any) {
       setError(e.message || 'Erreur chargement');

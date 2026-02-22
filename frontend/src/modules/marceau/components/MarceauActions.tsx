@@ -68,8 +68,8 @@ export function MarceauActions() {
       const response = await api.get<{ items: MarceauAction[]; total: number }>(
         `/marceau/actions?${params}`
       );
-      setActions(response.data.items || []);
-      setTotal(response.data.total || 0);
+      setActions(response.data?.items || []);
+      setTotal(response.data?.total || 0);
       setError(null);
     } catch (e: unknown) {
       setError((e as ApiMutationError).message || 'Erreur chargement');
