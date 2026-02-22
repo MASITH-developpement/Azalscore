@@ -1018,7 +1018,7 @@ class FleetAlert(Base):
     email_sent_at = Column(DateTime)
     sms_sent = Column(Boolean, default=False)
 
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)  # Renomme car 'metadata' reserve SQLAlchemy
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

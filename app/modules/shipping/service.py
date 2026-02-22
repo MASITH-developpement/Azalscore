@@ -1639,6 +1639,6 @@ class ShippingService:
 
 # ============== Factory ==============
 
-def create_shipping_service(session: AsyncSession, tenant_id: str) -> ShippingService:
+def create_shipping_service(session: Session, tenant_id: str) -> ShippingService:
     """Factory pour créer une instance du service."""
     return ShippingService(session, tenant_id)

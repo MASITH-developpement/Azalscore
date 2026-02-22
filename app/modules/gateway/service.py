@@ -363,7 +363,7 @@ class GatewayService:
             allowed_origins=json.dumps(data.allowed_origins) if data.allowed_origins else None,
             allowed_endpoints=json.dumps(data.allowed_endpoints) if data.allowed_endpoints else None,
             expires_at=data.expires_at,
-            metadata=json.dumps(data.metadata) if data.metadata else None,
+            extra_data=json.dumps(data.metadata) if data.metadata else None,
             created_by=self.user_id
         )
 

@@ -102,6 +102,7 @@ from .schemas import (
     EventResponse,
     EventStats,
     EventUpdate,
+    EvaluationResponse,
     EvaluationStats,
     EvaluationSubmit,
     GlobalEventStats,

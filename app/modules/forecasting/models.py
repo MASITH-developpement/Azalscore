@@ -406,11 +406,12 @@ class Scenario(Base):
         return f"<Scenario {self.code}: {self.name}>"
 
 
-class Budget(Base):
+class ForecastBudget(Base):
     """
-    Budget annuel ou périodique.
+    Budget annuel ou périodique pour le module forecasting.
+    Renomme pour eviter conflit avec budget/models.py
     """
-    __tablename__ = "budgets"
+    __tablename__ = "forecasting_budgets"
 
     # === Identifiants ===
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -609,7 +610,7 @@ def scenario_before_update(mapper, connection, target):
     target.version += 1
 
 
-@event.listens_for(Budget, 'before_update')
+@event.listens_for(ForecastBudget, 'before_update')
 def budget_before_update(mapper, connection, target):
     target.version += 1
 

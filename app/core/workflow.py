@@ -117,8 +117,8 @@ class WorkflowInstance(Base):
     current_step = Column(Integer, default=0)
     total_steps = Column(Integer, default=1)
 
-    # Métadonnées
-    metadata = Column(JSONB, default=dict)
+    # Métadonnées (extra_data car 'metadata' reserve SQLAlchemy)
+    extra_data = Column(JSONB, default=dict)
     amount = Column(Integer, nullable=True)  # Pour seuils d'approbation
 
     # Initiateur

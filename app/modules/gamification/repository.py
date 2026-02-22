@@ -8,7 +8,7 @@ Pattern _base_query() filtre obligatoire.
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, or_, func, desc, asc
@@ -85,7 +85,7 @@ class LevelRepository(BaseRepository):
             GamificationLevel.is_active == True
         ).first()
 
-    def get_all(self) -> list[GamificationLevel]:
+    def get_all(self) -> List[GamificationLevel]:
         return self._base_query().filter(
             GamificationLevel.is_active == True
         ).order_by(GamificationLevel.level_number).all()
@@ -136,7 +136,7 @@ class UserProfileRepository(BaseRepository):
     def get_by_user_id(self, user_id: UUID) -> UserGamificationProfile | None:
         return self._base_query().filter(UserGamificationProfile.user_id == user_id).first()
 
-    def get_or_create(self, user_id: UUID) -> tuple[UserGamificationProfile, bool]:
+    def get_or_create(self, user_id: UUID) -> Tuple[UserGamificationProfile, bool]:
         """Recupere ou cree un profil utilisateur."""
         profile = self.get_by_user_id(user_id)
         if profile:
@@ -157,7 +157,7 @@ class UserProfileRepository(BaseRepository):
         page_size: int = 20,
         sort_by: str = "current_level",
         sort_dir: str = "desc"
-    ) -> tuple[list[UserGamificationProfile], int]:
+    ) -> Tuple[List[UserGamificationProfile], int]:
         query = self._base_query()
         total = query.count()
 
@@ -168,12 +168,12 @@ class UserProfileRepository(BaseRepository):
         items = query.offset(offset).limit(page_size).all()
         return items, total
 
-    def get_top_by_xp(self, limit: int = 100) -> list[UserGamificationProfile]:
+    def get_top_by_xp(self, limit: int = 100) -> List[UserGamificationProfile]:
         return self._base_query().filter(
             UserGamificationProfile.show_on_leaderboard == True
         ).order_by(desc(UserGamificationProfile.lifetime_xp)).limit(limit).all()
 
-    def get_by_team(self, team_id: UUID) -> list[UserGamificationProfile]:
+    def get_by_team(self, team_id: UUID) -> List[UserGamificationProfile]:
         return self._base_query().filter(
             UserGamificationProfile.team_id == team_id
         ).all()
@@ -232,7 +232,7 @@ class PointTransactionRepository(BaseRepository):
         filters: PointTransactionFilters | None = None,
         page: int = 1,
         page_size: int = 50
-    ) -> tuple[list[PointTransaction], int]:
+    ) -> Tuple[List[PointTransaction], int]:
         query = self._base_query().filter(PointTransaction.user_id == user_id)
 
         if filters:
@@ -323,7 +323,7 @@ class BadgeCategoryRepository(BaseRepository):
     def get_by_code(self, code: str) -> BadgeCategory | None:
         return self._base_query().filter(BadgeCategory.code == code.upper()).first()
 
-    def get_all_active(self) -> list[BadgeCategory]:
+    def get_all_active(self) -> List[BadgeCategory]:
         return self._base_query().filter(
             BadgeCategory.is_active == True
         ).order_by(BadgeCategory.sort_order).all()
@@ -359,7 +359,7 @@ class BadgeRepository(BaseRepository):
         filters: BadgeFilters | None = None,
         page: int = 1,
         page_size: int = 50
-    ) -> tuple[list[GamificationBadge], int]:
+    ) -> Tuple[List[GamificationBadge], int]:
         query = self._base_query()
         now = datetime.utcnow()
 
@@ -449,7 +449,7 @@ class UserBadgeRepository(BaseRepository):
         user_id: UUID,
         status: BadgeStatus | None = None,
         include_badge: bool = True
-    ) -> list[UserBadge]:
+    ) -> List[UserBadge]:
         query = self._base_query().filter(UserBadge.user_id == user_id)
         if status:
             query = query.filter(UserBadge.status == status)
@@ -457,7 +457,7 @@ class UserBadgeRepository(BaseRepository):
             query = query.options(joinedload(UserBadge.badge))
         return query.order_by(desc(UserBadge.unlocked_at)).all()
 
-    def get_recent_unlocks(self, user_id: UUID, limit: int = 5) -> list[UserBadge]:
+    def get_recent_unlocks(self, user_id: UUID, limit: int = 5) -> List[UserBadge]:
         return self._base_query().filter(
             UserBadge.user_id == user_id,
             UserBadge.status == BadgeStatus.UNLOCKED
@@ -514,7 +514,7 @@ class ChallengeRepository(BaseRepository):
         filters: ChallengeFilters | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> tuple[list[GamificationChallenge], int]:
+    ) -> Tuple[List[GamificationChallenge], int]:
         query = self._base_query()
         now = datetime.utcnow()
 
@@ -546,7 +546,7 @@ class ChallengeRepository(BaseRepository):
         items = query.offset(offset).limit(page_size).all()
         return items, total
 
-    def get_active(self) -> list[GamificationChallenge]:
+    def get_active(self) -> List[GamificationChallenge]:
         now = datetime.utcnow()
         return self._base_query().filter(
             GamificationChallenge.status == ChallengeStatus.ACTIVE,
@@ -614,7 +614,7 @@ class UserChallengeRepository(BaseRepository):
         user_id: UUID,
         status: ChallengeStatus | None = None,
         include_challenge: bool = True
-    ) -> list[UserChallenge]:
+    ) -> List[UserChallenge]:
         query = self._base_query().filter(UserChallenge.user_id == user_id)
         if status:
             query = query.filter(UserChallenge.status == status)
@@ -622,10 +622,10 @@ class UserChallengeRepository(BaseRepository):
             query = query.options(joinedload(UserChallenge.challenge))
         return query.order_by(desc(UserChallenge.joined_at)).all()
 
-    def get_active_by_user(self, user_id: UUID) -> list[UserChallenge]:
+    def get_active_by_user(self, user_id: UUID) -> List[UserChallenge]:
         return self.get_by_user(user_id, ChallengeStatus.ACTIVE)
 
-    def get_by_challenge(self, challenge_id: UUID) -> list[UserChallenge]:
+    def get_by_challenge(self, challenge_id: UUID) -> List[UserChallenge]:
         return self._base_query().filter(
             UserChallenge.challenge_id == challenge_id
         ).order_by(desc(UserChallenge.progress)).all()
@@ -680,7 +680,7 @@ class RewardRepository(BaseRepository):
         user_coins: int | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> tuple[list[GamificationReward], int]:
+    ) -> Tuple[List[GamificationReward], int]:
         query = self._base_query()
         now = datetime.utcnow()
 
@@ -775,7 +775,7 @@ class RewardClaimRepository(BaseRepository):
         user_id: UUID,
         status: RewardStatus | None = None,
         include_reward: bool = True
-    ) -> list[RewardClaim]:
+    ) -> List[RewardClaim]:
         query = self._base_query().filter(RewardClaim.user_id == user_id)
         if status:
             query = query.filter(RewardClaim.status == status)
@@ -839,7 +839,7 @@ class RuleRepository(BaseRepository):
         self,
         event_type: str,
         event_source: str | None = None
-    ) -> list[GamificationRule]:
+    ) -> List[GamificationRule]:
         now = datetime.utcnow()
         query = self._base_query().filter(
             GamificationRule.is_active == True,
@@ -907,7 +907,7 @@ class RuleTriggerLogRepository(BaseRepository):
         user_id: UUID,
         rule_id: UUID,
         since: datetime | None = None
-    ) -> list[RuleTriggerLog]:
+    ) -> List[RuleTriggerLog]:
         query = self._base_query().filter(
             RuleTriggerLog.user_id == user_id,
             RuleTriggerLog.rule_id == rule_id
@@ -965,7 +965,7 @@ class TeamRepository(BaseRepository):
         public_only: bool = False,
         page: int = 1,
         page_size: int = 20
-    ) -> tuple[list[GamificationTeam], int]:
+    ) -> Tuple[List[GamificationTeam], int]:
         query = self._base_query().filter(GamificationTeam.is_active == True)
 
         if search:
@@ -1032,7 +1032,7 @@ class TeamMembershipRepository(BaseRepository):
             TeamMembership.tenant_id == self.tenant_id
         )
 
-    def get_by_user(self, user_id: UUID, active_only: bool = True) -> list[TeamMembership]:
+    def get_by_user(self, user_id: UUID, active_only: bool = True) -> List[TeamMembership]:
         query = self._base_query().filter(TeamMembership.user_id == user_id)
         if active_only:
             query = query.filter(TeamMembership.is_active == True)
@@ -1044,7 +1044,7 @@ class TeamMembershipRepository(BaseRepository):
             TeamMembership.is_active == True
         ).first()
 
-    def get_by_team(self, team_id: UUID, active_only: bool = True) -> list[TeamMembership]:
+    def get_by_team(self, team_id: UUID, active_only: bool = True) -> List[TeamMembership]:
         query = self._base_query().filter(TeamMembership.team_id == team_id)
         if active_only:
             query = query.filter(TeamMembership.is_active == True)
@@ -1102,10 +1102,10 @@ class CompetitionRepository(BaseRepository):
 
     def list(
         self,
-        status: list[CompetitionStatus] | None = None,
+        status: List[CompetitionStatus] | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> tuple[list[GamificationCompetition], int]:
+    ) -> Tuple[List[GamificationCompetition], int]:
         query = self._base_query().filter(GamificationCompetition.is_active == True)
 
         if status:
@@ -1160,7 +1160,7 @@ class CompetitionParticipantRepository(BaseRepository):
         self,
         competition_id: UUID,
         active_only: bool = True
-    ) -> list[CompetitionParticipant]:
+    ) -> List[CompetitionParticipant]:
         query = self._base_query().filter(CompetitionParticipant.competition_id == competition_id)
         if active_only:
             query = query.filter(CompetitionParticipant.is_active == True)
@@ -1213,7 +1213,7 @@ class LeaderboardRepository(BaseRepository):
             Leaderboard.is_featured == True
         ).first()
 
-    def list_active(self) -> list[Leaderboard]:
+    def list_active(self) -> List[Leaderboard]:
         return self._base_query().filter(
             Leaderboard.is_active == True
         ).order_by(desc(Leaderboard.is_featured), Leaderboard.name).all()
@@ -1249,7 +1249,7 @@ class LeaderboardEntryRepository(BaseRepository):
         leaderboard_id: UUID,
         limit: int = 100,
         offset: int = 0
-    ) -> list[LeaderboardEntry]:
+    ) -> List[LeaderboardEntry]:
         return self._base_query().filter(
             LeaderboardEntry.leaderboard_id == leaderboard_id
         ).order_by(LeaderboardEntry.rank).offset(offset).limit(limit).all()
@@ -1267,7 +1267,7 @@ class LeaderboardEntryRepository(BaseRepository):
         self.db.commit()
         return count
 
-    def create_many(self, entries: list[dict[str, Any]]) -> int:
+    def create_many(self, entries: List[dict[str, Any]]) -> int:
         for entry_data in entries:
             entry = LeaderboardEntry(tenant_id=self.tenant_id, **entry_data)
             self.db.add(entry)
@@ -1296,7 +1296,7 @@ class NotificationRepository(BaseRepository):
         unread_only: bool = False,
         notification_type: NotificationType | None = None,
         limit: int = 50
-    ) -> list[GamificationNotification]:
+    ) -> List[GamificationNotification]:
         query = self._base_query().filter(
             GamificationNotification.user_id == user_id,
             GamificationNotification.is_dismissed == False
@@ -1322,7 +1322,7 @@ class NotificationRepository(BaseRepository):
         self.db.refresh(entity)
         return entity
 
-    def mark_as_read(self, notification_ids: list[UUID], user_id: UUID) -> int:
+    def mark_as_read(self, notification_ids: List[UUID], user_id: UUID) -> int:
         now = datetime.utcnow()
         count = self._base_query().filter(
             GamificationNotification.id.in_(notification_ids),
@@ -1359,7 +1359,7 @@ class ActivityRepository(BaseRepository):
         filters: ActivityFilters | None = None,
         page: int = 1,
         page_size: int = 50
-    ) -> tuple[list[GamificationActivity], int]:
+    ) -> Tuple[List[GamificationActivity], int]:
         query = self._base_query().filter(GamificationActivity.user_id == user_id)
 
         if filters:
@@ -1380,7 +1380,7 @@ class ActivityRepository(BaseRepository):
         items = query.offset(offset).limit(page_size).all()
         return items, total
 
-    def get_recent(self, user_id: UUID, limit: int = 10) -> list[GamificationActivity]:
+    def get_recent(self, user_id: UUID, limit: int = 10) -> List[GamificationActivity]:
         return self._base_query().filter(
             GamificationActivity.user_id == user_id
         ).order_by(desc(GamificationActivity.created_at)).limit(limit).all()
@@ -1405,7 +1405,7 @@ class StreakRepository(BaseRepository):
             GamificationStreak.tenant_id == self.tenant_id
         )
 
-    def get_by_user(self, user_id: UUID) -> list[GamificationStreak]:
+    def get_by_user(self, user_id: UUID) -> List[GamificationStreak]:
         return self._base_query().filter(GamificationStreak.user_id == user_id).all()
 
     def get_by_user_and_type(self, user_id: UUID, streak_type: str) -> GamificationStreak | None:
@@ -1414,7 +1414,7 @@ class StreakRepository(BaseRepository):
             GamificationStreak.streak_type == streak_type
         ).first()
 
-    def get_or_create(self, user_id: UUID, streak_type: str) -> tuple[GamificationStreak, bool]:
+    def get_or_create(self, user_id: UUID, streak_type: str) -> Tuple[GamificationStreak, bool]:
         streak = self.get_by_user_and_type(user_id, streak_type)
         if streak:
             return streak, False
@@ -1454,7 +1454,7 @@ class ConfigRepository(BaseRepository):
     def get(self) -> GamificationConfig | None:
         return self._base_query().first()
 
-    def get_or_create(self) -> tuple[GamificationConfig, bool]:
+    def get_or_create(self) -> Tuple[GamificationConfig, bool]:
         config = self.get()
         if config:
             return config, False

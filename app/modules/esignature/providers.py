@@ -260,8 +260,8 @@ class YousignProvider(SignatureProviderInterface):
         if envelope.webhook_url:
             payload["webhook_url"] = envelope.webhook_url
 
-        if envelope.metadata:
-            payload["external_id"] = envelope.metadata.get("envelope_id", "")
+        if envelope.extra_data:
+            payload["external_id"] = envelope.extra_data.get("envelope_id", "")
 
         result = await self._http_request("POST", "/signature_requests", payload)
         external_id = result["id"]

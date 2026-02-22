@@ -208,8 +208,8 @@ class Folder(Base):
     subfolder_count = Column(Integer, default=0)
     total_size = Column(BigInteger, default=0)  # Taille totale en bytes
 
-    # Metadonnees
-    metadata = Column(JSONB, default=dict)  # Metadonnees personnalisees
+    # Metadonnees (extra_data car 'metadata' reserve SQLAlchemy)
+    extra_data = Column(JSONB, default=dict)  # Metadonnees personnalisees
     tags = Column(JSONB, default=list)
 
     # Soft delete
@@ -314,8 +314,8 @@ class Document(Base):
     preview_path = Column(String(1000), nullable=True)
     thumbnail_path = Column(String(1000), nullable=True)
 
-    # Metadonnees
-    metadata = Column(JSONB, default=dict)  # Metadonnees personnalisees
+    # Metadonnees (extra_data car 'metadata' reserve SQLAlchemy)
+    extra_data = Column(JSONB, default=dict)  # Metadonnees personnalisees
     tags = Column(JSONB, default=list)  # Tags
     custom_fields = Column(JSONB, default=dict)  # Champs personnalises
 
@@ -528,9 +528,9 @@ class DocumentLink(Base):
     link_type = Column(String(50), default="attachment")  # attachment, reference, source
     is_primary = Column(Boolean, default=False)  # Document principal de l'entite
 
-    # Metadonnees
+    # Metadonnees (extra_data car 'metadata' reserve SQLAlchemy)
     description = Column(String(500), nullable=True)
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -709,7 +709,7 @@ class DocumentAudit(Base):
     # Details
     old_value = Column(JSONB, nullable=True)  # Valeur avant modification
     new_value = Column(JSONB, nullable=True)  # Valeur apres modification
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)  # Renomme car 'metadata' reserve SQLAlchemy
 
     # Resultat
     success = Column(Boolean, default=True)

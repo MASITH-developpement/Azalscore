@@ -8,7 +8,7 @@ CRITIQUE: Toutes les requetes sont filtrees par tenant_id.
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, desc, asc, func, or_
@@ -67,7 +67,7 @@ class AssetCategoryRepository:
         active_only: bool = True,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[list[AssetCategory], int]:
+    ) -> Tuple[List[AssetCategory], int]:
         query = self._base_query()
 
         if parent_id:
@@ -82,7 +82,7 @@ class AssetCategoryRepository:
         items = query.order_by(AssetCategory.name).offset(skip).limit(limit).all()
         return items, total
 
-    def list_all(self, active_only: bool = True) -> list[AssetCategory]:
+    def list_all(self, active_only: bool = True) -> List[AssetCategory]:
         query = self._base_query()
         if active_only:
             query = query.filter(AssetCategory.is_active == True)
@@ -178,7 +178,7 @@ class FixedAssetRepository:
         page_size: int = 20,
         sort_by: str = "created_at",
         sort_dir: str = "desc"
-    ) -> Tuple[list[FixedAsset], int]:
+    ) -> Tuple[List[FixedAsset], int]:
         query = self._base_query()
 
         if filters:
@@ -224,10 +224,10 @@ class FixedAssetRepository:
 
         return items, total
 
-    def get_in_service(self) -> list[FixedAsset]:
+    def get_in_service(self) -> List[FixedAsset]:
         return self._base_query().filter(FixedAsset.status == AssetStatus.IN_SERVICE).all()
 
-    def get_depreciable(self) -> list[FixedAsset]:
+    def get_depreciable(self) -> List[FixedAsset]:
         """Retourne les actifs amortissables (en service, non totalement amortis)."""
         from .models import DepreciationMethod
         return self._base_query().filter(
@@ -236,32 +236,32 @@ class FixedAssetRepository:
             FixedAsset.in_service_date != None
         ).all()
 
-    def get_components(self, parent_id: UUID) -> list[FixedAsset]:
+    def get_components(self, parent_id: UUID) -> List[FixedAsset]:
         return self._base_query().filter(FixedAsset.parent_asset_id == parent_id).all()
 
     def count_components(self, parent_id: UUID) -> int:
         return self._base_query().filter(FixedAsset.parent_asset_id == parent_id).count()
 
-    def get_by_location(self, location_id: UUID) -> list[FixedAsset]:
+    def get_by_location(self, location_id: UUID) -> List[FixedAsset]:
         return self._base_query().filter(
             FixedAsset.location_id == location_id,
             FixedAsset.status == AssetStatus.IN_SERVICE
         ).all()
 
-    def get_by_responsible(self, responsible_id: UUID) -> list[FixedAsset]:
+    def get_by_responsible(self, responsible_id: UUID) -> List[FixedAsset]:
         return self._base_query().filter(
             FixedAsset.responsible_id == responsible_id,
             FixedAsset.status == AssetStatus.IN_SERVICE
         ).all()
 
-    def get_warranty_expiring(self, before_date: date) -> list[FixedAsset]:
+    def get_warranty_expiring(self, before_date: date) -> List[FixedAsset]:
         return self._base_query().filter(
             FixedAsset.status == AssetStatus.IN_SERVICE,
             FixedAsset.warranty_end_date != None,
             FixedAsset.warranty_end_date <= before_date
         ).order_by(FixedAsset.warranty_end_date).all()
 
-    def get_maintenance_due(self, before_date: date) -> list[FixedAsset]:
+    def get_maintenance_due(self, before_date: date) -> List[FixedAsset]:
         return self._base_query().filter(
             FixedAsset.status == AssetStatus.IN_SERVICE,
             FixedAsset.next_maintenance_date != None,
@@ -287,7 +287,7 @@ class FixedAssetRepository:
 
         return f"{code_prefix}000001"
 
-    def autocomplete(self, prefix: str, limit: int = 10) -> list[dict[str, Any]]:
+    def autocomplete(self, prefix: str, limit: int = 10) -> List[dict[str, Any]]:
         if len(prefix) < 2:
             return []
         query = self._base_query().filter(or_(
@@ -482,12 +482,12 @@ class DepreciationScheduleRepository:
     def _base_query(self):
         return self.db.query(DepreciationSchedule).filter(DepreciationSchedule.tenant_id == self.tenant_id)
 
-    def get_by_asset(self, asset_id: UUID) -> list[DepreciationSchedule]:
+    def get_by_asset(self, asset_id: UUID) -> List[DepreciationSchedule]:
         return self._base_query().filter(
             DepreciationSchedule.asset_id == asset_id
         ).order_by(DepreciationSchedule.period_number).all()
 
-    def get_for_period(self, period_start: date, period_end: date) -> list[DepreciationSchedule]:
+    def get_for_period(self, period_start: date, period_end: date) -> List[DepreciationSchedule]:
         return self._base_query().filter(
             DepreciationSchedule.period_start <= period_end,
             DepreciationSchedule.period_end >= period_start,
@@ -498,7 +498,7 @@ class DepreciationScheduleRepository:
         self._base_query().filter(DepreciationSchedule.asset_id == asset_id).delete()
         self.db.commit()
 
-    def create_bulk(self, entries: list[dict[str, Any]]) -> list[DepreciationSchedule]:
+    def create_bulk(self, entries: List[dict[str, Any]]) -> List[DepreciationSchedule]:
         objects = [
             DepreciationSchedule(tenant_id=self.tenant_id, **entry)
             for entry in entries
@@ -507,7 +507,7 @@ class DepreciationScheduleRepository:
         self.db.commit()
         return objects
 
-    def mark_as_posted(self, ids: list[UUID], journal_entry_id: UUID = None):
+    def mark_as_posted(self, ids: List[UUID], journal_entry_id: UUID = None):
         self.db.query(DepreciationSchedule).filter(
             DepreciationSchedule.id.in_(ids)
         ).update({
@@ -535,7 +535,7 @@ class AssetMovementRepository:
     def get_by_id(self, id: UUID) -> AssetMovement | None:
         return self._base_query().filter(AssetMovement.id == id).first()
 
-    def get_by_asset(self, asset_id: UUID) -> list[AssetMovement]:
+    def get_by_asset(self, asset_id: UUID) -> List[AssetMovement]:
         return self._base_query().filter(
             AssetMovement.asset_id == asset_id
         ).order_by(desc(AssetMovement.movement_date)).all()
@@ -548,7 +548,7 @@ class AssetMovementRepository:
         date_to: date | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[list[AssetMovement], int]:
+    ) -> Tuple[List[AssetMovement], int]:
         query = self._base_query()
 
         if asset_id:
@@ -629,7 +629,7 @@ class AssetMaintenanceRepository:
     def get_by_id(self, id: UUID) -> AssetMaintenance | None:
         return self._base_query().filter(AssetMaintenance.id == id).first()
 
-    def get_by_asset(self, asset_id: UUID) -> list[AssetMaintenance]:
+    def get_by_asset(self, asset_id: UUID) -> List[AssetMaintenance]:
         return self._base_query().filter(
             AssetMaintenance.asset_id == asset_id
         ).order_by(desc(AssetMaintenance.scheduled_date)).all()
@@ -642,7 +642,7 @@ class AssetMaintenanceRepository:
         date_to: date | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[list[AssetMaintenance], int]:
+    ) -> Tuple[List[AssetMaintenance], int]:
         query = self._base_query()
 
         if asset_id:
@@ -659,14 +659,14 @@ class AssetMaintenanceRepository:
         items = query.order_by(AssetMaintenance.scheduled_date).offset(offset).limit(page_size).all()
         return items, total
 
-    def get_upcoming(self, days: int = 30) -> list[AssetMaintenance]:
+    def get_upcoming(self, days: int = 30) -> List[AssetMaintenance]:
         today = date.today()
         return self._base_query().filter(
             AssetMaintenance.status.in_([MaintenanceStatus.PLANNED, MaintenanceStatus.OVERDUE]),
             AssetMaintenance.scheduled_date <= today + timedelta(days=days)
         ).order_by(AssetMaintenance.scheduled_date).all()
 
-    def get_overdue(self) -> list[AssetMaintenance]:
+    def get_overdue(self) -> List[AssetMaintenance]:
         today = date.today()
         return self._base_query().filter(
             AssetMaintenance.status == MaintenanceStatus.PLANNED,
@@ -760,7 +760,7 @@ class AssetInventoryRepository:
         location_id: UUID | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[list[AssetInventory], int]:
+    ) -> Tuple[List[AssetInventory], int]:
         query = self._base_query()
 
         if status:
@@ -819,7 +819,7 @@ class AssetInventoryRepository:
         self.db.refresh(entity)
         return entity
 
-    def add_items(self, inventory_id: UUID, items: list[dict[str, Any]]) -> list[AssetInventoryItem]:
+    def add_items(self, inventory_id: UUID, items: List[dict[str, Any]]) -> List[AssetInventoryItem]:
         objects = [
             AssetInventoryItem(tenant_id=self.tenant_id, inventory_id=inventory_id, **item)
             for item in items
@@ -878,7 +878,7 @@ class DepreciationRunRepository:
         status: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[list[DepreciationRun], int]:
+    ) -> Tuple[List[DepreciationRun], int]:
         query = self._base_query()
 
         if fiscal_year:
@@ -961,7 +961,7 @@ class AssetInsurancePolicyRepository:
         status: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[list[AssetInsurancePolicy], int]:
+    ) -> Tuple[List[AssetInsurancePolicy], int]:
         query = self._base_query()
 
         if status:
@@ -1015,7 +1015,7 @@ class AssetTransferRepository:
     def get_by_id(self, id: UUID) -> AssetTransfer | None:
         return self._base_query().filter(AssetTransfer.id == id).first()
 
-    def get_by_asset(self, asset_id: UUID) -> list[AssetTransfer]:
+    def get_by_asset(self, asset_id: UUID) -> List[AssetTransfer]:
         return self._base_query().filter(
             AssetTransfer.asset_id == asset_id
         ).order_by(desc(AssetTransfer.transfer_date)).all()
@@ -1026,7 +1026,7 @@ class AssetTransferRepository:
         status: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[list[AssetTransfer], int]:
+    ) -> Tuple[List[AssetTransfer], int]:
         query = self._base_query()
 
         if asset_id:

@@ -185,6 +185,7 @@ class BudgetCategory(Base):
     lies aux comptes comptables.
     """
     __tablename__ = "budget_categories"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)

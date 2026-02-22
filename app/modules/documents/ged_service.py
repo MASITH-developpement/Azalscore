@@ -266,7 +266,7 @@ class GEDService:
             inherit_permissions=data.inherit_permissions,
             retention_policy=data.retention_policy,
             retention_days=data.retention_days,
-            metadata=data.metadata,
+            extra_data=data.metadata,  # Colonne renommee extra_data
             tags=data.tags,
             created_by=user_id
         )
@@ -1264,7 +1264,7 @@ class GEDService:
             link_type=data.link_type,
             is_primary=data.is_primary,
             description=data.description,
-            metadata=data.metadata,
+            extra_data=data.metadata,  # Colonne renommee extra_data
             created_by=user_id or self.user_id
         )
 
@@ -1717,7 +1717,7 @@ class GEDService:
         document_id: UUID,
         page: int = 1,
         page_size: int = 50
-    ) -> Tuple[List[AuditResponse], int]:
+    ) -> Tuple[List["AuditResponse"], int]:
         """Recupere l'historique d'audit d'un document."""
         from .schemas import AuditResponse
         skip = (page - 1) * page_size

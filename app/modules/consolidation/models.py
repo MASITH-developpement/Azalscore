@@ -155,6 +155,7 @@ class ConsolidationPerimeter(Base):
     le perimetre de consolidation pour une periode donnee.
     """
     __tablename__ = "consolidation_perimeters"
+    __table_args__ = {'extend_existing': True}
 
     # Cle primaire + tenant
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
@@ -482,8 +483,8 @@ class Consolidation(Base):
     published_at = Column(DateTime)
     published_by = Column(UniversalUUID())
 
-    # Metadonnees
-    metadata = Column(JSON, default=dict)
+    # Metadonnees (extra_data car 'metadata' est reserve par SQLAlchemy)
+    extra_data = Column(JSON, default=dict)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False, index=True)

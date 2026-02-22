@@ -283,8 +283,8 @@ class GatewayApiKey(Base):
     revoked_by = Column(UniversalUUID(), nullable=True)
     revoked_reason = Column(String(500), nullable=True)
 
-    # Metadata
-    metadata = Column(Text, nullable=True)  # JSON
+    # Metadata (extra_data car 'metadata' reserve SQLAlchemy)
+    extra_data = Column(Text, nullable=True)  # JSON
 
     # Soft delete
     deleted_at = Column(DateTime, nullable=True)

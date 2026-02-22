@@ -456,8 +456,8 @@ class SignatureEnvelope(Base):
     signed_count = Column(Integer, default=0)
     viewed_count = Column(Integer, default=0)
 
-    # Metadonnees business
-    metadata = Column(JSON, default=dict)
+    # Metadonnees business (extra_data car 'metadata' reserve SQLAlchemy)
+    extra_data = Column(JSON, default=dict)
     tags = Column(JSON, default=list)
 
     # Workflow approbation

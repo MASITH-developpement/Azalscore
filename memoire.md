@@ -8,7 +8,7 @@
 
 ### Automatisation Complète Backend → Frontend
 
-**Objectif :** Synchroniser automatiquement les 66 modules backend avec le frontend (menu + permissions).
+##**Objectif :** Synchroniser automatiquement les 66 modules backend avec le frontend (menu + permissions).
 
 #### Ce qui a été fait :
 

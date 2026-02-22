@@ -12,9 +12,11 @@ from sqlalchemy import and_, or_, func, desc, asc
 from sqlalchemy.orm import Session
 
 from .models import (
-    Forecast, ForecastModel, Scenario, Budget, KPI,
+    Forecast, ForecastModel, Scenario, ForecastBudget, KPI,
     ForecastStatus, BudgetStatus, KPIStatus, ForecastType
 )
+# Alias pour compatibilité
+Budget = ForecastBudget
 from .schemas import ForecastFilters, BudgetFilters, KPIFilters
 
 

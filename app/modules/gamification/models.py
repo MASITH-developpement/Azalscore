@@ -321,8 +321,8 @@ class PointTransaction(Base):
     expires_at = Column(DateTime, nullable=True)
     is_expired = Column(Boolean, default=False)
 
-    # Metadata
-    metadata = Column(JSONB, default=dict)
+    # Metadata (extra_data car 'metadata' reserve SQLAlchemy)
+    extra_data = Column(JSONB, default=dict)
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(String(500), nullable=True)
 

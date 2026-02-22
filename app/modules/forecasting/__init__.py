@@ -16,7 +16,7 @@ from .models import (
     Forecast,
     ForecastModel,
     Scenario,
-    Budget,
+    ForecastBudget,
     KPI,
     ForecastType,
     ForecastMethod,
@@ -26,6 +26,8 @@ from .models import (
     BudgetStatus,
     KPIStatus,
 )
+# Alias pour compatibilite
+Budget = ForecastBudget
 
 # Repository
 from .repository import (
@@ -70,7 +72,8 @@ __all__ = [
     "Forecast",
     "ForecastModel",
     "Scenario",
-    "Budget",
+    "ForecastBudget",
+    "Budget",  # Alias pour compatibilite
     "KPI",
     # Enums
     "ForecastType",

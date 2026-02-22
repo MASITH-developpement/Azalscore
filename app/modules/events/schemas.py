@@ -125,6 +125,14 @@ class VenueResponse(VenueBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class VenueListResponse(BaseModel):
+    """Liste paginee des lieux."""
+    items: list[VenueResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
 class VenueRoomBase(BaseModel):
     """Base pour les salles."""
     code: str = Field(..., min_length=1, max_length=50)
@@ -1322,10 +1330,20 @@ class GlobalEventStats(BaseModel):
 # AGENDA
 # ============================================================================
 
+class AgendaSlot(BaseModel):
+    """Creneau d'agenda."""
+    start_time: time
+    end_time: time
+    session: SessionWithSpeakersResponse | None = None
+    is_break: bool = False
+    break_title: str | None = None
+
+
 class AgendaDay(BaseModel):
     """Jour d'agenda."""
     date: date
     sessions: list[SessionWithSpeakersResponse] = Field(default_factory=list)
+    slots: list[AgendaSlot] = Field(default_factory=list)
 
 
 class EventAgenda(BaseModel):
@@ -1337,43 +1355,192 @@ class EventAgenda(BaseModel):
 
 
 # ============================================================================
+# SCHEMAS LIST RESPONSE (pour compatibilite imports)
+# ============================================================================
+
+# Aliases pour uniformite avec autres modules
+EventListResponse = EventList
+EventDetailResponse = EventResponse  # Alias pour detail
+
+
+class SpeakerListResponse(BaseModel):
+    """Liste paginee des intervenants."""
+    items: list[SpeakerResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+class SessionListResponse(BaseModel):
+    """Liste paginee des sessions."""
+    items: list[SessionResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+class TicketTypeListResponse(BaseModel):
+    """Liste paginee des types de billets."""
+    items: list[TicketTypeResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+# Alias pour inscription
+RegistrationListResponse = RegistrationList
+
+
+class SponsorListResponse(BaseModel):
+    """Liste paginee des sponsors."""
+    items: list[SponsorResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+class DiscountCodeValidation(BaseModel):
+    """Validation d'un code promo."""
+    code: str
+    is_valid: bool
+    discount_amount: Decimal = Decimal("0.00")
+    discount_percentage: Decimal | None = None
+    message: str | None = None
+
+
+class CertificateTemplateUpdate(BaseModel):
+    """Mise a jour template certificat."""
+    name: str | None = None
+    description: str | None = None
+    html_template: str | None = None
+    css_styles: str | None = None
+    background_image_url: str | None = None
+    is_active: bool | None = None
+
+
+class CertificateListResponse(BaseModel):
+    """Liste paginee des certificats."""
+    items: list[CertificateResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+class EvaluationFormUpdate(BaseModel):
+    """Mise a jour formulaire evaluation."""
+    title: str | None = None
+    description: str | None = None
+    questions: list[dict] | None = None
+    is_anonymous: bool | None = None
+    is_required: bool | None = None
+    is_active: bool | None = None
+
+
+class EvaluationListResponse(BaseModel):
+    """Liste paginee des evaluations."""
+    items: list[EvaluationResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+# Alias pour compatibilite
+EvaluationCreate = EvaluationSubmit
+
+
+class InvitationListResponse(BaseModel):
+    """Liste paginee des invitations."""
+    items: list[InvitationResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+class WaitlistEntryCreate(BaseModel):
+    """Creation entree liste d'attente."""
+    event_id: UUID
+    email: EmailStr
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    phone: str | None = None
+    notes: str | None = None
+    priority: int = 0
+
+
+class WaitlistEntryResponse(BaseModel):
+    """Reponse entree liste d'attente."""
+    id: UUID
+    event_id: UUID
+    email: str
+    first_name: str
+    last_name: str
+    phone: str | None = None
+    position: int
+    status: str = "waiting"
+    notified_at: datetime | None = None
+    expires_at: datetime | None = None
+    converted_at: datetime | None = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WaitlistListResponse(BaseModel):
+    """Liste paginee de la liste d'attente."""
+    items: list[WaitlistEntryResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+class CheckInListResponse(BaseModel):
+    """Liste paginee des check-ins."""
+    items: list[CheckInResponse]
+    total: int
+    page: int = 1
+    page_size: int = 50
+
+
+# ============================================================================
 # EXPORTS
 # ============================================================================
 
 __all__ = [
     # Lieux
-    'VenueCreate', 'VenueUpdate', 'VenueResponse', 'VenueWithRoomsResponse',
+    'VenueCreate', 'VenueUpdate', 'VenueResponse', 'VenueListResponse', 'VenueWithRoomsResponse',
     'VenueRoomCreate', 'VenueRoomUpdate', 'VenueRoomResponse',
     # Evenements
-    'EventCreate', 'EventUpdate', 'EventResponse', 'EventListItem', 'EventList',
+    'EventCreate', 'EventUpdate', 'EventResponse', 'EventListResponse', 'EventDetailResponse',
+    'EventListItem', 'EventList',
     # Intervenants
-    'SpeakerCreate', 'SpeakerUpdate', 'SpeakerResponse',
+    'SpeakerCreate', 'SpeakerUpdate', 'SpeakerResponse', 'SpeakerListResponse',
     'SpeakerAssignmentCreate', 'SpeakerAssignmentUpdate', 'SpeakerAssignmentResponse',
     # Sessions
-    'SessionCreate', 'SessionUpdate', 'SessionResponse', 'SessionWithSpeakersResponse',
+    'SessionCreate', 'SessionUpdate', 'SessionResponse', 'SessionListResponse', 'SessionWithSpeakersResponse',
     # Billetterie
-    'TicketTypeCreate', 'TicketTypeUpdate', 'TicketTypeResponse',
+    'TicketTypeCreate', 'TicketTypeUpdate', 'TicketTypeResponse', 'TicketTypeListResponse',
     # Inscriptions
     'RegistrationCreate', 'RegistrationUpdate', 'RegistrationResponse', 'RegistrationList',
+    'RegistrationListResponse',
     # Check-in
-    'CheckInCreate', 'CheckInResponse', 'CheckInStats',
+    'CheckInCreate', 'CheckInResponse', 'CheckInStats', 'CheckInListResponse',
     # Sponsors
-    'SponsorCreate', 'SponsorUpdate', 'SponsorResponse',
+    'SponsorCreate', 'SponsorUpdate', 'SponsorResponse', 'SponsorListResponse',
     # Codes promo
-    'DiscountCodeCreate', 'DiscountCodeUpdate', 'DiscountCodeResponse',
+    'DiscountCodeCreate', 'DiscountCodeUpdate', 'DiscountCodeResponse', 'DiscountCodeValidation',
     'DiscountCodeApply', 'DiscountCodeResult',
     # Certificats
-    'CertificateTemplateCreate', 'CertificateTemplateResponse',
-    'CertificateIssue', 'CertificateResponse',
+    'CertificateTemplateCreate', 'CertificateTemplateUpdate', 'CertificateTemplateResponse',
+    'CertificateIssue', 'CertificateResponse', 'CertificateListResponse',
     # Evaluations
-    'EvaluationFormCreate', 'EvaluationFormResponse',
-    'EvaluationSubmit', 'EvaluationResponse', 'EvaluationStats',
+    'EvaluationFormCreate', 'EvaluationFormUpdate', 'EvaluationFormResponse',
+    'EvaluationSubmit', 'EvaluationCreate', 'EvaluationResponse', 'EvaluationStats', 'EvaluationListResponse',
     # Invitations
-    'InvitationCreate', 'InvitationBulkCreate', 'InvitationResponse',
+    'InvitationCreate', 'InvitationBulkCreate', 'InvitationResponse', 'InvitationListResponse',
     # Waitlist
-    'WaitlistEntry', 'WaitlistResponse',
+    'WaitlistEntry', 'WaitlistResponse', 'WaitlistEntryCreate', 'WaitlistEntryResponse', 'WaitlistListResponse',
     # Stats
     'EventStats', 'EventDashboard', 'GlobalEventStats',
     # Agenda
-    'AgendaDay', 'EventAgenda',
+    'AgendaSlot', 'AgendaDay', 'EventAgenda',
 ]
