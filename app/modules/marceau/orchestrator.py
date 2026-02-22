@@ -34,85 +34,10 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# LLM CLIENT (LAZY INITIALIZATION)
+# LLM CLIENT - Utilise le client multi-provider avec config tenant
 # ============================================================================
 
-_llm_client = None
-
-
-def get_llm_client():
-    """
-    Initialise et retourne le client LLM.
-    Support llama.cpp, Ollama, ou API compatible OpenAI.
-    """
-    global _llm_client
-
-    if _llm_client is None:
-        try:
-            # Essayer d'utiliser Ollama en local
-            import httpx
-
-            _llm_client = OllamaClient()
-            logger.info("[MARCEAU] Client LLM Ollama initialise")
-        except Exception as e:
-            logger.warning(f"[MARCEAU] LLM non disponible: {e}")
-            _llm_client = MockLLMClient()
-
-    return _llm_client
-
-
-class OllamaClient:
-    """Client pour Ollama (LLM local)."""
-
-    def __init__(self, base_url: str = "http://localhost:11434"):
-        self.base_url = base_url
-
-    async def generate(
-        self,
-        prompt: str,
-        model: str = "llama3:8b-instruct-q4_0",
-        temperature: float = 0.2,
-        max_tokens: int = 2048,
-    ) -> str:
-        """Genere une reponse via Ollama."""
-        import httpx
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{self.base_url}/api/generate",
-                json={
-                    "model": model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": temperature,
-                        "num_predict": max_tokens,
-                    }
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data.get("response", "")
-
-
-class MockLLMClient:
-    """Client LLM de fallback pour tests."""
-
-    async def generate(
-        self,
-        prompt: str,
-        model: str = "mock",
-        temperature: float = 0.2,
-        max_tokens: int = 2048,
-    ) -> str:
-        """Retourne une reponse mock."""
-        logger.warning("[MARCEAU] Utilisation du LLM mock - pas de vrai traitement")
-        return json.dumps({
-            "module": "telephonie",
-            "action": "unknown",
-            "confidence": 0.5,
-            "reasoning": "LLM non disponible - mode degrade"
-        })
+from .llm_client import get_llm_client_for_tenant
 
 
 # ============================================================================
@@ -153,6 +78,9 @@ class MarceauOrchestrator:
             "marketing": ("app.modules.marceau.modules.marketing.service", "MarketingService"),
             "seo": ("app.modules.marceau.modules.seo.service", "SEOService"),
             "support": ("app.modules.marceau.modules.support.service", "SupportService"),
+            "comptabilite": ("app.modules.marceau.modules.comptabilite.service", "ComptabiliteService"),
+            "juridique": ("app.modules.marceau.modules.juridique.service", "JuridiqueService"),
+            "recrutement": ("app.modules.marceau.modules.recrutement.service", "RecrutementService"),
             "orchestration": ("app.modules.marceau.modules.orchestration.service", "OrchestrationService"),
         }
 
@@ -300,8 +228,8 @@ Reponds UNIQUEMENT au format JSON valide:
 """
 
         try:
-            llm = get_llm_client()
-            model = self.config.llm_model if self.config else "llama3:8b-instruct-q4_0"
+            llm = await get_llm_client_for_tenant(self.tenant_id, self.db)
+            model = self.config.llm_model if self.config else None
             temperature = self.config.llm_temperature if self.config else 0.2
 
             response = await llm.generate(
@@ -489,10 +417,10 @@ Reponds de maniere professionnelle et concise. Si une action est necessaire, ind
 MARCEAU:"""
 
         try:
-            llm = get_llm_client()
+            llm = await get_llm_client_for_tenant(self.tenant_id, self.db)
             response = await llm.generate(
                 prompt=chat_prompt,
-                model=self.config.llm_model if self.config else "llama3:8b-instruct-q4_0",
+                model=self.config.llm_model if self.config else None,
                 temperature=0.7,  # Plus de creativite pour le chat
                 max_tokens=512
             )

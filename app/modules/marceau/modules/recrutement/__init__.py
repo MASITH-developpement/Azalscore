@@ -3,5 +3,8 @@ AZALS MODULE - Marceau Recrutement
 ===================================
 
 Module de recrutement automatise.
-TODO: Implementation Phase 2
 """
+
+from .service import RecrutementService
+
+__all__ = ["RecrutementService"]
