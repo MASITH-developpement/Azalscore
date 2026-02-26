@@ -645,13 +645,13 @@ class InventoryService:
         """Créer un mouvement de stock."""
         logger.info(
             "Creating stock movement | tenant=%s user=%s type=%s from_warehouse=%s to_warehouse=%s lines_count=%s",
-            self.tenant_id, self.user_id, data.type.value if data.type else None,
+            self.tenant_id, self.user_id, data.movement_type.value if data.movement_type else None,
             data.from_warehouse_id, data.to_warehouse_id, len(data.lines)
         )
         movement = StockMovement(
             tenant_id=self.tenant_id,
-            number=self._generate_movement_number(data.type),
-            type=data.type,
+            number=self._generate_movement_number(data.movement_type),
+            type=data.movement_type,
             movement_date=data.movement_date,
             from_warehouse_id=data.from_warehouse_id,
             from_location_id=data.from_location_id,
@@ -1049,13 +1049,13 @@ class InventoryService:
         """Créer une préparation de commande."""
         logger.info(
             "Creating picking | tenant=%s user=%s type=%s warehouse_id=%s reference=%s lines_count=%s",
-            self.tenant_id, self.user_id, data.type.value if data.type else None,
+            self.tenant_id, self.user_id, data.picking_type.value if data.picking_type else None,
             data.warehouse_id, data.reference_number, len(data.lines)
         )
         picking = Picking(
             tenant_id=self.tenant_id,
             number=self._generate_picking_number(),
-            type=data.type,
+            type=data.picking_type,
             warehouse_id=data.warehouse_id,
             reference_type=data.reference_type,
             reference_id=data.reference_id,
