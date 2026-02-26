@@ -7,7 +7,7 @@
 import { api } from '@/core/api-client';
 import type { ProductSuggestion } from './types';
 
-const BASE_URL = '/v1/inventory';
+const BASE_URL = '/inventory';
 
 // ============================================================================
 // PRODUCT AUTOCOMPLETE

@@ -8,13 +8,13 @@ import {
   DollarSign, TrendingUp, CreditCard, AlertCircle, CheckCircle2, Clock
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Document } from '../types';
+import { formatCurrency, formatDate, formatPercent } from '@/utils/formatters';
 import {
   getDaysUntilDue, isDocumentOverdue,
   PAYMENT_TERMS, PAYMENT_METHODS
 } from '../types';
-import { formatCurrency, formatDate, formatPercent } from '@/utils/formatters';
+import type { Document } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoicingFinancialTab - Informations financieres
@@ -104,19 +104,19 @@ export const InvoicingFinancialTab: React.FC<TabContentProps<Document>> = ({ dat
 
               <Grid cols={3} gap="md">
                 <div className="azals-field">
-                  <label className="azals-field__label">Montant du</label>
+                  <span className="azals-field__label">Montant du</span>
                   <div className="azals-field__value text-xl font-bold text-primary">
                     {formatCurrency(doc.total, doc.currency)}
                   </div>
                 </div>
                 <div className="azals-field">
-                  <label className="azals-field__label">Recu</label>
+                  <span className="azals-field__label">Recu</span>
                   <div className="azals-field__value text-xl font-bold text-green">
                     {formatCurrency(paymentReceived, doc.currency)}
                   </div>
                 </div>
                 <div className="azals-field">
-                  <label className="azals-field__label">Reste a payer</label>
+                  <span className="azals-field__label">Reste a payer</span>
                   <div className={`azals-field__value text-xl font-bold ${paymentPending > 0 ? 'text-orange' : 'text-green'}`}>
                     {formatCurrency(paymentPending, doc.currency)}
                   </div>
@@ -145,23 +145,23 @@ export const InvoicingFinancialTab: React.FC<TabContentProps<Document>> = ({ dat
       <Card title="Conditions de paiement" icon={<Clock size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Conditions</label>
+            <span className="azals-field__label">Conditions</span>
             <div className="azals-field__value">{getPaymentTermLabel(doc.payment_terms)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Mode de paiement</label>
+            <span className="azals-field__label">Mode de paiement</span>
             <div className="azals-field__value">{getPaymentMethodLabel(doc.payment_method)}</div>
           </div>
           {doc.due_date && (
             <div className="azals-field">
-              <label className="azals-field__label">Date d'echeance</label>
+              <span className="azals-field__label">Date d&apos;echeance</span>
               <div className={`azals-field__value ${isOverdue ? 'text-danger font-medium' : ''}`}>
                 {formatDate(doc.due_date)}
               </div>
             </div>
           )}
           <div className="azals-field">
-            <label className="azals-field__label">Devise</label>
+            <span className="azals-field__label">Devise</span>
             <div className="azals-field__value">{doc.currency}</div>
           </div>
         </Grid>

@@ -7,16 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, AlertTriangle, CheckCircle2, CreditCard } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseInvoice } from '../types';
-import {
-  INVOICE_STATUS_CONFIG,
-  canValidateInvoice, canPayInvoice, isOverdue
-} from '../types';
-import { formatCurrency } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -25,6 +15,15 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  canValidateInvoice, canPayInvoice, isOverdue
+} from '../types';
+import type { PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * InvoiceIATab - Assistant IA

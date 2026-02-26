@@ -13,6 +13,8 @@ Usage:
     name, code = resolver.resolve_client(client_id)
     name = resolver.resolve_employee(employee_id)
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any

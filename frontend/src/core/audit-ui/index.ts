@@ -4,6 +4,7 @@
  * Envoi au backend UNIQUEMENT - AUCUN stockage local
  */
 
+import { useEffect } from 'react';
 import { api } from '@core/api-client';
 import { logError } from '@core/error-handling';
 import type { UIAuditEvent } from '@/types';
@@ -78,7 +79,7 @@ const flushEvents = async (): Promise<void> => {
   eventQueue.length = 0;
 
   try {
-    await api.post('/v1/audit/ui-events', { events: eventsToSend });
+    await api.post('/audit/ui-events', { events: eventsToSend });
   } catch (error) {
     // En cas d'échec, on ne réinjecte PAS dans la queue
     // Les événements sont perdus - conformité charte (pas de stockage local)
@@ -260,8 +261,6 @@ export const forceFlush = (): Promise<void> => {
 // ============================================================
 // HOOK REACT
 // ============================================================
-
-import { useEffect } from 'react';
 
 /**
  * Hook pour tracker automatiquement le montage d'un composant

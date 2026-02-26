@@ -5,18 +5,18 @@
 
 import React from 'react';
 import {
-  Wrench, MapPin, Building2, Calendar, Shield,
+  Wrench, MapPin, Calendar, Shield,
   Tag, FileText, Gauge, AlertTriangle
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Asset, AssetMeter } from '../types';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
   getAssetAge, isWarrantyExpired, isWarrantyExpiringSoon,
   getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon
 } from '../types';
+import type { Asset, AssetMeter } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AssetInfoTab - Informations generales de l'equipement
@@ -47,40 +47,40 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
         <Card title="Informations principales" icon={<Wrench size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Code</label>
+              <span className="azals-field__label">Code</span>
               <span className="azals-field__value font-mono">{asset.code}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Nom</label>
+              <span className="azals-field__label">Nom</span>
               <span className="azals-field__value">{asset.name}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Type</label>
+              <span className="azals-field__label">Type</span>
               <span className={`azals-badge azals-badge--${ASSET_TYPE_CONFIG[asset.type].color}`}>
                 {ASSET_TYPE_CONFIG[asset.type].label}
               </span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Statut</label>
+              <span className="azals-field__label">Statut</span>
               <span className={`azals-badge azals-badge--${ASSET_STATUS_CONFIG[asset.status].color}`}>
                 {ASSET_STATUS_CONFIG[asset.status].label}
               </span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Criticite</label>
+              <span className="azals-field__label">Criticite</span>
               <span className={`azals-badge azals-badge--${CRITICALITY_CONFIG[asset.criticality].color}`}>
                 {CRITICALITY_CONFIG[asset.criticality].label}
               </span>
             </div>
             {asset.category_name && (
               <div className="azals-field">
-                <label className="azals-field__label">Categorie</label>
+                <span className="azals-field__label">Categorie</span>
                 <span className="azals-field__value">{asset.category_name}</span>
               </div>
             )}
             {asset.description && (
               <div className="azals-field azals-field--full">
-                <label className="azals-field__label">Description</label>
+                <span className="azals-field__label">Description</span>
                 <p className="azals-field__value text-muted">{asset.description}</p>
               </div>
             )}
@@ -91,12 +91,12 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
         <Card title="Localisation" icon={<MapPin size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Emplacement</label>
+              <span className="azals-field__label">Emplacement</span>
               <span className="azals-field__value">{asset.location || '-'}</span>
             </div>
             {asset.department_name && (
               <div className="azals-field">
-                <label className="azals-field__label">Departement</label>
+                <span className="azals-field__label">Departement</span>
                 <span className="azals-field__value">{asset.department_name}</span>
               </div>
             )}
@@ -107,15 +107,15 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
         <Card title="Specifications techniques" icon={<Tag size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Fabricant</label>
+              <span className="azals-field__label">Fabricant</span>
               <span className="azals-field__value">{asset.manufacturer || '-'}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Modele</label>
+              <span className="azals-field__label">Modele</span>
               <span className="azals-field__value">{asset.model || '-'}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">N de serie</label>
+              <span className="azals-field__label">N de serie</span>
               <span className="azals-field__value font-mono">{asset.serial_number || '-'}</span>
             </div>
           </div>
@@ -125,23 +125,23 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
         <Card title="Dates et garantie" icon={<Calendar size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Date d'achat</label>
+              <span className="azals-field__label">Date d&apos;achat</span>
               <span className="azals-field__value">{formatDate(asset.purchase_date)}</span>
             </div>
             {asset.purchase_cost && (
               <div className="azals-field">
-                <label className="azals-field__label">Cout d'achat</label>
+                <span className="azals-field__label">Cout d&apos;achat</span>
                 <span className="azals-field__value">{formatCurrency(asset.purchase_cost)}</span>
               </div>
             )}
             <div className="azals-field">
-              <label className="azals-field__label">Age</label>
+              <span className="azals-field__label">Age</span>
               <span className="azals-field__value">
                 {assetAge !== null ? `${assetAge} an(s)` : '-'}
               </span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Fin de garantie</label>
+              <span className="azals-field__label">Fin de garantie</span>
               <span className={`azals-field__value ${warrantyExpired ? 'text-danger' : warrantyExpiringSoon ? 'text-warning' : ''}`}>
                 {formatDate(asset.warranty_end_date)}
                 {warrantyExpired && ' (Expiree)'}
@@ -155,11 +155,11 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
         <Card title="Planning maintenance" icon={<Shield size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Derniere maintenance</label>
+              <span className="azals-field__label">Derniere maintenance</span>
               <span className="azals-field__value">{formatDate(asset.last_maintenance_date)}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Prochaine maintenance</label>
+              <span className="azals-field__label">Prochaine maintenance</span>
               <span className={`azals-field__value ${maintenanceOverdue ? 'text-danger font-medium' : maintenanceDueSoon ? 'text-warning' : ''}`}>
                 {formatDate(asset.next_maintenance_date)}
                 {maintenanceOverdue && ' (En retard)'}
@@ -168,7 +168,7 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
             </div>
             {daysUntilMaintenance !== null && (
               <div className="azals-field">
-                <label className="azals-field__label">Jours restants</label>
+                <span className="azals-field__label">Jours restants</span>
                 <span className={`azals-field__value font-medium ${daysUntilMaintenance < 0 ? 'text-danger' : daysUntilMaintenance <= 7 ? 'text-warning' : 'text-success'}`}>
                   {daysUntilMaintenance < 0 ? `${Math.abs(daysUntilMaintenance)} jours de retard` : `${daysUntilMaintenance} jours`}
                 </span>
@@ -176,7 +176,7 @@ export const AssetInfoTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
             )}
             {asset.total_maintenance_cost && (
               <div className="azals-field">
-                <label className="azals-field__label">Cout total maintenance</label>
+                <span className="azals-field__label">Cout total maintenance</span>
                 <span className="azals-field__value">{formatCurrency(asset.total_maintenance_cost)}</span>
               </div>
             )}

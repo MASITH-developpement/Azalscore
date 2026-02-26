@@ -5,12 +5,17 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Check, Wrench, X, Cog, AlertTriangle, Calendar, BarChart3, Clock,
+  ArrowLeft, Edit, Printer, Package, FileText, Sparkles
+} from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
+import { serializeFilters } from '@core/query-keys';
 import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -19,25 +24,11 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import {
-  Check, Wrench, X, Cog, AlertTriangle, Calendar, BarChart3, Clock,
-  ArrowLeft, Edit, Printer, Package, FileText, Sparkles
-} from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
 // Types et helpers
-import type { Asset, MaintenanceOrder, MaintenancePlan, MaintenanceDashboard } from './types';
-import {
-  ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
-  ORDER_TYPE_CONFIG, ORDER_STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG,
-  getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon,
-  isWarrantyExpired, getAssetAge, getTotalMaintenanceCost, getOrderCountByStatus,
-  getLowStockParts
-} from './types';
-import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
-
-// Composants tabs
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   AssetInfoTab,
   AssetOrdersTab,
@@ -46,6 +37,25 @@ import {
   AssetHistoryTab,
   AssetIATab
 } from './components';
+import {
+  ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
+  getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon,
+  isWarrantyExpired, getAssetAge, getTotalMaintenanceCost, getOrderCountByStatus,
+  getLowStockParts
+} from './types';
+import type { Asset, MaintenanceOrder, MaintenancePlan, MaintenanceDashboard } from './types';
+
+// Composants tabs
+
+// ============================================================================
+// LOCAL TYPES & HELPERS
+// ============================================================================
+
+interface StatusInfo {
+  value: string;
+  label: string;
+  color: string;
+}
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -83,21 +93,21 @@ const useMaintenanceDashboard = () => {
   return useQuery({
     queryKey: ['maintenance', 'dashboard'],
     queryFn: async () => {
-      return api.get<MaintenanceDashboard>('/v1/maintenance/dashboard').then(r => r.data);
+      return api.get<MaintenanceDashboard>('/maintenance/dashboard').then(r => r.data);
     }
   });
 };
 
 const useAssets = (filters?: { type?: string; status?: string; criticality?: string }) => {
   return useQuery({
-    queryKey: ['maintenance', 'assets', filters],
+    queryKey: ['maintenance', 'assets', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       if (filters?.criticality) params.append('criticality', filters.criticality);
       const queryString = params.toString();
-      const url = `/v1/maintenance/assets${queryString ? `?${queryString}` : ''}`;
+      const url = `/maintenance/assets${queryString ? `?${queryString}` : ''}`;
       return api.get<Asset[]>(url).then(r => r.data);
     }
   });
@@ -107,7 +117,7 @@ const useAsset = (id: string) => {
   return useQuery({
     queryKey: ['maintenance', 'asset', id],
     queryFn: async () => {
-      return api.get<Asset>(`/v1/maintenance/assets/${id}`).then(r => r.data);
+      return api.get<Asset>(`/maintenance/assets/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -115,14 +125,14 @@ const useAsset = (id: string) => {
 
 const useMaintenanceOrders = (filters?: { type?: string; status?: string; priority?: string }) => {
   return useQuery({
-    queryKey: ['maintenance', 'orders', filters],
+    queryKey: ['maintenance', 'orders', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       if (filters?.priority) params.append('priority', filters.priority);
       const queryString = params.toString();
-      const url = `/v1/maintenance/orders${queryString ? `?${queryString}` : ''}`;
+      const url = `/maintenance/orders${queryString ? `?${queryString}` : ''}`;
       return api.get<MaintenanceOrder[]>(url).then(r => r.data);
     }
   });
@@ -132,7 +142,7 @@ const useMaintenancePlans = () => {
   return useQuery({
     queryKey: ['maintenance', 'plans'],
     queryFn: async () => {
-      return api.get<MaintenancePlan[]>('/v1/maintenance/plans').then(r => r.data);
+      return api.get<MaintenancePlan[]>('/maintenance/plans').then(r => r.data);
     }
   });
 };
@@ -141,7 +151,7 @@ const useCreateAsset = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Asset>) => {
-      return api.post('/v1/maintenance/assets', data).then(r => r.data);
+      return api.post('/maintenance/assets', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance', 'assets'] })
   });
@@ -151,7 +161,7 @@ const useCreateMaintenanceOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<MaintenanceOrder>) => {
-      return api.post('/v1/maintenance/orders', data).then(r => r.data);
+      return api.post('/maintenance/orders', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance'] })
   });
@@ -161,7 +171,7 @@ const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v1/maintenance/orders/${id}`, { status }).then(r => r.data);
+      return api.patch(`/maintenance/orders/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance'] })
   });
@@ -351,13 +361,15 @@ const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onEd
       id: 'create-order',
       label: 'Nouvel ordre',
       icon: <Wrench size={16} />,
-      variant: 'primary'
+      variant: 'primary',
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMaintenanceOrder', assetId: asset.id } })); }
     },
     {
       id: 'print',
       label: 'Imprimer',
       icon: <Printer size={16} />,
-      variant: 'ghost'
+      variant: 'ghost',
+      onClick: () => { window.print(); }
     }
   ];
 
@@ -441,8 +453,8 @@ const FREQUENCIES = [
   { value: 'CYCLES_BASED', label: 'Par cycles' }
 ];
 
-const getStatusInfo = (statuses: any[], status: string) => {
-  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
+const getStatusInfo = (statuses: StatusInfo[], status: string): StatusInfo => {
+  return statuses.find(s => s.value === status) || { value: status, label: status, color: 'gray' };
 };
 
 const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelectAsset }) => {
@@ -474,11 +486,11 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
     { id: 'location', header: 'Emplacement', accessor: 'location', render: (v) => (v as string) || '-' },
     { id: 'criticality', header: 'Criticite', accessor: 'criticality', render: (v) => {
       const info = getStatusInfo(CRITICALITIES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const info = getStatusInfo(ASSET_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'next_maintenance_date', header: 'Proch. maint.', accessor: 'next_maintenance_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row: Asset) => (
@@ -512,21 +524,23 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           <Button onClick={() => setShowModal(true)}>Nouvel equipement</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel equipement" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Code</label>
+              <label htmlFor="asset-form-code">Code</label>
               <Input
+                id="asset-form-code"
                 value={formData.code || ''}
                 onChange={(v) => setFormData({ ...formData, code: v })}
               />
             </div>
             <div className="azals-field">
-              <label>Nom</label>
+              <label htmlFor="asset-form-name">Nom</label>
               <Input
+                id="asset-form-name"
                 value={formData.name || ''}
                 onChange={(v) => setFormData({ ...formData, name: v })}
               />
@@ -534,16 +548,18 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Type</label>
+              <label htmlFor="asset-form-type">Type</label>
               <Select
+                id="asset-form-type"
                 value={formData.type || ''}
                 onChange={(v) => setFormData({ ...formData, type: v as Asset['type'] })}
                 options={ASSET_TYPES}
               />
             </div>
             <div className="azals-field">
-              <label>Criticite</label>
+              <label htmlFor="asset-form-criticality">Criticite</label>
               <Select
+                id="asset-form-criticality"
                 value={formData.criticality || ''}
                 onChange={(v) => setFormData({ ...formData, criticality: v as Asset['criticality'] })}
                 options={CRITICALITIES}
@@ -552,15 +568,17 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Emplacement</label>
+              <label htmlFor="asset-form-location">Emplacement</label>
               <Input
+                id="asset-form-location"
                 value={formData.location || ''}
                 onChange={(v) => setFormData({ ...formData, location: v })}
               />
             </div>
             <div className="azals-field">
-              <label>N de serie</label>
+              <label htmlFor="asset-form-serial">N de serie</label>
               <Input
+                id="asset-form-serial"
                 value={formData.serial_number || ''}
                 onChange={(v) => setFormData({ ...formData, serial_number: v })}
               />
@@ -568,15 +586,17 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Fabricant</label>
+              <label htmlFor="asset-form-manufacturer">Fabricant</label>
               <Input
+                id="asset-form-manufacturer"
                 value={formData.manufacturer || ''}
                 onChange={(v) => setFormData({ ...formData, manufacturer: v })}
               />
             </div>
             <div className="azals-field">
-              <label>Modele</label>
+              <label htmlFor="asset-form-model">Modele</label>
               <Input
+                id="asset-form-model"
                 value={formData.model || ''}
                 onChange={(v) => setFormData({ ...formData, model: v })}
               />
@@ -584,8 +604,9 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Date d'achat</label>
+              <label htmlFor="asset-form-purchase-date">Date d&apos;achat</label>
               <input
+                id="asset-form-purchase-date"
                 type="date"
                 className="azals-input"
                 value={formData.purchase_date || ''}
@@ -593,8 +614,9 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
               />
             </div>
             <div className="azals-field">
-              <label>Fin de garantie</label>
+              <label htmlFor="asset-form-warranty">Fin de garantie</label>
               <input
+                id="asset-form-warranty"
                 type="date"
                 className="azals-input"
                 value={formData.warranty_end_date || ''}
@@ -646,7 +668,7 @@ const MaintenanceOrdersView: React.FC = () => {
     }},
     { id: 'priority', header: 'Priorite', accessor: 'priority', render: (v) => {
       const info = getStatusInfo(ORDER_PRIORITIES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'planned_start_date', header: 'Date prevue', accessor: 'planned_start_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'assigned_to_name', header: 'Assigne a', accessor: 'assigned_to_name', render: (v) => (v as string) || '-' },
@@ -687,13 +709,14 @@ const MaintenanceOrdersView: React.FC = () => {
           <Button onClick={() => setShowModal(true)}>Nouvel ordre</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" filterable />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel ordre de maintenance" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           <div className="azals-field">
-            <label>Equipement</label>
+            <label htmlFor="order-form-asset">Equipement</label>
             <Select
+              id="order-form-asset"
               value={formData.asset_id || ''}
               onChange={(v) => setFormData({ ...formData, asset_id: v })}
               options={assets.map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }))}
@@ -701,16 +724,18 @@ const MaintenanceOrdersView: React.FC = () => {
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Type</label>
+              <label htmlFor="order-form-type">Type</label>
               <Select
+                id="order-form-type"
                 value={formData.type || ''}
                 onChange={(v) => setFormData({ ...formData, type: v as MaintenanceOrder['type'] })}
                 options={ORDER_TYPES}
               />
             </div>
             <div className="azals-field">
-              <label>Priorite</label>
+              <label htmlFor="order-form-priority">Priorite</label>
               <Select
+                id="order-form-priority"
                 value={formData.priority || 'NORMAL'}
                 onChange={(v) => setFormData({ ...formData, priority: v as MaintenanceOrder['priority'] })}
                 options={ORDER_PRIORITIES}
@@ -718,8 +743,9 @@ const MaintenanceOrdersView: React.FC = () => {
             </div>
           </Grid>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label htmlFor="order-form-description" className="block text-sm font-medium mb-1">Description</label>
             <textarea
+              id="order-form-description"
               className="w-full border rounded px-3 py-2"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -729,8 +755,9 @@ const MaintenanceOrdersView: React.FC = () => {
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Date de debut prevue</label>
+              <label htmlFor="order-form-start-date">Date de debut prevue</label>
               <input
+                id="order-form-start-date"
                 type="date"
                 className="azals-input"
                 value={formData.planned_start_date || ''}
@@ -738,8 +765,9 @@ const MaintenanceOrdersView: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label>Date de fin prevue</label>
+              <label htmlFor="order-form-end-date">Date de fin prevue</label>
               <input
+                id="order-form-end-date"
                 type="date"
                 className="azals-input"
                 value={formData.planned_end_date || ''}
@@ -773,7 +801,7 @@ const PlansView: React.FC = () => {
       const info = FREQUENCIES.find(f => f.value === v);
       return `${info?.label || (v as string)} (${row.frequency_value})`;
     }},
-    { id: 'tasks', header: 'Taches', accessor: 'tasks', render: (v) => <Badge color="blue">{(v as any[])?.length || 0}</Badge> },
+    { id: 'tasks', header: 'Taches', accessor: 'tasks', render: (v) => <Badge color="blue">{Array.isArray(v) ? v.length : 0}</Badge> },
     { id: 'next_execution_date', header: 'Proch. execution', accessor: 'next_execution_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
@@ -791,10 +819,10 @@ const PlansView: React.FC = () => {
             options={[{ value: '', label: 'Toutes frequences' }, ...FREQUENCIES]}
             className="w-48"
           />
-          <Button>Nouveau plan</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMaintenancePlan' } })); }}>Nouveau plan</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };

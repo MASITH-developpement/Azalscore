@@ -5,18 +5,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
-import { SmartSelector } from '@/components/SmartSelector';
-import type { FieldConfig } from '@/components/SmartSelector';
 import {
   Building2, Wrench, FileText, MapPin,
   ChevronLeft, Users
 } from 'lucide-react';
-
+import { api } from '@core/api-client';
+import { Button } from '@ui/actions';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { SmartSelector } from '@/components/SmartSelector';
+import type { FieldConfig } from '@/components/SmartSelector';
+import { unwrapApiResponse } from '@/types';
+import type { Intervenant } from '@/types';
 import type { Intervention, InterventionFormData, DonneurOrdre } from '../types';
+
+// Type for client in search results
+interface ClientResult {
+  id: string;
+  name: string;
+  code?: string;
+}
 
 // ============================================================================
 // CONSTANTES
@@ -78,8 +86,9 @@ const useClients = () => {
   return useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/v1/commercial/customers');
-      return (response as any)?.items || [];
+      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/commercial/customers');
+      const data = unwrapApiResponse<{ items: { id: string; name: string; code?: string }[] }>(response);
+      return data?.items || [];
     }
   });
 };
@@ -88,8 +97,8 @@ const useDonneursOrdre = () => {
   return useQuery({
     queryKey: ['interventions', 'donneurs-ordre'],
     queryFn: async () => {
-      const response = await api.get<DonneurOrdre[]>('/v2/interventions/donneurs-ordre');
-      return response as unknown as DonneurOrdre[];
+      const response = await api.get<DonneurOrdre[]>('/interventions/donneurs-ordre');
+      return unwrapApiResponse<DonneurOrdre[]>(response);
     }
   });
 };
@@ -98,8 +107,9 @@ const useIntervenants = () => {
   return useQuery({
     queryKey: ['intervenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v1/hr/employees');
-      return (response as any)?.items || [];
+      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/hr/employees');
+      const data = unwrapApiResponse<{ items: { id: string; first_name: string; last_name: string }[] }>(response);
+      return data?.items || [];
     }
   });
 };
@@ -108,7 +118,7 @@ const useIntervention = (id?: string) => {
   return useQuery({
     queryKey: ['interventions', 'detail', id],
     queryFn: async () => {
-      const response = await api.get<Intervention>(`/v2/interventions/${id}`);
+      const response = await api.get<Intervention>(`/interventions/${id}`);
       return response as unknown as Intervention;
     },
     enabled: !!id
@@ -270,17 +280,19 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
     };
 
     try {
-      let result: any;
+      let resultId: string | undefined;
       if (isEdit && interventionId) {
-        result = await api.put(`/v2/interventions/${interventionId}`, apiData);
+        const response = await api.put(`/interventions/${interventionId}`, apiData);
+        resultId = (response as { id?: string })?.id;
       } else {
-        result = await api.post('/v2/interventions', apiData);
+        const response = await api.post('/interventions', apiData);
+        resultId = (response as { id?: string })?.id;
       }
 
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
 
       if (onSaved) {
-        onSaved(result?.id || interventionId || '');
+        onSaved(resultId || interventionId || '');
       } else {
         onBack();
       }
@@ -293,7 +305,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
 
   // Date/Time helpers
   const now = new Date();
-  const defaultDate = now.toISOString().slice(0, 16);
+  const _defaultDate = now.toISOString().slice(0, 16);
 
   return (
     <PageWrapper
@@ -326,7 +338,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
                   displayField="name"
                   entityName="donneur d'ordre"
                   entityIcon={<Users size={16} />}
-                  createEndpoint="/v2/interventions/donneurs-ordre"
+                  createEndpoint="/interventions/donneurs-ordre"
                   createFields={DONNEUR_ORDRE_CREATE_FIELDS}
                   queryKeys={['interventions', 'donneurs-ordre']}
                   allowCreate={true}
@@ -334,8 +346,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">N° donneur d'ordre</label>
+                <label htmlFor="interv-ref-externe" className="block text-sm font-medium mb-1">N° donneur d&apos;ordre</label>
                 <Input
+                  id="interv-ref-externe"
                   value={formData.reference_externe || ''}
                   onChange={(v) => updateField('reference_externe', v)}
                   placeholder="Ex: REF-2025-001, CMD-12345..."
@@ -344,7 +357,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
 
               <div className="azals-field">
                 <SmartSelector
-                  items={(clients || []).map((c: any) => ({ id: c.id, name: c.name, code: c.code }))}
+                  items={(clients || []).map((c: ClientResult) => ({ id: c.id, name: c.name, code: c.code }))}
                   value={formData.client_id}
                   onChange={(value) => updateField('client_id', value)}
                   label="Client final *"
@@ -353,7 +366,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
                   secondaryField="code"
                   entityName="client"
                   entityIcon={<Building2 size={16} />}
-                  createEndpoint="/v1/commercial/customers"
+                  createEndpoint="/commercial/customers"
                   createFields={CLIENT_CREATE_FIELDS}
                   queryKeys={['clients', 'commercial', 'customers']}
                   allowCreate={true}
@@ -362,8 +375,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Facturer à</label>
+                <label htmlFor="interv-facturer-a" className="block text-sm font-medium mb-1">Facturer à</label>
                 <Select
+                  id="interv-facturer-a"
                   value={formData.facturer_a}
                   onChange={(v) => updateField('facturer_a', v)}
                   options={FACTURATION_OPTIONS}
@@ -410,8 +424,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
           <FormSection title="Intervention" icon={<Wrench size={20} />}>
             <Grid cols={2} gap="md">
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Type d'intervention</label>
+                <label htmlFor="interv-type" className="block text-sm font-medium mb-1">Type d&apos;intervention</label>
                 <Select
+                  id="interv-type"
                   value={formData.type_intervention}
                   onChange={(v) => updateField('type_intervention', v)}
                   options={TYPES_INTERVENTION}
@@ -419,8 +434,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Priorité</label>
+                <label htmlFor="interv-priority" className="block text-sm font-medium mb-1">Priorité</label>
                 <Select
+                  id="interv-priority"
                   value={formData.priorite}
                   onChange={(v) => updateField('priorite', v)}
                   options={PRIORITES}
@@ -428,8 +444,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Corps d'état</label>
+                <label htmlFor="interv-corps-etat" className="block text-sm font-medium mb-1">Corps d&apos;état</label>
                 <Select
+                  id="interv-corps-etat"
                   value={formData.corps_etat || ''}
                   onChange={(v) => updateField('corps_etat', v || undefined)}
                   options={CORPS_ETAT_OPTIONS}
@@ -438,8 +455,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
             </Grid>
 
             <div className="azals-field" style={{ marginTop: '12px' }}>
-              <label className="block text-sm font-medium mb-1">Titre</label>
+              <label htmlFor="interv-titre" className="block text-sm font-medium mb-1">Titre</label>
               <Input
+                id="interv-titre"
                 value={formData.titre || ''}
                 onChange={(v) => updateField('titre', v)}
                 placeholder="Titre de l'intervention"
@@ -448,8 +466,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
 
             <Grid cols={3} gap="md">
               <div className="azals-field" style={{ marginTop: '12px' }}>
-                <label className="block text-sm font-medium mb-1">Date prévue</label>
+                <label htmlFor="interv-date" className="block text-sm font-medium mb-1">Date prévue</label>
                 <input
+                  id="interv-date"
                   type="datetime-local"
                   className="azals-input"
                   value={formData.date_prevue_debut || ''}
@@ -458,8 +477,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field" style={{ marginTop: '12px' }}>
-                <label className="block text-sm font-medium mb-1">Durée prévue (h)</label>
+                <label htmlFor="interv-duree" className="block text-sm font-medium mb-1">Durée prévue (h)</label>
                 <input
+                  id="interv-duree"
                   type="number"
                   className="azals-input"
                   step="0.25"
@@ -471,13 +491,14 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field" style={{ marginTop: '12px' }}>
-                <label className="block text-sm font-medium mb-1">Intervenant</label>
+                <label htmlFor="interv-intervenant" className="block text-sm font-medium mb-1">Intervenant</label>
                 <Select
+                  id="interv-intervenant"
                   value={formData.intervenant_id || ''}
                   onChange={(v) => updateField('intervenant_id', v)}
                   options={[
                     { value: '', label: 'Non assigné' },
-                    ...intervenants.map((i: any) => ({ value: i.id, label: `${i.first_name} ${i.last_name}` }))
+                    ...intervenants.map((i: Intervenant) => ({ value: i.id, label: `${i.first_name} ${i.last_name}` }))
                   ]}
                 />
               </div>
@@ -491,8 +512,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
           <FormSection title="Travaux" icon={<FileText size={20} />}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Description du problème</label>
+                <label htmlFor="interv-description" className="block text-sm font-medium mb-1">Description du problème</label>
                 <TextArea
+                  id="interv-description"
                   value={formData.description || ''}
                   onChange={(v) => updateField('description', v)}
                   rows={3}

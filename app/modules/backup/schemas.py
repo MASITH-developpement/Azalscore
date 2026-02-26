@@ -3,6 +3,8 @@ AZALS - Module Backup - Schémas
 ===============================
 Schémas Pydantic pour les sauvegardes.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

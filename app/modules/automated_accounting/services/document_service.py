@@ -5,6 +5,8 @@ AZALS MODULE M2A - Service Documents
 Service de gestion des documents comptables.
 Gère le flux complet: réception -> OCR -> IA -> comptabilisation.
 """
+from __future__ import annotations
+
 
 import hashlib
 import logging

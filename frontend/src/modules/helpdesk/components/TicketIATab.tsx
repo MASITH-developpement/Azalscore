@@ -7,17 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, AlertTriangle, Clock, User, Target, Zap, MessageSquare } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Ticket } from '../types';
-import {
-  PRIORITY_CONFIG, STATUS_CONFIG,
-  isTicketOverdue, isSlaDueSoon, getTicketAge,
-  getPublicMessageCount, getInternalMessageCount,
-  getFirstResponseTime, getResolutionTime
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -26,6 +15,17 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import {
+  PRIORITY_CONFIG, STATUS_CONFIG,
+  isTicketOverdue, isSlaDueSoon, getTicketAge,
+  getPublicMessageCount, getInternalMessageCount,
+  getFirstResponseTime, getResolutionTime
+} from '../types';
+import type { Ticket } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * TicketIATab - Assistant IA pour le ticket

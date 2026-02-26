@@ -4,12 +4,12 @@
  */
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, ArrowLeft, Building2, MapPin, Users } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { companyInfoSchema, type CompanyInfoValues } from '../schemas';
-import type { CompanyInfo } from '../types';
 import { COUNTRY_OPTIONS, LANGUAGE_OPTIONS, REVENUE_RANGE_OPTIONS } from '../types';
+import type { CompanyInfo } from '../types';
 
 interface StepCompanyInfoProps {
   data: CompanyInfo;

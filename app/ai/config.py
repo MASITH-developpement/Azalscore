@@ -6,6 +6,8 @@ Toutes les configurations sont versionnées et traçables.
 
 Conformité: AZA-NF-009, AZA-IA-002
 """
+from __future__ import annotations
+
 
 import os
 from dataclasses import dataclass
@@ -81,7 +83,7 @@ class AIConfig:
 
     def _detect_environment(self) -> Environment:
         """Détecte l'environnement actuel"""
-        env = os.getenv("AZALSCORE_ENV", "development").lower()
+        env = os.getenv("ENVIRONMENT", os.getenv("AZALS_ENV", "development")).lower()
         return {
             "development": Environment.DEVELOPMENT,
             "staging": Environment.STAGING,

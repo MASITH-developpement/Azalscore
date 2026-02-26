@@ -10,6 +10,8 @@ Flux de création de tenant après paiement:
 4. Utilisateur admin créé via IAMService
 5. Email de bienvenue envoyé (optionnel)
 """
+from __future__ import annotations
+
 
 import logging
 import re

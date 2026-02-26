@@ -11,20 +11,19 @@
  * FUTURE : Permettre à l'utilisateur de personnaliser son interface
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   Menu, X, Bell, User, LogOut, Settings, ChevronDown,
-  Search, Plus, LayoutList, LayoutGrid, Database, AlertTriangle,
-  FileText, Users, Package, Truck, Star, Clock, Sparkles
+  LayoutList, LayoutGrid, Database, AlertTriangle,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
-import { DynamicMenu } from '@ui/menu-dynamic';
+import { useTheo } from '@core/theo';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
 import { TheoPanelContainer } from '@ui/components/TheoPanel';
-import { useTheo } from '@core/theo';
 import { isDemoMode, setDemoMode } from '../utils/demoMode';
 import { setInterfaceMode, getCurrentMode, type InterfaceMode } from '../utils/interfaceMode';
 
@@ -34,16 +33,72 @@ import { setInterfaceMode, getCurrentMode, type InterfaceMode } from '../utils/i
 
 export type ViewKey =
   | 'saisie'
-  | 'gestion-devis' | 'gestion-commandes' | 'gestion-interventions' | 'gestion-factures' | 'gestion-paiements'
+  | 'gestion-devis'
+  | 'gestion-commandes'
+  | 'gestion-interventions'
+  | 'gestion-factures'
+  | 'gestion-paiements'
   | 'affaires'
-  | 'crm' | 'stock' | 'achats' | 'projets' | 'rh' | 'vehicules'
-  | 'production' | 'maintenance' | 'quality'
-  | 'pos' | 'ecommerce' | 'marketplace' | 'subscriptions'
-  | 'helpdesk' | 'bi' | 'compliance' | 'web'
-  | 'compta' | 'tresorerie'
-  | 'cockpit' | 'marceau'
+  | 'accounting'
+  | 'treasury'
+  | 'partners'
+  | 'projects'
+  | 'inventory'
+  | 'purchases'
+  | 'hr'
+  | 'production'
+  | 'maintenance'
+  | 'quality'
+  | 'pos'
+  | 'ecommerce'
+  | 'helpdesk'
+  | 'bi'
+  | 'compliance'
+  | 'ai-assistant'
+  | 'assets'
+  | 'contracts'
+  | 'expenses'
+  | 'timesheet'
+  | 'field-service'
+  | 'complaints'
+  | 'warranty'
+  | 'rfq'
+  | 'procurement'
+  | 'subscriptions'
+  | 'marketplace'
+  | 'esignature'
+  | 'email'
+  | 'broadcast'
+  | 'web'
+  | 'website'
+  | 'crm'
+  | 'commercial'
+  | 'finance'
+  | 'consolidation'
+  | 'qc'
+  | 'automated-accounting'
+  | 'social-networks'
+  | 'marceau'
+  | 'cockpit'
   | 'admin'
-  | 'profile' | 'settings';
+  | 'audit'
+  | 'backup'
+  | 'guardian'
+  | 'iam'
+  | 'tenants'
+  | 'triggers'
+  | 'autoconfig'
+  | 'hr-vault'
+  | 'stripe-integration'
+  | 'country-packs'
+  | 'odoo-import'
+  | 'import-odoo'
+  | 'import-axonaut'
+  | 'import-pennylane'
+  | 'import-sage'
+  | 'import-chorus'
+  | 'profile'
+  | 'settings';
 
 interface MenuItem {
   key: ViewKey;
@@ -71,27 +126,63 @@ const MENU_ITEMS: MenuItem[] = [
   { key: 'gestion-factures', label: 'Factures', group: 'Gestion', capability: 'invoicing.view' },
   { key: 'gestion-paiements', label: 'Paiements', group: 'Gestion', capability: 'payments.view' },
   { key: 'affaires', label: 'Suivi Affaires', group: 'Affaires', capability: 'projects.view' },
-  { key: 'crm', label: 'CRM / Clients', group: 'Modules', capability: 'partners.view' },
-  { key: 'stock', label: 'Stock', group: 'Modules', capability: 'inventory.view' },
-  { key: 'achats', label: 'Achats', group: 'Modules', capability: 'purchases.view' },
-  { key: 'projets', label: 'Projets', group: 'Modules', capability: 'projects.view' },
-  { key: 'rh', label: 'RH', group: 'Modules', capability: 'hr.view' },
+  { key: 'partners', label: 'CRM / Clients', group: 'Modules', capability: 'partners.view' },
+  { key: 'projects', label: 'Projets', group: 'Modules', capability: 'projects.view' },
+  { key: 'inventory', label: 'Stock', group: 'Modules', capability: 'inventory.view' },
+  { key: 'purchases', label: 'Achats', group: 'Modules', capability: 'purchases.view' },
+  { key: 'hr', label: 'Ressources Humaines', group: 'Modules', capability: 'hr.view' },
+  { key: 'contracts', label: 'Contrats', group: 'Modules', capability: 'contracts.view' },
+  { key: 'timesheet', label: 'Feuilles de Temps', group: 'Modules', capability: 'timesheet.view' },
+  { key: 'field-service', label: 'Service Terrain', group: 'Modules', capability: 'field_service.view' },
+  { key: 'complaints', label: 'Réclamations', group: 'Modules', capability: 'complaints.view' },
+  { key: 'warranty', label: 'Garanties', group: 'Modules', capability: 'warranty.view' },
+  { key: 'rfq', label: 'Appels d\'Offres', group: 'Modules', capability: 'rfq.view' },
+  { key: 'procurement', label: 'Approvisionnement', group: 'Modules', capability: 'procurement.view' },
+  { key: 'crm', label: 'CRM Avancé', group: 'Modules', capability: 'crm.view' },
   { key: 'production', label: 'Production', group: 'Logistique', capability: 'production.view' },
   { key: 'maintenance', label: 'Maintenance', group: 'Logistique', capability: 'maintenance.view' },
   { key: 'quality', label: 'Qualité', group: 'Logistique', capability: 'quality.view' },
+  { key: 'qc', label: 'Contrôle Qualité', group: 'Logistique', capability: 'qc.view' },
   { key: 'pos', label: 'Point de Vente', group: 'Commerce', capability: 'pos.view' },
   { key: 'ecommerce', label: 'E-commerce', group: 'Commerce', capability: 'ecommerce.view' },
-  { key: 'marketplace', label: 'Marketplace', group: 'Commerce', capability: 'marketplace.view' },
   { key: 'subscriptions', label: 'Abonnements', group: 'Commerce', capability: 'subscriptions.view' },
+  { key: 'marketplace', label: 'Marketplace', group: 'Commerce', capability: 'marketplace.view' },
+  { key: 'commercial', label: 'Commercial', group: 'Commerce', capability: 'commercial.view' },
   { key: 'helpdesk', label: 'Support Client', group: 'Services', capability: 'helpdesk.view' },
-  { key: 'web', label: 'Site Web', group: 'Digital', capability: 'web.view' },
   { key: 'bi', label: 'Reporting & BI', group: 'Digital', capability: 'bi.view' },
   { key: 'compliance', label: 'Conformité', group: 'Digital', capability: 'compliance.view' },
-  { key: 'compta', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },
-  { key: 'tresorerie', label: 'Trésorerie', group: 'Finance', capability: 'treasury.view' },
+  { key: 'broadcast', label: 'Diffusion', group: 'Digital', capability: 'broadcast.view' },
+  { key: 'web', label: 'Site Web', group: 'Digital', capability: 'web.view' },
+  { key: 'website', label: 'Site Web Builder', group: 'Digital', capability: 'website.view' },
+  { key: 'social-networks', label: 'Réseaux Sociaux', group: 'Digital', capability: 'social_networks.view' },
+  { key: 'esignature', label: 'Signature Électronique', group: 'Communication', capability: 'esignature.view' },
+  { key: 'email', label: 'Emails', group: 'Communication', capability: 'email.view' },
+  { key: 'accounting', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },
+  { key: 'treasury', label: 'Trésorerie', group: 'Finance', capability: 'treasury.view' },
+  { key: 'assets', label: 'Immobilisations', group: 'Finance', capability: 'assets.view' },
+  { key: 'expenses', label: 'Notes de Frais', group: 'Finance', capability: 'expenses.view' },
+  { key: 'finance', label: 'Finance', group: 'Finance', capability: 'finance.view' },
+  { key: 'consolidation', label: 'Consolidation', group: 'Finance', capability: 'consolidation.view' },
+  { key: 'automated-accounting', label: 'Comptabilité Auto', group: 'Finance', capability: 'automated_accounting.view' },
   { key: 'cockpit', label: 'Cockpit Dirigeant', group: 'Direction', capability: 'cockpit.view' },
+  { key: 'ai-assistant', label: 'Assistant IA', group: 'IA', capability: 'ai_assistant.view' },
   { key: 'marceau', label: 'Marceau IA', group: 'IA', capability: 'marceau.view' },
   { key: 'admin', label: 'Administration', group: 'Système', capability: 'admin.view' },
+  { key: 'audit', label: 'Audit & Logs', group: 'Système', capability: 'audit.view' },
+  { key: 'backup', label: 'Sauvegardes', group: 'Système', capability: 'backup.view' },
+  { key: 'guardian', label: 'Sécurité', group: 'Système', capability: 'guardian.view' },
+  { key: 'iam', label: 'Gestion des Accès', group: 'Système', capability: 'iam.view' },
+  { key: 'tenants', label: 'Multi-Tenants', group: 'Système', capability: 'tenants.view' },
+  { key: 'triggers', label: 'Automatisations', group: 'Système', capability: 'triggers.view' },
+  { key: 'autoconfig', label: 'Configuration Auto', group: 'Système', capability: 'autoconfig.view' },
+  { key: 'hr-vault', label: 'Coffre-fort RH', group: 'Système', capability: 'hr_vault.view' },
+  { key: 'stripe-integration', label: 'Intégration Stripe', group: 'Système', capability: 'stripe_integration.view' },
+  { key: 'country-packs', label: 'Packs Pays', group: 'Système', capability: 'country_packs.view' },
+  { key: 'import-odoo', label: 'Import Odoo', group: 'Import', capability: 'import_data.odoo' },
+  { key: 'import-axonaut', label: 'Import Axonaut', group: 'Import', capability: 'import_data.axonaut' },
+  { key: 'import-pennylane', label: 'Import Pennylane', group: 'Import', capability: 'import_data.pennylane' },
+  { key: 'import-sage', label: 'Import Sage', group: 'Import', capability: 'import_data.sage' },
+  { key: 'import-chorus', label: 'Import Chorus', group: 'Import', capability: 'import_data.chorus' },
 ];
 
 // ============================================================
@@ -122,26 +213,43 @@ const Header: React.FC<HeaderProps> = ({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const demoMode = isDemoMode();
 
-  const currentItem = MENU_ITEMS.find(m => m.key === currentView);
+  const currentItem = useMemo(
+    () => MENU_ITEMS.find(m => m.key === currentView),
+    [currentView]
+  );
 
-  // Filtrer les items selon les capabilities
-  const visibleItems = MENU_ITEMS.filter(item => {
-    if (!item.capability) return true;
-    return capabilities.includes(item.capability);
-  });
+  // Filtrer les items selon les capabilities (mémorisé pour éviter recalcul)
+  const visibleItems = useMemo(() => {
+    return MENU_ITEMS.filter(item => {
+      if (!item.capability) return true;
+      return capabilities.includes(item.capability);
+    });
+  }, [capabilities]);
 
-  // Grouper les items filtrés pour le dropdown
-  const groups = visibleItems.reduce((acc, item) => {
-    const group = item.group || 'Autre';
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(item);
-    return acc;
-  }, {} as Record<string, MenuItem[]>);
+  // Grouper les items filtrés pour le dropdown (mémorisé)
+  const groups = useMemo(() => {
+    return visibleItems.reduce((acc, item) => {
+      const group = item.group || 'Autre';
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(item);
+      return acc;
+    }, {} as Record<string, MenuItem[]>);
+  }, [visibleItems]);
 
-  const handleModeSwitch = () => {
+  // Handlers mémorisés pour éviter re-renders enfants
+  const handleModeSwitch = useCallback(() => {
     const newMode = mode === 'azalscore' ? 'erp' : 'azalscore';
     setInterfaceMode(newMode);
-  };
+  }, [mode]);
+
+  const toggleDropdown = useCallback(() => {
+    setDropdownOpen(prev => !prev);
+  }, []);
+
+  const handleItemClick = useCallback((key: ViewKey) => {
+    onViewChange(key);
+    setDropdownOpen(false);
+  }, [onViewChange]);
 
   return (
     <header className={clsx('azals-unified-header', {
@@ -169,7 +277,7 @@ const Header: React.FC<HeaderProps> = ({
           <div className="azals-unified-header__selector-container">
             <button
               className="azals-unified-header__selector"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              onClick={toggleDropdown}
             >
               <span>{currentItem?.label || 'Sélectionner'}</span>
               <ChevronDown size={18} className={dropdownOpen ? 'rotate' : ''} />
@@ -186,10 +294,7 @@ const Header: React.FC<HeaderProps> = ({
                         className={clsx('azals-unified-header__item', {
                           'azals-unified-header__item--active': currentView === item.key
                         })}
-                        onClick={() => {
-                          onViewChange(item.key);
-                          setDropdownOpen(false);
-                        }}
+                        onClick={() => handleItemClick(item.key)}
                       >
                         {item.label}
                       </button>
@@ -308,19 +413,23 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewChange }) => {
   const { capabilities } = useCapabilities();
 
-  // Filtrer les items selon les capabilities
-  const visibleItems = MENU_ITEMS.filter(item => {
-    if (!item.capability) return true;
-    return capabilities.includes(item.capability);
-  });
+  // Filtrer les items selon les capabilities (mémorisé)
+  const visibleItems = useMemo(() => {
+    return MENU_ITEMS.filter(item => {
+      if (!item.capability) return true;
+      return capabilities.includes(item.capability);
+    });
+  }, [capabilities]);
 
-  // Grouper les items filtrés
-  const groups = visibleItems.reduce((acc, item) => {
-    const group = item.group || 'Autre';
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(item);
-    return acc;
-  }, {} as Record<string, MenuItem[]>);
+  // Grouper les items filtrés (mémorisé)
+  const groups = useMemo(() => {
+    return visibleItems.reduce((acc, item) => {
+      const group = item.group || 'Autre';
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(item);
+      return acc;
+    }, {} as Record<string, MenuItem[]>);
+  }, [visibleItems]);
 
   return (
     <>

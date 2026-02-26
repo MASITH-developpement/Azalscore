@@ -9,12 +9,12 @@ import {
   CheckCircle, XCircle, AlertCircle, CreditCard, Gift, Repeat
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Subscription, SubscriptionHistoryEntry } from '../types';
+import { formatDateTime, formatCurrency } from '@/utils/formatters';
 import {
   SUBSCRIPTION_STATUS_CONFIG
 } from '../types';
-import { formatDateTime, formatCurrency } from '@/utils/formatters';
+import type { Subscription, SubscriptionHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SubscriptionHistoryTab - Historique

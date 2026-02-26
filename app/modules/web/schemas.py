@@ -28,6 +28,13 @@ class ThemeModeEnum(str, Enum):
     HIGH_CONTRAST = "HIGH_CONTRAST"
 
 
+class UIStyleEnum(str, Enum):
+    """Style visuel de l'interface: classique, moderne ou glass"""
+    CLASSIC = "CLASSIC"
+    MODERN = "MODERN"
+    GLASS = "GLASS"
+
+
 class WidgetTypeEnum(str, Enum):
     KPI = "KPI"
     CHART = "CHART"
@@ -331,6 +338,7 @@ MenuTreeNode.model_rebuild()
 class UserPreferenceCreate(BaseModel):
     theme_id: int | None = None
     theme_mode: ThemeModeEnum = ThemeModeEnum.SYSTEM
+    ui_style: UIStyleEnum = UIStyleEnum.CLASSIC
     sidebar_collapsed: bool = False
     sidebar_mini: bool = False
     toolbar_dense: bool = False
@@ -350,14 +358,15 @@ class UserPreferenceCreate(BaseModel):
 
 
 class UserPreferenceResponse(BaseModel):
-    id: int
-    user_id: int
-    theme_id: int | None = None
+    id: str  # UUID as string
+    user_id: str  # UUID as string
+    theme_id: str | None = None  # UUID as string
     theme_mode: ThemeModeEnum
+    ui_style: UIStyleEnum = UIStyleEnum.CLASSIC
     sidebar_collapsed: bool
     sidebar_mini: bool
     toolbar_dense: bool
-    default_dashboard_id: int | None = None
+    default_dashboard_id: str | None = None  # UUID as string
     table_density: str
     table_page_size: int
     font_size: str
@@ -371,11 +380,27 @@ class UserPreferenceResponse(BaseModel):
     sound_enabled: bool
     desktop_notifications: bool
     custom_shortcuts: dict[str, Any] | None = None
-    favorite_widgets: list[int] | None = None
+    favorite_widgets: list[str] | None = None  # UUIDs as strings
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("id", "user_id", "theme_id", "default_dashboard_id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Convertit les UUIDs en strings."""
+        if v is None:
+            return None
+        return str(v)
+
+    @field_validator("ui_style", mode="before")
+    @classmethod
+    def default_ui_style(cls, v):
+        """Retourne CLASSIC si ui_style est None (pour les enregistrements existants)."""
+        if v is None:
+            return UIStyleEnum.CLASSIC
+        return v
 
     @field_validator("custom_shortcuts", "favorite_widgets", mode="before")
     @classmethod

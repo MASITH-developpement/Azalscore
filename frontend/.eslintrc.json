@@ -97,6 +97,7 @@
     "*.config.js",
     "*.config.ts",
     "vite.config.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "src/modules/_TEMPLATE"
   ]
 }

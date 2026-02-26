@@ -8,16 +8,17 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  FileText, Plus, Edit, Trash2, Search, Check, X, Send,
-  Euro, Calendar, Building2, CreditCard, ChevronRight,
+  FileText, Plus, Edit, Search, Check, Send,
+  Euro, Calendar, CreditCard, ChevronRight,
   Download, Printer, Clock, CheckCircle2, AlertTriangle,
-  ArrowLeftRight, Ban, Package, History, FileArchive, Sparkles
+  ArrowLeftRight, Package, History, FileArchive, Sparkles,
+  Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
+import { serializeFilters } from '@core/query-keys';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -27,17 +28,10 @@ import {
   type StatusDefinition,
   type SemanticColor,
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Import types et composants tabs
-import type {
-  Facture, FactureFormData, Customer, FactureType, FactureStatus,
-  PaymentMethod, Payment, PaymentFormData, DocumentLine
-} from './types';
-import {
-  STATUS_CONFIG, TYPE_CONFIG, PAYMENT_METHODS,
-  isOverdue, getDaysUntilDue
-} from './types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   FactureInfoTab,
@@ -46,7 +40,16 @@ import {
   FactureDocsTab,
   FactureHistoryTab,
   FactureIATab,
+  FactureRiskTab,
 } from './components';
+import {
+  STATUS_CONFIG, TYPE_CONFIG, PAYMENT_METHODS,
+  isOverdue, getDaysUntilDue
+} from './types';
+import type {
+  Facture, FactureFormData, Customer, FactureType, FactureStatus,
+  PaymentMethod, Payment, PaymentFormData
+} from './types';
 
 // ============================================================
 // API HOOKS
@@ -54,7 +57,7 @@ import {
 
 const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType; status?: string; search?: string }) => {
   return useQuery({
-    queryKey: ['commercial', 'documents', 'factures', page, pageSize, filters],
+    queryKey: ['commercial', 'documents', 'factures', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
@@ -67,7 +70,7 @@ const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType
       }
       if (filters?.status) params.append('status', filters.status);
       if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Facture>>(`/v1/commercial/documents?${params}`);
+      const response = await api.get<PaginatedResponse<Facture>>(`/commercial/documents?${params}`);
       return response.data;
     },
   });
@@ -77,7 +80,7 @@ const useFacture = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', id],
     queryFn: async () => {
-      const response = await api.get<Facture>(`/v1/commercial/documents/${id}`);
+      const response = await api.get<Facture>(`/commercial/documents/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -88,30 +91,30 @@ const useFacturePayments = (documentId: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', documentId, 'payments'],
     queryFn: async () => {
-      const response = await api.get<Payment[]>(`/v1/commercial/documents/${documentId}/payments`);
+      const response = await api.get<Payment[]>(`/commercial/documents/${documentId}/payments`);
       return response.data;
     },
     enabled: !!documentId,
   });
 };
 
-const useCustomers = (search?: string) => {
+const _useCustomers = (search?: string) => {
   return useQuery({
     queryKey: ['commercial', 'customers', 'search', search],
     queryFn: async () => {
       const params = new URLSearchParams({ page: '1', page_size: '50' });
       if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/v1/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
       return response.data.items;
     },
   });
 };
 
-const useCreateFacture = () => {
+const _useCreateFacture = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: FactureFormData) => {
-      const response = await api.post<Facture>('/v1/commercial/documents', data);
+      const response = await api.post<Facture>('/commercial/documents', data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -122,7 +125,7 @@ const useValidateFacture = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Facture>(`/v1/commercial/documents/${id}/validate`);
+      const response = await api.post<Facture>(`/commercial/documents/${id}/validate`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -133,7 +136,7 @@ const useSendFacture = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Facture>(`/v1/commercial/documents/${id}/send`);
+      const response = await api.post<Facture>(`/commercial/documents/${id}/send`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -144,7 +147,7 @@ const useCreatePayment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ documentId, data }: { documentId: string; data: PaymentFormData }) => {
-      const response = await api.post<Payment>('/v1/commercial/payments', {
+      const response = await api.post<Payment>('/commercial/payments', {
         document_id: documentId,
         ...data,
       });
@@ -158,7 +161,7 @@ const useCreateAvoir = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (factureId: string) => {
-      const response = await api.post<Facture>(`/v1/commercial/documents/${factureId}/credit-note`);
+      const response = await api.post<Facture>(`/commercial/documents/${factureId}/credit-note`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -391,6 +394,7 @@ const FactureListView: React.FC<{
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -456,6 +460,12 @@ const FactureDetailView: React.FC<{
       component: FactureFinancialTab,
     },
     {
+      id: 'risk',
+      label: 'Risque Client',
+      icon: <Shield size={18} />,
+      component: FactureRiskTab,
+    },
+    {
       id: 'documents',
       label: 'Documents',
       icon: <FileArchive size={18} />,
@@ -477,9 +487,10 @@ const FactureDetailView: React.FC<{
   ], [facture?.lines?.length]);
 
   // Status mapping
-  const statusDef: StatusDefinition | undefined = facture ? {
-    label: STATUS_CONFIG[facture.status].label,
-    color: STATUS_CONFIG[facture.status].color as SemanticColor,
+  const statusConfig = facture ? (STATUS_CONFIG[facture.status] || { label: facture.status, color: 'gray' }) : null;
+  const statusDef: StatusDefinition | undefined = statusConfig ? {
+    label: statusConfig.label,
+    color: statusConfig.color as SemanticColor,
   } : undefined;
 
   // Info bar items (KPIs)
@@ -575,6 +586,7 @@ const FactureDetailView: React.FC<{
       label: 'PDF',
       icon: <Download size={16} />,
       variant: 'ghost',
+      onClick: () => { window.open(`/api/commercial/documents/${facture.id}/pdf`, '_blank'); },
     });
 
     actions.push({
@@ -582,6 +594,7 @@ const FactureDetailView: React.FC<{
       label: 'Imprimer',
       icon: <Printer size={16} />,
       variant: 'ghost',
+      onClick: () => { window.print(); },
     });
 
     return actions;

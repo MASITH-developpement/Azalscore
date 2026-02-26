@@ -3,6 +3,8 @@ AZALS MODULE 15 - Stripe Integration Router
 =============================================
 Endpoints API pour l'intégration Stripe.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -463,17 +465,49 @@ async def receive_webhook(
     request: Request,
     service: StripeService = Depends(get_service)
 ):
-    """Recevoir un webhook Stripe."""
-    payload = await request.json()
+    """
+    Recevoir un webhook Stripe.
+
+    SÉCURITÉ: Vérifie la signature Stripe AVANT tout traitement.
+    """
+    import json
+    import os
+
+    payload = await request.body()
     signature = request.headers.get("Stripe-Signature")
 
-    event_id = payload.get("id")
-    event_type = payload.get("type")
+    # SÉCURITÉ: Signature obligatoire
+    if not signature:
+        raise HTTPException(status_code=400, detail="Missing Stripe-Signature header")
+
+    # SÉCURITÉ: Vérifier la signature Stripe
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    if webhook_secret:
+        try:
+            import stripe
+            event = stripe.Webhook.construct_event(payload, signature, webhook_secret)
+        except stripe.error.SignatureVerificationError:
+            raise HTTPException(status_code=400, detail="Invalid signature")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Webhook verification failed")
+    else:
+        # En développement sans secret, parser mais logger un warning
+        import logging
+        logging.getLogger(__name__).warning(
+            "[WEBHOOK] STRIPE_WEBHOOK_SECRET not configured - signature not verified"
+        )
+        try:
+            event = json.loads(payload)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    event_id = event.get("id")
+    event_type = event.get("type")
 
     if not event_id or not event_type:
         raise HTTPException(status_code=400, detail="Payload invalide")
 
-    webhook = service.process_webhook(event_id, event_type, payload, signature)
+    webhook = service.process_webhook(event_id, event_type, dict(event), signature)
     return {"received": True, "webhook_id": webhook.id}
 
 

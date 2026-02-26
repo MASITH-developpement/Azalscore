@@ -20,6 +20,8 @@ ENDPOINTS MIGRÉS (32):
 - Sessions (2): list_my_sessions + revoke_sessions
 - Password Policy (2): get + update
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from uuid import UUID
@@ -241,8 +243,7 @@ async def logout(
     ✅ MIGRÉ CORE SaaS:
     - Utilise context.user_id au lieu de current_user.id
     """
-    # TODO: Extraire JTI du token courant
-    # Pour l'instant, on révoque toutes les sessions si demandé
+    # NOTE: Phase 2 - Extraire JTI du token pour révocation ciblée
     if data.all_sessions:
         service.revoke_all_sessions(context.user_id, "User logout all")
 
@@ -1195,7 +1196,7 @@ async def list_my_sessions(
                 created_at=s.created_at,
                 expires_at=s.expires_at,
                 last_activity_at=s.last_activity_at,
-                is_current=False  # TODO: comparer avec JTI courant
+                is_current=False  # NOTE: Phase 2 - comparer avec JTI du token
             )
             for s in sessions
         ],

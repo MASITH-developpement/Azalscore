@@ -7,10 +7,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { X, AlertTriangle, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import { trackAction } from '@core/audit-ui';
-import { useFocusTrap } from '../hooks/useFocusTrap';
+import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import type { ActionButton } from '@/types';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // ============================================================
 // TYPES
@@ -169,14 +169,14 @@ export const CapabilityAction: React.FC<CapabilityActionProps> = ({
       setShowConfirm(true);
     } else {
       trackAction('action_button', action.id);
-      await action.onClick();
+      await action.onClick?.();
     }
   };
 
   const handleConfirm = async () => {
     setShowConfirm(false);
     trackAction('action_button', action.id, { confirmed: true });
-    await action.onClick();
+    await action.onClick?.();
   };
 
   return (
@@ -375,7 +375,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Collect only the enabled, visible items for keyboard navigation
-  const enabledItems = items.filter((item) => !item.disabled);
+  const _enabledItems = items.filter((item) => !item.disabled);
 
   // Focus the correct menu item when focusedIndex changes
   useEffect(() => {

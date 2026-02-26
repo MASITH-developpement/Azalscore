@@ -10,12 +10,12 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { ProductionOrder, WorkOrder } from '../types';
 import { formatDuration, formatDateTime } from '@/utils/formatters';
 import {
   WORK_ORDER_STATUS_CONFIG
 } from '../types';
+import type { ProductionOrder, WorkOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderOperationsTab - Operations/Ordres de travail
@@ -94,7 +94,7 @@ export const OrderOperationsTab: React.FC<TabContentProps<ProductionOrder>> = ({
         <div className="azals-empty">
           <Settings size={48} className="text-muted" />
           <h3>Aucune operation</h3>
-          <p className="text-muted">Cet ordre n'a pas encore d'operations definies.</p>
+          <p className="text-muted">Cet ordre n&apos;a pas encore d&apos;operations definies.</p>
         </div>
       )}
 
@@ -241,13 +241,13 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, highlight }) =
 
       {workOrder.status === 'READY' && (
         <div className="azals-work-order-card__actions">
-          <Button size="sm" leftIcon={<Play size={14} />}>Demarrer</Button>
+          <Button size="sm" leftIcon={<Play size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'startWorkOrder', workOrderId: workOrder.id } })); }}>Demarrer</Button>
         </div>
       )}
       {workOrder.status === 'IN_PROGRESS' && (
         <div className="azals-work-order-card__actions">
-          <Button size="sm" variant="secondary" leftIcon={<Pause size={14} />}>Pause</Button>
-          <Button size="sm" leftIcon={<CheckCircle size={14} />}>Terminer</Button>
+          <Button size="sm" variant="secondary" leftIcon={<Pause size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'pauseWorkOrder', workOrderId: workOrder.id } })); }}>Pause</Button>
+          <Button size="sm" leftIcon={<CheckCircle size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'completeWorkOrder', workOrderId: workOrder.id } })); }}>Terminer</Button>
         </div>
       )}
     </div>

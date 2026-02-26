@@ -4,6 +4,8 @@ AZALS - Analytics 360° ÉLITE
 Analyse transverse multi-module pour vision globale.
 Détection d'anomalies et recommendations intelligentes.
 """
+from __future__ import annotations
+
 
 import logging
 from dataclasses import dataclass, field

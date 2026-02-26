@@ -7,16 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, AlertTriangle, CheckCircle2, Send, Package, FileText } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseOrder } from '../types';
-import { formatCurrency } from '@/utils/formatters';
-import {
-  ORDER_STATUS_CONFIG,
-  canValidateOrder, canCreateInvoiceFromOrder
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -25,6 +15,16 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  ORDER_STATUS_CONFIG,
+  canValidateOrder, canCreateInvoiceFromOrder
+} from '../types';
+import type { PurchaseOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * OrderIATab - Assistant IA
@@ -209,7 +209,7 @@ function generateSuggestedActions(order: PurchaseOrder): SuggestedActionData[] {
  */
 function generateInsights(order: PurchaseOrder): Insight[] {
   const insights: Insight[] = [];
-  const statusConfig = ORDER_STATUS_CONFIG[order.status];
+  const _statusConfig = ORDER_STATUS_CONFIG[order.status];
 
   // Statut
   if (order.status === 'DRAFT') {

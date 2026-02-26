@@ -637,3 +637,115 @@ class FinancialReport(Base):
         Index("ix_reports_tenant_type", "tenant_id", "report_type"),
         Index("ix_reports_tenant_dates", "tenant_id", "start_date", "end_date"),
     )
+
+
+# ============================================================================
+# MODÈLES PROVIDERS FINANCE
+# ============================================================================
+
+class FinanceProviderType(str, enum.Enum):
+    """Types de providers finance."""
+    SWAN = "swan"
+    NMI = "nmi"
+    DEFACTO = "defacto"
+    SOLARIS = "solaris"
+
+
+class FinanceProviderConfig(Base):
+    """
+    Configuration d'un provider finance par tenant.
+
+    Stocke les credentials et paramètres de chaque provider
+    avec isolation multi-tenant stricte.
+    """
+    __tablename__ = "finance_provider_configs"
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+
+    # Provider
+    provider = Column(String(50), nullable=False)  # swan, nmi, defacto, solaris
+
+    # Activation
+    is_enabled = Column(Boolean, default=True)
+    is_primary = Column(Boolean, default=False)
+    priority = Column(Integer, default=100)
+
+    # Credentials (chiffrés en DB via PostgreSQL pgcrypto)
+    api_key = Column(String(500), nullable=True)
+    api_secret = Column(String(500), nullable=True)
+    api_endpoint = Column(String(500), nullable=True)
+
+    # Configuration flexible
+    config_data = Column(JSON, default=dict)
+
+    # Rate limiting par tenant
+    custom_requests_per_minute = Column(Integer, nullable=True)
+    custom_requests_per_day = Column(Integer, nullable=True)
+
+    # Monitoring
+    last_success_at = Column(DateTime, nullable=True)
+    last_error_at = Column(DateTime, nullable=True)
+    last_error_message = Column(Text, nullable=True)
+    total_requests = Column(Integer, default=0)
+    total_errors = Column(Integer, default=0)
+
+    # Audit
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(UniversalUUID(), nullable=True)
+    updated_by = Column(UniversalUUID(), nullable=True)
+
+    __table_args__ = (
+        Index("ix_finance_provider_tenant", "tenant_id", "provider", unique=True),
+        Index("ix_finance_provider_enabled", "tenant_id", "is_enabled"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<FinanceProviderConfig {self.tenant_id}:{self.provider}>"
+
+
+class FinanceWebhookEvent(Base):
+    """
+    Événements webhooks reçus des providers finance.
+
+    Stocke tous les événements pour audit et retry.
+    """
+    __tablename__ = "finance_webhook_events"
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+
+    # Événement
+    provider = Column(String(50), nullable=False)  # swan, nmi, etc.
+    event_type = Column(String(100), nullable=False)
+    event_id = Column(String(255), nullable=False)  # ID fourni par le provider
+
+    # Payload
+    payload = Column(JSON, nullable=False)
+    raw_payload = Column(Text, nullable=True)
+
+    # Signature
+    signature = Column(String(255), nullable=True)
+    signature_valid = Column(Boolean, default=False)
+
+    # Traitement
+    processed = Column(Boolean, default=False)
+    processed_at = Column(DateTime, nullable=True)
+    process_error = Column(Text, nullable=True)
+    retry_count = Column(Integer, default=0)
+    max_retries = Column(Integer, default=3)
+    next_retry_at = Column(DateTime, nullable=True)
+
+    # Timestamps
+    received_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_webhook_tenant_provider", "tenant_id", "provider"),
+        Index("ix_webhook_event_id", "provider", "event_id", unique=True),
+        Index("ix_webhook_unprocessed", "processed", "next_retry_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<FinanceWebhookEvent {self.provider}:{self.event_type}:{self.event_id}>"

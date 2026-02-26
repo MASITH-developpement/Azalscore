@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, User, Mail, Phone } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { personalInfoSchema, type PersonalInfoValues } from '../schemas';
 import type { PersonalInfo } from '../types';
 

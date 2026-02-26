@@ -3,6 +3,8 @@ AZALS MODULE 13 - POS Schemas
 ==============================
 Schémas Pydantic pour validation et sérialisation.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

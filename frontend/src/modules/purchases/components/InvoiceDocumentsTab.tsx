@@ -5,26 +5,26 @@
 
 import React from 'react';
 import { Paperclip, Upload, FileText, Download, Printer, ShoppingCart } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseInvoice } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate } from '@/utils/formatters';
+import type { PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoiceDocumentsTab - Documents
  */
 export const InvoiceDocumentsTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ data: invoice }) => {
   const handleUpload = () => {
-    console.log('Upload document for invoice:', invoice.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadDocument', invoiceId: invoice.id } }));
   };
 
   const handlePrint = () => {
-    console.log('Print invoice:', invoice.id);
+    window.print();
   };
 
   const handleDownloadPDF = () => {
-    console.log('Download PDF for invoice:', invoice.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadInvoicePDF', invoiceId: invoice.id } }));
   };
 
   return (
@@ -40,7 +40,7 @@ export const InvoiceDocumentsTab: React.FC<TabContentProps<PurchaseInvoice>> = (
                 Cette facture est liee a une commande fournisseur
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'purchases', type: 'order', id: invoice.order_id } })); }}>
               Voir la commande
             </Button>
           </div>
@@ -109,21 +109,21 @@ export const InvoiceDocumentsTab: React.FC<TabContentProps<PurchaseInvoice>> = (
       <Card title="Tracabilite" icon={<FileText size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{invoice.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDate(invoice.created_at)}</div>
           </div>
           {invoice.validated_by_name && (
             <>
               <div className="azals-field">
-                <label className="azals-field__label">Valide par</label>
+                <span className="azals-field__label">Valide par</span>
                 <div className="azals-field__value">{invoice.validated_by_name}</div>
               </div>
               <div className="azals-field">
-                <label className="azals-field__label">Valide le</label>
+                <span className="azals-field__label">Valide le</span>
                 <div className="azals-field__value">{invoice.validated_at ? formatDate(invoice.validated_at) : '-'}</div>
               </div>
             </>

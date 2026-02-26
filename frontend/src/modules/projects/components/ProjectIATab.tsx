@@ -7,19 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, Calendar, Target, Euro, Users, CheckSquare } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Project } from '../types';
-import { formatCurrency, formatPercent, formatHours } from '@/utils/formatters';
-import {
-  PROJECT_STATUS_CONFIG,
-  isProjectOverdue, isProjectNearDeadline, isBudgetOverrun,
-  getDaysRemaining, getRemainingBudget, getBudgetUsedPercent,
-  getTaskCountByStatus, getOverdueTasks, getTotalLoggedHours,
-  getTotalEstimatedHours, getMilestoneStats, getNextMilestone
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -28,6 +15,19 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatPercent, formatHours } from '@/utils/formatters';
+import {
+  PROJECT_STATUS_CONFIG,
+  isProjectOverdue, isProjectNearDeadline, isBudgetOverrun,
+  getDaysRemaining, getRemainingBudget, getBudgetUsedPercent,
+  getTaskCountByStatus, getOverdueTasks, getTotalLoggedHours,
+  getTotalEstimatedHours, getMilestoneStats, getNextMilestone
+} from '../types';
+import type { Project } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * ProjectIATab - Assistant IA pour le projet

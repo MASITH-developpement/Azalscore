@@ -5,9 +5,12 @@ Utilise Resend pour l'envoi d'emails.
 pip install resend
 """
 
+import html
 import os
+import re
 from typing import Optional
 from datetime import datetime
+from urllib.parse import urlparse
 
 try:
     import resend
@@ -21,7 +24,19 @@ logger = get_logger(__name__)
 
 
 class EmailService:
-    """Service d'envoi d'emails transactionnels."""
+    """Service d'envoi d'emails transactionnels avec protections de sécurité."""
+
+    # Pattern de validation email (RFC 5322 simplifié)
+    EMAIL_PATTERN = re.compile(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    )
+
+    # Domaines autorisés pour les URLs (protection open redirect)
+    ALLOWED_URL_DOMAINS = {
+        "app.azalscore.com",
+        "azalscore.com",
+        "staging.azalscore.com",
+    }
 
     def __init__(self):
         if RESEND_AVAILABLE:
@@ -30,27 +45,71 @@ class EmailService:
         self.from_name = "AZALSCORE"
         self.app_url = os.getenv("APP_URL", "https://app.azalscore.com")
 
+    def _validate_email(self, email: str) -> bool:
+        """Valide le format d'une adresse email."""
+        if not email or len(email) > 254:
+            return False
+        return bool(self.EMAIL_PATTERN.match(email))
+
+    def _validate_url(self, url: str) -> bool:
+        """Valide qu'une URL est sûre (protection open redirect/XSS)."""
+        if not url:
+            return False
+
+        try:
+            parsed = urlparse(url)
+
+            # Doit être HTTPS
+            if parsed.scheme != "https":
+                return False
+
+            hostname = parsed.hostname or ""
+
+            # Vérifier le domaine
+            for allowed_domain in self.ALLOWED_URL_DOMAINS:
+                if hostname == allowed_domain or hostname.endswith(f".{allowed_domain}"):
+                    return True
+
+            return False
+
+        except Exception:
+            return False
+
+    def _escape_html(self, text: str) -> str:
+        """Échappe les caractères HTML pour prévenir XSS."""
+        if not text:
+            return ""
+        return html.escape(str(text), quote=True)
+
     def send_email(
         self,
         to: str,
         subject: str,
-        html: str,
+        html_content: str,
         text: Optional[str] = None
     ) -> bool:
-        """Envoyer un email."""
+        """Envoyer un email avec validation de sécurité."""
         if not RESEND_AVAILABLE:
             logger.warning("[EMAIL] Resend non disponible")
             return False
+
+        # Validation de l'email destinataire
+        if not self._validate_email(to):
+            logger.warning(f"[EMAIL] Adresse email invalide: {to}")
+            return False
+
+        # Nettoyer le sujet (pas de caractères de contrôle)
+        clean_subject = re.sub(r'[\r\n\t]', ' ', subject)[:200]
 
         try:
             resend.Emails.send({
                 "from": f"{self.from_name} <{self.from_email}>",
                 "to": [to],
-                "subject": subject,
-                "html": html,
+                "subject": clean_subject,
+                "html": html_content,
                 "text": text or ""
             })
-            logger.info(f"[EMAIL] Envoyé à {to}: {subject}")
+            logger.info(f"[EMAIL] Envoyé à {to}: {clean_subject[:50]}...")
             return True
         except Exception as e:
             logger.error(f"[EMAIL] Erreur: {e}")
@@ -148,9 +207,13 @@ class EmailService:
 
     def send_welcome(self, email: str, name: str, tenant_name: str) -> bool:
         """Email de bienvenue après inscription."""
+        # Échappement HTML des entrées utilisateur
+        safe_name = self._escape_html(name)
+        safe_tenant = self._escape_html(tenant_name)
+
         content = f"""
-        <h1>Bienvenue {name} !</h1>
-        <p>Votre compte <strong>{tenant_name}</strong> est maintenant actif.</p>
+        <h1>Bienvenue {safe_name} !</h1>
+        <p>Votre compte <strong>{safe_tenant}</strong> est maintenant actif.</p>
         <p>Vous bénéficiez de <strong>14 jours d'essai gratuit</strong> avec accès à toutes les fonctionnalités.</p>
         <p>Voici les prochaines étapes :</p>
         <ul>
@@ -162,16 +225,17 @@ class EmailService:
         """
         return self.send_email(
             to=email,
-            subject=f"Bienvenue sur AZALSCORE, {name} !",
-            html=self._base_template(content)
+            subject=f"Bienvenue sur AZALSCORE, {safe_name} !",
+            html_content=self._base_template(content)
         )
 
     def send_trial_ending(self, email: str, name: str, days_left: int) -> bool:
         """Email de rappel fin d'essai."""
+        safe_name = self._escape_html(name)
         urgency = "⏰" if days_left <= 3 else "📅"
         content = f"""
         <h1>{urgency} Votre essai se termine bientôt</h1>
-        <p>Bonjour {name},</p>
+        <p>Bonjour {safe_name},</p>
         <p>Il vous reste <strong>{days_left} jour{"s" if days_left > 1 else ""}</strong> pour profiter de votre essai gratuit AZALSCORE.</p>
         <p>Pour continuer à utiliser votre ERP sans interruption, passez à un abonnement dès maintenant :</p>
         <a href="{self.app_url}/billing/upgrade" class="btn">Choisir mon plan →</a>
@@ -182,14 +246,15 @@ class EmailService:
         return self.send_email(
             to=email,
             subject=f"⏰ Plus que {days_left} jours d'essai AZALSCORE",
-            html=self._base_template(content)
+            html_content=self._base_template(content)
         )
 
     def send_trial_expired(self, email: str, name: str) -> bool:
         """Email de fin d'essai."""
+        safe_name = self._escape_html(name)
         content = f"""
         <h1>Votre essai est terminé</h1>
-        <p>Bonjour {name},</p>
+        <p>Bonjour {safe_name},</p>
         <p>Votre période d'essai AZALSCORE est arrivée à son terme.</p>
         <p>Vos données sont conservées pendant <strong>30 jours</strong>. Pour y accéder à nouveau, souscrivez un abonnement :</p>
         <a href="{self.app_url}/billing/upgrade" class="btn">Réactiver mon compte →</a>
@@ -200,24 +265,29 @@ class EmailService:
         return self.send_email(
             to=email,
             subject="Votre essai AZALSCORE est terminé",
-            html=self._base_template(content)
+            html_content=self._base_template(content)
         )
 
     def send_payment_success(
-        self, 
-        email: str, 
-        name: str, 
-        plan: str, 
+        self,
+        email: str,
+        name: str,
+        plan: str,
         amount: float
     ) -> bool:
         """Email de confirmation de paiement."""
+        safe_name = self._escape_html(name)
+        safe_plan = self._escape_html(plan)
+        # Validation du montant
+        safe_amount = abs(float(amount)) if isinstance(amount, (int, float)) else 0.0
+
         content = f"""
         <h1 style="color: #10b981;">✓ Paiement confirmé</h1>
-        <p>Bonjour {name},</p>
+        <p>Bonjour {safe_name},</p>
         <p>Nous confirmons la réception de votre paiement :</p>
         <div class="box">
-            <p><strong>Plan :</strong> {plan}</p>
-            <p><strong>Montant :</strong> {amount:.2f} €</p>
+            <p><strong>Plan :</strong> {safe_plan}</p>
+            <p><strong>Montant :</strong> {safe_amount:.2f} €</p>
             <p><strong>Date :</strong> {datetime.now().strftime('%d/%m/%Y à %H:%M')}</p>
         </div>
         <p>Votre facture est disponible dans votre espace client.</p>
@@ -226,14 +296,15 @@ class EmailService:
         return self.send_email(
             to=email,
             subject="✅ Paiement confirmé - AZALSCORE",
-            html=self._base_template(content)
+            html_content=self._base_template(content)
         )
 
     def send_payment_failed(self, email: str, name: str) -> bool:
         """Email d'échec de paiement."""
+        safe_name = self._escape_html(name)
         content = f"""
         <h1 style="color: #ef4444;">⚠️ Problème de paiement</h1>
-        <p>Bonjour {name},</p>
+        <p>Bonjour {safe_name},</p>
         <p>Nous n'avons pas pu traiter votre paiement. Cela peut arriver pour plusieurs raisons :</p>
         <ul>
             <li>Carte expirée ou fonds insuffisants</li>
@@ -249,16 +320,18 @@ class EmailService:
         return self.send_email(
             to=email,
             subject="⚠️ Échec de paiement - AZALSCORE",
-            html=self._base_template(content)
+            html_content=self._base_template(content)
         )
 
     def send_subscription_cancelled(self, email: str, name: str, end_date: str) -> bool:
         """Email de confirmation d'annulation."""
+        safe_name = self._escape_html(name)
+        safe_date = self._escape_html(end_date)
         content = f"""
         <h1>Abonnement annulé</h1>
-        <p>Bonjour {name},</p>
+        <p>Bonjour {safe_name},</p>
         <p>Comme demandé, votre abonnement AZALSCORE a été annulé.</p>
-        <p>Vous conservez l'accès à toutes les fonctionnalités jusqu'au <strong>{end_date}</strong>.</p>
+        <p>Vous conservez l'accès à toutes les fonctionnalités jusqu'au <strong>{safe_date}</strong>.</p>
         <p>Vos données seront conservées 30 jours après cette date, puis supprimées définitivement.</p>
         <p style="margin-top: 24px;">Nous espérons vous revoir bientôt !</p>
         <a href="{self.app_url}/billing/reactivate" class="btn">Réactiver mon abonnement →</a>
@@ -266,20 +339,28 @@ class EmailService:
         return self.send_email(
             to=email,
             subject="Confirmation d'annulation - AZALSCORE",
-            html=self._base_template(content)
+            html_content=self._base_template(content)
         )
 
     def send_invitation(
-        self, 
-        email: str, 
-        inviter_name: str, 
+        self,
+        email: str,
+        inviter_name: str,
         tenant_name: str,
         invite_url: str
     ) -> bool:
         """Email d'invitation à rejoindre un tenant."""
+        safe_inviter = self._escape_html(inviter_name)
+        safe_tenant = self._escape_html(tenant_name)
+
+        # Validation de l'URL d'invitation (SÉCURITÉ: protection open redirect)
+        if not self._validate_url(invite_url):
+            logger.warning(f"[EMAIL] URL d'invitation invalide rejetée: {invite_url}")
+            return False
+
         content = f"""
         <h1>Vous êtes invité(e) !</h1>
-        <p><strong>{inviter_name}</strong> vous invite à rejoindre <strong>{tenant_name}</strong> sur AZALSCORE.</p>
+        <p><strong>{safe_inviter}</strong> vous invite à rejoindre <strong>{safe_tenant}</strong> sur AZALSCORE.</p>
         <p>AZALSCORE est une solution ERP complète pour gérer votre entreprise : ventes, comptabilité, RH, production...</p>
         <a href="{invite_url}" class="btn">Accepter l'invitation →</a>
         <p style="color: #888; font-size: 14px; margin-top: 24px;">
@@ -288,15 +369,22 @@ class EmailService:
         """
         return self.send_email(
             to=email,
-            subject=f"{inviter_name} vous invite sur AZALSCORE",
-            html=self._base_template(content)
+            subject=f"{safe_inviter} vous invite sur AZALSCORE",
+            html_content=self._base_template(content)
         )
 
     def send_password_reset(self, email: str, name: str, reset_url: str) -> bool:
         """Email de réinitialisation de mot de passe."""
+        safe_name = self._escape_html(name)
+
+        # Validation de l'URL de reset (SÉCURITÉ: protection open redirect)
+        if not self._validate_url(reset_url):
+            logger.warning(f"[EMAIL] URL de reset invalide rejetée: {reset_url}")
+            return False
+
         content = f"""
         <h1>Réinitialisation du mot de passe</h1>
-        <p>Bonjour {name},</p>
+        <p>Bonjour {safe_name},</p>
         <p>Vous avez demandé à réinitialiser votre mot de passe AZALSCORE.</p>
         <p>Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :</p>
         <a href="{reset_url}" class="btn">Réinitialiser mon mot de passe →</a>
@@ -307,14 +395,15 @@ class EmailService:
         return self.send_email(
             to=email,
             subject="Réinitialisation de votre mot de passe AZALSCORE",
-            html=self._base_template(content)
+            html_content=self._base_template(content)
         )
 
     def send_2fa_enabled(self, email: str, name: str) -> bool:
         """Email de confirmation d'activation 2FA."""
+        safe_name = self._escape_html(name)
         content = f"""
         <h1 style="color: #10b981;">✓ Double authentification activée</h1>
-        <p>Bonjour {name},</p>
+        <p>Bonjour {safe_name},</p>
         <p>La double authentification (2FA) a été activée sur votre compte AZALSCORE.</p>
         <p>Vous devrez désormais saisir un code de votre application d'authentification en plus de votre mot de passe.</p>
         <div class="box">
@@ -327,7 +416,7 @@ class EmailService:
         return self.send_email(
             to=email,
             subject="🔐 Double authentification activée - AZALSCORE",
-            html=self._base_template(content)
+            html_content=self._base_template(content)
         )
 
 

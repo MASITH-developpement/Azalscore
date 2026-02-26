@@ -6,13 +6,13 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Audit, AuditFinding } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   FINDING_SEVERITY_CONFIG, FINDING_STATUS_CONFIG,
   isFindingOpen, isFindingCritical
 } from '../types';
-import { formatDate } from '@/utils/formatters';
+import type { Audit, AuditFinding } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AuditFindingsTab - Constats de l'audit

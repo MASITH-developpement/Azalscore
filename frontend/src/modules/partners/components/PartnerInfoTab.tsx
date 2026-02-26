@@ -8,13 +8,13 @@ import {
   User, Mail, Phone, MapPin, Building, Globe, Tag, Calendar
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner, Client } from '../types';
 import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters';
 import {
   getFullAddress, getPartnerAge,
   CLIENT_TYPE_CONFIG
 } from '../types';
+import type { Partner, Client } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PartnerInfoTab - Informations generales
@@ -30,32 +30,32 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
         <Card title="Identite" icon={<User size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Nom / Raison sociale</label>
+              <span>Nom / Raison sociale</span>
               <div className="font-medium text-lg">{partner.name}</div>
             </div>
             {partner.code && (
               <div className="azals-std-field">
-                <label>Code</label>
+                <span>Code</span>
                 <div className="font-mono">{partner.code}</div>
               </div>
             )}
             {isClient && client.client_type && (
               <div className="azals-std-field">
-                <label>Type de client</label>
+                <span>Type de client</span>
                 <div className={`font-medium text-${CLIENT_TYPE_CONFIG[client.client_type]?.color || 'gray'}`}>
                   {CLIENT_TYPE_CONFIG[client.client_type]?.label || client.client_type}
                 </div>
               </div>
             )}
             <div className="azals-std-field">
-              <label>Statut</label>
+              <span>Statut</span>
               <div className={`font-medium ${partner.is_active ? 'text-success' : 'text-muted'}`}>
                 {partner.is_active ? 'Actif' : 'Inactif'}
               </div>
             </div>
             {partner.industry && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Secteur d'activite</label>
+                <span>Secteur d&apos;activite</span>
                 <div>{partner.industry}</div>
               </div>
             )}
@@ -67,7 +67,7 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
           <div className="space-y-3">
             {partner.email && (
               <div className="azals-std-field">
-                <label>Email</label>
+                <span>Email</span>
                 <div className="flex items-center gap-2">
                   <Mail size={14} className="text-muted" />
                   <a href={`mailto:${partner.email}`} className="text-primary hover:underline">
@@ -78,7 +78,7 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
             )}
             {partner.phone && (
               <div className="azals-std-field">
-                <label>Telephone</label>
+                <span>Telephone</span>
                 <div className="flex items-center gap-2">
                   <Phone size={14} className="text-muted" />
                   <a href={`tel:${partner.phone}`} className="text-primary hover:underline">
@@ -89,7 +89,7 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
             )}
             {partner.mobile && (
               <div className="azals-std-field">
-                <label>Mobile</label>
+                <span>Mobile</span>
                 <div className="flex items-center gap-2">
                   <Phone size={14} className="text-muted" />
                   {partner.mobile}
@@ -98,7 +98,7 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
             )}
             {partner.website && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Site web</label>
+                <span>Site web</span>
                 <div className="flex items-center gap-2">
                   <Globe size={14} className="text-muted" />
                   <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -115,25 +115,25 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
           <div className="space-y-3">
             {(partner.address_line1 || partner.address) && (
               <div className="azals-std-field">
-                <label>Adresse</label>
+                <span>Adresse</span>
                 <div>{partner.address_line1 || partner.address}</div>
                 {partner.address_line2 && <div>{partner.address_line2}</div>}
               </div>
             )}
             <div className="azals-std-field">
-              <label>Ville</label>
+              <span>Ville</span>
               <div>
                 {partner.postal_code && <span>{partner.postal_code} </span>}
                 {partner.city || '-'}
               </div>
             </div>
             <div className="azals-std-field">
-              <label>Pays</label>
+              <span>Pays</span>
               <div>{partner.country || partner.country_code || 'France'}</div>
             </div>
             {getFullAddress(partner) && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Adresse complete</label>
+                <span>Adresse complete</span>
                 <div className="text-sm text-muted">{getFullAddress(partner)}</div>
               </div>
             )}
@@ -145,25 +145,25 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
           <div className="space-y-3">
             {(partner.vat_number || partner.tax_id) && (
               <div className="azals-std-field">
-                <label>N TVA / SIRET</label>
+                <span>N TVA / SIRET</span>
                 <div className="font-mono">{partner.vat_number || partner.tax_id}</div>
               </div>
             )}
             {isClient && client.payment_terms !== undefined && (
               <div className="azals-std-field">
-                <label>Delai de paiement</label>
+                <span>Delai de paiement</span>
                 <div>{client.payment_terms} jours</div>
               </div>
             )}
             {isClient && client.credit_limit !== undefined && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Limite de credit</label>
+                <span>Limite de credit</span>
                 <div>{formatCurrency(client.credit_limit, client.currency)}</div>
               </div>
             )}
             {isClient && client.discount_rate !== undefined && client.discount_rate > 0 && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Remise standard</label>
+                <span>Remise standard</span>
                 <div>{client.discount_rate}%</div>
               </div>
             )}
@@ -176,28 +176,28 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
         <Card title="Dates" icon={<Calendar size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Date de creation</label>
+              <span>Date de creation</span>
               <div>{formatDateTime(partner.created_at)}</div>
             </div>
             <div className="azals-std-field">
-              <label>Anciennete</label>
+              <span>Anciennete</span>
               <div>{getPartnerAge(partner)}</div>
             </div>
             {partner.updated_at && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Derniere modification</label>
+                <span>Derniere modification</span>
                 <div>{formatDateTime(partner.updated_at)}</div>
               </div>
             )}
             {isClient && client.first_order_date && (
               <div className="azals-std-field">
-                <label>Premiere commande</label>
+                <span>Premiere commande</span>
                 <div>{formatDate(client.first_order_date)}</div>
               </div>
             )}
             {isClient && client.last_order_date && (
               <div className="azals-std-field">
-                <label>Derniere commande</label>
+                <span>Derniere commande</span>
                 <div>{formatDate(client.last_order_date)}</div>
               </div>
             )}
@@ -209,7 +209,7 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
           <div className="space-y-3">
             {partner.tags && partner.tags.length > 0 && (
               <div className="azals-std-field">
-                <label>Tags</label>
+                <span>Tags</span>
                 <div className="flex flex-wrap gap-1">
                   {partner.tags.map((tag, index) => (
                     <span key={index} className="azals-badge azals-badge--blue">
@@ -221,19 +221,19 @@ export const PartnerInfoTab: React.FC<TabContentProps<Partner>> = ({ data: partn
             )}
             {partner.source && (
               <div className="azals-std-field">
-                <label>Source</label>
+                <span>Source</span>
                 <div>{partner.source}</div>
               </div>
             )}
             {partner.assigned_to_name && (
               <div className="azals-std-field">
-                <label>Responsable</label>
+                <span>Responsable</span>
                 <div>{partner.assigned_to_name}</div>
               </div>
             )}
             {partner.notes && (
               <div className="azals-std-field">
-                <label>Notes</label>
+                <span>Notes</span>
                 <div className="text-sm text-muted whitespace-pre-wrap">{partner.notes}</div>
               </div>
             )}

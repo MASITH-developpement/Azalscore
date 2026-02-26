@@ -1,0 +1,89 @@
+{
+  "module_id": "azalscore.finance.bank_reconciliation",
+  "version": "1.0.0",
+  "description": "Workflow de rapprochement bancaire automatique avec matching intelligent",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "import_bank_statement",
+      "use": "azalscore.transformers.import.parse_bank_statement@1.0.0",
+      "inputs": {
+        "file_path": "{{context.statement_file}}",
+        "bank_format": "{{context.bank_format}}",
+        "account_id": "{{context.bank_account_id}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "get_accounting_transactions",
+      "use": "azalscore.calculations.finance.get_unreconciled_transactions@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "date_from": "{{context.period_start}}",
+        "date_to": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "auto_match_transactions",
+      "use": "azalscore.calculations.finance.auto_match_bank_transactions@1.0.0",
+      "inputs": {
+        "bank_transactions": "{{import_bank_statement.transactions}}",
+        "accounting_transactions": "{{get_accounting_transactions.transactions}}",
+        "matching_rules": "{{context.matching_rules}}",
+        "tolerance_amount": 0.01,
+        "tolerance_days": 3
+      },
+      "retry": 2,
+      "timeout": 60000
+    },
+    {
+      "id": "create_reconciliation_entries",
+      "condition": "{{auto_match_transactions.unmatched_bank_count}} > 0",
+      "use": "azalscore.generators.accounting.create_bank_entries@1.0.0",
+      "inputs": {
+        "unmatched_transactions": "{{auto_match_transactions.unmatched_bank}}",
+        "bank_account": "512000",
+        "journal_code": "BQ"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "validate_reconciliation",
+      "use": "azalscore.validators.finance.validate_bank_reconciliation@1.0.0",
+      "inputs": {
+        "bank_balance": "{{import_bank_statement.closing_balance}}",
+        "accounting_balance": "{{get_accounting_transactions.balance}}",
+        "matched_count": "{{auto_match_transactions.matched_count}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_reconciliation_report",
+      "use": "azalscore.generators.documents.generate_reconciliation_report@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "period": "{{context.period_start}} - {{context.period_end}}",
+        "matched": "{{auto_match_transactions.matched}}",
+        "unmatched_bank": "{{auto_match_transactions.unmatched_bank}}",
+        "unmatched_accounting": "{{auto_match_transactions.unmatched_accounting}}",
+        "variance": "{{validate_reconciliation.variance}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "matched_count": "{{auto_match_transactions.matched_count}}",
+    "unmatched_bank_count": "{{auto_match_transactions.unmatched_bank_count}}",
+    "unmatched_accounting_count": "{{auto_match_transactions.unmatched_accounting_count}}",
+    "variance": "{{validate_reconciliation.variance}}",
+    "is_reconciled": "{{validate_reconciliation.is_balanced}}",
+    "report_url": "{{generate_reconciliation_report.url}}"
+  }
+}

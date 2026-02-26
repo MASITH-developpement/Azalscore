@@ -9,3 +9,4 @@ export { FactureFinancialTab } from './FactureFinancialTab';
 export { FactureDocsTab } from './FactureDocsTab';
 export { FactureHistoryTab } from './FactureHistoryTab';
 export { FactureIATab } from './FactureIATab';
+export { FactureRiskTab } from './FactureRiskTab';

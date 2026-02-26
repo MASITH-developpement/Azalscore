@@ -4,6 +4,8 @@ AZALS MODULE T0 - Schémas Pydantic IAM
 
 Schémas de validation pour les endpoints IAM.
 """
+from __future__ import annotations
+
 
 
 import re
@@ -26,6 +28,7 @@ class UserBase(BaseModel):
     department: str | None = Field(None, max_length=200)
     locale: str = Field(default="fr", max_length=10)
     timezone: str = Field(default="Europe/Paris", max_length=50)
+    default_view: str | None = Field(None, max_length=50, description="Vue par défaut après connexion")
 
 
 class UserCreate(UserBase):
@@ -38,18 +41,10 @@ class UserCreate(UserBase):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        """Validation complexité mot de passe."""
-        if len(v) < 12:
-            raise ValueError('Le mot de passe doit contenir au moins 12 caractères')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une majuscule')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une minuscule')
-        if not re.search(r'\d', v):
-            raise ValueError('Le mot de passe doit contenir au moins un chiffre')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            raise ValueError('Le mot de passe doit contenir au moins un caractère spécial')
-        return v
+        """Validation complexité mot de passe via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        # IAM exige 12 caractères minimum (plus strict que signup)
+        return validate_password_or_raise(v)
 
 
 class UserUpdate(BaseModel):
@@ -63,6 +58,7 @@ class UserUpdate(BaseModel):
     department: str | None = Field(None, max_length=200)
     locale: str | None = Field(None, max_length=10)
     timezone: str | None = Field(None, max_length=50)
+    default_view: str | None = Field(None, max_length=50, description="Vue par défaut après connexion")
     is_active: bool | None = None
 
 
@@ -80,6 +76,7 @@ class UserResponse(BaseModel):
     department: str | None
     locale: str
     timezone: str
+    default_view: str | None = None  # Vue par défaut après connexion
     is_active: bool
     is_verified: bool
     is_locked: bool
@@ -109,17 +106,9 @@ class PasswordChange(BaseModel):
     @field_validator('new_password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 12:
-            raise ValueError('Le mot de passe doit contenir au moins 12 caractères')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une majuscule')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une minuscule')
-        if not re.search(r'\d', v):
-            raise ValueError('Le mot de passe doit contenir au moins un chiffre')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            raise ValueError('Le mot de passe doit contenir au moins un caractère spécial')
-        return v
+        """Validation via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 class PasswordReset(BaseModel):
@@ -131,6 +120,13 @@ class PasswordResetConfirm(BaseModel):
     """Confirmation réinitialisation mot de passe."""
     token: str
     new_password: str = Field(..., min_length=12, max_length=128)
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """Validation via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 # ============================================================================
@@ -263,6 +259,11 @@ class PermissionCheckResult(BaseModel):
     source: str | None = None  # "role:ADMIN" ou "group:MANAGERS"
 
 
+class UserPermissionsUpdate(BaseModel):
+    """Mise à jour des permissions utilisateur."""
+    capabilities: list[str] = Field(..., description="Liste des codes de permission à attribuer")
+
+
 # ============================================================================
 # SCHÉMAS GROUPE
 # ============================================================================
@@ -378,6 +379,13 @@ class InvitationAccept(BaseModel):
     password: str = Field(..., min_length=12, max_length=128)
     first_name: str | None = None
     last_name: str | None = None
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """Validation via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 # ============================================================================

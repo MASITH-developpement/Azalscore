@@ -13,6 +13,8 @@ PRINCIPE: Deny by default
 SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
           qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
 """
+from __future__ import annotations
+
 
 import logging
 import re
@@ -351,8 +353,23 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     ("POST", r"/v1/invoicing/credits/?$"): RoutePermission(Module.BILLING, Action.CREATE),
 
     # =========================================================================
-    # PURCHASES / PROCUREMENT (v1 et v2 routes)
+    # PURCHASES / PROCUREMENT (routes sans prefix et v1)
     # =========================================================================
+    # Routes sans prefix (utilisées par le frontend)
+    ("GET", r"/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/purchases/orders/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/purchases/orders/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("GET", r"/purchases/invoices/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/purchases/invoices/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/purchases/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    # Routes v1
     ("GET", r"/v1/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
     ("GET", r"/v1/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
     ("POST", r"/v1/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
@@ -697,6 +714,7 @@ PUBLIC_ROUTES: list[str] = [
     r"^/api/auth/.*$",
     r"^/auth/.*$",
     r"^/v1/auth/.*$",       # Routes auth sous /v1
+    r"^/api/v1/auth/.*$",   # Routes auth sous /api/v1
     r"^/v1/audit/.*$",      # Routes audit (UI events)
     r"^/$",
     r"^/static/.*$",        # Fichiers statiques
@@ -771,15 +789,27 @@ class RBACMiddleware(BaseHTTPMiddleware):
         route_perm = self._find_route_permission(method, path)
 
         if not route_perm:
-            # Route non configurée dans RBAC → passer en mode bêta
-            # Les endpoints gèrent leur propre authentification via get_current_user
-            # En production, activer deny-by-default ci-dessous:
-            # logger.warning("Route non configurée dans RBAC: %s %s", method, path)
-            # return JSONResponse(
-            #     status_code=403,
-            #     content={"detail": "Route non autorisée"}
-            # )
-            return await call_next(request)
+            # Route non configurée dans RBAC
+            # SÉCURITÉ P0: deny-by-default ACTIVÉ en production
+            # Les routes non listées sont refusées avec 403
+            import os
+            strict_mode = os.getenv("RBAC_STRICT_MODE", "false").lower() == "true"
+
+            if strict_mode:
+                logger.warning(
+                    "RBAC DENIED: Route non configurée (deny-by-default)",
+                    extra={"method": method, "path": path, "mode": "strict"}
+                )
+                return build_error_response(
+                    status_code=403,
+                    error_type=ErrorType.AUTHORIZATION,
+                    message="Route non autorisée (non configurée dans RBAC)",
+                    html_path="frontend/errors/403.html"
+                )
+            else:
+                # Mode bêta: warning mais laisse passer
+                logger.debug("RBAC: Route non configurée, mode permissif: %s %s", method, path)
+                return await call_next(request)
 
         # 4. Route configurée → Vérifier l'authentification
         if not self._is_authenticated(request):

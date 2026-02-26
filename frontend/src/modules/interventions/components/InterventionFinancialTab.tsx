@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
+import { formatCurrency, formatDuration } from '@/utils/formatters';
 import type { Intervention } from '../types';
-import { formatCurrency, formatDate, formatDuration } from '@/utils/formatters';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionFinancialTab - Facturation de l'intervention
@@ -39,7 +39,7 @@ export const InterventionFinancialTab: React.FC<TabContentProps<Intervention>> =
           <AlertTriangle size={20} />
           <div>
             <strong>Intervention non facturable</strong>
-            <p>Cette intervention n'est pas marquée comme facturable au client.</p>
+            <p>Cette intervention n&apos;est pas marquée comme facturable au client.</p>
           </div>
         </div>
       )}
@@ -74,7 +74,7 @@ export const InterventionFinancialTab: React.FC<TabContentProps<Intervention>> =
               <div>
                 <h4 className="font-medium">À facturer</h4>
                 <p className="text-sm text-muted">
-                  L'intervention est terminée et peut être facturée.
+                  L&apos;intervention est terminée et peut être facturée.
                 </p>
               </div>
               <Button

@@ -12,6 +12,8 @@ Usage:
     ref = generator.next_reference("CLIENT")  # -> CLI-0001
     ref = generator.next_reference("FACTURE_VENTE")  # -> FV-2026-0001
 """
+from __future__ import annotations
+
 
 import uuid
 from datetime import datetime

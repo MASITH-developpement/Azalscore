@@ -3,6 +3,8 @@ AZALS MODULE 18 - Mobile App Router
 ====================================
 Endpoints API pour le backend mobile.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request

@@ -1,0 +1,1 @@
+"""Tests for Shipping module."""

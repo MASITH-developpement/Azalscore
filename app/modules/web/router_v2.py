@@ -5,6 +5,8 @@ AZALS MODULE WEB - Router v2 CORE SaaS
 Endpoints pour la gestion des composants web transverses.
 Migration CORE SaaS v2 avec SaaSContext.
 """
+from __future__ import annotations
+
 
 from typing import List
 from uuid import UUID
@@ -794,7 +796,7 @@ async def get_page(
     """
     service = get_web_service(db, context.tenant_id, context.user_id)
 
-    page = service.get_page(int(page_id))
+    page = service.get_custom_page(int(page_id))
 
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -815,7 +817,7 @@ async def get_page_by_slug(
     """
     service = get_web_service(db, context.tenant_id, context.user_id)
 
-    page = service.get_page_by_slug(slug)
+    page = service.get_custom_page_by_slug(slug)
 
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")

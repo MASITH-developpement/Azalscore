@@ -5,18 +5,18 @@
 
 import React from 'react';
 import {
-  User, Mail, Shield, Calendar, Clock, Key,
+  User, Mail, Shield, Calendar, Key,
   Smartphone, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { AdminUser } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 import {
   getUserFullName,
   USER_STATUS_CONFIG, hasTwoFactorEnabled, mustChangePassword,
   getPasswordAgeDays, isPasswordOld
 } from '../types';
-import { formatDate, formatDateTime } from '@/utils/formatters';
+import type { AdminUser } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * UserInfoTab - Informations utilisateur
@@ -30,18 +30,18 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
       <Card title="Identite" icon={<User size={18} />}>
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Nom d'utilisateur</label>
+            <span className="azals-field__label">Nom d&apos;utilisateur</span>
             <div className="azals-field__value font-mono">{user.username}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Email</label>
+            <span className="azals-field__label">Email</span>
             <div className="azals-field__value flex items-center gap-2">
               <Mail size={14} className="text-muted" />
               {user.email}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                 {statusConfig.label}
@@ -51,15 +51,15 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
         </Grid>
         <Grid cols={3} gap="md" className="mt-4">
           <div className="azals-field">
-            <label className="azals-field__label">Prenom</label>
+            <span className="azals-field__label">Prenom</span>
             <div className="azals-field__value">{user.first_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value">{user.last_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom complet</label>
+            <span className="azals-field__label">Nom complet</span>
             <div className="azals-field__value font-medium">{getUserFullName(user)}</div>
           </div>
         </Grid>
@@ -67,9 +67,9 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
 
       {/* Role et permissions */}
       <Card title="Role et acces" icon={<Shield size={18} />} className="mt-4">
-        <Grid cols={2} gap="md">
+        <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Role</label>
+            <span className="azals-field__label">Role</span>
             <div className="azals-field__value">
               {user.role_name ? (
                 <span className="azals-badge azals-badge--purple">{user.role_name}</span>
@@ -79,9 +79,19 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">ID Role</label>
+            <span className="azals-field__label">ID Role</span>
             <div className="azals-field__value font-mono text-sm azals-std-field--secondary">
               {user.role_id || '-'}
+            </div>
+          </div>
+          <div className="azals-field">
+            <span className="azals-field__label">Vue par défaut</span>
+            <div className="azals-field__value">
+              {user.default_view ? (
+                <span className="azals-badge azals-badge--blue">{user.default_view}</span>
+              ) : (
+                <span className="text-muted">Automatique (selon rôle)</span>
+              )}
             </div>
           </div>
         </Grid>
@@ -98,7 +108,7 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
       <Card title="Securite" icon={<Key size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Authentification 2FA</label>
+            <span className="azals-field__label">Authentification 2FA</span>
             <div className="azals-field__value flex items-center gap-2">
               {hasTwoFactorEnabled(user) ? (
                 <>
@@ -114,7 +124,7 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Mot de passe</label>
+            <span className="azals-field__label">Mot de passe</span>
             <div className="azals-field__value">
               {mustChangePassword(user) ? (
                 <span className="flex items-center gap-2 text-orange-600">
@@ -135,7 +145,7 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Change le</label>
+            <span className="azals-field__label">Change le</span>
             <div className="azals-field__value">
               {user.password_changed_at ? formatDate(user.password_changed_at) : 'Jamais'}
             </div>
@@ -143,13 +153,13 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
         </Grid>
         <Grid cols={2} gap="md" className="mt-4 azals-std-field--secondary">
           <div className="azals-field">
-            <label className="azals-field__label">Echecs de connexion</label>
+            <span className="azals-field__label">Echecs de connexion</span>
             <div className={`azals-field__value ${user.failed_login_count > 3 ? 'text-red-600 font-medium' : ''}`}>
               {user.failed_login_count}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Derniere IP</label>
+            <span className="azals-field__label">Derniere IP</span>
             <div className="azals-field__value font-mono text-sm">
               {user.last_ip || '-'}
             </div>
@@ -161,15 +171,15 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
       <Card title="Dates" icon={<Calendar size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDateTime(user.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDateTime(user.updated_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Derniere connexion</label>
+            <span className="azals-field__label">Derniere connexion</span>
             <div className="azals-field__value">
               {user.last_login ? formatDateTime(user.last_login) : 'Jamais'}
             </div>
@@ -177,11 +187,11 @@ export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }
         </Grid>
         <Grid cols={2} gap="md" className="mt-4">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{user.created_by || 'Systeme'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nombre de connexions</label>
+            <span className="azals-field__label">Nombre de connexions</span>
             <div className="azals-field__value">{user.login_count}</div>
           </div>
         </Grid>

@@ -8,6 +8,8 @@ Principes de gouvernance:
 - Double confirmation pour points rouges
 - Traçabilité complète de toutes les actions
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request

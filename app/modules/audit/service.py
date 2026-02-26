@@ -5,7 +5,10 @@ AZALS MODULE T3 - Service Audit & Benchmark
 Logique métier pour l'audit et les benchmarks.
 """
 
+from __future__ import annotations
+
 import json
+import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -420,7 +423,8 @@ class AuditService:
         self,
         metric_code: str,
         value: float,
-        dimensions: dict[str, Any] = None
+        dimensions: dict[str, Any] = None,
+        timestamp: datetime = None
     ) -> MetricValue:
         """Enregistre une valeur de métrique."""
         metric = self.db.query(MetricDefinition).filter(
@@ -432,7 +436,7 @@ class AuditService:
         if not metric:
             return None
 
-        now = datetime.utcnow()
+        now = timestamp if timestamp else datetime.utcnow()
 
         # Déterminer la période selon l'agrégation
         if metric.aggregation_period == "MINUTE":
@@ -463,6 +467,7 @@ class AuditService:
             return existing
         else:
             metric_value = MetricValue(
+                id=uuid.uuid4(),
                 tenant_id=self.tenant_id,
                 metric_id=metric.id,
                 metric_code=metric_code,
@@ -476,6 +481,7 @@ class AuditService:
                 dimensions=json.dumps(dimensions) if dimensions else None
             )
             self.db.add(metric_value)
+            self.db.flush()
             return metric_value
 
     def get_metric_values(
@@ -1033,27 +1039,45 @@ class AuditService:
         """
         Benchmark fonctionnel.
 
-        ATTENTION: Ce benchmark n'est pas encore implémenté.
+        STATUT: NON IMPLEMENTE (Hors scope v3.1)
         Retourne 0% avec avertissement explicite au lieu de 100% factice.
 
-        TODO: Implémenter les vérifications fonctionnelles:
-        - Tests E2E passent
-        - Coverage de code suffisant
-        - Fonctionnalités critiques opérationnelles
+        Conformite AZA-NF-009: Un benchmark non implemente doit retourner
+        un score de 0% plutot qu'un faux positif de 100%.
+
+        Implementation future requise:
+        - Integration avec pytest pour execution des tests E2E
+        - Integration avec coverage.py pour mesure de couverture
+        - Verification des fonctionnalites critiques via health checks
+
+        Args:
+            benchmark: Definition du benchmark
+            config: Configuration du benchmark
+            baseline: Valeurs de reference
+
+        Returns:
+            Tuple (score=0, details, warnings) - score toujours 0 tant que non implemente
         """
         import logging
         logger = logging.getLogger(__name__)
 
         logger.warning(
-            f"[FEATURE_BENCHMARK] tenant={self.tenant_id} benchmark_id={benchmark.id} "
-            f"NOT IMPLEMENTED - Returning 0% instead of fake 100%"
+            "[FEATURE_BENCHMARK] tenant=%s benchmark_id=%s "
+            "NOT_IMPLEMENTED - Returning 0%% (honest) instead of fake 100%%",
+            self.tenant_id, benchmark.id
         )
 
         return 0, {
             "status": "NOT_IMPLEMENTED",
-            "message": "Feature benchmark non implémenté - score 0% par défaut",
-            "recommendation": "Implémenter _run_feature_benchmark() avec de vraies vérifications"
-        }, ["FEATURE benchmark non implémenté - résultat non fiable"]
+            "scope": "OUT_OF_SCOPE_V3.1",
+            "message": "Feature benchmark non implemente - score 0% par defaut",
+            "conformity": "AZA-NF-009: Pas de resultat trompeur",
+            "future_requirements": [
+                "Integration pytest pour tests E2E",
+                "Integration coverage.py pour mesure couverture",
+                "Health checks pour fonctionnalites critiques"
+            ]
+        }, ["FEATURE benchmark non implemente - utiliser benchmarks PERFORMANCE ou SECURITY"]
 
     def list_benchmarks(self, benchmark_type: str = None) -> list[Benchmark]:
         """Liste les benchmarks."""
@@ -1216,7 +1240,14 @@ class AuditService:
         return results
 
     def _apply_single_retention_rule(self, rule: DataRetentionRule) -> int:
-        """Applique une règle de rétention unique."""
+        """
+        Applique une regle de retention unique.
+
+        Actions supportees:
+        - DELETE: Supprime les enregistrements
+        - ARCHIVE: Exporte vers JSON puis supprime
+        - ANONYMIZE: Remplace les PII par des valeurs anonymes
+        """
         cutoff_date = datetime.utcnow() - timedelta(days=rule.retention_days)
 
         # Pour les logs d'audit
@@ -1226,14 +1257,180 @@ class AuditService:
                 AuditLog.created_at < cutoff_date
             )
 
-            count = query.delete(synchronize_session=False) if rule.action == "DELETE" else query.count()
-                # TODO: Implémenter archivage/anonymisation
+            logs = query.all()
+            count = len(logs)
+
+            if count == 0:
+                rule.last_run_at = datetime.utcnow()
+                rule.last_affected_count = 0
+                return 0
+
+            if rule.action == "DELETE":
+                query.delete(synchronize_session=False)
+
+            elif rule.action == "ARCHIVE":
+                # Archiver vers fichier JSON puis supprimer
+                count = self._archive_audit_logs(logs, rule)
+                query.delete(synchronize_session=False)
+
+            elif rule.action == "ANONYMIZE":
+                # Anonymiser les PII en gardant les donnees pour analyse
+                count = self._anonymize_audit_logs(logs)
 
             rule.last_run_at = datetime.utcnow()
             rule.last_affected_count = count
             return count
 
         return 0
+
+    def _archive_audit_logs(self, logs: list[AuditLog], rule: DataRetentionRule) -> int:
+        """
+        Archive les logs d'audit vers un fichier JSON.
+
+        Conformite: AZA-NF-009 (Auditabilite permanente)
+        """
+        import os
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        # Repertoire d'archive
+        archive_dir = os.path.join("/var/lib/azalscore/archives", self.tenant_id)
+        os.makedirs(archive_dir, exist_ok=True)
+
+        # Nom du fichier avec timestamp
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        archive_file = os.path.join(
+            archive_dir,
+            f"audit_logs_{timestamp}_{rule.id}.json"
+        )
+
+        # Serialiser les logs
+        archived_data = {
+            "tenant_id": self.tenant_id,
+            "rule_name": rule.name,
+            "archived_at": datetime.utcnow().isoformat(),
+            "count": len(logs),
+            "logs": []
+        }
+
+        for log in logs:
+            archived_data["logs"].append({
+                "id": str(log.id),
+                "action": log.action.value if log.action else None,
+                "level": log.level.value if log.level else None,
+                "category": log.category.value if log.category else None,
+                "module": log.module,
+                "entity_type": log.entity_type,
+                "entity_id": log.entity_id,
+                "user_id": str(log.user_id) if log.user_id else None,
+                "user_email": log.user_email,
+                "user_role": log.user_role,
+                "ip_address": log.ip_address,
+                "description": log.description,
+                "success": log.success,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            })
+
+        # Ecrire le fichier
+        with open(archive_file, "w", encoding="utf-8") as f:
+            json.dump(archived_data, f, ensure_ascii=False, indent=2)
+
+        logger.info(
+            "[AUDIT] Archived %d logs to %s for tenant %s",
+            len(logs), archive_file, self.tenant_id
+        )
+
+        return len(logs)
+
+    def _anonymize_audit_logs(self, logs: list[AuditLog]) -> int:
+        """
+        Anonymise les PII dans les logs d'audit.
+
+        Champs anonymises:
+        - user_email -> hash tronque
+        - ip_address -> "xxx.xxx.xxx.xxx"
+        - user_agent -> "ANONYMIZED"
+        - old_value/new_value -> suppression des PII JSON
+
+        Conformite: AZA-I18N-003 (RGPD - Droit a l'oubli)
+        """
+        import hashlib
+        import logging
+
+        logger = logging.getLogger(__name__)
+        count = 0
+
+        for log in logs:
+            # Anonymiser l'email (garder un hash pour les statistiques)
+            if log.user_email:
+                email_hash = hashlib.sha256(log.user_email.encode()).hexdigest()[:8]
+                log.user_email = f"anon_{email_hash}@anonymized"
+
+            # Masquer l'IP
+            if log.ip_address:
+                log.ip_address = "xxx.xxx.xxx.xxx"
+
+            # Supprimer le user agent
+            if log.user_agent:
+                log.user_agent = "ANONYMIZED"
+
+            # Anonymiser old_value et new_value si presents
+            if log.old_value:
+                log.old_value = self._anonymize_json_pii(log.old_value)
+            if log.new_value:
+                log.new_value = self._anonymize_json_pii(log.new_value)
+
+            count += 1
+
+        logger.info(
+            "[AUDIT] Anonymized %d logs for tenant %s",
+            count, self.tenant_id
+        )
+
+        return count
+
+    def _anonymize_json_pii(self, json_str: str) -> str:
+        """
+        Anonymise les PII dans une chaine JSON.
+
+        Champs cibles: email, phone, address, name, ip, etc.
+        """
+        if not json_str:
+            return json_str
+
+        try:
+            data = json.loads(json_str)
+        except (json.JSONDecodeError, TypeError):
+            return json_str
+
+        pii_fields = {
+            "email", "phone", "telephone", "mobile", "address", "adresse",
+            "name", "nom", "first_name", "prenom", "last_name", "ip_address",
+            "ssn", "nir", "iban", "credit_card", "password", "secret"
+        }
+
+        def anonymize_dict(d: dict) -> dict:
+            result = {}
+            for key, value in d.items():
+                key_lower = key.lower()
+                if any(pii in key_lower for pii in pii_fields):
+                    result[key] = "[ANONYMIZED]"
+                elif isinstance(value, dict):
+                    result[key] = anonymize_dict(value)
+                elif isinstance(value, list):
+                    result[key] = [
+                        anonymize_dict(item) if isinstance(item, dict) else item
+                        for item in value
+                    ]
+                else:
+                    result[key] = value
+            return result
+
+        if isinstance(data, dict):
+            data = anonymize_dict(data)
+
+        return json.dumps(data, ensure_ascii=False)
 
     # ========================================================================
     # EXPORTS
@@ -1441,6 +1638,94 @@ class AuditService:
                 "refresh_interval": dashboard.refresh_interval
             },
             "data": data
+        }
+
+    # ========================================================================
+    # MÉTHODES COMPLÉMENTAIRES
+    # ========================================================================
+
+    def list_compliance_checks(
+        self,
+        framework: ComplianceFramework = None,
+        is_active: bool = True
+    ) -> list[ComplianceCheck]:
+        """Liste les contrôles de conformité."""
+        query = self.db.query(ComplianceCheck).filter(
+            ComplianceCheck.tenant_id == self.tenant_id
+        )
+        if is_active:
+            query = query.filter(ComplianceCheck.is_active)
+        if framework:
+            query = query.filter(ComplianceCheck.framework == framework)
+        return query.all()
+
+    def list_retention_rules(
+        self,
+        target_module: str = None,
+        is_active: bool = True
+    ) -> list[DataRetentionRule]:
+        """Liste les règles de rétention."""
+        query = self.db.query(DataRetentionRule).filter(
+            DataRetentionRule.tenant_id == self.tenant_id
+        )
+        if is_active:
+            query = query.filter(DataRetentionRule.is_active)
+        if target_module:
+            query = query.filter(DataRetentionRule.target_module == target_module)
+        return query.all()
+
+    def list_exports(self, status: str = None) -> list[AuditExport]:
+        """Liste les exports."""
+        query = self.db.query(AuditExport).filter(
+            AuditExport.tenant_id == self.tenant_id
+        )
+        if status:
+            query = query.filter(AuditExport.status == status)
+        return query.order_by(AuditExport.requested_at.desc()).all()
+
+    def get_export(self, export_id) -> AuditExport | None:
+        """Récupère un export par son ID."""
+        return self.db.query(AuditExport).filter(
+            AuditExport.id == export_id,
+            AuditExport.tenant_id == self.tenant_id
+        ).first()
+
+    def list_dashboards(self) -> list[AuditDashboard]:
+        """Liste les tableaux de bord."""
+        return self.db.query(AuditDashboard).filter(
+            AuditDashboard.tenant_id == self.tenant_id,
+            AuditDashboard.is_active
+        ).all()
+
+    def get_stats(
+        self,
+        from_date: datetime = None,
+        to_date: datetime = None
+    ) -> dict[str, Any]:
+        """Récupère les statistiques avec période optionnelle."""
+        return self._get_audit_stats()
+
+    def get_audit_dashboard(self, period: str = "24h") -> dict[str, Any]:
+        """Récupère le dashboard d'audit complet."""
+        stats = self._get_audit_stats()
+
+        # Logs récents
+        recent_logs = self.db.query(AuditLog).filter(
+            AuditLog.tenant_id == self.tenant_id
+        ).order_by(AuditLog.created_at.desc()).limit(10).all()
+
+        # Sessions actives
+        active_sessions = self.db.query(AuditSession).filter(
+            AuditSession.tenant_id == self.tenant_id,
+            AuditSession.is_active
+        ).all()
+
+        return {
+            "stats": stats,
+            "recent_logs": recent_logs,
+            "active_sessions": active_sessions,
+            "compliance_summary": None,
+            "latest_benchmarks": None
         }
 
     def _get_audit_stats(self) -> dict[str, Any]:

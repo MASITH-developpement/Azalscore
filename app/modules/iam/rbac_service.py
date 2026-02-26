@@ -10,6 +10,8 @@ PRINCIPE FONDAMENTAL: Deny by default
 - Chaque accès est vérifié contre la matrice RBAC
 - Les refus critiques sont logués
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any
@@ -269,7 +271,7 @@ class RBACService:
 
     def _get_user_teams(self, user: IAMUser) -> list[int]:
         """Récupère les IDs des équipes de l'utilisateur."""
-        # TODO: Implémenter selon la structure des équipes
+        # NOTE: Phase 2 - Intégration table user_teams
         return []
 
     def _apply_limited_filter(

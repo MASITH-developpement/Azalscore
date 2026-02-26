@@ -1,0 +1,117 @@
+{
+  "module_id": "azalscore.commercial.customer_onboarding",
+  "version": "1.0.0",
+  "description": "Workflow d'integration nouveau client avec verification et configuration",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_company_info",
+      "use": "azalscore.validators.commercial.validate_company_registration@1.0.0",
+      "inputs": {
+        "company_name": "{{context.company_name}}",
+        "siret": "{{context.siret}}",
+        "vat_number": "{{context.vat_number}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "verify_siret",
+      "use": "azalscore.external.government.verify_siret@1.0.0",
+      "inputs": {
+        "siret": "{{context.siret}}"
+      },
+      "retry": 3,
+      "timeout": 10000,
+      "fallback": "azalscore.external.government.manual_verification"
+    },
+    {
+      "id": "verify_vat_intra",
+      "condition": "{{context.vat_number}} != null",
+      "use": "azalscore.external.government.verify_tva_intra@1.0.0",
+      "inputs": {
+        "vat_number": "{{context.vat_number}}"
+      },
+      "retry": 3,
+      "timeout": 10000
+    },
+    {
+      "id": "validate_contact_info",
+      "use": "azalscore.validators.common.validate_contact_info@1.0.0",
+      "inputs": {
+        "email": "{{context.contact_email}}",
+        "phone": "{{context.contact_phone}}",
+        "address": "{{context.billing_address}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "generate_customer_code",
+      "use": "azalscore.generators.sequences.generate_customer_code@1.0.0",
+      "inputs": {
+        "company_name": "{{context.company_name}}",
+        "country": "{{context.country}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "assess_credit_risk",
+      "use": "azalscore.calculations.commercial.assess_customer_credit@1.0.0",
+      "inputs": {
+        "company_info": "{{verify_siret.company_data}}",
+        "requested_credit_limit": "{{context.requested_credit_limit}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_customer_account",
+      "use": "azalscore.transformers.customers.create_customer_record@1.0.0",
+      "inputs": {
+        "customer_code": "{{generate_customer_code.code}}",
+        "company_name": "{{context.company_name}}",
+        "siret": "{{context.siret}}",
+        "vat_number": "{{context.vat_number}}",
+        "contact_info": "{{validate_contact_info}}",
+        "credit_limit": "{{assess_credit_risk.approved_limit}}",
+        "payment_terms": "{{context.payment_terms}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_accounting_account",
+      "use": "azalscore.generators.accounting.create_customer_account@1.0.0",
+      "inputs": {
+        "customer_id": "{{create_customer_account.customer_id}}",
+        "customer_code": "{{generate_customer_code.code}}",
+        "company_name": "{{context.company_name}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "send_welcome_email",
+      "use": "azalscore.generators.communications.generate_welcome_email@1.0.0",
+      "inputs": {
+        "recipient_email": "{{context.contact_email}}",
+        "company_name": "{{context.company_name}}",
+        "customer_code": "{{generate_customer_code.code}}",
+        "portal_url": "{{context.customer_portal_url}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "customer_id": "{{create_customer_account.customer_id}}",
+    "customer_code": "{{generate_customer_code.code}}",
+    "siret_verified": "{{verify_siret.is_valid}}",
+    "vat_verified": "{{verify_vat_intra.is_valid}}",
+    "credit_limit": "{{assess_credit_risk.approved_limit}}",
+    "accounting_account": "{{create_accounting_account.account_number}}"
+  }
+}

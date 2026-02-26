@@ -6,38 +6,29 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthenticatedQuery } from '@/ui-engine/hooks';
 import {
-  Users, UserPlus, Phone, Mail, Building2, MapPin,
-  TrendingUp, Target, Calendar, Clock, Euro,
-  ChevronRight, Plus, Edit, Trash2, Search,
-  CheckCircle2, XCircle, FileText, Star, AlertTriangle,
-  Sparkles, ArrowLeft, Printer
+  UserPlus, Building2, MapPin,
+  TrendingUp, Target, Clock, Euro,
+  Plus, Edit, Search,
+  CheckCircle2, FileText, AlertTriangle,
+  Sparkles, ArrowLeft, Printer, Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
+import { serializeFilters } from '@core/query-keys';
+import { Button } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
-import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-import type { SemanticColor } from '@ui/standards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
   type InfoBarItem,
   type SidebarSection,
   type ActionDefinition
-} from '@ui/standards';
+, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Types et helpers
-import type {
-  Customer, Opportunity, PipelineStats, SalesDashboard,
-  CustomerType, OpportunityStatus
-} from './types';
-import {
-  CUSTOMER_TYPE_CONFIG, OPPORTUNITY_STATUS_CONFIG,
-  isProspect, isActiveCustomer, canConvert, getCustomerValue
-} from './types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
 // Composants tabs
@@ -47,8 +38,17 @@ import {
   CustomerFinancialTab,
   CustomerDocsTab,
   CustomerHistoryTab,
-  CustomerIATab
+  CustomerIATab,
+  CustomerRiskTab
 } from './components';
+import {
+  CUSTOMER_TYPE_CONFIG, OPPORTUNITY_STATUS_CONFIG,
+  canConvert
+} from './types';
+import type {
+  Customer, Opportunity, PipelineStats, SalesDashboard,
+  CustomerType, OpportunityStatus
+} from './types';
 
 // ============================================================
 // COMPONENTS LOCAUX
@@ -78,13 +78,13 @@ const OpportunityStatusBadge: React.FC<{ status: OpportunityStatus }> = ({ statu
 
 const useCustomers = (page = 1, pageSize = 25, filters?: { type?: string; search?: string; is_active?: boolean }) => {
   return useQuery({
-    queryKey: ['commercial', 'customers', page, pageSize, filters],
+    queryKey: ['commercial', 'customers', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.type) params.append('type', filters.type);
       if (filters?.search) params.append('search', filters.search);
       if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
-      const response = await api.get<PaginatedResponse<Customer>>(`/v1/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
       return response.data;
     },
   });
@@ -94,7 +94,7 @@ const useCustomer = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'customers', id],
     queryFn: async () => {
-      const response = await api.get<Customer>(`/v1/commercial/customers/${id}`);
+      const response = await api.get<Customer>(`/commercial/customers/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -103,12 +103,12 @@ const useCustomer = (id: string) => {
 
 const useOpportunities = (page = 1, pageSize = 25, filters?: { status?: string; customer_id?: string }) => {
   return useQuery({
-    queryKey: ['commercial', 'opportunities', page, pageSize, filters],
+    queryKey: ['commercial', 'opportunities', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.status) params.append('status', filters.status);
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
-      const response = await api.get<PaginatedResponse<Opportunity>>(`/v1/commercial/opportunities?${params}`);
+      const response = await api.get<PaginatedResponse<Opportunity>>(`/commercial/opportunities?${params}`);
       return response.data;
     },
   });
@@ -118,7 +118,7 @@ const usePipelineStats = () => {
   return useQuery({
     queryKey: ['commercial', 'pipeline', 'stats'],
     queryFn: async () => {
-      const response = await api.get<PipelineStats>('/v1/commercial/pipeline/stats');
+      const response = await api.get<PipelineStats>('/commercial/pipeline/stats');
       return response.data;
     },
   });
@@ -128,7 +128,7 @@ const useSalesDashboard = () => {
   return useQuery({
     queryKey: ['commercial', 'dashboard'],
     queryFn: async () => {
-      const response = await api.get<SalesDashboard>('/v1/commercial/dashboard');
+      const response = await api.get<SalesDashboard>('/commercial/dashboard');
       return response.data;
     },
   });
@@ -138,7 +138,7 @@ const useCreateCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Customer>) => {
-      const response = await api.post<Customer>('/v1/commercial/customers', data);
+      const response = await api.post<Customer>('/commercial/customers', data);
       return response.data;
     },
     onSuccess: () => {
@@ -151,7 +151,7 @@ const useUpdateCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Customer> }) => {
-      const response = await api.put<Customer>(`/v1/commercial/customers/${id}`, data);
+      const response = await api.put<Customer>(`/commercial/customers/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -164,7 +164,7 @@ const useDeleteCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/commercial/customers/${id}`);
+      await api.delete(`/commercial/customers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commercial', 'customers'] });
@@ -176,7 +176,7 @@ const useConvertProspect = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (customerId: string) => {
-      const response = await api.post<Customer>(`/v1/commercial/customers/${customerId}/convert`);
+      const response = await api.post<Customer>(`/commercial/customers/${customerId}/convert`);
       return response.data;
     },
     onSuccess: () => {
@@ -227,7 +227,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customerId, onB
     }
   };
 
-  const handleDelete = async () => {
+  const _handleDelete = async () => {
     if (window.confirm('Supprimer ce contact ?')) {
       await deleteCustomer.mutateAsync(customerId);
       onBack();
@@ -273,6 +273,12 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customerId, onB
       label: 'Historique',
       icon: <Clock size={16} />,
       component: CustomerHistoryTab
+    },
+    {
+      id: 'risk',
+      label: 'Risque',
+      icon: <Shield size={16} />,
+      component: CustomerRiskTab
     },
     {
       id: 'ia',
@@ -638,6 +644,7 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onCreat
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -916,6 +923,7 @@ const OpportunitiesList: React.FC<OpportunitiesListProps> = ({ onSelectOpportuni
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,

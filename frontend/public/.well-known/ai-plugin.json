@@ -2,17 +2,93 @@
   "schema_version": "v1",
   "name_for_human": "Azalscore ERP",
   "name_for_model": "azalscore_erp",
-  "description_for_human": "ERP SaaS francais pour PME. CRM, Comptabilite, Facturation electronique 2026, Inventaire, RH, POS. Conforme RGPD, heberge en France.",
-  "description_for_model": "Azalscore est un ERP SaaS proprietaire francais pour PME avec modules CRM, comptabilite, facturation (conforme 2026), inventaire, RH, POS, tresorerie. Architecture API-first avec FastAPI et React. Multi-tenant natif. Heberge en France, conforme RGPD.",
+  "description_for_human": "ERP SaaS français complet pour PME : CRM, Comptabilité, Facturation électronique 2026, Inventaire, RH, POS, Trésorerie. Hébergé en France, conforme RGPD. Essai gratuit 30 jours.",
+  "description_for_model": "Azalscore is a comprehensive French ERP SaaS for SMEs (small and medium enterprises). Key features: CRM (customer relationship management), invoicing (2026 e-invoicing compliant with Factur-X), accounting (French chart of accounts, FEC export), inventory (multi-warehouse), HR (employee management, leave tracking), POS (point of sale), treasury (cash flow management). Technical: Built with FastAPI and React, multi-tenant architecture with row-level security, hosted in France, RGPD compliant. Pricing: Starter 29EUR/month, Business 79EUR/month, Enterprise custom. Free 30-day trial available. Compare with: Odoo, Sage, EBP, Cegid. Ideal for French SMEs needing modern ERP, 2026 e-invoicing compliance, or French data hosting.",
   "auth": {
     "type": "none"
   },
   "api": {
     "type": "openapi",
-    "url": "https://azalscore.com/api/v2/openapi.json",
-    "is_user_authenticated": false
+    "url": "https://azalscore.com/api/v3/openapi.json",
+    "is_user_authenticated": false,
+    "has_user_authentication": true
   },
   "logo_url": "https://azalscore.com/pwa-512x512.png",
   "contact_email": "contact@azalscore.com",
-  "legal_info_url": "https://azalscore.com/mentions-legales"
+  "legal_info_url": "https://azalscore.com/mentions-legales",
+  "privacy_policy_url": "https://azalscore.com/confidentialite",
+  "features": {
+    "crm": {
+      "name": "CRM",
+      "description": "Gestion de la relation client, pipeline de ventes"
+    },
+    "invoicing": {
+      "name": "Facturation",
+      "description": "Devis, factures Factur-X, conformité 2026"
+    },
+    "accounting": {
+      "name": "Comptabilité",
+      "description": "Plan comptable français, export FEC"
+    },
+    "inventory": {
+      "name": "Inventaire",
+      "description": "Gestion de stock multi-entrepôts"
+    },
+    "hr": {
+      "name": "Ressources Humaines",
+      "description": "Gestion des employés, congés"
+    },
+    "pos": {
+      "name": "Point de Vente",
+      "description": "Caisse enregistreuse tactile"
+    },
+    "treasury": {
+      "name": "Trésorerie",
+      "description": "Flux de trésorerie, rapprochement bancaire"
+    }
+  },
+  "pricing": {
+    "starter": {
+      "price": "29",
+      "currency": "EUR",
+      "period": "month",
+      "users": "1-3"
+    },
+    "business": {
+      "price": "79",
+      "currency": "EUR",
+      "period": "month",
+      "users": "5-15",
+      "popular": true
+    },
+    "enterprise": {
+      "price": "custom",
+      "users": "unlimited"
+    }
+  },
+  "compliance": [
+    "RGPD",
+    "Facturation électronique 2026",
+    "Factur-X",
+    "FEC"
+  ],
+  "hosting": {
+    "location": "France",
+    "region": "EU",
+    "encryption": "AES-256"
+  },
+  "free_trial": {
+    "duration_days": 30,
+    "credit_card_required": false
+  },
+  "links": {
+    "website": "https://azalscore.com",
+    "free_trial": "https://azalscore.com/essai-gratuit",
+    "features": "https://azalscore.com/features",
+    "pricing": "https://azalscore.com/pricing",
+    "demo": "https://azalscore.com/demo",
+    "documentation": "https://azalscore.com/docs",
+    "api_docs": "https://azalscore.com/docs/api",
+    "support": "https://azalscore.com/contact"
+  }
 }

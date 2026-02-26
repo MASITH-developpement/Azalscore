@@ -5,16 +5,16 @@
 
 import React from 'react';
 import {
-  FileText, User, Calendar, Clock, CreditCard, MapPin, Mail, Phone
+  FileText, User, Calendar, Clock, CreditCard, Mail
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Document } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG,
   PAYMENT_TERMS, PAYMENT_METHODS
 } from '../types';
-import { formatDate, formatCurrency } from '@/utils/formatters';
+import type { Document } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoicingInfoTab - Informations generales
@@ -39,11 +39,11 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
       <Card title="Informations du document" icon={<FileText size={18} />}>
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Numero</label>
+            <span className="azals-field__label">Numero</span>
             <div className="azals-field__value font-medium">{doc.number}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Type</label>
+            <span className="azals-field__label">Type</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${typeConfig.color}`}>
                 {typeConfig.label}
@@ -51,7 +51,7 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                 {statusConfig.label}
@@ -59,7 +59,7 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Reference</label>
+            <span className="azals-field__label">Reference</span>
             <div className="azals-field__value">{doc.reference || '-'}</div>
           </div>
         </Grid>
@@ -69,11 +69,11 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
       <Card title="Client" icon={<User size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value font-medium">{doc.customer_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Email</label>
+            <span className="azals-field__label">Email</span>
             <div className="azals-field__value">
               {doc.customer_email ? (
                 <a href={`mailto:${doc.customer_email}`} className="azals-link flex items-center gap-1">
@@ -90,12 +90,12 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
       <Card title="Dates" icon={<Calendar size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Date du document</label>
+            <span className="azals-field__label">Date du document</span>
             <div className="azals-field__value">{formatDate(doc.date)}</div>
           </div>
           {doc.type === 'QUOTE' && (
             <div className="azals-field">
-              <label className="azals-field__label">Date de validite</label>
+              <span className="azals-field__label">Date de validite</span>
               <div className="azals-field__value">
                 {doc.validity_date ? formatDate(doc.validity_date) : '-'}
               </div>
@@ -103,7 +103,7 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
           )}
           {(doc.type === 'INVOICE' || doc.type === 'ORDER') && (
             <div className="azals-field">
-              <label className="azals-field__label">Date d'echeance</label>
+              <span className="azals-field__label">Date d&apos;echeance</span>
               <div className={`azals-field__value ${doc.is_overdue ? 'text-danger' : ''}`}>
                 {doc.due_date ? formatDate(doc.due_date) : '-'}
                 {doc.is_overdue && <span className="ml-2 text-danger">(En retard)</span>}
@@ -111,7 +111,7 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
             </div>
           )}
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDate(doc.created_at)}</div>
           </div>
         </Grid>
@@ -125,11 +125,11 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
       >
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Conditions</label>
+            <span className="azals-field__label">Conditions</span>
             <div className="azals-field__value">{getPaymentTermLabel(doc.payment_terms)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Mode de paiement</label>
+            <span className="azals-field__label">Mode de paiement</span>
             <div className="azals-field__value">{getPaymentMethodLabel(doc.payment_method)}</div>
           </div>
         </Grid>
@@ -140,13 +140,13 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
         <Card title="Notes" icon={<FileText size={18} />} className="mt-4">
           {doc.notes && (
             <div className="azals-field mb-4">
-              <label className="azals-field__label">Notes (visibles sur le document)</label>
+              <span className="azals-field__label">Notes (visibles sur le document)</span>
               <div className="azals-field__value whitespace-pre-wrap">{doc.notes}</div>
             </div>
           )}
           {doc.internal_notes && (
             <div className="azals-field azals-std-field--secondary">
-              <label className="azals-field__label">Notes internes</label>
+              <span className="azals-field__label">Notes internes</span>
               <div className="azals-field__value whitespace-pre-wrap text-muted">
                 {doc.internal_notes}
               </div>
@@ -160,11 +160,11 @@ export const InvoicingInfoTab: React.FC<TabContentProps<Document>> = ({ data: do
         <Card title="Validation" icon={<Clock size={18} />} className="mt-4 azals-std-field--secondary">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Valide le</label>
+              <span className="azals-field__label">Valide le</span>
               <div className="azals-field__value">{formatDate(doc.validated_at)}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Valide par</label>
+              <span className="azals-field__label">Valide par</span>
               <div className="azals-field__value">{doc.validated_by_name || '-'}</div>
             </div>
           </Grid>

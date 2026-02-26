@@ -120,7 +120,7 @@ interface AuthStore extends AuthState {
 // STORE AUTH (ZUSTAND)
 // ============================================================
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>((set, _get) => ({
   user: null,
   tokens: null,
   isAuthenticated: false,
@@ -179,7 +179,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     try {
-      const response = await api.post<LoginResponse>('/v1/auth/login', credentials, {
+      const response = await api.post<LoginResponse>('/auth/login', credentials, {
         skipAuth: true,
       });
 
@@ -220,7 +220,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   logout: async (): Promise<void> => {
     try {
-      await api.post('/v1/auth/logout', {});
+      await api.post('/auth/logout', {});
     } catch {
       // Ignorer les erreurs de logout
     } finally {
@@ -281,7 +281,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     try {
-      const response = await api.get<User>('/v1/auth/me');
+      const response = await api.get<User>('/auth/me');
       set({
         user: response.data,
         isAuthenticated: true,
@@ -307,8 +307,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await api.post<LoginResponse>('/v1/auth/verify-2fa', { totp_code: code });
-      const { user, tokens, tenant_id } = response.data;
+      const response = await api.post<LoginResponse>('/auth/verify-2fa', { totp_code: code });
+      const data = response.data;
+      if (!data) throw new Error('No response data');
+      const { user, tokens, tenant_id } = data;
 
       tokenManager.setTokens(tokens.access_token, tokens.refresh_token);
       setTenantId(tenant_id);

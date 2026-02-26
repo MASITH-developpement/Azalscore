@@ -5,6 +5,8 @@ AZALS MODULE T9 - API Trial Registration
 Endpoints publics pour l'inscription à l'essai gratuit.
 Aucune authentification requise (PUBLIC_PATHS).
 """
+from __future__ import annotations
+
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session

@@ -2,6 +2,8 @@
 AZALS - Service Journal APPEND-ONLY
 Gestion du journal d'audit inaltérable
 """
+from __future__ import annotations
+
 
 
 from sqlalchemy.orm import Session

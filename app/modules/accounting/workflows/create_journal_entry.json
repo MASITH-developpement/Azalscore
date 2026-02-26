@@ -1,0 +1,72 @@
+{
+  "module_id": "azalscore.accounting.create_journal_entry",
+  "version": "1.0.0",
+  "description": "Workflow de creation d'ecriture comptable",
+  "steps": [
+    {
+      "id": "validate_period",
+      "use": "azalscore.validators.finance.validate_fiscal_period@1.0.0",
+      "inputs": {
+        "date": "{{context.entry_date}}",
+        "fiscal_year_id": "{{context.fiscal_year_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "validate_accounts",
+      "use": "azalscore.validators.finance.validate_accounts_exist@1.0.0",
+      "inputs": {
+        "account_codes": "{{context.account_codes}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "validate_balance",
+      "use": "azalscore.validators.finance.validate_entry_balance@1.0.0",
+      "inputs": {
+        "lines": "{{context.entry_lines}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "generate_entry_number",
+      "use": "azalscore.generators.sequences.generate_entry_number@1.0.0",
+      "inputs": {
+        "journal_code": "{{context.journal_code}}",
+        "fiscal_year": "{{context.fiscal_year}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "create_entry",
+      "use": "azalscore.accounting.create_entry@1.0.0",
+      "inputs": {
+        "entry_number": "{{generate_entry_number.number}}",
+        "journal_code": "{{context.journal_code}}",
+        "date": "{{context.entry_date}}",
+        "reference": "{{context.reference}}",
+        "lines": "{{context.entry_lines}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "update_account_balances",
+      "use": "azalscore.accounting.update_balances@1.0.0",
+      "inputs": {
+        "entry_id": "{{create_entry.id}}",
+        "lines": "{{context.entry_lines}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "entry_id": "{{create_entry.id}}",
+    "entry_number": "{{generate_entry_number.number}}"
+  }
+}

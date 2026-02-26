@@ -9,12 +9,12 @@ import {
   CheckCircle2, AlertTriangle, Users
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Audit } from '../types';
+import { formatDate, formatPercent } from '@/utils/formatters';
 import {
   AUDIT_TYPE_CONFIG, AUDIT_STATUS_CONFIG, getAuditScoreColor
 } from '../types';
-import { formatDate, formatPercent } from '@/utils/formatters';
+import type { Audit } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AuditInfoTab - Informations generales
@@ -26,15 +26,15 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
       <Card title="Identification" icon={<ClipboardCheck size={18} />}>
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Code audit</label>
+            <span className="azals-field__label">Code audit</span>
             <div className="azals-field__value font-mono">{audit.code}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value">{audit.name}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${AUDIT_STATUS_CONFIG[audit.status].color}`}>
                 {AUDIT_STATUS_CONFIG[audit.status].label}
@@ -42,7 +42,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Type d'audit</label>
+            <span className="azals-field__label">Type d&apos;audit</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${AUDIT_TYPE_CONFIG[audit.type].color}`}>
                 {AUDIT_TYPE_CONFIG[audit.type].label}
@@ -51,7 +51,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
           </div>
           {audit.description && (
             <div className="azals-field col-span-2">
-              <label className="azals-field__label">Description</label>
+              <span className="azals-field__label">Description</span>
               <div className="azals-field__value">{audit.description}</div>
             </div>
           )}
@@ -63,13 +63,13 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
         <Grid cols={2} gap="md">
           {audit.scope && (
             <div className="azals-field">
-              <label className="azals-field__label">Perimetre</label>
+              <span className="azals-field__label">Perimetre</span>
               <div className="azals-field__value">{audit.scope}</div>
             </div>
           )}
           {audit.objectives && (
             <div className="azals-field">
-              <label className="azals-field__label">Objectifs</label>
+              <span className="azals-field__label">Objectifs</span>
               <div className="azals-field__value">{audit.objectives}</div>
             </div>
           )}
@@ -77,10 +77,10 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
       </Card>
 
       {/* Equipe d'audit */}
-      <Card title="Equipe d'audit" icon={<Users size={18} />} className="mt-4">
+      <Card title="Equipe d&apos;audit" icon={<Users size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Auditeur principal</label>
+            <span className="azals-field__label">Auditeur principal</span>
             <div className="azals-field__value flex items-center gap-1">
               <User size={14} className="text-muted" />
               {audit.auditor || audit.lead_auditor || '-'}
@@ -88,7 +88,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
           </div>
           {audit.auditor_company && (
             <div className="azals-field">
-              <label className="azals-field__label">Cabinet / Societe</label>
+              <span className="azals-field__label">Cabinet / Societe</span>
               <div className="azals-field__value flex items-center gap-1">
                 <Building2 size={14} className="text-muted" />
                 {audit.auditor_company}
@@ -97,7 +97,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
           )}
           {audit.audit_team && audit.audit_team.length > 0 && (
             <div className="azals-field azals-std-field--secondary">
-              <label className="azals-field__label">Equipe</label>
+              <span className="azals-field__label">Equipe</span>
               <div className="azals-field__value">
                 {audit.audit_team.join(', ')}
               </div>
@@ -110,25 +110,25 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
       <Card title="Calendrier" icon={<Calendar size={18} />} className="mt-4">
         <Grid cols={4} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Date prevue</label>
+            <span className="azals-field__label">Date prevue</span>
             <div className="azals-field__value">
               {audit.planned_date ? formatDate(audit.planned_date) : '-'}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Date de debut</label>
+            <span className="azals-field__label">Date de debut</span>
             <div className="azals-field__value">
               {audit.start_date ? formatDate(audit.start_date) : '-'}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Date de fin</label>
+            <span className="azals-field__label">Date de fin</span>
             <div className="azals-field__value">
               {audit.end_date ? formatDate(audit.end_date) : '-'}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Date cloture</label>
+            <span className="azals-field__label">Date cloture</span>
             <div className="azals-field__value">
               {audit.completed_date ? (
                 <span className="text-green-600 flex items-center gap-1">
@@ -140,7 +140,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
           </div>
           {audit.next_audit_date && (
             <div className="azals-field azals-std-field--secondary">
-              <label className="azals-field__label">Prochain audit</label>
+              <span className="azals-field__label">Prochain audit</span>
               <div className="azals-field__value">
                 {formatDate(audit.next_audit_date)}
               </div>
@@ -154,7 +154,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
         <Card title="Resultats" icon={<ClipboardCheck size={18} />} className="mt-4">
           <Grid cols={4} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Score global</label>
+              <span className="azals-field__label">Score global</span>
               <div className="azals-field__value">
                 {audit.score !== undefined ? (
                   <span className={`text-2xl font-bold text-${getAuditScoreColor(audit.score)}-600`}>
@@ -164,13 +164,13 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Total constats</label>
+              <span className="azals-field__label">Total constats</span>
               <div className="azals-field__value text-xl font-medium">
                 {audit.findings_count}
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Critiques</label>
+              <span className="azals-field__label">Critiques</span>
               <div className="azals-field__value">
                 {audit.critical_findings > 0 ? (
                   <span className="text-red-600 font-bold flex items-center gap-1">
@@ -183,7 +183,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Majeurs</label>
+              <span className="azals-field__label">Majeurs</span>
               <div className="azals-field__value">
                 {(audit.major_findings || 0) > 0 ? (
                   <span className="text-orange-600 font-medium">{audit.major_findings}</span>
@@ -199,7 +199,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
             <div className="mt-4 pt-4 border-t">
               <Grid cols={2} gap="md">
                 <div className="azals-field">
-                  <label className="azals-field__label">Plan d'action</label>
+                  <span className="azals-field__label">Plan d&apos;action</span>
                   <div className="azals-field__value">
                     <span className={`azals-badge azals-badge--${
                       audit.action_plan_status === 'COMPLETED' ? 'green' :
@@ -212,7 +212,7 @@ export const AuditInfoTab: React.FC<TabContentProps<Audit>> = ({ data: audit }) 
                 </div>
                 {audit.action_plan_progress !== undefined && (
                   <div className="azals-field">
-                    <label className="azals-field__label">Progression</label>
+                    <span className="azals-field__label">Progression</span>
                     <div className="azals-field__value">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-gray-200 rounded-full h-2">

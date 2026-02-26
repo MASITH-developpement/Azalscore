@@ -4,6 +4,8 @@ AZALS MODULE - TREASURY: Router
 
 API REST pour la gestion de la trésorerie.
 """
+from __future__ import annotations
+
 
 from typing import Optional
 from uuid import UUID

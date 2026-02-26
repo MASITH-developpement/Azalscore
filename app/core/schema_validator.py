@@ -10,6 +10,8 @@ RÈGLE NON NÉGOCIABLE:
 - AUCUN BIGINT / INTEGER pour identifiants
 - BLOCAGE IMMÉDIAT si violation détectée en production
 """
+from __future__ import annotations
+
 
 import logging
 

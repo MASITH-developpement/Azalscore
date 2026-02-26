@@ -11,19 +11,21 @@
 
 import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { ShieldX } from 'lucide-react';
-import { LoadingState } from './ui-engine/components/StateViews';
-import { tokenManager, setTenantId } from '@core/api-client';
+import { HelmetProvider } from 'react-helmet-async';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
+import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
+import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import LandingPage from './pages/LandingPage';
 import { MentionsLegales, Confidentialite, CGV, Contact } from './pages/legal';
 import { TrialRegistration } from './pages/trial';
-import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
-import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
+import { LoadingState } from './ui-engine/components/StateViews';
 import './styles/main.css';
 import './styles/unified-layout.css';
 import './styles/azalscore.css';
+import './styles/blog.css';
 import './modules/saisie/saisie.css';
 
 // ============================================================
@@ -60,6 +62,35 @@ const SettingsModule = lazy(() => import('./modules/settings'));
 const MarceauModule = lazy(() => import('./modules/marceau'));
 const SaisieModule = lazy(() => import('./modules/saisie'));
 
+// Import modules
+const OdooImport = lazy(() => import('./modules/import').then(m => ({ default: m.OdooImportModule })));
+const AxonautImport = lazy(() => import('./modules/import').then(m => ({ default: m.AxonautImportModule })));
+const PennylaneImport = lazy(() => import('./modules/import').then(m => ({ default: m.PennylaneImportModule })));
+const SageImport = lazy(() => import('./modules/import').then(m => ({ default: m.SageImportModule })));
+const ChorusImport = lazy(() => import('./modules/import').then(m => ({ default: m.ChorusImportModule })));
+
+// Blog pages
+const BlogIndex = lazy(() => import('./pages/blog'));
+const BlogFacturation2026 = lazy(() => import('./pages/blog/FacturationElectronique2026'));
+const BlogErpPmeGuide = lazy(() => import('./pages/blog/ErpPmeGuideComplet'));
+const BlogRgpdErp = lazy(() => import('./pages/blog/ConformiteRgpdErp'));
+const BlogTresorerie = lazy(() => import('./pages/blog/GestionTresoreriePme'));
+const BlogCrm = lazy(() => import('./pages/blog/CrmRelationClient'));
+const BlogStock = lazy(() => import('./pages/blog/GestionStockOptimisation'));
+
+// Comparatif pages (SEO)
+const VsOdoo = lazy(() => import('./pages/comparatif/VsOdoo'));
+const VsSage = lazy(() => import('./pages/comparatif/VsSage'));
+const VsEbp = lazy(() => import('./pages/comparatif/VsEbp'));
+
+// Secteurs pages (SEO)
+const SecteurCommerce = lazy(() => import('./pages/secteurs/Commerce'));
+const SecteurServices = lazy(() => import('./pages/secteurs/Services'));
+const SecteurIndustrie = lazy(() => import('./pages/secteurs/Industrie'));
+
+// Feature detail pages (SEO)
+const FeatureDetail = lazy(() => import('./pages/features/FeatureDetail'));
+
 // ============================================================
 // VIEW KEY → CAPABILITY MAPPING
 // Maps each ViewKey to the capability required to access it.
@@ -75,26 +106,62 @@ const VIEW_CAPABILITY_MAP: Partial<Record<ViewKey, string>> = {
   'gestion-paiements': 'invoicing.view',
   'gestion-interventions': 'interventions.view',
   'affaires': 'invoicing.view',
-  'crm': 'partners.view',
-  'stock': 'inventory.view',
-  'achats': 'purchases.view',
-  'projets': 'projects.view',
-  'rh': 'hr.view',
-  'vehicules': 'inventory.view',
+  'crm': 'crm.view',
+  'partners': 'partners.view',
+  'inventory': 'inventory.view',
+  'purchases': 'purchases.view',
+  'projects': 'projects.view',
+  'hr': 'hr.view',
   'production': 'production.view',
   'maintenance': 'maintenance.view',
   'quality': 'quality.view',
+  'qc': 'qc.view',
   'pos': 'pos.view',
   'ecommerce': 'ecommerce.view',
   'marketplace': 'marketplace.view',
   'subscriptions': 'subscriptions.view',
+  'commercial': 'commercial.view',
   'helpdesk': 'helpdesk.view',
   'web': 'web.view',
+  'website': 'website.view',
   'bi': 'bi.view',
   'compliance': 'compliance.view',
-  'compta': 'accounting.view',
-  'tresorerie': 'treasury.view',
+  'broadcast': 'broadcast.view',
+  'social-networks': 'social_networks.view',
+  'accounting': 'accounting.view',
+  'treasury': 'treasury.view',
+  'assets': 'assets.view',
+  'expenses': 'expenses.view',
+  'finance': 'finance.view',
+  'consolidation': 'consolidation.view',
+  'automated-accounting': 'automated_accounting.view',
+  'contracts': 'contracts.view',
+  'timesheet': 'timesheet.view',
+  'field-service': 'field_service.view',
+  'complaints': 'complaints.view',
+  'warranty': 'warranty.view',
+  'rfq': 'rfq.view',
+  'procurement': 'procurement.view',
+  'esignature': 'esignature.view',
+  'email': 'email.view',
+  'ai-assistant': 'ai_assistant.view',
+  'marceau': 'marceau.view',
   'admin': 'admin.view',
+  'audit': 'audit.view',
+  'backup': 'backup.view',
+  'guardian': 'guardian.view',
+  'iam': 'iam.view',
+  'tenants': 'tenants.view',
+  'triggers': 'triggers.view',
+  'autoconfig': 'autoconfig.view',
+  'hr-vault': 'hr_vault.view',
+  'stripe-integration': 'stripe_integration.view',
+  'country-packs': 'country_packs.view',
+  'import-odoo': 'import_data.odoo',
+  'import-axonaut': 'import_data.axonaut',
+  'import-pennylane': 'import_data.pennylane',
+  'import-sage': 'import_data.sage',
+  'import-chorus': 'import_data.chorus',
 };
 
 // ============================================================
@@ -107,9 +174,25 @@ const UnauthorizedView: React.FC = () => (
     <ShieldX size={48} className="azals-unauthorized__icon" />
     <h2 className="azals-unauthorized__title">Acces non autorise</h2>
     <p className="azals-unauthorized__message">
-      Vous n'avez pas les permissions necessaires pour acceder a ce module.
-      Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur.
+      Vous n&apos;avez pas les permissions necessaires pour acceder a ce module.
+      Contactez votre administrateur si vous pensez qu&apos;il s&apos;agit d&apos;une erreur.
     </p>
+  </div>
+);
+
+// ============================================================
+// PLACEHOLDER MODULE
+// Shown for modules that are not yet implemented.
+// ============================================================
+
+const PlaceholderModule: React.FC<{ name: string }> = ({ name }) => (
+  <div className="azals-placeholder">
+    <div className="azals-placeholder__content">
+      <h2 className="azals-placeholder__title">{name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</h2>
+      <p className="azals-placeholder__message">
+        Ce module est en cours de développement. Il sera disponible prochainement.
+      </p>
+    </div>
   </div>
 );
 
@@ -151,16 +234,16 @@ class ErrorBoundary extends React.Component<
           <div className="azals-error-boundary__card">
             <h1 className="azals-error-boundary__brand">AZALSCORE</h1>
             <h2 className="azals-error-boundary__title">
-              Une erreur inattendue s'est produite
+              Une erreur inattendue s&apos;est produite
             </h2>
             <p className="azals-error-boundary__message">
-              {this.state.error?.message || "L'application a rencontre un probleme."}
+              {this.state.error?.message || "L&apos;application a rencontre un probleme."}
             </p>
             <button
               className="azals-error-boundary__button"
               onClick={this.handleReload}
             >
-              Recharger l'application
+              Recharger l&apos;application
             </button>
           </div>
         </div>
@@ -233,11 +316,9 @@ const Login: React.FC = () => {
       // Définir le tenant AVANT le login
       const normalizedTenant = tenant.toLowerCase().trim();
       setTenantId(normalizedTenant);
-      console.log('[LOGIN] Tenant défini:', normalizedTenant);
 
       // Utiliser la fonction login du store qui gère tout (tokens + user data)
       await login({ email, password });
-      console.log('[LOGIN] Connexion réussie');
     } catch (err) {
       console.error('[LOGIN] Erreur:', err);
       setError(err instanceof Error ? err.message : 'Identifiants invalides');
@@ -304,19 +385,102 @@ const Login: React.FC = () => {
 // ============================================================
 
 const VIEW_BASE_PATH: Partial<Record<ViewKey, string>> = {
+  // Saisie rapide
+  'saisie': '/saisie',
+
+  // Gestion documents
   'gestion-devis': '/invoicing',
   'gestion-commandes': '/invoicing',
   'gestion-factures': '/invoicing',
   'gestion-paiements': '/invoicing',
   'gestion-interventions': '/interventions',
-  'crm': '/partners',
-  'achats': '/purchases',
-  'compta': '/accounting',
-  'tresorerie': '/treasury',
-  'ecommerce': '/ecommerce',
+
+  // Affaires
+  'affaires': '/affaires',
+
+  // Modules métier
+  'partners': '/partners',
+  'crm': '/crm',
+  'inventory': '/inventory',
+  'purchases': '/purchases',
+  'projects': '/projects',
+  'hr': '/hr',
+  'contracts': '/contracts',
+  'timesheet': '/timesheet',
+  'field-service': '/field-service',
+  'complaints': '/complaints',
+  'warranty': '/warranty',
+  'rfq': '/rfq',
+  'procurement': '/procurement',
+
+  // Logistique & Production
+  'production': '/production',
+  'maintenance': '/maintenance',
+  'quality': '/quality',
+  'qc': '/qc',
+
+  // Commerce
   'pos': '/pos',
+  'ecommerce': '/ecommerce',
+  'marketplace': '/marketplace',
+  'subscriptions': '/subscriptions',
+  'commercial': '/commercial',
+
+  // Services
+  'helpdesk': '/helpdesk',
+
+  // Digital
+  'web': '/web',
+  'website': '/website',
+  'bi': '/bi',
   'compliance': '/compliance',
+  'broadcast': '/broadcast',
+  'social-networks': '/social-networks',
+
+  // Communication
+  'esignature': '/esignature',
+  'email': '/email',
+
+  // Finance
+  'accounting': '/accounting',
+  'treasury': '/treasury',
+  'assets': '/assets',
+  'expenses': '/expenses',
+  'finance': '/finance',
+  'consolidation': '/consolidation',
+  'automated-accounting': '/automated-accounting',
+
+  // Direction
+  'cockpit': '/cockpit',
+
+  // Système
+  'audit': '/audit',
+  'backup': '/backup',
+  'guardian': '/guardian',
+  'iam': '/iam',
+  'tenants': '/tenants',
+  'triggers': '/triggers',
+  'autoconfig': '/autoconfig',
+  'hr-vault': '/hr-vault',
+  'stripe-integration': '/stripe-integration',
+  'country-packs': '/country-packs',
+
+  // IA
+  'marceau': '/marceau',
+
+  // Import
+  'import-odoo': '/import/odoo',
+  'import-axonaut': '/import/axonaut',
+  'import-pennylane': '/import/pennylane',
+  'import-sage': '/import/sage',
+  'import-chorus': '/import/chorus',
+
+  // Système
   'admin': '/admin',
+
+  // Utilisateur
+  'profile': '/profile',
+  'settings': '/settings',
 };
 
 // Reverse mapping: URL path → ViewKey (for URL-based navigation)
@@ -403,18 +567,26 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
         return <AffairesModule />;
 
       // Modules métier
-      case 'crm':
+      case 'partners':
         return <PartnersModule />;
-      case 'stock':
+      case 'crm':
+        return <PartnersModule />; // CRM avancé utilise le même module
+      case 'inventory':
         return <InventoryModule />;
-      case 'achats':
+      case 'purchases':
         return <PurchasesModule />;
-      case 'projets':
+      case 'projects':
         return <ProjectsModule />;
-      case 'rh':
+      case 'hr':
         return <HRModule />;
-      case 'vehicules':
-        return <VehiculesModule />;
+      case 'contracts':
+      case 'timesheet':
+      case 'field-service':
+      case 'complaints':
+      case 'warranty':
+      case 'rfq':
+      case 'procurement':
+        return <PlaceholderModule name={viewKey} />;
 
       // Logistique & Production
       case 'production':
@@ -422,6 +594,7 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
       case 'maintenance':
         return <MaintenanceModule />;
       case 'quality':
+      case 'qc':
         return <QualityModule />;
 
       // Commerce
@@ -433,6 +606,8 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
         return <MarketplaceModule />;
       case 'subscriptions':
         return <SubscriptionsModule />;
+      case 'commercial':
+        return <PlaceholderModule name="Commercial" />;
 
       // Services
       case 'helpdesk':
@@ -440,17 +615,32 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
 
       // Digital
       case 'web':
+      case 'website':
         return <WebModule />;
       case 'bi':
         return <BIModule />;
       case 'compliance':
         return <ComplianceModule />;
+      case 'broadcast':
+      case 'social-networks':
+        return <PlaceholderModule name={viewKey} />;
+
+      // Communication
+      case 'esignature':
+      case 'email':
+        return <PlaceholderModule name={viewKey} />;
 
       // Finance
-      case 'compta':
+      case 'accounting':
         return <AccountingModule />;
-      case 'tresorerie':
+      case 'treasury':
         return <TreasuryModule />;
+      case 'assets':
+      case 'expenses':
+      case 'finance':
+      case 'consolidation':
+      case 'automated-accounting':
+        return <PlaceholderModule name={viewKey} />;
 
       // Direction
       case 'cockpit':
@@ -458,11 +648,35 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
 
       // IA
       case 'marceau':
+      case 'ai-assistant':
         return <MarceauModule />;
+
+      // Import
+      case 'import-odoo':
+        return <OdooImport />;
+      case 'import-axonaut':
+        return <AxonautImport />;
+      case 'import-pennylane':
+        return <PennylaneImport />;
+      case 'import-sage':
+        return <SageImport />;
+      case 'import-chorus':
+        return <ChorusImport />;
 
       // Système
       case 'admin':
         return <AdminModule />;
+      case 'audit':
+      case 'backup':
+      case 'guardian':
+      case 'iam':
+      case 'tenants':
+      case 'triggers':
+      case 'autoconfig':
+      case 'hr-vault':
+      case 'stripe-integration':
+      case 'country-packs':
+        return <PlaceholderModule name={viewKey} />;
 
       // Utilisateur
       case 'profile':
@@ -516,7 +730,7 @@ const AppContent: React.FC = () => {
   const loadCapabilities = useCapabilitiesStore((state) => state.loadCapabilities);
   const capStatus = useCapabilitiesStore((state) => state.status);
 
-  // Charger les capabilities au montage (production : appel API /v1/auth/capabilities)
+  // Charger les capabilities au montage (production : appel API /auth/capabilities)
   useEffect(() => {
     if (capStatus === 'idle') {
       loadCapabilities();
@@ -585,9 +799,10 @@ const UnifiedApp: React.FC = () => {
   // Non authentifié - afficher landing page, pages légales ou login
   if (!isAuthenticated) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/essai-gratuit" element={<TrialRegistration />} />
             <Route path="/essai-gratuit/verify" element={<TrialRegistration />} />
@@ -595,22 +810,46 @@ const UnifiedApp: React.FC = () => {
             <Route path="/confidentialite" element={<Confidentialite />} />
             <Route path="/cgv" element={<CGV />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogIndex /></Suspense>} />
+            <Route path="/blog/facturation-electronique-2026" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogFacturation2026 /></Suspense>} />
+            <Route path="/blog/erp-pme-guide-complet" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogErpPmeGuide /></Suspense>} />
+            <Route path="/blog/conformite-rgpd-erp" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogRgpdErp /></Suspense>} />
+            <Route path="/blog/gestion-tresorerie-pme" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogTresorerie /></Suspense>} />
+            <Route path="/blog/crm-relation-client" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogCrm /></Suspense>} />
+            <Route path="/blog/gestion-stock-optimisation" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogStock /></Suspense>} />
+
+            {/* Comparatif pages */}
+            <Route path="/comparatif/azalscore-vs-odoo" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsOdoo /></Suspense>} />
+            <Route path="/comparatif/azalscore-vs-sage" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsSage /></Suspense>} />
+            <Route path="/comparatif/azalscore-vs-ebp" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsEbp /></Suspense>} />
+
+            {/* Secteurs pages */}
+            <Route path="/secteurs/commerce" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><SecteurCommerce /></Suspense>} />
+            <Route path="/secteurs/services" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><SecteurServices /></Suspense>} />
+            <Route path="/secteurs/industrie" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><SecteurIndustrie /></Suspense>} />
+
+            {/* Feature detail pages */}
+            <Route path="/features/:feature" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><FeatureDetail /></Suspense>} />
+
             <Route path="*" element={<LandingPage />} />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
+            </Routes>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </HelmetProvider>
     );
   }
 
   // Authentifié
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <HelmetProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </HelmetProvider>
   );
 };
 

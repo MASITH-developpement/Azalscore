@@ -11,6 +11,7 @@
  * - Toutes les erreurs sont traçables
  */
 
+import { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '@/core/api-client';
 import { useErrorStore, type UIError, type ErrorSeverity } from '@/core/error-handling';
 
@@ -132,7 +133,7 @@ const sendErrorToGuardian = async (report: GuardianErrorReport): Promise<void> =
       return;
     }
 
-    const response = await fetch(`${getApiUrl()}/api/v1/guardian/errors/frontend`, {
+    const response = await fetch(`${getApiUrl()}/api/guardian/errors/frontend`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +163,7 @@ export const fetchGuardianAlerts = async (): Promise<GuardianAlert[]> => {
 
     if (!token || !tenantId) return [];
 
-    const response = await fetch(`${getApiUrl()}/api/v1/guardian/alerts?is_resolved=false`, {
+    const response = await fetch(`${getApiUrl()}/api/guardian/alerts?is_resolved=false`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'X-Tenant-ID': tenantId,
@@ -188,7 +189,7 @@ export const acknowledgeGuardianAlert = async (alertId: number): Promise<boolean
 
     if (!token || !tenantId) return false;
 
-    const response = await fetch(`${getApiUrl()}/api/v1/guardian/alerts/${alertId}/acknowledge`, {
+    const response = await fetch(`${getApiUrl()}/api/guardian/alerts/${alertId}/acknowledge`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -262,7 +263,7 @@ export const captureUIError = (uiError: UIError): void => {
 /**
  * Mappe la sévérité UI vers GUARDIAN
  */
-const mapSeverityToGuardian = (severity: ErrorSeverity): string => {
+const _mapSeverityToGuardian = (severity: ErrorSeverity): string => {
   const mapping: Record<ErrorSeverity, string> = {
     info: 'INFO',
     warning: 'WARNING',
@@ -379,8 +380,6 @@ export const getCorrelationId = (): string | null => correlationId;
 // ============================================================
 // REACT HOOKS
 // ============================================================
-
-import { useState, useEffect, useCallback } from 'react';
 
 /**
  * Hook pour les alertes GUARDIAN

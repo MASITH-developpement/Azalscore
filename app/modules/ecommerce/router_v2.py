@@ -8,6 +8,8 @@ MIGRATION CORE SaaS v2:
 - Pattern: context: SaaSContext = Depends(get_saas_context)
 - Factory: get_ecommerce_service(db, context.tenant_id, context.user_id)
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal
@@ -399,7 +401,7 @@ def update_cart_item(
 ):
     """Mettre à jour la quantité d'un article."""
     result, message = service.update_cart_item(cart_id, item_id, data.quantity)
-    if result is None and not isinstance(result, bool):
+    if result is None:
         raise HTTPException(status_code=400, detail=message)
 
     return {"success": True, "message": message}

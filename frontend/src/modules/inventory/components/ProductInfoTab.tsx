@@ -9,10 +9,10 @@ import {
   Truck, Calendar, User
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product } from '../types';
-import { formatQuantity } from '../types';
 import { formatDate, formatCurrency } from '@/utils/formatters';
+import { formatQuantity } from '../types';
+import type { Product } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductInfoTab - Informations générales de l'article
@@ -25,35 +25,35 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
         <Card title="Identification" icon={<Package size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Hash size={14} />
                 Code article
-              </label>
+              </span>
               <div className="azals-std-field__value font-mono">{product.code}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Package size={14} />
                 Désignation
-              </label>
+              </span>
               <div className="azals-std-field__value">{product.name}</div>
             </div>
             <div className="azals-std-field azals-std-field--full">
-              <label className="azals-std-field__label">Description</label>
+              <span className="azals-std-field__label">Description</span>
               <div className="azals-std-field__value">{product.description || '-'}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Tag size={14} />
                 Catégorie
-              </label>
+              </span>
               <div className="azals-std-field__value">{product.category_name || '-'}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Barcode size={14} />
                 Code-barres
-              </label>
+              </span>
               <div className="azals-std-field__value font-mono">{product.barcode || '-'}</div>
             </div>
           </div>
@@ -63,23 +63,23 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
         <Card title="Caractéristiques" icon={<Scale size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Unité de mesure</label>
+              <span className="azals-std-field__label">Unité de mesure</span>
               <div className="azals-std-field__value">{product.unit}</div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">Poids</label>
+              <span className="azals-std-field__label">Poids</span>
               <div className="azals-std-field__value">
                 {product.weight ? `${product.weight} kg` : '-'}
               </div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">Volume</label>
+              <span className="azals-std-field__label">Volume</span>
               <div className="azals-std-field__value">
                 {product.volume ? `${product.volume} m³` : '-'}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Suivi par lot</label>
+              <span className="azals-std-field__label">Suivi par lot</span>
               <div className="azals-std-field__value">
                 <span className={`azals-badge azals-badge--${product.is_lot_tracked ? 'green' : 'gray'}`}>
                   {product.is_lot_tracked ? 'Oui' : 'Non'}
@@ -87,7 +87,7 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Suivi par N° série</label>
+              <span className="azals-std-field__label">Suivi par N° série</span>
               <div className="azals-std-field__value">
                 <span className={`azals-badge azals-badge--${product.is_serialized ? 'green' : 'gray'}`}>
                   {product.is_serialized ? 'Oui' : 'Non'}
@@ -95,7 +95,7 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Statut</label>
+              <span className="azals-std-field__label">Statut</span>
               <div className="azals-std-field__value">
                 <span className={`azals-badge azals-badge--${product.is_active ? 'green' : 'gray'}`}>
                   {product.is_active ? 'Actif' : 'Inactif'}
@@ -109,26 +109,26 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
         <Card title="Approvisionnement" icon={<Truck size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">
+              <span className="azals-std-field__label">
                 <Building2 size={14} />
                 Fournisseur principal
-              </label>
+              </span>
               <div className="azals-std-field__value">{product.supplier_name || '-'}</div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">Délai de livraison</label>
+              <span className="azals-std-field__label">Délai de livraison</span>
               <div className="azals-std-field__value">
                 {product.lead_time_days ? `${product.lead_time_days} jours` : '-'}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Prix d'achat</label>
+              <span className="azals-std-field__label">Prix d&apos;achat</span>
               <div className="azals-std-field__value font-medium">
                 {formatCurrency(product.cost_price)}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Prix de vente</label>
+              <span className="azals-std-field__label">Prix de vente</span>
               <div className="azals-std-field__value font-medium">
                 {formatCurrency(product.sale_price)}
               </div>
@@ -140,19 +140,19 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
         <Card title="Seuils de stock" icon={<Package size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Stock minimum</label>
+              <span className="azals-std-field__label">Stock minimum</span>
               <div className="azals-std-field__value text-warning font-medium">
                 {formatQuantity(product.min_stock, product.unit)}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Stock maximum</label>
+              <span className="azals-std-field__label">Stock maximum</span>
               <div className="azals-std-field__value">
                 {product.max_stock > 0 ? formatQuantity(product.max_stock, product.unit) : '-'}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Stock actuel</label>
+              <span className="azals-std-field__label">Stock actuel</span>
               <div className={`azals-std-field__value font-semibold ${
                 product.current_stock <= 0 ? 'text-danger' :
                 product.current_stock <= product.min_stock ? 'text-warning' : 'text-success'
@@ -161,7 +161,7 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Stock disponible</label>
+              <span className="azals-std-field__label">Stock disponible</span>
               <div className="azals-std-field__value font-medium">
                 {formatQuantity(product.available_stock ?? product.current_stock, product.unit)}
               </div>
@@ -178,25 +178,25 @@ export const ProductInfoTab: React.FC<TabContentProps<Product>> = ({ data: produ
       >
         <Grid cols={4} gap="md">
           <div className="azals-std-field">
-            <label className="azals-std-field__label">
+            <span className="azals-std-field__label">
               <Calendar size={14} />
               Date de création
-            </label>
+            </span>
             <div className="azals-std-field__value text-sm">{formatDate(product.created_at)}</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">
+            <span className="azals-std-field__label">
               <User size={14} />
               Créé par
-            </label>
+            </span>
             <div className="azals-std-field__value text-sm">{product.created_by || '-'}</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">Dernière modification</label>
+            <span className="azals-std-field__label">Dernière modification</span>
             <div className="azals-std-field__value text-sm">{formatDate(product.updated_at)}</div>
           </div>
           <div className="azals-std-field">
-            <label className="azals-std-field__label">ID interne</label>
+            <span className="azals-std-field__label">ID interne</span>
             <div className="azals-std-field__value text-sm font-mono">{product.id}</div>
           </div>
         </Grid>

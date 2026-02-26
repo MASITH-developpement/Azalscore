@@ -17,13 +17,11 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FileText,
   Upload,
   Search,
-  Filter,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -32,14 +30,16 @@ import {
   Plus,
   Inbox,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
+import { serializeFilters } from '@core/query-keys';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
-import { Modal, Input, TextArea, Select } from '@ui/forms';
-import { ErrorState } from '../../../ui-engine/components/StateViews';
+import { Modal, Select } from '@ui/forms';
+import { PageWrapper, Card } from '@ui/layout';
+import { DataTable } from '@ui/tables';
 import type { TableColumn, PaginatedResponse } from '@/types';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES
@@ -121,7 +121,7 @@ const useAssistanteDashboard = () => {
 
 const useDocuments = (page = 1, pageSize = 20, filters: Record<string, string> = {}) => {
   return useQuery({
-    queryKey: ['accounting', 'documents', page, pageSize, filters],
+    queryKey: ['accounting', 'documents', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -369,8 +369,9 @@ const UploadModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} title="Ajouter un document">
       <div className="azals-auto-accounting__upload-form">
         <div className="azals-form-group">
-          <label className="azals-form-label">Type de document</label>
+          <label htmlFor="upload-doc-type" className="azals-form-label">Type de document</label>
           <Select
+            id="upload-doc-type"
             value={documentType}
             onChange={(value) => setDocumentType(value)}
             options={documentTypes}
@@ -378,13 +379,14 @@ const UploadModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Fichier</label>
+          <label htmlFor="upload-doc-file" className="azals-form-label">Fichier</label>
           <div
             className={`azals-auto-accounting__dropzone ${
               selectedFile ? 'azals-auto-accounting__dropzone--has-file' : ''
             }`}
           >
             <input
+              id="upload-doc-file"
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
@@ -408,7 +410,7 @@ const UploadModal: React.FC<{
         <div className="azals-form-group azals-form-group--info">
           <p>
             Le document sera automatiquement analysé et comptabilisé.
-            Vous n'avez rien d'autre à faire !
+            Vous n&apos;avez rien d&apos;autre à faire !
           </p>
         </div>
 
@@ -440,7 +442,7 @@ export const AssistanteDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useAssistanteDashboard();
-  const { data: documents, isLoading: documentsLoading, error: documentsError, refetch: refetchDocuments } = useDocuments(
+  const { data: documents, isLoading: documentsLoading, error: _documentsError, refetch: _refetchDocuments } = useDocuments(
     page,
     20,
     statusFilter ? { status: statusFilter } : {}
@@ -588,7 +590,8 @@ export const AssistanteDashboard: React.FC = () => {
             columns={columns}
             data={documents?.items || []}
             keyField="id"
-            isLoading={documentsLoading}
+          filterable
+          isLoading={documentsLoading}
             actions={rowActions}
             pagination={{
               page,

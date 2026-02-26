@@ -5,19 +5,19 @@
 
 import React from 'react';
 import { FileText, Image, Upload, Download, ExternalLink } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Product } from '../types';
-import { formatFileSize } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDateTime } from '@/utils/formatters';
+import { formatFileSize } from '../types';
+import type { Product } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductDocumentsTab - Documents et images
  */
 export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: product }) => {
   const handleUpload = () => {
-    console.log('Upload document for product:', product.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadDocument', productId: product.id } }));
   };
 
   return (
@@ -38,7 +38,7 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted">Image du produit</p>
-              <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />} className="mt-2">
+              <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />} className="mt-2" onClick={() => { window.open(product.image_url, '_blank'); }}>
                 Voir en taille reelle
               </Button>
             </div>
@@ -47,7 +47,7 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
           <div className="azals-empty azals-empty--sm">
             <Image size={32} className="text-muted" />
             <p className="text-muted">Aucune image principale</p>
-            <Button variant="secondary" size="sm" leftIcon={<Upload size={14} />} className="mt-2">
+            <Button variant="secondary" size="sm" leftIcon={<Upload size={14} />} className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadImage', productId: product.id } })); }}>
               Ajouter une image
             </Button>
           </div>
@@ -99,7 +99,7 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
                     {doc.type} - {formatFileSize(doc.size)} - {formatDateTime(doc.uploaded_at)}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={() => { window.open(doc.url, '_blank'); }}>
                   Telecharger
                 </Button>
               </div>
@@ -132,15 +132,15 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
       <Card title="Tracabilite" icon={<FileText size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{product.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDateTime(product.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDateTime(product.updated_at)}</div>
           </div>
         </Grid>

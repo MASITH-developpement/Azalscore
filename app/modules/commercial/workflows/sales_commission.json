@@ -1,0 +1,92 @@
+{
+  "module_id": "azalscore.commercial.sales_commission",
+  "version": "1.0.0",
+  "description": "Workflow de calcul et validation des commissions commerciales",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_sales_data",
+      "use": "azalscore.calculations.commercial.get_sales_by_rep@1.0.0",
+      "inputs": {
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}",
+        "sales_rep_ids": "{{context.sales_rep_ids}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "get_commission_plans",
+      "use": "azalscore.calculations.commercial.get_commission_plans@1.0.0",
+      "inputs": {
+        "sales_rep_ids": "{{context.sales_rep_ids}}",
+        "effective_date": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_commissions",
+      "use": "azalscore.calculations.commercial.calculate_commissions@1.0.0",
+      "inputs": {
+        "sales_data": "{{get_sales_data.sales}}",
+        "commission_plans": "{{get_commission_plans.plans}}",
+        "include_accelerators": true
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "apply_clawbacks",
+      "use": "azalscore.calculations.commercial.apply_commission_clawbacks@1.0.0",
+      "inputs": {
+        "commissions": "{{calculate_commissions.results}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "create_commission_entries",
+      "use": "azalscore.generators.accounting.create_commission_entries@1.0.0",
+      "inputs": {
+        "commissions": "{{apply_clawbacks.net_commissions}}",
+        "expense_account": "641100",
+        "payable_account": "421000",
+        "journal_code": "OD",
+        "date": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_commission_statements",
+      "use": "azalscore.generators.documents.generate_commission_statements@1.0.0",
+      "inputs": {
+        "commissions": "{{apply_clawbacks.net_commissions}}",
+        "period": "{{context.period_start}} - {{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "notify_sales_reps",
+      "use": "azalscore.generators.communications.send_commission_statements@1.0.0",
+      "inputs": {
+        "statements": "{{generate_commission_statements.statements}}",
+        "template": "commission_statement"
+      },
+      "retry": 3,
+      "timeout": 30000
+    }
+  ],
+  "outputs": {
+    "total_commissions": "{{calculate_commissions.total}}",
+    "total_clawbacks": "{{apply_clawbacks.total_clawbacks}}",
+    "net_commissions": "{{apply_clawbacks.net_total}}",
+    "reps_processed": "{{calculate_commissions.rep_count}}",
+    "accounting_entry_id": "{{create_commission_entries.entry_id}}"
+  }
+}

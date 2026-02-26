@@ -5,14 +5,14 @@
 
 import React from 'react';
 import {
-  FileText, Link2, ArrowRight, Upload, Download, File, Image, FileSpreadsheet
+  FileText, Link2, ArrowRight, Upload, File
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Document, RelatedDocument } from '../types';
-import { DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG } from '../types';
+import { Card } from '@ui/layout';
 import { formatDate, formatCurrency } from '@/utils/formatters';
+import { DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG } from '../types';
+import type { Document } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoicingDocumentsTab - Documents lies
@@ -23,7 +23,6 @@ export const InvoicingDocumentsTab: React.FC<TabContentProps<Document>> = ({ dat
   const childDocs = doc.children || [];
 
   const handleUpload = () => {
-    console.log('Upload attachment for document:', doc.id);
   };
 
   return (
@@ -45,7 +44,7 @@ export const InvoicingDocumentsTab: React.FC<TabContentProps<Document>> = ({ dat
                 {DOCUMENT_STATUS_CONFIG[parentDoc.status]?.label}
               </span>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'invoicing', params: { documentId: parentDoc.id } } })); }}>
               Voir
             </Button>
           </div>
@@ -74,7 +73,7 @@ export const InvoicingDocumentsTab: React.FC<TabContentProps<Document>> = ({ dat
                 <div className="text-right font-medium">
                   {formatCurrency(child.total)}
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'invoicing', params: { documentId: child.id } } })); }}>
                   Voir
                 </Button>
               </div>
@@ -134,7 +133,7 @@ export const InvoicingDocumentsTab: React.FC<TabContentProps<Document>> = ({ dat
         <div className="azals-empty azals-empty--sm">
           <File size={32} className="text-muted" />
           <p className="text-muted">Aucune piece jointe</p>
-          <Button variant="ghost" size="sm" leftIcon={<Upload size={14} />} onClick={handleUpload} className="mt-2">
+          <Button variant="ghost" size="sm" leftIcon={<Upload size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addAttachment', documentId: doc.id } })); }} className="mt-2">
             Ajouter un fichier
           </Button>
         </div>
@@ -146,7 +145,7 @@ export const InvoicingDocumentsTab: React.FC<TabContentProps<Document>> = ({ dat
           <Upload size={48} className="text-muted mx-auto mb-4" />
           <p className="text-muted mb-2">Glissez-deposez vos fichiers ici</p>
           <p className="text-sm text-muted mb-4">ou</p>
-          <Button variant="secondary" onClick={handleUpload}>
+          <Button variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addAttachment', documentId: doc.id } })); }}>
             Parcourir
           </Button>
           <p className="text-xs text-muted mt-4">

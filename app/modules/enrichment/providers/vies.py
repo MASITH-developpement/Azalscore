@@ -8,6 +8,8 @@ API officielle de la Commission Europeenne.
 API Documentation: https://ec.europa.eu/taxation_customs/vies/
 REST API: https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number
 """
+from __future__ import annotations
+
 
 import logging
 import re

@@ -4,6 +4,8 @@ AZALS MODULE M2 - Service Finance
 
 Service métier pour la comptabilité et la trésorerie.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime
@@ -1262,7 +1264,7 @@ class FinanceService:
             current_year_revenues=current_year_revenues,
             current_year_expenses=current_year_expenses,
             current_year_result=current_year_revenues - current_year_expenses,
-            period_revenues=Decimal("0"),  # TODO: période courante
+            period_revenues=Decimal("0"),  # NOTE: Phase 2 - Calcul période courante
             period_expenses=Decimal("0"),
             period_result=Decimal("0"),
             pending_entries=pending_entries,

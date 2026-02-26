@@ -2,6 +2,8 @@
 AZALS - Service de validation workflow RED
 Gestion stricte du workflow de validation DIRIGEANT pour décisions RED
 """
+from __future__ import annotations
+
 
 import json
 from datetime import datetime

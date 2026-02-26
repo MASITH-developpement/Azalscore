@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Affaire, TeamMember, AffaireIntervention } from '../types';
-import { formatDuration } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { formatDuration } from '../types';
+import type { Affaire, TeamMember, AffaireIntervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AffaireLinesTab - Interventions et ressources de l'affaire
@@ -82,7 +82,7 @@ export const AffaireLinesTab: React.FC<TabContentProps<Affaire>> = ({ data: affa
               <Users size={32} className="text-muted" />
               <p className="text-muted">Aucun membre assigné</p>
               {affaire.status !== 'TERMINE' && affaire.status !== 'ANNULE' && (
-                <Button size="sm" variant="ghost" leftIcon={<Plus size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Plus size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addTeamMember', affaireId: affaire.id } })); }}>
                   Ajouter un membre
                 </Button>
               )}

@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Send, X, Minimize2, Maximize2, Bot, User, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '@core/api-client';
-import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, User, Loader2, AlertCircle } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -81,7 +81,7 @@ export function MarceauChat({ position = 'bottom-right', defaultOpen = false }: 
         conversation_id: string;
         intent: string | null;
         confidence: number;
-      }>('/v1/marceau/chat/message', {
+      }>('/marceau/chat/message', {
         message: userMessage.content,
         conversation_id: conversationId,
       });
@@ -275,7 +275,14 @@ export function useMarceauChat() {
 
   const openChat = (initialMessage?: string) => {
     setIsOpen(true);
-    // TODO: Envoyer le message initial si fourni
+    if (initialMessage) {
+      // Dispatch event to send initial message after chat opens
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('marceau:send', {
+          detail: { message: initialMessage }
+        }));
+      }, 300);
+    }
   };
 
   const closeChat = () => {

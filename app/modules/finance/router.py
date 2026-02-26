@@ -4,6 +4,8 @@ AZALS MODULE M2 - Router Finance
 
 Endpoints API pour la comptabilité et la trésorerie.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

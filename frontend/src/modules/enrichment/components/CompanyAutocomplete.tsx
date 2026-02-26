@@ -6,8 +6,8 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { searchCompanyByName } from '../api';
-import type { CompanySuggestion, EnrichedContactFields } from '../types';
+import { searchCompanyByName, lookupSiret } from '../api';
+import type { CompanySuggestion, EnrichedContactFields, RiskData } from '../types';
 
 // ============================================================================
 // TYPES
@@ -17,6 +17,8 @@ export interface CompanyAutocompleteProps {
   value?: string;
   onChange?: (value: string) => void;
   onSelect?: (fields: EnrichedContactFields) => void;
+  /** Callback appelé automatiquement dès que les données de risque BODACC arrivent */
+  onRiskData?: (riskData: RiskData | null) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -32,6 +34,7 @@ export function CompanyAutocomplete({
   value = '',
   onChange,
   onSelect,
+  onRiskData,
   placeholder = 'Rechercher une entreprise...',
   disabled = false,
   className = '',
@@ -142,7 +145,7 @@ export function CompanyAutocomplete({
     [onChange, minLength, debounceMs]
   );
 
-  const handleSelectSuggestion = useCallback((suggestion: CompanySuggestion) => {
+  const handleSelectSuggestion = useCallback(async (suggestion: CompanySuggestion) => {
     // Mark that we're updating to prevent race conditions
     isUserTypingRef.current = true;
 
@@ -154,23 +157,80 @@ export function CompanyAutocomplete({
     setSuggestions([]);
     lastSearchRef.current = '';
 
-    // Create enriched fields from suggestion
-    const enrichedFields: EnrichedContactFields = {
-      name: suggestion.name,
-      company_name: suggestion.name,
-      siret: suggestion.siret,
-      siren: suggestion.siren,
-      address: suggestion.address,
-      address_line1: suggestion.address,
-      city: suggestion.city,
-      postal_code: suggestion.postal_code,
-    };
+    // Faire un lookup SIRET pour obtenir les données complètes (INSEE + BODACC)
+    if (suggestion.siret) {
+      try {
+        const response = await lookupSiret(suggestion.siret);
+        const fields = response?.enriched_fields as EnrichedContactFields;
+        if (fields) {
+          // Appeler onSelect avec les données complètes INSEE + BODACC
+          onSelect?.(fields);
 
-    onSelect?.(enrichedFields);
+          // Envoyer les données de risque séparément
+          if (onRiskData) {
+            if (fields._bodacc_risk_level || fields._risk_level) {
+              onRiskData({
+                level: fields._bodacc_risk_level || fields._risk_level,
+                label: fields._bodacc_risk_label || fields._risk_label,
+                reason: fields._bodacc_risk_reason || fields._risk_reason,
+                score: fields._bodacc_risk_score ?? fields._risk_score,
+                alerts: fields._bodacc_critical_alerts || [],
+                sources: fields._sources || [],
+              });
+            } else {
+              onRiskData(null);
+            }
+          }
+        } else {
+          // Fallback: données basiques de la suggestion si le lookup échoue
+          const basicFields: EnrichedContactFields = {
+            name: suggestion.name,
+            company_name: suggestion.name,
+            siret: suggestion.siret,
+            siren: suggestion.siren,
+            address: suggestion.address,
+            address_line1: suggestion.address,
+            city: suggestion.city,
+            postal_code: suggestion.postal_code,
+          };
+          onSelect?.(basicFields);
+          onRiskData?.(null);
+        }
+      } catch (err) {
+        console.error('Error fetching company data:', err);
+        // Fallback: données basiques de la suggestion
+        const basicFields: EnrichedContactFields = {
+          name: suggestion.name,
+          company_name: suggestion.name,
+          siret: suggestion.siret,
+          siren: suggestion.siren,
+          address: suggestion.address,
+          address_line1: suggestion.address,
+          city: suggestion.city,
+          postal_code: suggestion.postal_code,
+        };
+        onSelect?.(basicFields);
+        onRiskData?.(null);
+      }
+    } else {
+      // Pas de SIRET, utiliser les données basiques
+      const basicFields: EnrichedContactFields = {
+        name: suggestion.name,
+        company_name: suggestion.name,
+        siret: suggestion.siret,
+        siren: suggestion.siren,
+        address: suggestion.address,
+        address_line1: suggestion.address,
+        city: suggestion.city,
+        postal_code: suggestion.postal_code,
+      };
+      onSelect?.(basicFields);
+      onRiskData?.(null);
+    }
 
     // Reset typing flag after a short delay
     setTimeout(() => { isUserTypingRef.current = false; }, 100);
-  }, [onChange, onSelect]);
+  }, [onChange, onSelect, onRiskData]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions || suggestions.length === 0) return;

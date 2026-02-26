@@ -1,0 +1,31 @@
+# =============================================================================
+# AZALSCORE - Redirects Configuration
+# Compatible: Netlify, Cloudflare Pages, Render
+# =============================================================================
+
+# SPA fallback - toutes les routes vers index.html
+/*    /index.html   200
+
+# Redirections SEO - anciennes URLs vers nouvelles
+/fonctionnalites    /features   301
+/tarification       /pricing    301
+/demonstration      /demo       301
+/a-propos           /about      301
+/documentation      /docs       301
+
+# Redirections raccourcies
+/try                /essai-gratuit  301
+/trial              /essai-gratuit  301
+/free-trial         /essai-gratuit  301
+/start              /essai-gratuit  301
+/signup             /essai-gratuit  301
+
+# API redirections (pour compatibilite)
+/api/v1/*           /api/v3/:splat  301
+/api/v2/*           /api/v3/:splat  301
+
+# Fichiers SEO accessibles
+/robots.txt         /robots.txt     200
+/sitemap.xml        /sitemap.xml    200
+/ai.txt             /ai.txt         200
+/llms.txt           /llms.txt       200

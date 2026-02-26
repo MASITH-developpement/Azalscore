@@ -1,0 +1,111 @@
+{
+  "module_id": "azalscore.finance.supplier_invoice",
+  "version": "1.0.0",
+  "description": "Workflow de traitement des factures fournisseurs avec rapprochement commande",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_supplier",
+      "use": "azalscore.validators.commercial.validate_supplier@1.0.0",
+      "inputs": {
+        "supplier_id": "{{context.supplier_id}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "validate_supplier_iban",
+      "use": "azalscore.validators.common.validate_iban_format@1.0.0",
+      "inputs": {
+        "iban": "{{context.supplier_iban}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "match_purchase_order",
+      "condition": "{{context.purchase_order_id}} != null",
+      "use": "azalscore.calculations.finance.match_invoice_to_order@1.0.0",
+      "inputs": {
+        "invoice_lines": "{{context.invoice_lines}}",
+        "purchase_order_id": "{{context.purchase_order_id}}",
+        "tolerance_percent": 5
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_invoice_totals",
+      "use": "azalscore.calculations.commercial.calculate_document_total@1.0.0",
+      "inputs": {
+        "lines": "{{context.invoice_lines}}",
+        "currency": "{{context.currency}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "calculate_vat_deductible",
+      "use": "azalscore.calculations.tax.calculate_vat_deductible@1.0.0",
+      "inputs": {
+        "vat_amounts": "{{calculate_invoice_totals.vat_breakdown}}",
+        "supplier_vat_status": "{{validate_supplier.vat_status}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "create_accounting_entries",
+      "use": "azalscore.generators.accounting.create_supplier_invoice_entries@1.0.0",
+      "inputs": {
+        "supplier_account": "401000",
+        "expense_accounts": "{{context.expense_accounts}}",
+        "vat_account": "445660",
+        "invoice_lines": "{{context.invoice_lines}}",
+        "totals": "{{calculate_invoice_totals}}",
+        "journal_code": "AC",
+        "date": "{{context.invoice_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "schedule_payment",
+      "condition": "{{context.auto_schedule_payment}} == true",
+      "use": "azalscore.generators.payments.schedule_supplier_payment@1.0.0",
+      "inputs": {
+        "supplier_id": "{{context.supplier_id}}",
+        "amount": "{{calculate_invoice_totals.total_ttc}}",
+        "due_date": "{{context.payment_due_date}}",
+        "payment_terms": "{{validate_supplier.payment_terms}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "alert_variance",
+      "condition": "{{match_purchase_order.has_variance}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "invoice_variance",
+        "severity": "warning",
+        "title": "Ecart facture/commande",
+        "message": "Variance de {{match_purchase_order.variance_percent}}% detectee",
+        "data": "{{match_purchase_order.variance_details}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    }
+  ],
+  "outputs": {
+    "invoice_validated": true,
+    "total_ht": "{{calculate_invoice_totals.total_ht}}",
+    "total_vat": "{{calculate_invoice_totals.total_vat}}",
+    "total_ttc": "{{calculate_invoice_totals.total_ttc}}",
+    "vat_deductible": "{{calculate_vat_deductible.deductible_amount}}",
+    "accounting_entry_id": "{{create_accounting_entries.entry_id}}",
+    "order_matched": "{{match_purchase_order.is_matched}}",
+    "payment_scheduled": "{{schedule_payment.payment_id}}"
+  }
+}

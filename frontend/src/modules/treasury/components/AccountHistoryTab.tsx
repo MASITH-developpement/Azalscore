@@ -8,9 +8,9 @@ import {
   Clock, User, CheckCircle2, RefreshCw, Plus, Edit, ArrowRight
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { BankAccount, AccountHistoryEntry } from '../types';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
+import type { BankAccount, AccountHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AccountHistoryTab - Historique

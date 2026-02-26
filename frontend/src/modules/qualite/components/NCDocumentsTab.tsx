@@ -9,9 +9,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { NonConformance, NCDocument } from '../types';
 import { formatDate } from '@/utils/formatters';
+import type { NonConformance, NCDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * NCDocumentsTab - Documents
@@ -24,7 +24,6 @@ export const NCDocumentsTab: React.FC<TabContentProps<NonConformance>> = ({ data
   const others = documents.filter(d => !['photo', 'rapport'].includes(d.doc_type || '') && !d.mime_type?.startsWith('image/'));
 
   const handleAddDocument = () => {
-    console.log('Add document to NC', nc.id);
   };
 
   return (

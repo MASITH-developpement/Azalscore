@@ -4,6 +4,8 @@ AZALS MODULE T9 - Schémas Trial Registration
 
 Schémas Pydantic pour l'inscription à l'essai gratuit.
 """
+from __future__ import annotations
+
 
 import re
 from datetime import datetime

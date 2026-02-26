@@ -1,0 +1,97 @@
+{
+  "module_id": "azalscore.commercial.pricing_approval",
+  "version": "1.0.0",
+  "description": "Workflow d'approbation des prix speciaux et remises",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_pricing_request",
+      "use": "azalscore.validators.commercial.validate_pricing_request@1.0.0",
+      "inputs": {
+        "request_id": "{{context.request_id}}",
+        "customer_id": "{{context.customer_id}}",
+        "products": "{{context.products}}",
+        "requested_prices": "{{context.requested_prices}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "calculate_margin_impact",
+      "use": "azalscore.calculations.commercial.calculate_margin_impact@1.0.0",
+      "inputs": {
+        "products": "{{context.products}}",
+        "standard_prices": "{{validate_pricing_request.standard_prices}}",
+        "requested_prices": "{{context.requested_prices}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "check_approval_thresholds",
+      "use": "azalscore.validators.commercial.check_discount_thresholds@1.0.0",
+      "inputs": {
+        "discount_percentages": "{{calculate_margin_impact.discounts}}",
+        "requester_role": "{{context.requester_role}}",
+        "approval_matrix": "{{context.approval_matrix}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "get_customer_history",
+      "use": "azalscore.calculations.commercial.get_customer_purchase_history@1.0.0",
+      "inputs": {
+        "customer_id": "{{context.customer_id}}",
+        "months": 12
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "auto_approve",
+      "condition": "{{check_approval_thresholds.auto_approved}} == true",
+      "use": "azalscore.transformers.status.approve_pricing_request@1.0.0",
+      "inputs": {
+        "request_id": "{{context.request_id}}",
+        "approved_by": "system",
+        "reason": "Within auto-approval threshold"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "route_for_approval",
+      "condition": "{{check_approval_thresholds.auto_approved}} == false",
+      "use": "azalscore.transformers.workflow.route_for_approval@1.0.0",
+      "inputs": {
+        "request_id": "{{context.request_id}}",
+        "approver_level": "{{check_approval_thresholds.required_level}}",
+        "margin_impact": "{{calculate_margin_impact}}",
+        "customer_history": "{{get_customer_history}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "notify_requester",
+      "use": "azalscore.generators.communications.send_pricing_status@1.0.0",
+      "inputs": {
+        "requester_email": "{{context.requester_email}}",
+        "request_id": "{{context.request_id}}",
+        "status": "{{auto_approve.status || route_for_approval.status}}",
+        "approver": "{{check_approval_thresholds.required_approver}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "request_id": "{{context.request_id}}",
+    "status": "{{auto_approve.status || route_for_approval.status}}",
+    "discount_percentage": "{{calculate_margin_impact.average_discount}}",
+    "margin_impact": "{{calculate_margin_impact.total_impact}}",
+    "approval_level": "{{check_approval_thresholds.required_level}}"
+  }
+}

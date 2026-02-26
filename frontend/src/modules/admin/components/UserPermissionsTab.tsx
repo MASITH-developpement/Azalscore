@@ -5,14 +5,14 @@
 
 import React, { useState } from 'react';
 import {
-  Shield, CheckCircle2, XCircle, Eye, Edit3,
+  Shield, CheckCircle2, Eye, Edit3,
   Trash2, Settings, Lock, Search
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Input } from '@ui/forms';
-import type { TabContentProps } from '@ui/standards';
-import type { AdminUser, Permission } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { PERMISSION_CATEGORY_CONFIG } from '../types';
+import type { AdminUser, Permission } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * UserPermissionsTab - Permissions utilisateur
@@ -130,7 +130,7 @@ export const UserPermissionsTab: React.FC<TabContentProps<AdminUser>> = ({ data:
         ) : (
           <div className="azals-empty azals-empty--sm">
             <Search size={32} className="text-muted" />
-            <p className="text-muted">Aucune permission trouvee pour "{searchTerm}"</p>
+            <p className="text-muted">Aucune permission trouvee pour &quot;{searchTerm}&quot;</p>
           </div>
         )}
       </Card>

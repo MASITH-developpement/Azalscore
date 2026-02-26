@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { FileText, Download, ExternalLink, Upload, Calendar } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Audit, AuditDocument } from '../types';
-import { formatFileSize } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate, formatDateTime } from '@/utils/formatters';
+import { formatFileSize } from '../types';
+import type { Audit, AuditDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AuditDocumentsTab - Documents de l'audit
@@ -32,7 +32,7 @@ export const AuditDocumentsTab: React.FC<TabContentProps<Audit>> = ({ data: audi
           <div className="flex items-center gap-4 p-4 bg-green-50 rounded border border-green-200">
             <FileText size={32} className="text-green-500" />
             <div className="flex-1">
-              <div className="font-medium">Rapport d'audit - {audit.code}</div>
+              <div className="font-medium">Rapport d&apos;audit - {audit.code}</div>
               <div className="text-sm text-muted">
                 {audit.report_date ? `Emis le ${formatDate(audit.report_date)}` : 'Rapport disponible'}
               </div>
@@ -82,13 +82,13 @@ export const AuditDocumentsTab: React.FC<TabContentProps<Audit>> = ({ data: audi
       {/* Actions documents (ERP only) */}
       <Card title="Gestion des documents" className="mt-4 azals-std-field--secondary">
         <Grid cols={3} gap="md">
-          <Button variant="secondary" className="justify-start" leftIcon={<Upload size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<Upload size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addDocument', auditId: audit.id } })); }}>
             Ajouter un document
           </Button>
-          <Button variant="secondary" className="justify-start" leftIcon={<FileText size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<FileText size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'generateReport', auditId: audit.id } })); }}>
             Generer rapport
           </Button>
-          <Button variant="secondary" className="justify-start" leftIcon={<Download size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<Download size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'exportAllDocuments', auditId: audit.id } })); }}>
             Exporter tous les documents
           </Button>
         </Grid>
@@ -98,15 +98,15 @@ export const AuditDocumentsTab: React.FC<TabContentProps<Audit>> = ({ data: audi
       <Card title="Tracabilite" icon={<Calendar size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{audit.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDateTime(audit.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDateTime(audit.updated_at)}</div>
           </div>
         </Grid>

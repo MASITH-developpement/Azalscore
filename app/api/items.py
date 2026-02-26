@@ -4,15 +4,18 @@ AZALS - Endpoints Items Multi-Tenant ÉLITE
 CRUD sécurisé avec isolation stricte par tenant_id.
 Pagination standardisée pour performance.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
-from app.core.models import Item
+from app.core.models import Item, User
 from app.core.pagination import PaginationParams, get_pagination_params, paginate_query
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -52,6 +55,7 @@ class PaginatedItemsResponse(BaseModel):
 @router.post("/", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
 def create_item(
     item_data: ItemCreate,
+    current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db)
 ):
@@ -59,6 +63,8 @@ def create_item(
     Crée un item pour le tenant courant.
     Le tenant_id est injecté automatiquement depuis X-Tenant-ID.
     AUCUNE possibilité de créer pour un autre tenant.
+
+    SÉCURITÉ: Authentification requise.
     """
     # Création de l'item avec tenant_id forcé
     db_item = Item(
@@ -76,6 +82,7 @@ def create_item(
 
 @router.get("/", response_model=PaginatedItemsResponse)
 def list_items(
+    current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id),
     pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db)
@@ -84,6 +91,8 @@ def list_items(
     Liste UNIQUEMENT les items du tenant courant.
     Filtrage strict par tenant_id : isolation totale.
     PAGINÉ: Utiliser skip/limit pour performances optimales.
+
+    SÉCURITÉ: Authentification requise.
 
     Paramètres:
     - skip: Nombre d'éléments à sauter (défaut: 0)
@@ -110,6 +119,7 @@ def list_items(
 @router.get("/{item_id}", response_model=ItemResponse)
 def get_item(
     item_id: int,
+    current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db)
 ):
@@ -117,6 +127,8 @@ def get_item(
     Récupère un item par ID.
     Vérifie que l'item appartient au tenant courant.
     404 si item inexistant OU appartient à un autre tenant.
+
+    SÉCURITÉ: Authentification requise.
     """
     item = db.query(Item).filter(
         Item.id == item_id,
@@ -136,12 +148,15 @@ def get_item(
 def update_item(
     item_id: int,
     item_data: ItemCreate,
+    current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db)
 ):
     """
     Met à jour un item du tenant courant.
     Impossible de modifier un item d'un autre tenant.
+
+    SÉCURITÉ: Authentification requise.
     """
     item = db.query(Item).filter(
         Item.id == item_id,
@@ -167,12 +182,15 @@ def update_item(
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(
     item_id: int,
+    current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db)
 ):
     """
     Supprime un item du tenant courant.
     Impossible de supprimer un item d'un autre tenant.
+
+    SÉCURITÉ: Authentification requise.
     """
     item = db.query(Item).filter(
         Item.id == item_id,

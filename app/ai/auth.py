@@ -6,6 +6,8 @@ L'authentification sert à vérifier l'identité, pas à limiter l'autorité lé
 
 Conformité: AZA-SEC-002, AZA-SEC-003
 """
+from __future__ import annotations
+
 
 import os
 import uuid
@@ -352,10 +354,7 @@ class AIAuthManager:
         # SÉCURITÉ: Ne JAMAIS logger le code MFA
         logger.info("[AUTH] MFA code initiated for %s (code masked for security)", email)
 
-        # TODO: Implémenter l'envoi réel par email
-        # from app.modules.email.service import EmailService
-        # email_service = EmailService(db, tenant_id)
-        # await email_service.send_mfa_code(email, code)
+        # NOTE: Phase 2 - Envoi via EmailService.send_mfa_code()
 
     def _invalidate_session(self, session_id: str):
         """Invalide une session"""

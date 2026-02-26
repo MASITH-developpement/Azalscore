@@ -9,14 +9,14 @@ import {
   Phone, Mail, AlertTriangle, Wrench, Package, Lock, ShieldAlert
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import { formatDate, formatDuration } from '@/utils/formatters';
 import {
   formatAddress,
   PRIORITE_CONFIG, TYPE_CONFIG, STATUT_CONFIG,
   isLate, getDaysUntilIntervention
 } from '../types';
-import { formatDate, formatTime, formatDuration } from '@/utils/formatters';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionInfoTab - Informations générales de l'intervention
@@ -96,7 +96,7 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
             </div>
             {intervention.donneur_ordre_name && (
               <div className="azals-dl__row">
-                <dt>Donneur d'ordre</dt>
+                <dt>Donneur d&apos;ordre</dt>
                 <dd>{intervention.donneur_ordre_name}</dd>
               </div>
             )}
@@ -180,7 +180,7 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
       </Grid>
 
       {/* Adresse d'intervention */}
-      <Card title="Lieu d'intervention" icon={<MapPin size={18} />} className="mt-4">
+      <Card title="Lieu d&apos;intervention" icon={<MapPin size={18} />} className="mt-4">
         <div className="azals-address-block">
           <p className="font-medium">{formatAddress(intervention)}</p>
           {intervention.contact_sur_place && (

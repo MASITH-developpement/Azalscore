@@ -9,10 +9,9 @@ import {
   CheckCircle, AlertTriangle, Search, X
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { NonConformance, NCHistoryEntry } from '../types';
-import { NC_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { NonConformance, NCHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * NCHistoryTab - Historique

@@ -66,9 +66,14 @@ async def stripe_webhook(
             return {"status": "processed_with_errors", "event_type": event_type}
 
     except Exception as e:
-        logger.error(f"[WEBHOOK] Error processing {event_type}: {e}")
+        logger.error(
+            f"[WEBHOOK] Error processing {event_type}",
+            extra={"error": str(e)[:200]},
+            exc_info=True
+        )
+        # SÉCURITÉ: Ne pas exposer les détails d'erreur internes
         # Retourner 200 pour éviter les retries Stripe
-        return {"status": "error", "event_type": event_type, "message": str(e)}
+        return {"status": "error", "event_type": event_type, "message": "Internal processing error"}
     
     finally:
         db.close()

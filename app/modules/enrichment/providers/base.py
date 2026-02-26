@@ -4,6 +4,8 @@ AZALS MODULE - Auto-Enrichment - Base Provider
 
 Classe abstraite pour tous les fournisseurs d'enrichissement.
 """
+from __future__ import annotations
+
 
 import hashlib
 import json

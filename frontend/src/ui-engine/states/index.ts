@@ -4,9 +4,9 @@
  */
 
 import { create } from 'zustand';
-import type { ModuleInfo, Tenant } from '@/types';
 import { api } from '@core/api-client';
 import { logError } from '@core/error-handling';
+import type { ModuleInfo, Tenant } from '@/types';
 
 // ============================================================
 // UI GLOBAL STATE
@@ -73,8 +73,8 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
   loadModules: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<{ modules: ModuleInfo[] }>('/v1/modules');
-      set({ modules: response.data.modules, isLoading: false });
+      const response = await api.get<{ modules: ModuleInfo[] }>('/modules');
+      set({ modules: response.data?.modules ?? [], isLoading: false });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load modules',
@@ -114,7 +114,7 @@ export const useTenantStore = create<TenantState>((set) => ({
   loadTenant: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<Tenant>('/v1/tenant/current');
+      const response = await api.get<Tenant>('/tenant/current');
       set({ tenant: response.data, isLoading: false });
     } catch (error) {
       set({
@@ -152,7 +152,7 @@ interface NotificationState {
   markAllAsRead: () => Promise<void>;
 }
 
-export const useNotificationStore = create<NotificationState>((set, get) => ({
+export const useNotificationStore = create<NotificationState>((set, _get) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
@@ -160,8 +160,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   loadNotifications: async () => {
     set({ isLoading: true });
     try {
-      const response = await api.get<{ notifications: Notification[] }>('/v1/notifications');
-      const notifications = response.data.notifications;
+      const response = await api.get<{ notifications: Notification[] }>('/notifications');
+      const notifications = response.data?.notifications ?? [];
       set({
         notifications,
         unreadCount: notifications.filter((n) => !n.read).length,
@@ -174,7 +174,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAsRead: async (id: string) => {
     try {
-      await api.post(`/v1/notifications/${id}/read`);
+      await api.post(`/notifications/${id}/read`);
       set((state) => ({
         notifications: state.notifications.map((n) =>
           n.id === id ? { ...n, read: true } : n
@@ -188,7 +188,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAllAsRead: async () => {
     try {
-      await api.post('/v1/notifications/read-all');
+      await api.post('/notifications/read-all');
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, read: true })),
         unreadCount: 0,

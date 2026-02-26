@@ -561,7 +561,7 @@
 }
 
 .azals-guardian-card__action-status {
-  font-family: monospace;
+  font-family: var(--azals-font-mono);
 }
 
 .azals-guardian-card__action-type {

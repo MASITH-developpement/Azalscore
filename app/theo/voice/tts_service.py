@@ -5,6 +5,8 @@ THÉO — Service TTS (Text-to-Speech)
 Abstraction pour la synthèse vocale.
 Providers interchangeables: ElevenLabs, Google, Azure, etc.
 """
+from __future__ import annotations
+
 
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, AsyncIterator, List

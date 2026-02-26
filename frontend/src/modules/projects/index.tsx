@@ -5,12 +5,17 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Folder, ClipboardList, CheckCircle, RefreshCw, Clock, BarChart3,
+  DollarSign, ArrowLeft, Edit, Printer,
+  Sparkles, FileText, CheckSquare
+} from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -19,25 +24,11 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import {
-  Folder, ClipboardList, CheckCircle, RefreshCw, Clock, BarChart3,
-  DollarSign, ArrowLeft, Edit, Send, Printer, Trash2, Target,
-  User, Sparkles, FileText, CheckSquare
-} from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
 // Types et helpers
-import type { Project, Task, TimeEntry, ProjectStats } from './types';
-import {
-  PROJECT_STATUS_CONFIG, TASK_STATUS_CONFIG, PRIORITY_CONFIG,
-  getDaysRemaining, getBudgetUsedPercent, getTaskCountByStatus,
-  getTotalLoggedHours, isProjectOverdue, isProjectNearDeadline,
-  isBudgetOverrun
-} from './types';
 import { formatDate, formatCurrency, formatHours, formatPercent } from '@/utils/formatters';
-
-// Composants tabs
 import {
   ProjectInfoTab,
   ProjectTasksTab,
@@ -46,6 +37,15 @@ import {
   ProjectHistoryTab,
   ProjectIATab
 } from './components';
+import {
+  PROJECT_STATUS_CONFIG, PRIORITY_CONFIG,
+  getDaysRemaining, getBudgetUsedPercent, getTaskCountByStatus,
+  getTotalLoggedHours, isProjectOverdue, isProjectNearDeadline,
+  isBudgetOverrun
+} from './types';
+import type { Project, Task, TimeEntry, ProjectStats } from './types';
+
+// Composants tabs
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -83,23 +83,24 @@ const useProjectStats = () => {
   return useQuery({
     queryKey: ['projects', 'stats'],
     queryFn: async () => {
-      const response = await api.get<ProjectStats>('/v1/projects/summary').then(r => r.data);
+      const response = await api.get<ProjectStats>('/projects/summary').then(r => r.data);
       return response;
     }
   });
 };
 
 const useProjects = (filters?: { status?: string; client_id?: string }) => {
+  // Query key avec valeurs primitives (évite cache miss sur référence objet)
   return useQuery({
-    queryKey: ['projects', 'list', filters],
+    queryKey: ['projects', 'list', filters?.status ?? null, filters?.client_id ?? null],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.client_id) params.append('client_id', filters.client_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/projects?${queryString}` : '/v1/projects';
-      const response = await api.get<{ items: Project[] } | Project[]>(url).then(r => r.data);
-      return (response as any)?.items || response as Project[];
+      const url = queryString ? `/projects?${queryString}` : '/projects';
+      const response = await api.get<{ items: Project[] }>(url).then(r => r.data);
+      return response?.items || [];
     }
   });
 };
@@ -108,7 +109,7 @@ const useProject = (id: string) => {
   return useQuery({
     queryKey: ['projects', 'detail', id],
     queryFn: async () => {
-      const response = await api.get<Project>(`/v1/projects/${id}`).then(r => r.data);
+      const response = await api.get<Project>(`/projects/${id}`).then(r => r.data);
       return response;
     },
     enabled: !!id
@@ -116,42 +117,44 @@ const useProject = (id: string) => {
 };
 
 const useTasks = (filters?: { status?: string; project_id?: string; assignee_id?: string }) => {
+  // Query key avec valeurs primitives (évite cache miss sur référence objet)
   return useQuery({
-    queryKey: ['projects', 'tasks', filters],
+    queryKey: ['projects', 'tasks', filters?.status ?? null, filters?.project_id ?? null, filters?.assignee_id ?? null],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.project_id) params.append('project_id', filters.project_id);
       if (filters?.assignee_id) params.append('assignee_id', filters.assignee_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/projects/tasks?${queryString}` : '/v1/projects/tasks';
-      const response = await api.get<{ items: Task[] } | Task[]>(url).then(r => r.data);
-      return (response as any)?.items || response as Task[];
+      const url = queryString ? `/projects/tasks?${queryString}` : '/projects/tasks';
+      const response = await api.get<{ items: Task[] }>(url).then(r => r.data);
+      return response?.items || [];
     }
   });
 };
 
 const useTimeEntries = (filters?: { project_id?: string; date_from?: string; date_to?: string }) => {
+  // Query key avec valeurs primitives (évite cache miss sur référence objet)
   return useQuery({
-    queryKey: ['projects', 'time-entries', filters],
+    queryKey: ['projects', 'time-entries', filters?.project_id ?? null, filters?.date_from ?? null, filters?.date_to ?? null],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.project_id) params.append('project_id', filters.project_id);
       if (filters?.date_from) params.append('date_from', filters.date_from);
       if (filters?.date_to) params.append('date_to', filters.date_to);
       const queryString = params.toString();
-      const url = queryString ? `/v1/projects/time-entries?${queryString}` : '/v1/projects/time-entries';
+      const url = queryString ? `/projects/time-entries?${queryString}` : '/projects/time-entries';
       const response = await api.get<TimeEntry[]>(url).then(r => r.data);
       return response;
     }
   });
 };
 
-const useCreateProject = () => {
+const _useCreateProject = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Project>) => {
-      return api.post<Project>('/v1/projects', data).then(r => r.data);
+      return api.post<Project>('/projects', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -163,7 +166,7 @@ const useUpdateTaskStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch<Task>(`/v1/projects/tasks/${id}/status`, { status }).then(r => r.data);
+      return api.patch<Task>(`/projects/tasks/${id}/status`, { status }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', 'tasks'] });
@@ -176,7 +179,7 @@ const useLogTime = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { project_id: string; task_id?: string; date: string; hours: number; description?: string; is_billable?: boolean }) => {
-      return api.post<TimeEntry>('/v1/projects/time-entries', data).then(r => r.data);
+      return api.post<TimeEntry>('/projects/time-entries', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', 'time-entries'] });
@@ -492,10 +495,10 @@ const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({
             options={[{ value: '', label: 'Tous statuts' }, ...PROJECT_STATUS]}
             className="w-36"
           />
-          <Button>Nouveau projet</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:modal', { detail: { type: 'project-create' } })); }}>Nouveau projet</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -590,10 +593,10 @@ const TasksView: React.FC = () => {
             options={[{ value: '', label: 'Tous statuts' }, ...TASK_STATUS]}
             className="w-32"
           />
-          <Button>Nouvelle tache</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:modal', { detail: { type: 'task-create' } })); }}>Nouvelle tache</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -662,7 +665,7 @@ const TimesheetView: React.FC = () => {
             <Button onClick={() => setShowLogModal(true)}>Saisir du temps</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" error={timeError instanceof Error ? timeError : null} onRetry={() => timeRefetch()} />
+        <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" filterable error={timeError instanceof Error ? timeError : null} onRetry={() => timeRefetch()} />
       </Card>
 
       {showLogModal && (

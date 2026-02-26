@@ -123,7 +123,9 @@ export interface TabDefinition<T = unknown> {
   /** Onglet IA (styling spécial en mode AZALSCORE) */
   isIA?: boolean;
   /** Composant à rendre pour ce tab */
-  component: React.ComponentType<TabContentProps<T>>;
+  component?: React.ComponentType<TabContentProps<T>>;
+  /** Contenu JSX direct (alternative à component) */
+  content?: React.ReactNode;
 }
 
 /**

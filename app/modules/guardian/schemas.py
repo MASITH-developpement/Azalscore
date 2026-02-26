@@ -4,6 +4,8 @@ AZALS MODULE GUARDIAN - Schémas Pydantic
 
 Schémas de validation et sérialisation pour l'API GUARDIAN.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Any

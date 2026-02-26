@@ -18,16 +18,9 @@ from typing import Optional, Set
 from uuid import UUID
 import enum
 
-
-class UserRole(str, enum.Enum):
-    """Rôles utilisateur SaaS AZALSCORE."""
-    SUPERADMIN = "SUPERADMIN"  # Créateur système
-    DIRIGEANT = "DIRIGEANT"    # Dirigeant tenant
-    ADMIN = "ADMIN"            # Administrateur tenant
-    DAF = "DAF"                # Directeur Administratif et Financier
-    COMPTABLE = "COMPTABLE"    # Comptable
-    COMMERCIAL = "COMMERCIAL"  # Commercial
-    EMPLOYE = "EMPLOYE"        # Employé standard
+# Import canonical de UserRole depuis models.py
+# Ré-exporté ici pour compatibilité avec les imports existants
+from app.core.models import UserRole  # noqa: F401 - re-export intentionnel
 
 
 class TenantScope(str, enum.Enum):

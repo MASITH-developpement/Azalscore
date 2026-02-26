@@ -3,6 +3,8 @@ AZALS MODULE 17 - Field Service Service
 ========================================
 Logique métier pour la gestion des interventions terrain.
 """
+from __future__ import annotations
+
 
 import uuid
 from datetime import date, datetime, timedelta

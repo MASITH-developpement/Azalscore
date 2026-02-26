@@ -1,0 +1,107 @@
+{
+  "module_id": "azalscore.finance.process_payment",
+  "version": "1.0.0",
+  "description": "Workflow de traitement de paiement avec lettrage automatique et comptabilisation",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_payment",
+      "use": "azalscore.validators.finance.validate_payment@1.0.0",
+      "inputs": {
+        "amount": "{{context.payment_amount}}",
+        "currency": "{{context.currency}}",
+        "payment_method": "{{context.payment_method}}",
+        "reference": "{{context.payment_reference}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "validate_bank_account",
+      "use": "azalscore.validators.common.validate_iban_format@1.0.0",
+      "inputs": {
+        "iban": "{{context.bank_iban}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "find_invoices_to_match",
+      "use": "azalscore.calculations.finance.find_matching_invoices@1.0.0",
+      "inputs": {
+        "customer_id": "{{context.customer_id}}",
+        "amount": "{{context.payment_amount}}",
+        "tolerance": 0.01
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_payment_entry",
+      "use": "azalscore.generators.accounting.create_journal_entry@1.0.0",
+      "inputs": {
+        "journal_code": "BQ",
+        "date": "{{context.payment_date}}",
+        "description": "Paiement {{context.payment_reference}}",
+        "lines": [
+          {
+            "account": "512000",
+            "debit": "{{context.payment_amount}}",
+            "credit": 0
+          },
+          {
+            "account": "411000",
+            "debit": 0,
+            "credit": "{{context.payment_amount}}"
+          }
+        ]
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "perform_lettering",
+      "condition": "{{find_invoices_to_match.matches_found}} == true",
+      "use": "azalscore.calculations.finance.perform_account_lettering@1.0.0",
+      "inputs": {
+        "payment_entry_id": "{{create_payment_entry.entry_id}}",
+        "invoice_entries": "{{find_invoices_to_match.invoice_entries}}",
+        "letter_code": "{{context.letter_code}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "update_invoice_status",
+      "condition": "{{find_invoices_to_match.fully_paid}} == true",
+      "use": "azalscore.transformers.status.update_document_status@1.0.0",
+      "inputs": {
+        "document_type": "invoice",
+        "document_ids": "{{find_invoices_to_match.invoice_ids}}",
+        "new_status": "paid"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "send_receipt",
+      "condition": "{{context.send_receipt}} == true",
+      "use": "azalscore.generators.communications.generate_payment_receipt@1.0.0",
+      "inputs": {
+        "customer_email": "{{context.customer_email}}",
+        "payment_amount": "{{context.payment_amount}}",
+        "payment_date": "{{context.payment_date}}",
+        "invoices_paid": "{{find_invoices_to_match.invoice_numbers}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "payment_entry_id": "{{create_payment_entry.entry_id}}",
+    "lettering_code": "{{perform_lettering.letter_code}}",
+    "invoices_matched": "{{find_invoices_to_match.invoice_ids}}",
+    "remaining_amount": "{{find_invoices_to_match.remaining_amount}}"
+  }
+}

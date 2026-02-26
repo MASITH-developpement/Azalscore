@@ -5,6 +5,8 @@ AZALS MODULE M2A - Service OCR
 Service d'extraction OCR pour les documents comptables.
 Supporte plusieurs moteurs: Tesseract, AWS Textract, Azure Cognitive Services.
 """
+from __future__ import annotations
+
 
 import hashlib
 import logging

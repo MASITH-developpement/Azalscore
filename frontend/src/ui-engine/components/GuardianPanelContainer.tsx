@@ -5,11 +5,11 @@
  */
 
 import React, { useCallback } from 'react';
-import { GuardianPanel } from './GuardianPanel';
 import {
   useIncidentStore,
   GuardianActions,
 } from '@/core/guardian/incident-store';
+import { GuardianPanel } from './GuardianPanel';
 
 export const GuardianPanelContainer: React.FC = () => {
   const {
@@ -41,7 +41,6 @@ export const GuardianPanelContainer: React.FC = () => {
         GuardianActions.goToCockpit(incidentId);
         break;
       default:
-        console.warn('[GUARDIAN] Unknown action:', action);
     }
   }, []);
 

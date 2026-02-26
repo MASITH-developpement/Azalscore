@@ -5,6 +5,8 @@ THÉO — REST API
 REST endpoints pour l'intégration texte et le contrôle.
 Utilisé en complément ou fallback du WebSocket.
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, HTTPException, Depends, Query, Body

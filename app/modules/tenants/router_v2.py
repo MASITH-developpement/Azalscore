@@ -22,6 +22,8 @@ ENDPOINTS MIGRÉS (30):
 - Provisioning (2): provision + provision_masith
 - Platform (1): stats
 """
+from __future__ import annotations
+
 
 from datetime import datetime, timedelta
 
@@ -92,7 +94,7 @@ def verify_tenant_ownership(context: SaaSContext, tenant_id: str) -> None:
     - Utilise context.role et context.tenant_id
     """
     # Super admin peut tout faire
-    if context.role == UserRole.SUPER_ADMIN:
+    if context.role == UserRole.SUPERADMIN:
         return
 
     # Vérifier que l'utilisateur appartient au tenant
@@ -110,7 +112,7 @@ def require_super_admin(context: SaaSContext) -> None:
     ✅ MIGRÉ CORE SaaS:
     - Utilise context.role
     """
-    if context.role != UserRole.SUPER_ADMIN:
+    if context.role != UserRole.SUPERADMIN:
         raise HTTPException(
             status_code=403,
             detail="Accès refusé. Droits super_admin requis pour cette opération."
@@ -124,7 +126,7 @@ def require_tenant_admin(context: SaaSContext) -> None:
     ✅ MIGRÉ CORE SaaS:
     - Utilise context.role
     """
-    if context.role not in [UserRole.SUPER_ADMIN, UserRole.DIRIGEANT, UserRole.ADMIN]:
+    if context.role not in [UserRole.SUPERADMIN, UserRole.DIRIGEANT, UserRole.ADMIN]:
         raise HTTPException(
             status_code=403,
             detail="Accès refusé. Rôle ADMIN ou DIRIGEANT requis."

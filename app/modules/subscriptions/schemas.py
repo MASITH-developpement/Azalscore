@@ -3,6 +3,8 @@ AZALS MODULE 14 - Subscriptions Schemas
 ========================================
 Schémas Pydantic pour validation et sérialisation.
 """
+from __future__ import annotations
+
 
 import datetime
 from decimal import Decimal

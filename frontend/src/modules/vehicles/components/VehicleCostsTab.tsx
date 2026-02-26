@@ -9,13 +9,13 @@ import {
   Leaf, Euro, PieChart, BarChart3
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Vehicule } from '../types';
 import { formatCurrency } from '@/utils/formatters';
 import {
   calculCoutKm, getCO2Km, formatCurrencyKm, formatKilometers,
   getTotalMaintenanceCost, getTotalMileageCost, getTotalCO2Emissions
 } from '../types';
+import type { Vehicule } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * VehicleCostsTab - Couts detailles du vehicule

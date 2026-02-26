@@ -4,6 +4,8 @@ AZALS MODULE - Marceau Schemas
 
 Schemas Pydantic pour validation des donnees Marceau.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Any
@@ -372,6 +374,10 @@ class MarceauDashboardResponse(BaseModel):
     avg_confidence_score: float
     avg_response_time_seconds: float
     tokens_used_today: int
+
+    # Statut LLM
+    llm_configured: bool = False
+    llm_provider: str | None = None
 
 
 class ModuleStatsResponse(BaseModel):

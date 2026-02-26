@@ -1,0 +1,110 @@
+{
+  "module_id": "azalscore.commercial.quote_to_order",
+  "version": "1.0.0",
+  "description": "Workflow de conversion devis en commande avec validation et generation documents",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_quote",
+      "use": "azalscore.validators.commercial.validate_quote@1.0.0",
+      "inputs": {
+        "quote_id": "{{context.quote_id}}",
+        "check_validity": true,
+        "check_stock": "{{context.check_stock}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "verify_customer_credit",
+      "use": "azalscore.validators.commercial.check_customer_credit@1.0.0",
+      "inputs": {
+        "customer_id": "{{context.customer_id}}",
+        "order_amount": "{{validate_quote.total_ttc}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_order_number",
+      "use": "azalscore.generators.sequences.generate_sequence_number@1.0.0",
+      "inputs": {
+        "sequence_type": "sales_order",
+        "prefix": "CMD",
+        "fiscal_year": "{{context.fiscal_year}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "create_sales_order",
+      "use": "azalscore.transformers.documents.convert_quote_to_order@1.0.0",
+      "inputs": {
+        "quote_id": "{{context.quote_id}}",
+        "order_number": "{{generate_order_number.number}}",
+        "order_date": "{{context.order_date}}",
+        "delivery_date": "{{context.requested_delivery_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "reserve_stock",
+      "condition": "{{context.reserve_stock}} == true",
+      "use": "azalscore.transformers.inventory.reserve_stock@1.0.0",
+      "inputs": {
+        "order_id": "{{create_sales_order.order_id}}",
+        "lines": "{{create_sales_order.order_lines}}",
+        "warehouse_id": "{{context.warehouse_id}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "update_quote_status",
+      "use": "azalscore.transformers.status.update_document_status@1.0.0",
+      "inputs": {
+        "document_type": "quote",
+        "document_id": "{{context.quote_id}}",
+        "new_status": "converted",
+        "linked_document": "{{create_sales_order.order_id}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "generate_order_confirmation",
+      "use": "azalscore.generators.documents.generate_order_confirmation_pdf@1.0.0",
+      "inputs": {
+        "order_id": "{{create_sales_order.order_id}}",
+        "order_number": "{{generate_order_number.number}}",
+        "customer": "{{validate_quote.customer_data}}",
+        "lines": "{{create_sales_order.order_lines}}",
+        "totals": "{{create_sales_order.totals}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "send_confirmation_email",
+      "condition": "{{context.send_confirmation}} == true",
+      "use": "azalscore.generators.communications.send_order_confirmation@1.0.0",
+      "inputs": {
+        "customer_email": "{{validate_quote.customer_data.email}}",
+        "order_number": "{{generate_order_number.number}}",
+        "pdf_url": "{{generate_order_confirmation.url}}",
+        "delivery_date": "{{context.requested_delivery_date}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "order_id": "{{create_sales_order.order_id}}",
+    "order_number": "{{generate_order_number.number}}",
+    "order_total": "{{create_sales_order.totals.total_ttc}}",
+    "stock_reserved": "{{reserve_stock.reserved}}",
+    "confirmation_url": "{{generate_order_confirmation.url}}"
+  }
+}

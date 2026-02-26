@@ -4,6 +4,8 @@ AZALS MODULE M4 - Router Achats
 
 Endpoints API pour la gestion des achats.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

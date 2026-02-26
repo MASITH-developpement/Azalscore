@@ -10,15 +10,11 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Link2,
-  Unlink,
   Check,
   X,
-  Search,
-  Filter,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -28,21 +24,19 @@ import {
   Calendar,
   Hash,
   Plus,
-  RefreshCw,
   Settings,
   Eye,
   ArrowRight,
   Zap,
   Target,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
 import { Modal, Input, Select, TextArea } from '@ui/forms';
+import { PageWrapper, Card } from '@ui/layout';
 import { ErrorState } from '../../../ui-engine/components/StateViews';
-import type { TableColumn } from '@/types';
 
 // ============================================================
 // TYPES
@@ -202,7 +196,7 @@ const useDeleteRule = () => {
   });
 };
 
-const useUnreconcile = () => {
+const _useUnreconcile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -231,7 +225,7 @@ const formatCurrency = (value: number, currency = 'EUR') =>
 const formatDate = (dateStr: string | null) =>
   dateStr ? new Date(dateStr).toLocaleDateString('fr-FR') : '-';
 
-const formatDateTime = (dateStr: string) =>
+const _formatDateTime = (dateStr: string) =>
   new Date(dateStr).toLocaleString('fr-FR');
 
 const formatPercent = (value: number) =>
@@ -364,7 +358,7 @@ const TransactionCard: React.FC<{
           {transaction.suggested_matches.length > 0 && (
             <StatusBadge variant="info" size="sm" status={`${transaction.suggested_matches.length} suggestion(s)`} />
           )}
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
             {expanded ? 'Masquer' : 'Voir suggestions'}
           </Button>
         </div>
@@ -444,7 +438,7 @@ const TransactionCard: React.FC<{
             <div className="azals-auto-accounting__no-matches">
               <AlertTriangle size={20} />
               <p>Aucune correspondance trouvée automatiquement</p>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'searchManually', transactionId: transaction.id } })); }}>
                 Rechercher manuellement
               </Button>
             </div>
@@ -530,7 +524,7 @@ const RulesWidget: React.FC<{
         <div className="azals-empty-state azals-empty-state--small">
           <p>Aucune règle configurée</p>
           <p className="azals-text--muted">
-            Les règles permettent d'améliorer le rapprochement automatique
+            Les règles permettent d&apos;améliorer le rapprochement automatique
           </p>
         </div>
       )}
@@ -578,8 +572,9 @@ const AddRuleModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} title="Créer une règle" size="lg">
       <div className="azals-auto-accounting__rule-form">
         <div className="azals-form-group">
-          <label className="azals-form-label">Nom de la règle</label>
+          <label htmlFor="rule-name" className="azals-form-label">Nom de la règle</label>
           <Input
+            id="rule-name"
             value={name}
             onChange={(value) => setName(value)}
             placeholder="Ex: Loyer mensuel, Abonnement téléphone..."
@@ -588,8 +583,9 @@ const AddRuleModal: React.FC<{
 
         <div className="azals-form-row">
           <div className="azals-form-group">
-            <label className="azals-form-label">Champ à analyser</label>
+            <label htmlFor="rule-pattern-field" className="azals-form-label">Champ à analyser</label>
             <Select
+              id="rule-pattern-field"
               value={patternField}
               onChange={(value) => setPatternField(value)}
               options={[
@@ -601,8 +597,9 @@ const AddRuleModal: React.FC<{
           </div>
 
           <div className="azals-form-group">
-            <label className="azals-form-label">Type de correspondance</label>
+            <label htmlFor="rule-pattern-type" className="azals-form-label">Type de correspondance</label>
             <Select
+              id="rule-pattern-type"
               value={patternType}
               onChange={(value) => setPatternType(value as 'EXACT' | 'CONTAINS' | 'REGEX')}
               options={[
@@ -615,8 +612,9 @@ const AddRuleModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Valeur à rechercher</label>
+          <label htmlFor="rule-pattern-value" className="azals-form-label">Valeur à rechercher</label>
           <Input
+            id="rule-pattern-value"
             value={patternValue}
             onChange={(value) => setPatternValue(value)}
             placeholder={
@@ -629,8 +627,9 @@ const AddRuleModal: React.FC<{
 
         <div className="azals-form-row">
           <div className="azals-form-group">
-            <label className="azals-form-label">Action</label>
+            <label htmlFor="rule-target-type" className="azals-form-label">Action</label>
             <Select
+              id="rule-target-type"
               value={targetType}
               onChange={(value) => setTargetType(value as 'DOCUMENT' | 'ACCOUNT' | 'JOURNAL')}
               options={[
@@ -642,7 +641,7 @@ const AddRuleModal: React.FC<{
           </div>
 
           <div className="azals-form-group">
-            <label className="azals-form-label">
+            <label htmlFor="rule-target-value" className="azals-form-label">
               {targetType === 'ACCOUNT'
                 ? 'Code compte'
                 : targetType === 'JOURNAL'
@@ -650,6 +649,7 @@ const AddRuleModal: React.FC<{
                 : 'ID document'}
             </label>
             <Input
+              id="rule-target-value"
               value={targetValue}
               onChange={(value) => setTargetValue(value)}
               placeholder={
@@ -664,8 +664,9 @@ const AddRuleModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Priorité (1-100)</label>
+          <label htmlFor="rule-priority" className="azals-form-label">Priorité (1-100)</label>
           <Input
+            id="rule-priority"
             type="number"
             value={String(priority)}
             onChange={(value) => {
@@ -759,8 +760,9 @@ const ReconcileModal: React.FC<{
         )}
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Notes (optionnel)</label>
+          <label htmlFor="reconcile-notes" className="azals-form-label">Notes (optionnel)</label>
           <TextArea
+            id="reconcile-notes"
             value={notes}
             onChange={(value) => setNotes(value)}
             placeholder="Commentaire sur ce rapprochement..."

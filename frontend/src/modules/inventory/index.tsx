@@ -6,42 +6,28 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
 import {
   Box, AlertTriangle, DollarSign, BarChart3, Clock, ClipboardList,
-  Package, Tag, MapPin, ArrowLeft, Edit, Trash2, Eye, Printer,
-  ArrowUpRight, ArrowDownRight, RefreshCw, Layers, Hash, Sparkles
+  Package, Tag, MapPin, ArrowLeft, Edit, Eye, Printer,
+  RefreshCw, Hash, Sparkles
 } from 'lucide-react';
-import type { TableColumn } from '@/types';
-import type { SemanticColor } from '@ui/standards';
+import { api } from '@core/api-client';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
   type InfoBarItem,
   type SidebarSection,
   type ActionDefinition
-} from '@ui/standards';
-
-// Types et helpers
-import type {
-  Category, Warehouse, Location, Product, Lot, Serial,
-  Movement, InventoryCount, InventoryCountLine, Picking, PickingLine,
-  InventoryDashboard, MovementType, MovementStatus
-} from './types';
-import {
-  formatQuantity,
-  MOVEMENT_TYPE_CONFIG, MOVEMENT_STATUS_CONFIG,
-  PICKING_TYPE_CONFIG, PICKING_STATUS_CONFIG,
-  isLowStock, isOutOfStock, isOverstock, getStockLevel, getStockLevelLabel
-} from './types';
+, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import { BarcodeLookup } from '@/modules/enrichment';
+import type { EnrichedProductFields } from '@/modules/enrichment';
+import type { TableColumn } from '@/types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-
-// Composants tabs
 import {
   ProductInfoTab,
   ProductStockTab,
@@ -50,10 +36,23 @@ import {
   ProductHistoryTab,
   ProductIATab
 } from './components';
+import {
+  formatQuantity,
+  MOVEMENT_TYPE_CONFIG, MOVEMENT_STATUS_CONFIG,
+  PICKING_TYPE_CONFIG, PICKING_STATUS_CONFIG,
+  isLowStock, isOutOfStock, getStockLevel, getStockLevelLabel
+} from './types';
+import type {
+  Category, Warehouse, Location, Product,
+  Movement, InventoryCount, Picking,
+  InventoryDashboard, MovementType, MovementStatus
+} from './types';
+
+// Types et helpers
+
+// Composants tabs
 
 // Auto-enrichissement produit par code-barres
-import { BarcodeLookup } from '@/modules/enrichment';
-import type { EnrichedProductFields } from '@/modules/enrichment';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -91,7 +90,7 @@ const useInventoryDashboard = () => {
   return useQuery({
     queryKey: ['inventory', 'dashboard'],
     queryFn: async () => {
-      return api.get<InventoryDashboard>('/v1/inventory/dashboard').then(r => r.data);
+      return api.get<InventoryDashboard>('/inventory/dashboard').then(r => r.data);
     }
   });
 };
@@ -100,7 +99,7 @@ const useCategories = () => {
   return useQuery({
     queryKey: ['inventory', 'categories'],
     queryFn: async () => {
-      const response = await api.get<{ items: Category[] }>('/v1/inventory/categories').then(r => r.data);
+      const response = await api.get<{ items: Category[] }>('/inventory/categories').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -110,7 +109,7 @@ const useWarehouses = () => {
   return useQuery({
     queryKey: ['inventory', 'warehouses'],
     queryFn: async () => {
-      const response = await api.get<{ items: Warehouse[] }>('/v1/inventory/warehouses').then(r => r.data);
+      const response = await api.get<{ items: Warehouse[] }>('/inventory/warehouses').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -121,8 +120,8 @@ const useLocations = (warehouseId?: string) => {
     queryKey: ['inventory', 'locations', warehouseId],
     queryFn: async () => {
       const url = warehouseId
-        ? `/v1/inventory/locations?warehouse_id=${encodeURIComponent(warehouseId)}`
-        : '/v1/inventory/locations';
+        ? `/inventory/locations?warehouse_id=${encodeURIComponent(warehouseId)}`
+        : '/inventory/locations';
       const response = await api.get<{ items: Location[] }>(url).then(r => r.data);
       return response?.items || [];
     }
@@ -133,7 +132,7 @@ const useProducts = () => {
   return useQuery({
     queryKey: ['inventory', 'products'],
     queryFn: async () => {
-      const response = await api.get<{ items: Product[] }>('/v1/inventory/products').then(r => r.data);
+      const response = await api.get<{ items: Product[] }>('/inventory/products').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -143,7 +142,7 @@ const useProduct = (id: string) => {
   return useQuery({
     queryKey: ['inventory', 'products', id],
     queryFn: async () => {
-      return api.get<Product>(`/v1/inventory/products/${id}`).then(r => r.data);
+      return api.get<Product>(`/inventory/products/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -153,7 +152,7 @@ const useMovements = () => {
   return useQuery({
     queryKey: ['inventory', 'movements'],
     queryFn: async () => {
-      const response = await api.get<{ items: Movement[] }>('/v1/inventory/movements').then(r => r.data);
+      const response = await api.get<{ items: Movement[] }>('/inventory/movements').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -163,7 +162,7 @@ const usePickings = () => {
   return useQuery({
     queryKey: ['inventory', 'pickings'],
     queryFn: async () => {
-      const response = await api.get<{ items: Picking[] }>('/v1/inventory/pickings').then(r => r.data);
+      const response = await api.get<{ items: Picking[] }>('/inventory/pickings').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -173,7 +172,7 @@ const useInventoryCounts = () => {
   return useQuery({
     queryKey: ['inventory', 'counts'],
     queryFn: async () => {
-      const response = await api.get<{ items: InventoryCount[] }>('/v1/inventory/counts').then(r => r.data);
+      const response = await api.get<{ items: InventoryCount[] }>('/inventory/counts').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -183,7 +182,7 @@ const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Product>) => {
-      return api.post('/v1/inventory/products', data).then(r => r.data);
+      return api.post('/inventory/products', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'products'] })
   });
@@ -193,7 +192,7 @@ const useCreateMovement = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Movement>) => {
-      return api.post('/v1/inventory/movements', data).then(r => r.data);
+      return api.post('/inventory/movements', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory'] })
   });
@@ -203,7 +202,7 @@ const useValidateMovement = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v1/inventory/movements/${id}/validate`).then(r => r.data);
+      return api.post(`/inventory/movements/${id}/validate`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory'] })
   });
@@ -220,7 +219,7 @@ interface ProductDetailViewProps {
 
 const ProductDetailView: React.FC<ProductDetailViewProps> = ({ productId, onBack }) => {
   const { data: product, isLoading, error, refetch } = useProduct(productId);
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   if (isLoading) {
     return (
@@ -385,7 +384,8 @@ const ProductDetailView: React.FC<ProductDetailViewProps> = ({ productId, onBack
       id: 'print',
       label: 'Imprimer',
       icon: <Printer size={16} />,
-      variant: 'secondary'
+      variant: 'secondary',
+      onClick: () => { window.print(); }
     }
   ];
 
@@ -395,13 +395,15 @@ const ProductDetailView: React.FC<ProductDetailViewProps> = ({ productId, onBack
       id: 'edit',
       label: 'Modifier',
       icon: <Edit size={16} />,
-      variant: 'secondary'
+      variant: 'secondary',
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editProduct', productId: product.id } })); }
     },
     {
       id: 'movement',
       label: 'Nouveau mouvement',
       icon: <RefreshCw size={16} />,
-      variant: 'primary'
+      variant: 'primary',
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMovement', productId: product.id } })); }
     }
   ];
 
@@ -521,7 +523,7 @@ const ProductsView: React.FC<ProductsViewProps> = ({ onSelectProduct }) => {
         <h3 className="text-lg font-semibold">Articles</h3>
         <Button onClick={() => setShowModal(true)}>Nouvel article</Button>
       </div>
-      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel article" size="lg">
         <form onSubmit={handleSubmit}>
@@ -650,9 +652,9 @@ const WarehousesView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Entrepôts</h3>
-        <Button>Nouvel entrepôt</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createWarehouse' } })); }}>Nouvel entrepôt</Button>
       </div>
-      <DataTable columns={columns} data={warehouses} isLoading={isLoading} keyField="id" error={whError instanceof Error ? whError : null} onRetry={() => whRefetch()} />
+      <DataTable columns={columns} data={warehouses} isLoading={isLoading} keyField="id" filterable error={whError instanceof Error ? whError : null} onRetry={() => whRefetch()} />
     </Card>
   );
 };
@@ -716,7 +718,7 @@ const MovementsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Mouvements de stock</h3>
         <Button onClick={() => setShowModal(true)}>Nouveau mouvement</Button>
       </div>
-      <DataTable columns={columns} data={movements} isLoading={isLoading} keyField="id" error={mvError instanceof Error ? mvError : null} onRetry={() => mvRefetch()} />
+      <DataTable columns={columns} data={movements} isLoading={isLoading} keyField="id" filterable error={mvError instanceof Error ? mvError : null} onRetry={() => mvRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau mouvement" size="lg">
         <form onSubmit={handleSubmit}>
@@ -830,7 +832,7 @@ const PickingsView: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Préparations</h3>
       </div>
-      <DataTable columns={columns} data={pickings} isLoading={isLoading} keyField="id" error={pickError instanceof Error ? pickError : null} onRetry={() => pickRefetch()} />
+      <DataTable columns={columns} data={pickings} isLoading={isLoading} keyField="id" filterable error={pickError instanceof Error ? pickError : null} onRetry={() => pickRefetch()} />
     </Card>
   );
 };
@@ -863,9 +865,9 @@ const InventoryCountsView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Inventaires</h3>
-        <Button>Nouvel inventaire</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createInventoryCount' } })); }}>Nouvel inventaire</Button>
       </div>
-      <DataTable columns={columns} data={counts} isLoading={isLoading} keyField="id" error={countError instanceof Error ? countError : null} onRetry={() => countRefetch()} />
+      <DataTable columns={columns} data={counts} isLoading={isLoading} keyField="id" filterable error={countError instanceof Error ? countError : null} onRetry={() => countRefetch()} />
     </Card>
   );
 };

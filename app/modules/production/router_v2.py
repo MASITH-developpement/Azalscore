@@ -9,6 +9,8 @@ AZALS MODULE PRODUCTION - Router API v2 (CORE SaaS)
 
 API REST pour la gestion de production (Manufacturing).
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID
@@ -102,7 +104,8 @@ async def list_work_centers(
 ):
     """✅ MIGRÉ CORE SaaS: Lister les centres de travail"""
     service = get_production_service(db, context.tenant_id)
-    return service.list_work_centers(status=status)
+    items, _ = service.list_work_centers(status=status)
+    return items
 
 
 @router.get("/work-centers/{wc_id}", response_model=WorkCenterResponse)
@@ -614,4 +617,4 @@ async def get_production_dashboard(
 ):
     """✅ MIGRÉ CORE SaaS: Récupérer le dashboard de production"""
     service = get_production_service(db, context.tenant_id)
-    return service.get_production_dashboard()
+    return service.get_dashboard()

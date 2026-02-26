@@ -4,8 +4,8 @@
 
 import React from 'react';
 import { useUser } from '@core/auth';
-import { PageWrapper, Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 
 const ProfilePage: React.FC = () => {
   const user = useUser();
@@ -16,19 +16,19 @@ const ProfilePage: React.FC = () => {
         <Card title="Informations personnelles">
           <div className="azals-profile__info">
             <div className="azals-profile__field">
-              <label>Nom</label>
+              <span className="azals-profile__label">Nom</span>
               <span>{user?.name}</span>
             </div>
             <div className="azals-profile__field">
-              <label>Email</label>
+              <span className="azals-profile__label">Email</span>
               <span>{user?.email}</span>
             </div>
             <div className="azals-profile__field">
-              <label>Rôles</label>
-              <span>{user?.roles.join(', ')}</span>
+              <span className="azals-profile__label">Rôles</span>
+              <span>{user?.roles?.join(', ') || 'Aucun rôle'}</span>
             </div>
             <div className="azals-profile__field">
-              <label>Dernière connexion</label>
+              <span className="azals-profile__label">Dernière connexion</span>
               <span>{user?.last_login ? new Date(user.last_login).toLocaleString('fr-FR') : 'N/A'}</span>
             </div>
           </div>

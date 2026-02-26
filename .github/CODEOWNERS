@@ -1,0 +1,104 @@
+# =============================================================================
+# AZALS - Code Owners
+# =============================================================================
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Les code owners sont automatiquement sollicites pour review
+# lors de la creation d'une PR touchant leurs fichiers.
+# =============================================================================
+
+# =============================================================================
+# GLOBAL - Tous les fichiers
+# =============================================================================
+* @azals/core-team
+
+# =============================================================================
+# INFRASTRUCTURE & DEVOPS
+# =============================================================================
+/.github/                       @azals/devops @azals/security
+/docker-compose*.yml            @azals/devops
+/Dockerfile*                    @azals/devops
+/scripts/                       @azals/devops
+/alembic/                       @azals/backend-leads
+/alembic.ini                    @azals/backend-leads
+
+# =============================================================================
+# SECURITE - Revue obligatoire equipe securite
+# =============================================================================
+/app/core/security/             @azals/security
+/app/core/auth/                 @azals/security
+/app/modules/iam/               @azals/security
+/app/modules/guardian/          @azals/security
+/app/modules/audit/             @azals/security
+/.secrets.baseline              @azals/security
+/sonar-project.properties       @azals/security
+/.pre-commit-config.yaml        @azals/security
+
+# =============================================================================
+# CORE - Architecture et services de base
+# =============================================================================
+/app/core/                      @azals/backend-leads
+/app/azals.py                   @azals/backend-leads
+/app/main.py                    @azals/backend-leads
+
+# =============================================================================
+# MODULES FINANCIERS - Comptabilite, Tresorerie, Facturation
+# =============================================================================
+/app/modules/accounting/        @azals/finance-team @azals/backend-leads
+/app/modules/treasury/          @azals/finance-team
+/app/modules/finance/           @azals/finance-team
+/app/modules/pos/               @azals/finance-team
+/app/modules/subscriptions/     @azals/finance-team
+/app/modules/stripe_integration/ @azals/finance-team @azals/security
+
+# =============================================================================
+# MODULES COMMERCIAUX
+# =============================================================================
+/app/modules/commercial/        @azals/crm-team
+/app/modules/contacts/          @azals/crm-team
+/app/modules/ecommerce/         @azals/crm-team
+
+# =============================================================================
+# MODULES OPERATIONNELS
+# =============================================================================
+/app/modules/inventory/         @azals/ops-team
+/app/modules/production/        @azals/ops-team
+/app/modules/projects/          @azals/ops-team
+/app/modules/maintenance/       @azals/ops-team
+/app/modules/field_service/     @azals/ops-team
+
+# =============================================================================
+# MODULES IA / AI
+# =============================================================================
+/app/modules/ai_assistant/      @azals/ai-team
+/app/modules/marceau/           @azals/ai-team
+
+# =============================================================================
+# CONFIGURATION & TENANTS
+# =============================================================================
+/app/modules/tenants/           @azals/backend-leads @azals/security
+/app/modules/autoconfig/        @azals/backend-leads
+
+# =============================================================================
+# FRONTEND
+# =============================================================================
+/frontend/                      @azals/frontend-team
+/frontend/src/modules/          @azals/frontend-team
+
+# =============================================================================
+# TESTS
+# =============================================================================
+/tests/                         @azals/qa-team
+
+# =============================================================================
+# DOCUMENTATION
+# =============================================================================
+/docs/                          @azals/documentation
+*.md                            @azals/documentation
+
+# =============================================================================
+# CONFIGURATION CRITIQUE - Approbation multiple requise
+# =============================================================================
+/requirements.txt               @azals/security @azals/devops
+/pyproject.toml                 @azals/backend-leads @azals/devops
+/.env.example                   @azals/security

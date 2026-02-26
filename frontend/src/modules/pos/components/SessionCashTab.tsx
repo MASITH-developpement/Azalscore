@@ -6,16 +6,16 @@
 import React from 'react';
 import {
   Banknote, ArrowUpCircle, ArrowDownCircle, AlertTriangle,
-  CheckCircle2, Calculator, TrendingUp, TrendingDown
+  CheckCircle2, Calculator, TrendingUp
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { POSSession, CashMovement } from '../types';
+import { formatCurrency, formatTime } from '@/utils/formatters';
 import {
   CASH_MOVEMENT_TYPE_CONFIG,
   hasCashDifference, hasSignificantDifference, isSessionClosed
 } from '../types';
-import { formatCurrency, formatDateTime, formatTime } from '@/utils/formatters';
+import type { POSSession, CashMovement } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SessionCashTab - Gestion de caisse
@@ -70,19 +70,19 @@ export const SessionCashTab: React.FC<TabContentProps<POSSession>> = ({ data: se
         >
           <Grid cols={3} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Solde declare</label>
+              <span className="azals-field__label">Solde declare</span>
               <div className="azals-field__value text-xl font-bold">
                 {formatCurrency(session.closing_balance || 0)}
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Solde attendu</label>
+              <span className="azals-field__label">Solde attendu</span>
               <div className="azals-field__value text-xl font-bold">
                 {formatCurrency(session.expected_balance || 0)}
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Ecart</label>
+              <span className="azals-field__label">Ecart</span>
               <div className={`azals-field__value text-xl font-bold ${
                 !hasCashDifference(session) ? 'text-green-600' :
                 hasSignificantDifference(session) ? 'text-red-600' : 'text-orange-600'

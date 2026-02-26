@@ -4,15 +4,15 @@
  */
 
 import React from 'react';
-import { Package, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Seller, MarketplaceProduct } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   PRODUCT_STATUS_CONFIG,
   isProductLowStock, isProductOutOfStock
 } from '../types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Seller, MarketplaceProduct } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SellerProductsTab - Produits du vendeur
@@ -96,7 +96,7 @@ export const SellerProductsTab: React.FC<TabContentProps<Seller>> = ({ data: sel
       <Card title="Statistiques produits" icon={<Package size={18} />} className="mt-4 azals-std-field--secondary">
         <div className="grid grid-cols-3 gap-4">
           <div className="azals-field">
-            <label className="azals-field__label">Valeur totale stock</label>
+            <span className="azals-field__label">Valeur totale stock</span>
             <div className="azals-field__value text-lg font-medium">
               {formatCurrency(
                 products.reduce((sum, p) => sum + (p.price * p.stock), 0)
@@ -104,7 +104,7 @@ export const SellerProductsTab: React.FC<TabContentProps<Seller>> = ({ data: sel
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Prix moyen</label>
+            <span className="azals-field__label">Prix moyen</span>
             <div className="azals-field__value text-lg font-medium">
               {products.length > 0
                 ? formatCurrency(products.reduce((sum, p) => sum + p.price, 0) / products.length)
@@ -112,7 +112,7 @@ export const SellerProductsTab: React.FC<TabContentProps<Seller>> = ({ data: sel
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Categories</label>
+            <span className="azals-field__label">Categories</span>
             <div className="azals-field__value text-lg font-medium">
               {new Set(products.map(p => p.category)).size}
             </div>

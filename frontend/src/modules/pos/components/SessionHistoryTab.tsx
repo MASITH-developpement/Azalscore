@@ -9,10 +9,10 @@ import {
   PauseCircle, ArrowRight
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { POSSession, SessionHistoryEntry } from '../types';
-import { SESSION_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { SESSION_STATUS_CONFIG } from '../types';
+import type { POSSession, SessionHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SessionHistoryTab - Historique de la session

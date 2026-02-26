@@ -26,11 +26,11 @@
 
 import React, { useState, useCallback } from 'react';
 import { clsx } from 'clsx';
+import { FooterActions } from './FooterActions';
 import { HeaderStandard } from './HeaderStandard';
 import { MainInfoBar } from './MainInfoBar';
-import { TabsStandard } from './TabsStandard';
 import { SidebarSummary } from './SidebarSummary';
-import { FooterActions } from './FooterActions';
+import { TabsStandard } from './TabsStandard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import type { BaseViewStandardProps } from './types';
 

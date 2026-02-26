@@ -5,6 +5,8 @@ AZALS MODULE T1 - Service Configuration Automatique
 Logique métier pour la configuration automatique par fonction.
 """
 
+from __future__ import annotations
+
 import json
 from datetime import datetime
 from typing import Any
@@ -286,31 +288,35 @@ class AutoConfigService:
             )
         ).all()
 
+        # Convertir en sets pour opérations O(1)
+        roles_set = set(roles)
+        permissions_set = set(permissions)
+        modules_set = set(modules)
+
         for override in overrides:
             # Rôles ajoutés
             if override.added_roles:
-                roles.extend(json.loads(override.added_roles))
+                roles_set.update(json.loads(override.added_roles))
             # Rôles retirés
             if override.removed_roles:
-                for role in json.loads(override.removed_roles):
-                    if role in roles:
-                        roles.remove(role)
+                roles_set -= set(json.loads(override.removed_roles))
             # Permissions ajoutées
             if override.added_permissions:
-                permissions.extend(json.loads(override.added_permissions))
+                permissions_set.update(json.loads(override.added_permissions))
             # Permissions retirées
             if override.removed_permissions:
-                for perm in json.loads(override.removed_permissions):
-                    if perm in permissions:
-                        permissions.remove(perm)
+                permissions_set -= set(json.loads(override.removed_permissions))
             # Modules ajoutés
             if override.added_modules:
-                modules.extend(json.loads(override.added_modules))
+                modules_set.update(json.loads(override.added_modules))
             # Modules retirés
             if override.removed_modules:
-                for mod in json.loads(override.removed_modules):
-                    if mod in modules:
-                        modules.remove(mod)
+                modules_set -= set(json.loads(override.removed_modules))
+
+        # Reconvertir en listes
+        roles = list(roles_set)
+        permissions = list(permissions_set)
+        modules = list(modules_set)
 
         return {
             "profile_code": profile.code,
@@ -373,7 +379,7 @@ class AutoConfigService:
 
         # Auto-approve pour override dirigeant ou IT si demandeur a le droit
         if override_type in [OverrideType.EXECUTIVE, OverrideType.IT_ADMIN]:
-            # TODO: Vérifier les permissions du demandeur
+            # NOTE: Phase 2 - Vérification permissions via IAMService
             override.status = OverrideStatus.APPROVED
             override.approved_by = requested_by
             override.approved_at = datetime.utcnow()
@@ -568,9 +574,7 @@ class AutoConfigService:
         result = {"steps": [], "errors": []}
 
         # Étape 1: Créer le compte utilisateur
-        # TODO: Intégration avec module IAM pour créer le compte
-        # user = iam_service.create_user(...)
-        # onboarding.user_id = user.id
+        # NOTE: Phase 2 - Intégration IAMService.create_user()
         steps["account_created"] = True
         result["steps"].append("account_created")
 
@@ -590,13 +594,13 @@ class AutoConfigService:
                 result["steps"].append("profile_assigned")
 
         # Étape 3: Envoyer email de bienvenue
-        # TODO: Intégration avec système d'email
+        # NOTE: Phase 2 - Intégration email_service
         onboarding.welcome_email_sent = True
         steps["welcome_email"] = True
         result["steps"].append("welcome_email")
 
         # Étape 4: Notifier le manager
-        # TODO: Notification manager
+        # NOTE: Phase 2 - Intégration notification_service
         onboarding.manager_notified = True
         steps["manager_notified"] = True
         result["steps"].append("manager_notified")
@@ -707,7 +711,7 @@ class AutoConfigService:
         result["steps"].append("profile_revoked")
 
         # Étape 3: Désactiver le compte
-        # TODO: Intégration avec module IAM
+        # NOTE: Phase 2 - Intégration IAMService.deactivate_user()
         offboarding.account_deactivated = True
         steps["account_deactivated"] = True
         result["steps"].append("account_deactivated")

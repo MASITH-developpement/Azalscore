@@ -1,0 +1,83 @@
+{
+  "module_id": "azalscore.commercial.contract_renewal",
+  "version": "1.0.0",
+  "description": "Workflow de renouvellement de contrat avec alertes et generation automatique",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_expiring_contracts",
+      "use": "azalscore.calculations.commercial.get_expiring_contracts@1.0.0",
+      "inputs": {
+        "days_ahead": "{{context.days_ahead}}",
+        "contract_types": "{{context.contract_types}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_renewal_terms",
+      "use": "azalscore.calculations.commercial.calculate_renewal_terms@1.0.0",
+      "inputs": {
+        "contracts": "{{get_expiring_contracts.contracts}}",
+        "price_increase_rate": "{{context.price_increase_rate}}",
+        "apply_loyalty_discount": "{{context.apply_loyalty_discount}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "assess_customer_health",
+      "use": "azalscore.calculations.commercial.calculate_customer_health@1.0.0",
+      "inputs": {
+        "customer_ids": "{{get_expiring_contracts.customer_ids}}",
+        "include_payment_history": true,
+        "include_support_tickets": true
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "generate_renewal_proposals",
+      "use": "azalscore.generators.documents.generate_renewal_proposals@1.0.0",
+      "inputs": {
+        "contracts": "{{get_expiring_contracts.contracts}}",
+        "new_terms": "{{calculate_renewal_terms.proposals}}",
+        "customer_health": "{{assess_customer_health.scores}}"
+      },
+      "retry": 2,
+      "timeout": 20000
+    },
+    {
+      "id": "send_renewal_reminders",
+      "use": "azalscore.generators.communications.send_renewal_reminders@1.0.0",
+      "inputs": {
+        "contracts": "{{get_expiring_contracts.contracts}}",
+        "proposals": "{{generate_renewal_proposals.proposals}}",
+        "template": "contract_renewal"
+      },
+      "retry": 3,
+      "timeout": 30000
+    },
+    {
+      "id": "notify_sales_team",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "contract_renewals",
+        "severity": "info",
+        "title": "Contrats a renouveler",
+        "message": "{{get_expiring_contracts.count}} contrats expirent dans les {{context.days_ahead}} prochains jours",
+        "data": "{{get_expiring_contracts.summary}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    }
+  ],
+  "outputs": {
+    "contracts_expiring": "{{get_expiring_contracts.count}}",
+    "total_renewal_value": "{{calculate_renewal_terms.total_value}}",
+    "proposals_generated": "{{generate_renewal_proposals.count}}",
+    "reminders_sent": "{{send_renewal_reminders.sent_count}}",
+    "at_risk_contracts": "{{assess_customer_health.at_risk_count}}"
+  }
+}

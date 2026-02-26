@@ -9,6 +9,8 @@ Chaque entreprise cliente = 1 Tenant isolé
 - Trial de 14 jours
 - Modules de base activés selon le plan
 """
+from __future__ import annotations
+
 
 import re
 import secrets
@@ -97,10 +99,81 @@ class SignupError(Exception):
 
 
 class SignupService:
-    """Service de signup pour nouvelles entreprises."""
+    """Service de signup pour nouvelles entreprises avec validations de sécurité."""
+
+    # Regex pour validation email (RFC 5322 simplifié)
+    EMAIL_PATTERN = re.compile(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    )
+
+    # Configuration des mots de passe
+    PASSWORD_MIN_LENGTH = 12
+    PASSWORD_REQUIRE_UPPERCASE = True
+    PASSWORD_REQUIRE_LOWERCASE = True
+    PASSWORD_REQUIRE_DIGIT = True
+    PASSWORD_REQUIRE_SPECIAL = True
+
+    # Caractères spéciaux autorisés
+    SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?"
 
     def __init__(self, db: Session):
         self.db = db
+
+    def _validate_email(self, email: str) -> bool:
+        """Valide le format d'une adresse email."""
+        if not email or len(email) > 254:
+            return False
+        return bool(self.EMAIL_PATTERN.match(email))
+
+    def _validate_password(self, password: str) -> tuple[bool, str]:
+        """
+        Valide la complexité d'un mot de passe.
+
+        Returns:
+            Tuple (is_valid, error_message)
+        """
+        if len(password) < self.PASSWORD_MIN_LENGTH:
+            return False, f"Le mot de passe doit contenir au moins {self.PASSWORD_MIN_LENGTH} caractères"
+
+        if self.PASSWORD_REQUIRE_UPPERCASE and not any(c.isupper() for c in password):
+            return False, "Le mot de passe doit contenir au moins une majuscule"
+
+        if self.PASSWORD_REQUIRE_LOWERCASE and not any(c.islower() for c in password):
+            return False, "Le mot de passe doit contenir au moins une minuscule"
+
+        if self.PASSWORD_REQUIRE_DIGIT and not any(c.isdigit() for c in password):
+            return False, "Le mot de passe doit contenir au moins un chiffre"
+
+        if self.PASSWORD_REQUIRE_SPECIAL and not any(c in self.SPECIAL_CHARS for c in password):
+            return False, f"Le mot de passe doit contenir au moins un caractère spécial ({self.SPECIAL_CHARS})"
+
+        return True, ""
+
+    def _validate_siret(self, siret: str) -> bool:
+        """
+        Valide un numéro SIRET français (14 chiffres, algorithme de Luhn).
+        """
+        if not siret:
+            return True  # SIRET est optionnel
+
+        # Nettoyer (enlever espaces)
+        siret_clean = re.sub(r'\s', '', siret)
+
+        # Doit contenir exactement 14 chiffres
+        if not re.match(r'^\d{14}$', siret_clean):
+            return False
+
+        # Algorithme de Luhn
+        total = 0
+        for i, char in enumerate(siret_clean):
+            digit = int(char)
+            if i % 2 == 0:
+                digit *= 2
+                if digit > 9:
+                    digit -= 9
+            total += digit
+
+        return total % 10 == 0
 
     def signup(
         self,
@@ -138,17 +211,44 @@ class SignupService:
                 "login_url": "/login",
             }
         """
-        # 1. Générer le tenant_id depuis le nom de l'entreprise
+        # 1. Valider les entrées (SÉCURITÉ)
+
+        # Valider les emails
+        if not self._validate_email(admin_email):
+            raise SignupError("INVALID_EMAIL", "Format d'email administrateur invalide")
+
+        if not self._validate_email(company_email):
+            raise SignupError("INVALID_EMAIL", "Format d'email entreprise invalide")
+
+        # Valider le mot de passe
+        is_valid, password_error = self._validate_password(admin_password)
+        if not is_valid:
+            raise SignupError("WEAK_PASSWORD", password_error)
+
+        # Valider le SIRET si fourni
+        if siret and not self._validate_siret(siret):
+            raise SignupError("INVALID_SIRET", "Format de SIRET invalide")
+
+        # Valider le nom de l'entreprise
+        if not company_name or len(company_name.strip()) < 2:
+            raise SignupError("INVALID_COMPANY_NAME", "Le nom de l'entreprise est trop court")
+
+        if len(company_name) > 200:
+            raise SignupError("INVALID_COMPANY_NAME", "Le nom de l'entreprise est trop long")
+
+        # 2. Générer le tenant_id depuis le nom de l'entreprise
         tenant_id = self._generate_tenant_id(company_name)
-        
-        # 2. Vérifier que l'email n'existe pas déjà
+
+        # 3. Vérifier que l'email n'existe pas déjà
+        # SÉCURITÉ: Message générique pour éviter l'énumération d'utilisateurs
         existing_user = self.db.query(User).filter(
             User.email == admin_email
         ).first()
         if existing_user:
-            raise SignupError("EMAIL_EXISTS", f"L'email {admin_email} est déjà utilisé")
-        
-        # 3. Vérifier que le tenant n'existe pas
+            raise SignupError("SIGNUP_FAILED", "Impossible de créer le compte. Veuillez réessayer ou contacter le support.")
+
+        # 4. Vérifier que le tenant n'existe pas
+        # SÉCURITÉ: Message générique pour éviter l'énumération d'entreprises
         existing_tenant = self.db.query(Tenant).filter(
             or_(
                 Tenant.tenant_id == tenant_id,
@@ -156,9 +256,9 @@ class SignupService:
             )
         ).first()
         if existing_tenant:
-            raise SignupError("COMPANY_EXISTS", f"Une entreprise avec ce nom ou email existe déjà")
-        
-        # 4. Valider le plan
+            raise SignupError("SIGNUP_FAILED", "Impossible de créer le compte. Veuillez réessayer ou contacter le support.")
+
+        # 5. Valider le plan
         plan_upper = plan.upper()
         if plan_upper not in PLAN_CONFIG:
             plan_upper = "PROFESSIONAL"
@@ -342,11 +442,28 @@ class SignupService:
         return names.get(code, f"Module {code}")
 
     def check_email_available(self, email: str) -> bool:
-        """Vérifier si un email est disponible."""
+        """
+        Vérifier si un email est disponible.
+
+        SÉCURITÉ: Cette méthode peut être utilisée pour l'énumération d'utilisateurs.
+        Elle devrait être protégée par un rate limiting côté API.
+        """
+        # Valider le format d'abord
+        if not self._validate_email(email):
+            return False  # Format invalide = non disponible
+
         return not self.db.query(User).filter(User.email == email).first()
 
     def check_company_available(self, name: str) -> bool:
-        """Vérifier si un nom d'entreprise est disponible."""
+        """
+        Vérifier si un nom d'entreprise est disponible.
+
+        SÉCURITÉ: Cette méthode peut être utilisée pour l'énumération d'entreprises.
+        Elle devrait être protégée par un rate limiting côté API.
+        """
+        if not name or len(name.strip()) < 2:
+            return False
+
         # Générer le slug de base (sans suffixe d'unicité)
         base_slug = self._generate_base_slug(name)
         # Si le slug de base ou une variante existe déjà, considérer comme pris

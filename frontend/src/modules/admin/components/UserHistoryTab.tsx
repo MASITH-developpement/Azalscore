@@ -9,9 +9,9 @@ import {
   Key, CheckCircle2, XCircle, ArrowRight
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { AdminUser, AuditLog, UserHistoryEntry } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { AdminUser, UserHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * UserHistoryTab - Historique utilisateur
@@ -80,7 +80,7 @@ export const UserHistoryTab: React.FC<TabContentProps<AdminUser>> = ({ data: use
         ) : (
           <div className="azals-empty azals-empty--sm">
             <Shield size={32} className="text-muted" />
-            <p className="text-muted">Aucun log d'audit</p>
+            <p className="text-muted">Aucun log d&apos;audit</p>
           </div>
         )}
       </Card>

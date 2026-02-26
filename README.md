@@ -2,6 +2,17 @@
 
 > Plateforme ERP nouvelle generation - Comptabilite automatique & Cockpit decisionnel
 
+## Statistiques Projet
+
+| Metrique | Valeur |
+|----------|--------|
+| Modules metier | 8 |
+| Endpoints API | 286 |
+| Sous-programmes | 943 |
+| Workflows DAG | 46 |
+| Tests | 8322 |
+| Conformance AZALSCORE | 100% |
+
 ## Demarrage rapide
 
 ```bash

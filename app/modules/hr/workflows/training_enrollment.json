@@ -1,0 +1,97 @@
+{
+  "module_id": "azalscore.hr.training_enrollment",
+  "version": "1.0.0",
+  "description": "Workflow d'inscription aux formations",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_training",
+      "use": "azalscore.validators.hr.validate_training_course@1.0.0",
+      "inputs": {
+        "training_id": "{{context.training_id}}",
+        "session_id": "{{context.session_id}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "check_eligibility",
+      "use": "azalscore.validators.hr.check_training_eligibility@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "training_id": "{{context.training_id}}",
+        "prerequisites": "{{validate_training.prerequisites}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_session_availability",
+      "use": "azalscore.validators.hr.check_session_capacity@1.0.0",
+      "inputs": {
+        "session_id": "{{context.session_id}}",
+        "current_enrollments": true
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_budget",
+      "use": "azalscore.calculations.hr.check_training_budget@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "training_cost": "{{validate_training.cost}}",
+        "fiscal_year": "{{context.fiscal_year}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "request_manager_approval",
+      "condition": "{{validate_training.requires_approval}} == true",
+      "use": "azalscore.transformers.workflow.request_training_approval@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "training_id": "{{context.training_id}}",
+        "manager_id": "{{context.manager_id}}",
+        "justification": "{{context.justification}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_enrollment",
+      "condition": "{{request_manager_approval.approved}} == true || {{validate_training.requires_approval}} == false",
+      "use": "azalscore.transformers.hr.create_training_enrollment@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "session_id": "{{context.session_id}}",
+        "enrollment_date": "{{context.enrollment_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "send_confirmation",
+      "use": "azalscore.generators.communications.send_training_confirmation@1.0.0",
+      "inputs": {
+        "employee_email": "{{context.employee_email}}",
+        "training_name": "{{validate_training.name}}",
+        "session_dates": "{{validate_training.session_dates}}",
+        "location": "{{validate_training.location}}",
+        "enrollment_id": "{{create_enrollment.enrollment_id}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "enrollment_id": "{{create_enrollment.enrollment_id}}",
+    "status": "{{create_enrollment.status}}",
+    "eligible": "{{check_eligibility.eligible}}",
+    "budget_available": "{{check_budget.available}}",
+    "approval_required": "{{validate_training.requires_approval}}",
+    "approval_status": "{{request_manager_approval.status}}"
+  }
+}

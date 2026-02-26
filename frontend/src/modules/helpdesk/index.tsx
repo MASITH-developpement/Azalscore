@@ -5,28 +5,21 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import {
   Inbox, Settings, AlertTriangle, CheckCircle, Clock, Target, Star,
-  MessageSquare, FileText, BookOpen, Sparkles, User, Edit
+  MessageSquare, FileText, BookOpen, Sparkles, Edit
 } from 'lucide-react';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button, Modal } from '@ui/actions';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import type { Ticket, TicketCategory, KnowledgeArticle, HelpdeskDashboard, TicketPriority, TicketStatus, TicketSource } from './types';
-import {
-  PRIORITIES, STATUSES, SOURCES,
-  PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
-  isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
-  getTicketAge, getPublicMessageCount
-} from './types';
-import { formatDate, formatDateTime, formatDuration } from '@/utils/formatters';
+import { formatDate, formatDuration } from '@/utils/formatters';
 import {
   TicketInfoTab,
   TicketMessagesTab,
@@ -35,6 +28,14 @@ import {
   TicketKnowledgeTab,
   TicketIATab
 } from './components';
+import {
+  PRIORITIES, STATUSES, SOURCES,
+  PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
+  isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
+  getTicketAge, getPublicMessageCount
+} from './types';
+import type { Ticket, TicketCategory, KnowledgeArticle, HelpdeskDashboard, TicketPriority, TicketSource } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -80,7 +81,7 @@ const useHelpdeskDashboard = () => {
   return useQuery({
     queryKey: ['helpdesk', 'dashboard'],
     queryFn: async () => {
-      return api.get<HelpdeskDashboard>('/v1/helpdesk/dashboard').then(r => r.data);
+      return api.get<HelpdeskDashboard>('/helpdesk/dashboard').then(r => r.data);
     }
   });
 };
@@ -89,21 +90,21 @@ const useTicketCategories = () => {
   return useQuery({
     queryKey: ['helpdesk', 'categories'],
     queryFn: async () => {
-      return api.get<TicketCategory[]>('/v1/helpdesk/categories').then(r => r.data);
+      return api.get<TicketCategory[]>('/helpdesk/categories').then(r => r.data);
     }
   });
 };
 
 const useTickets = (filters?: { status?: string; priority?: string; category_id?: string }) => {
   return useQuery({
-    queryKey: ['helpdesk', 'tickets', filters],
+    queryKey: ['helpdesk', 'tickets', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.priority) params.append('priority', filters.priority);
       if (filters?.category_id) params.append('category_id', filters.category_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/helpdesk/tickets?${queryString}` : '/v1/helpdesk/tickets';
+      const url = queryString ? `/helpdesk/tickets?${queryString}` : '/helpdesk/tickets';
       return api.get<Ticket[]>(url).then(r => r.data);
     }
   });
@@ -113,7 +114,7 @@ const useTicket = (id: string) => {
   return useQuery({
     queryKey: ['helpdesk', 'tickets', id],
     queryFn: async () => {
-      return api.get<Ticket>(`/v1/helpdesk/tickets/${id}`).then(r => r.data);
+      return api.get<Ticket>(`/helpdesk/tickets/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -123,7 +124,7 @@ const useKnowledgeArticles = () => {
   return useQuery({
     queryKey: ['helpdesk', 'articles'],
     queryFn: async () => {
-      return api.get<KnowledgeArticle[]>('/v1/helpdesk/articles').then(r => r.data);
+      return api.get<KnowledgeArticle[]>('/helpdesk/articles').then(r => r.data);
     }
   });
 };
@@ -132,7 +133,7 @@ const useCreateTicket = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Ticket>) => {
-      return api.post('/v1/helpdesk/tickets', data).then(r => r.data);
+      return api.post('/helpdesk/tickets', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
   });
@@ -142,7 +143,7 @@ const useUpdateTicketStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v1/helpdesk/tickets/${id}`, { status }).then(r => r.data);
+      return api.patch(`/helpdesk/tickets/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
   });
@@ -298,7 +299,7 @@ const TicketDetailView: React.FC<TicketDetailViewProps> = ({ ticketId, onBack })
       id: 'edit',
       label: 'Modifier',
       icon: <Edit size={16} />,
-      onClick: () => console.log('Edit ticket'),
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editTicket', ticketId: ticket.id } })); },
     },
   ];
 
@@ -401,21 +402,23 @@ const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSel
             <Button onClick={() => setShowModal(true)}>Nouveau ticket</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={tickets} isLoading={isLoading} keyField="id" />
+        <DataTable columns={columns} data={tickets} isLoading={isLoading} keyField="id" filterable />
       </Card>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau ticket" size="lg">
         <form onSubmit={handleSubmit}>
           <div className="azals-field">
-            <label className="azals-field__label">Sujet</label>
+            <label className="azals-field__label" htmlFor="ticket-subject">Sujet</label>
             <Input
+              id="ticket-subject"
               value={formData.subject || ''}
               onChange={(v) => setFormData({ ...formData, subject: v })}
             />
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Description</label>
+            <label className="azals-field__label" htmlFor="ticket-description">Description</label>
             <TextArea
+              id="ticket-description"
               value={formData.description || ''}
               onChange={(v) => setFormData({ ...formData, description: v })}
               rows={4}
@@ -423,16 +426,18 @@ const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSel
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label className="azals-field__label">Categorie</label>
+              <label className="azals-field__label" htmlFor="ticket-category">Categorie</label>
               <Select
+                id="ticket-category"
                 value={formData.category_id || ''}
                 onChange={(val) => setFormData({ ...formData, category_id: val })}
                 options={[{ value: '', label: 'Selectionner...' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Priorite</label>
+              <label className="azals-field__label" htmlFor="ticket-priority">Priorite</label>
               <Select
+                id="ticket-priority"
                 value={formData.priority || 'MEDIUM'}
                 onChange={(val) => setFormData({ ...formData, priority: val as TicketPriority })}
                 options={PRIORITIES}
@@ -441,16 +446,18 @@ const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSel
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label className="azals-field__label">Source</label>
+              <label className="azals-field__label" htmlFor="ticket-source">Source</label>
               <Select
+                id="ticket-source"
                 value={formData.source || 'WEB'}
                 onChange={(val) => setFormData({ ...formData, source: val as TicketSource })}
                 options={SOURCES}
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Email client</label>
+              <label className="azals-field__label" htmlFor="ticket-email">Email client</label>
               <Input
+                id="ticket-email"
                 type="email"
                 value={formData.customer_email || ''}
                 onChange={(v) => setFormData({ ...formData, customer_email: v })}
@@ -484,9 +491,9 @@ const CategoriesView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Categories</h3>
-        <Button>Nouvelle categorie</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createCategory' } })); }}>Nouvelle categorie</Button>
       </div>
-      <DataTable columns={columns} data={categories} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={categories} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -530,10 +537,10 @@ const KnowledgeBaseView: React.FC = () => {
             ]}
             className="w-32"
           />
-          <Button>Nouvel article</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createArticle' } })); }}>Nouvel article</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };

@@ -6,13 +6,14 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Hash, Settings, RotateCcw, Check } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input, CheckboxInput } from '@ui/forms';
-import { Hash, Settings, RotateCcw, Eye, Check, X } from 'lucide-react';
+import { Card, Grid } from '@ui/layout';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
+import { unwrapApiResponse } from '@/types';
 
 // ============================================================================
 // TYPES
@@ -93,11 +94,11 @@ const useSequences = () => {
     queryKey: ['admin', 'sequences'],
     queryFn: async (): Promise<SequenceConfig[]> => {
       try {
-        const res = await api.get<{ items: SequenceConfig[]; total: number }>('/v1/admin/sequences', {
+        const res = await api.get<{ items: SequenceConfig[]; total: number }>('/admin/sequences', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
-        const data = res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+        const data = unwrapApiResponse<{ items: SequenceConfig[]; total: number }>(res);
         return data?.items || [];
       } catch {
         return [];
@@ -111,8 +112,8 @@ const useUpdateSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ entityType, data }: { entityType: string; data: SequenceUpdateData }) => {
-      const res = await api.put<SequenceConfig>(`/v1/admin/sequences/${entityType}`, data);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      const res = await api.put<SequenceConfig>(`/admin/sequences/${entityType}`, data);
+      return unwrapApiResponse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sequences'] });
@@ -124,8 +125,8 @@ const useResetSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (entityType: string) => {
-      const res = await api.post<SequenceConfig>(`/v1/admin/sequences/${entityType}/reset`);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      const res = await api.post<SequenceConfig>(`/admin/sequences/${entityType}/reset`);
+      return unwrapApiResponse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sequences'] });
@@ -148,8 +149,8 @@ const usePreviewSequence = (
         if (config.padding) params.append('padding', String(config.padding));
         if (config.separator) params.append('separator', config.separator);
         const queryString = params.toString();
-        const res = await api.get<PreviewResponse>(`/v1/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
-        return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+        const res = await api.get<PreviewResponse>(`/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
+        return unwrapApiResponse(res) ?? null;
       } catch {
         return null;
       }
@@ -259,16 +260,18 @@ const EditModal: React.FC<EditModalProps> = ({
         {/* Formulaire */}
         <Grid cols={2}>
           <div className="azals-field">
-            <label>Prefixe</label>
+            <label htmlFor={`seq-prefix-${sequence.entity_type}`}>Prefixe</label>
             <Input
+              id={`seq-prefix-${sequence.entity_type}`}
               value={formData.prefix || ''}
               onChange={(v: string) => handleChange('prefix', v)}
               placeholder="CLI, FV, etc."
             />
           </div>
           <div className="azals-field">
-            <label>Separateur</label>
+            <label htmlFor={`seq-separator-${sequence.entity_type}`}>Separateur</label>
             <Select
+              id={`seq-separator-${sequence.entity_type}`}
               value={formData.separator || '-'}
               onChange={(v) => handleChange('separator', v)}
               options={SEPARATORS}
@@ -278,8 +281,9 @@ const EditModal: React.FC<EditModalProps> = ({
 
         <Grid cols={2}>
           <div className="azals-field">
-            <label>Nombre de chiffres</label>
+            <label htmlFor={`seq-padding-${sequence.entity_type}`}>Nombre de chiffres</label>
             <Select
+              id={`seq-padding-${sequence.entity_type}`}
               value={String(formData.padding || 4)}
               onChange={(v) => handleChange('padding', parseInt(v))}
               options={PADDING_OPTIONS}
@@ -491,7 +495,8 @@ const SequencesView: React.FC = () => {
         data={filteredSequences}
         isLoading={isLoading}
         keyField="entity_type"
-        onRowClick={handleEdit}
+          filterable
+          onRowClick={handleEdit}
       />
 
       <EditModal
@@ -509,7 +514,7 @@ const SequencesView: React.FC = () => {
           <strong>Legende du format:</strong> AAAA = Annee | X = Chiffres du compteur
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          <strong>Note:</strong> Le compteur n'est pas modifiable manuellement pour garantir l'integrite des sequences.
+          <strong>Note:</strong> Le compteur n&apos;est pas modifiable manuellement pour garantir l&apos;integrite des sequences.
         </div>
       </div>
     </Card>

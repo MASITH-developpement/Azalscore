@@ -1,0 +1,106 @@
+{
+  "module_id": "azalscore.finance.close_fiscal_period",
+  "version": "1.0.0",
+  "description": "Workflow de cloture de periode fiscale avec verifications et ecritures de regularisation",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_period",
+      "use": "azalscore.validators.finance.validate_fiscal_period@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "check_pending_entries",
+      "use": "azalscore.calculations.finance.check_pending_entries@1.0.0",
+      "inputs": {
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "alert_pending_entries",
+      "condition": "{{check_pending_entries.has_pending}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "pending_entries",
+        "severity": "warning",
+        "title": "Ecritures en attente",
+        "message": "{{check_pending_entries.pending_count}} ecritures non validees",
+        "data": "{{check_pending_entries.pending_details}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "calculate_trial_balance",
+      "use": "azalscore.calculations.finance.calculate_trial_balance@1.0.0",
+      "inputs": {
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "verify_balance",
+      "use": "azalscore.validators.finance.validate_journal_entry_balance@1.0.0",
+      "inputs": {
+        "total_debit": "{{calculate_trial_balance.total_debit}}",
+        "total_credit": "{{calculate_trial_balance.total_credit}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "create_closing_entries",
+      "condition": "{{context.create_closing_entries}} == true",
+      "use": "azalscore.generators.accounting.create_period_closing_entries@1.0.0",
+      "inputs": {
+        "period_end": "{{context.period_end}}",
+        "income_accounts": "{{calculate_trial_balance.income_accounts}}",
+        "expense_accounts": "{{calculate_trial_balance.expense_accounts}}",
+        "result_account": "120000"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "lock_period",
+      "use": "azalscore.transformers.status.lock_fiscal_period@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}",
+        "locked_by": "{{context.user_id}}",
+        "locked_at": "{{context.timestamp}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_period_report",
+      "use": "azalscore.generators.documents.generate_period_report@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}",
+        "trial_balance": "{{calculate_trial_balance}}",
+        "closing_entries": "{{create_closing_entries}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "period_closed": true,
+    "trial_balance": "{{calculate_trial_balance}}",
+    "balance_verified": "{{verify_balance.is_balanced}}",
+    "closing_entry_id": "{{create_closing_entries.entry_id}}",
+    "report_url": "{{generate_period_report.url}}"
+  }
+}

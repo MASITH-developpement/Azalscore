@@ -58,15 +58,17 @@ class SchedulerService:
         - Marquer toutes les décisions RED de la veille comme "réinitialisées"
         - Réactiver le workflow (remet completed_steps à vide)
         - Les tresoreries en deficit redeviennent RED
+
+        SÉCURITÉ: Traitement PAR TENANT pour garantir l'isolation multi-tenant.
         """
         db = SessionLocal()
         try:
             logger.info("[...] Reinitialisation des alertes RED...")
 
-            # Vérifier les décisions RED complétées
+            # SÉCURITÉ: Récupérer les décisions RED avec leur tenant_id pour traitement isolé
             # Note: reason est la colonne principale, is_fully_validated=1 signifie validé
             result = db.execute(text("""
-                SELECT d.id, d.reason
+                SELECT d.id, d.tenant_id, d.reason
                 FROM decisions d
                 WHERE d.level = 'RED'
                 AND d.is_fully_validated = 1
@@ -76,34 +78,39 @@ class SchedulerService:
             old_reds = result.fetchall()
 
             if old_reds:
-                # Réinitialiser les étapes du workflow
-                for red_id, _reason in old_reds:
+                # Réinitialiser les étapes du workflow PAR TENANT
+                for red_id, tenant_id, _reason in old_reds:
+                    # SÉCURITÉ: Filtrage explicite par tenant_id dans les requêtes
                     # Supprimer les étapes complétées (table correcte: red_decision_workflows)
                     db.execute(text("""
                         DELETE FROM red_decision_workflows
                         WHERE decision_id = :decision_id
-                    """), {"decision_id": str(red_id)})
+                        AND tenant_id = :tenant_id
+                    """), {"decision_id": str(red_id), "tenant_id": tenant_id})
 
                     # Réinitialiser is_fully_validated (0 = False)
                     db.execute(text("""
                         UPDATE decisions
                         SET is_fully_validated = 0
-                        WHERE id = :decision_id AND level = 'RED'
-                    """), {"decision_id": str(red_id)})
+                        WHERE id = :decision_id
+                        AND tenant_id = :tenant_id
+                        AND level = 'RED'
+                    """), {"decision_id": str(red_id), "tenant_id": tenant_id})
 
                 db.commit()
                 logger.info("[OK] %s alerte(s) RED reinitialisee(s)", len(old_reds))
 
-                # Journaliser l'action avec UUID système valide
-                for red_id, _reason in old_reds:
+                # Journaliser l'action avec UUID système valide - PAR TENANT
+                for red_id, tenant_id, _reason in old_reds:
                     journal_id = str(uuid.uuid4())
+                    # SÉCURITÉ: Journal dans le contexte du bon tenant
                     db.execute(text("""
                         INSERT INTO core_audit_journal
                         (id, tenant_id, user_id, action, details, created_at)
                         VALUES (:id, :tenant_id, :user_id, :action, :details, CURRENT_TIMESTAMP)
                     """), {
                         "id": journal_id,
-                        "tenant_id": "system",
+                        "tenant_id": tenant_id,  # CORRECTION: tenant réel au lieu de "system"
                         "user_id": SYSTEM_USER_UUID,
                         "action": "RED_RESET_DAILY",
                         "details": f"Réinitialisation RED quotidienne - ID: {red_id}"

@@ -17,9 +17,8 @@ RUN npm ci --only=production=false
 COPY . .
 
 # Build for production (VITE_DEMO_MODE is NOT set for production)
-# Note: Using npx vite build directly to skip tsc type-check (pre-existing TS errors)
 ENV NODE_ENV=production
-RUN npx vite build
+RUN npm run build
 
 # Stage 2: Production (nginx)
 FROM nginx:alpine AS production

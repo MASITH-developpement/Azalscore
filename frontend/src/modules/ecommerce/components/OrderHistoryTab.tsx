@@ -6,10 +6,10 @@
 import React from 'react';
 import { Clock, User, CheckCircle2, Truck, CreditCard, XCircle, ArrowRight, Package } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Order, OrderHistoryEntry } from '../types';
-import { ORDER_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { ORDER_STATUS_CONFIG } from '../types';
+import type { Order, OrderHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderHistoryTab - Historique

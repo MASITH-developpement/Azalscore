@@ -7,6 +7,8 @@ Version 2 avec support SaaSContext pour multi-tenancy.
 
 Migration CORE SaaS v2: Utilise SaaSContext au lieu de get_current_user + get_tenant_id
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Optional

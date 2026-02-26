@@ -3,6 +3,8 @@ AZALS MODULE 14 - Subscriptions Service
 =========================================
 Logique métier pour la gestion des abonnements.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime, timedelta

@@ -4,9 +4,9 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { trackAuthEvent } from '@core/audit-ui';
 import { useAuth } from '@core/auth';
 import { useCapabilitiesStore } from '@core/capabilities';
-import { trackAuthEvent } from '@core/audit-ui';
 import { Button } from '@ui/actions';
 
 const TwoFactorPage: React.FC = () => {

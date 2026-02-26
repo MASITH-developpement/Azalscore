@@ -23,10 +23,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
-from app.core.types import UniversalUUID
+from app.core.types import JSONB, UniversalUUID
 from app.db import Base
 
 

@@ -1,10 +1,10 @@
 """Website lead model for capturing leads from website."""
-from sqlalchemy import Column, String, DateTime, Boolean, Text
-from sqlalchemy.dialects.postgresql import UUID, ENUM
+from sqlalchemy import Column, String, DateTime, Boolean, Text, Enum as SQLEnum
 from datetime import datetime
 import enum
 
 from app.db.base import Base
+from app.core.types import UniversalUUID
 
 
 class LeadSource(str, enum.Enum):
@@ -41,10 +41,8 @@ class WebsiteLead(Base):
     company = Column(String, nullable=True)
     job_title = Column(String, nullable=True)
 
-    source = Column(ENUM('website_form', 'demo_request', 'contact_form', 'pricing_inquiry', 'newsletter',
-                         name='lead_source', create_type=False), default='website_form')
-    status = Column(ENUM('new', 'contacted', 'qualified', 'demo_scheduled', 'proposal_sent', 'won', 'lost',
-                         name='lead_status', create_type=False), default='new', index=True)
+    source = Column(SQLEnum(LeadSource), default=LeadSource.website_form)
+    status = Column(SQLEnum(LeadStatus), default=LeadStatus.new, index=True)
     message = Column(Text, nullable=True)
 
     company_size = Column(String, nullable=True)
@@ -56,13 +54,13 @@ class WebsiteLead(Base):
     utm_source = Column(String, nullable=True)
     utm_campaign = Column(String, nullable=True)
 
-    assigned_to = Column(UUID(as_uuid=True), nullable=True)
+    assigned_to = Column(UniversalUUID(), nullable=True)
     last_contact_date = Column(DateTime, nullable=True)
     next_follow_up = Column(DateTime, nullable=True)
     notes = Column(Text, nullable=True)
 
     converted_to_customer = Column(Boolean, default=False)
-    customer_id = Column(UUID(as_uuid=True), nullable=True)
+    customer_id = Column(UniversalUUID(), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

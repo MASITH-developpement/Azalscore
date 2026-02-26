@@ -19,8 +19,8 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from app.api.admin import router as admin_dashboard_router
-from app.api.admin_migration import router as admin_migration_router
+from app.api.admin import AdminUserCreate, AdminUserResponse, router as admin_dashboard_router
+# admin_migration_router supprimé (U-021) - migration temporaire retirée
 from app.api.admin_sequences import router as admin_sequences_router
 from app.api.auth import router as auth_router
 from app.api.branding import router as branding_router
@@ -29,14 +29,12 @@ from app.api.webhooks import router as webhooks_router
 
 # Module COCKPIT - Tableau de bord dirigeant
 from app.api.cockpit import router as cockpit_router
+
+# Modules COMMERCIAL, PROJECTS, INTERVENTIONS -> v3 uniquement (voir app/api/v3.py)
 from app.api.decision import router as decision_router
 from app.api.hr import router as hr_router
 from app.api.invoicing import router as invoicing_router
-from app.api.invoicing_v2 import router as invoicing_router_v2
-from app.api.cockpit_v2 import router as cockpit_router_v2
-from app.api.partners_v2 import router as partners_router_v2
-from app.api.decision_v2 import router as decision_router_v2
-from app.api.branding_v2 import router as branding_router_v2
+# V2 ROUTERS SUPPRIMÉS - Migration v3 complète
 from app.api.items import router as items_router
 from app.api.journal import router as journal_router
 from app.api.legal import router as legal_router
@@ -45,6 +43,7 @@ from app.api.protected import router as protected_router
 from app.api.red_workflow import router as red_workflow_router
 from app.api.tax import router as tax_router
 from app.api.workflows import router as workflows_router
+from app.api.approval_workflows import router as approval_workflows_router
 from app.core.compression import CompressionMiddleware
 from app.core.config import get_settings
 from app.core.database import engine, get_db
@@ -54,7 +53,7 @@ from app.core.health import router as health_router
 from app.api.health_business import router as health_business_router
 from app.core.http_errors import register_error_handlers
 from app.core.logging_config import get_logger, setup_logging
-from app.core.metrics import MetricsMiddleware, init_metrics
+from app.core.metrics import MetricsMiddleware, init_metrics, init_all_metrics
 from app.core.metrics import router as metrics_router
 from app.core.middleware import TenantMiddleware
 from app.core.core_auth_middleware import CoreAuthMiddleware
@@ -67,57 +66,25 @@ from app.core.version import AZALS_VERSION
 from app.db import Base
 from app.db.model_loader import load_all_models, verify_models_loaded
 
-# Module IA - Assistant IA Transverse Opérationnelle
-from app.modules.ai_assistant.router import router as ai_router
+# ===========================================================================
+# ROUTERS UNIFIÉS - Migration CORE SaaS v2 (Wave 8 Complete)
+# ===========================================================================
+# Tous les modules migrent vers router_unified.py qui supporte v1 et v2
+# via double enregistrement avec préfixes différents.
+# ===========================================================================
 
 # Module IA - Orchestration IA AZALSCORE (Theo, Guardian, GPT, Claude)
 from app.ai.api import router as ai_orchestration_router
 
-# Module T3 - Audit & Benchmark Évolutif
-from app.modules.audit.router import router as audit_router
-
 # API Audit - UI Events endpoint
 from app.api.audit import router as audit_api_router
 
-# Module T1 - Configuration Automatique par Fonction
-from app.modules.autoconfig.router import router as autoconfig_router
+# Audit Module v2 - Full Audit & Benchmark API
+from app.modules.audit.router_v2 import router as audit_v2_router
 
-# Module BACKUP - Sauvegardes chiffrées
-from app.modules.backup.router import router as backup_router
-
-# Module M10 - BI & Reporting (Business Intelligence)
-from app.modules.bi.router import router as bi_router
-
-# Module T6 - Diffusion d'Information Périodique
-from app.modules.broadcast.router import router as broadcast_router
-
-# Module M1 - Commercial (CRM & Ventes)
-from app.modules.commercial.router import router as commercial_router
-
-# Module M11 - Compliance (Conformité Réglementaire)
-from app.modules.compliance.router import router as compliance_router
-from app.modules.country_packs.france.router import router as france_pack_router
-
-# Module T5 - Packs Pays (Localisation)
-from app.modules.country_packs.router import router as country_packs_router
-
-# Module M12 - E-Commerce
-from app.modules.ecommerce.router import router as ecommerce_router
-
-# Module EMAIL - Email transactionnel
-from app.modules.email.router import router as email_router
-from app.modules.email.router_v2 import router as email_router_v2
-
-# Module M17 - Field Service (Interventions Terrain)
-from app.modules.field_service.router import router as field_service_router
-
-# Module M2 - Finance (Comptabilité & Trésorerie)
-from app.modules.finance.router import router as finance_router
+# Guardian middleware and logging
 from app.modules.guardian.middleware import setup_guardian_middleware
 from app.core.request_logging import setup_request_logging
-
-# Module GUARDIAN - Correction Automatique Gouvernée & Auditable
-from app.modules.guardian.router import router as guardian_router
 
 # Module GUARDIAN AI - Monitoring IA automatisé (Mode A/B/C)
 from app.modules.guardian.ai_router import router as guardian_ai_router
@@ -125,147 +92,102 @@ from app.modules.guardian.ai_router import router as guardian_ai_router
 # API Incidents - Endpoint simplifié pour Guardian
 from app.api.incidents import router as incidents_router
 
-# Module M16 - Helpdesk (Support Client)
-from app.modules.helpdesk.router import router as helpdesk_router
-
-# Module M3 - RH (Ressources Humaines)
-from app.modules.hr.router import router as hr_module_router
-from app.modules.hr.router_v2 import router as hr_router_v2
+# RBAC Middleware
 from app.modules.iam.rbac_middleware import RBACMiddleware
 
-# Module T0 - IAM (Gestion Utilisateurs & Rôles)
-from app.modules.iam.router import router as iam_router
-
-# Module INTERVENTIONS v1 - Interventions conformes spec
-from app.modules.interventions.router import router as interventions_router
-
-# Module M5 - Stock (Inventaire + Logistique)
-from app.modules.inventory.router import router as inventory_router
-
-# Module M8 - Maintenance (Asset Management / GMAO)
-from app.modules.maintenance.router import router as maintenance_router
-
-# Module MARKETPLACE - Site marchand
-from app.modules.marketplace.router import router as marketplace_router
-
-# Module M18 - Mobile App Backend
-from app.modules.mobile.router import router as mobile_router
-from app.modules.mobile.router_v2 import router as mobile_router_v2
-
-# Module M13 - POS (Point de Vente)
-from app.modules.pos.router import router as pos_router
-
-# Module M4 - Achats (Procurement)
-from app.modules.procurement.router import router as procurement_router
-
-# Module M4 - Achats (Purchases) - Backend complet
-from app.modules.purchases.router import router as purchases_router
-
-# Module ACCOUNTING - Comptabilité Générale - Backend complet
-from app.modules.accounting.router import router as accounting_router
-
-# Module TREASURY - Trésorerie - Backend complet
-from app.modules.treasury.router import router as treasury_router
-
-# Module M6 - Production (Manufacturing)
-from app.modules.production.router import router as production_router
-
-# Module M9 - Projets (Project Management)
-from app.modules.projects.router import router as projects_router
-
-# Module T4 - Contrôle Qualité Central
-from app.modules.qc.router import router as qc_router
-
-# Module M7 - Qualité (Quality Management)
-from app.modules.quality.router import router as quality_router
-from app.modules.quality.router_v2 import router as quality_router_v2
-
-# Module M15 - Stripe Integration
-from app.modules.stripe_integration.router import router as stripe_router
-from app.modules.stripe_integration.router_v2 import router as stripe_router_v2
-
-# Module M14 - Subscriptions (Abonnements)
-from app.modules.subscriptions.router import router as subscriptions_router
-from app.modules.subscriptions.router_v2 import router as subscriptions_router_v2
-
-# Module T9 - Gestion des Tenants (Multi-Tenancy)
-from app.modules.tenants.router import router as tenants_router
+# Trial Router
 from app.modules.tenants.api_trial import router as trial_router
 
-# Module AI Assistant - Assistant IA Transverse
-from app.modules.ai_assistant.router_v2 import router as ai_assistant_router_v2
+# France Country Pack (sous-module, reste en v1)
+from app.modules.country_packs.france.router import router as france_pack_router
+from app.modules.country_packs.france.einvoicing_router import router as france_einvoicing_router
+from app.modules.country_packs.france.fec.router import router as france_fec_router
+from app.modules.country_packs.france.pcg.router import router as france_pcg_router
+from app.modules.country_packs.france.liasses_router import router as france_liasses_router
 
-# Module T1 - Configuration Automatique
-from app.modules.autoconfig.router_v2 import router as autoconfig_router_v2
+# Finance - Dunning (Relances Impayés)
+from app.modules.finance.dunning.router import router as dunning_router
 
-# Module T2 - Système de Déclencheurs & Diffusion
-from app.modules.triggers.router import router as triggers_router
-from app.modules.triggers.router_v2 import router as triggers_router_v2
+# Module Settings - Paramètres dynamiques par module
+from app.api.module_settings_router import router as module_settings_router
 
-# Module T5 - Packs Pays
-from app.modules.country_packs.router_v2 import router as country_packs_router_v2
-
-# Module T7 - Module Web Transverse
-from app.modules.web.router import router as web_router
-from app.modules.web.router_v2 import router as web_router_v2
-
-# Module Marketplace - Site Marchand Public
-from app.modules.marketplace.router_v2 import router as marketplace_router_v2
-
-# Module T8 - Site Web Officiel AZALS
-from app.modules.website.router import router as website_router
-from app.modules.website.router_v2 import router as website_router_v2
-
+# ===========================================================================
+# MODULES LEGACY (v1 seulement - pas de router_unified)
+# ===========================================================================
 # Module MARCEAU - Agent IA Polyvalent (9 modules metiers)
 from app.modules.marceau.router import router as marceau_router
 
 # Module ENRICHMENT - Auto-enrichissement via APIs externes (INSEE, Adresse gouv, Open Facts)
 from app.modules.enrichment import enrichment_router
 
-# Module Interventions v2 - Router enrichi aligné frontend
-from app.modules.interventions.router_v2 import router as interventions_router_v2
+# Module ODOO IMPORT - Import de données depuis Odoo (versions 8-18)
+from app.modules.odoo_import import odoo_import_router
 
-# Module Contacts Unifiés v2 - Sous-programmes réutilisables (Clients + Fournisseurs)
-from app.modules.contacts.router_v2 import router as contacts_router_v2
+# Module INVENTORY - Gestion des stocks et produits
+from app.modules.inventory.router import router as inventory_router
 
-# ============================================================================
-# ROUTERS V2 ADDITIONNELS - Migration CORE SaaS (24 modules)
-# ============================================================================
+# Module POS - Point de Vente
+from app.modules.pos.router_crud import router as pos_router
 
-# MODULES CRITIQUES (Sécurité/Admin)
-from app.modules.iam.router_v2 import router as iam_router_v2
-from app.modules.backup.router_v2 import router as backup_router_v2
-from app.modules.tenants.router_v2 import router as tenants_router_v2
-from app.modules.guardian.router_v2 import router as guardian_router_v2
+# Module WEBSITE - Site Web / CMS
+from app.modules.website.router_crud import router as website_router
 
-# MODULES FINANCIERS
-from app.modules.accounting.router_v2 import router as accounting_router_v2
-from app.modules.finance.router_v2 import router as finance_router_v2
-from app.modules.treasury.router_v2 import router as treasury_router_v2
-from app.modules.procurement.router_v2 import router as procurement_router_v2
-from app.modules.purchases.router_v2 import router as purchases_router_v2
-from app.modules.pos.router_v2 import router as pos_router_v2
-from app.modules.ecommerce.router_v2 import router as ecommerce_router_v2
+# Module ECOMMERCE - Boutique en ligne
+from app.modules.ecommerce.router_crud import router as ecommerce_router
 
-# MODULES OPÉRATIONNELS
-from app.modules.inventory.router_v2 import router as inventory_router_v2
-from app.modules.production.router_v2 import router as production_router_v2
-from app.modules.projects.router_v2 import router as projects_router_v2
-from app.modules.maintenance.router_v2 import router as maintenance_router_v2
-from app.modules.field_service.router_v2 import router as field_service_router_v2
-from app.modules.helpdesk.router_v2 import router as helpdesk_router_v2
+# Module SOCIAL NETWORKS - Métriques Marketing (Administration)
+from app.modules.social_networks import router as social_networks_router
+# Module SOCIAL PUBLICATIONS - Publications & Leads (Marketing)
+from app.modules.social_networks import publication_router as social_publications_router
 
-# AUTRES MODULES
-from app.modules.commercial.router_v2 import router as commercial_router_v2
-from app.modules.audit.router_v2 import router as audit_router_v2
-from app.modules.bi.router_v2 import router as bi_router_v2
-from app.modules.broadcast.router_v2 import router as broadcast_router_v2
-from app.modules.compliance.router_v2 import router as compliance_router_v2
-from app.modules.qc.router_v2 import router as qc_router_v2
-from app.modules.automated_accounting.router_v2 import router as automated_accounting_router_v2
+# ===========================================================================
+# MODULES GAP HAUTE PRIORITÉ (Wave 9)
+# ===========================================================================
+# GAP-076: Forecasting - Prévisions financières
+from app.modules.forecasting.router import router as forecasting_router
 
-# Website Tracking API v2 - Analytics, Leads, Demo Requests
-from app.api.v2.website_tracking import router as website_tracking_router
+# GAP-081: Field Service - Service terrain et techniciens
+from app.modules.fieldservice.router import router as fieldservice_router
+
+# GAP-083: Approval - Workflow d'approbation multi-niveaux
+from app.modules.approval.router import router as approval_router
+
+# GAP-084: Expenses - Gestion des notes de frais
+from app.modules.expenses.router import router as expenses_router
+
+# GAP-086: Integrations - Connecteurs externes (Sage, Odoo, Stripe...)
+from app.modules.integrations.router import router as integrations_router
+
+# ===========================================================================
+# MODULES V3 - CRUDRouter (Migration complète)
+# ===========================================================================
+# Tous les modules sont maintenant servis via /v3/ par app.api.v3
+# Les router_unified.py ont été supprimés
+# ===========================================================================
+
+# ===========================================================================
+# API V3 - CRUDROUTER EDITION (Minimal Code)
+# ===========================================================================
+# Routers CRUDRouter auto-generes avec ~60% moins de boilerplate
+# Import conditionnel pour compatibilite si modules pas encore migres
+# ===========================================================================
+try:
+    from app.api.v3 import router as api_v3_router, _metrics as api_v3_metrics
+    API_V3_AVAILABLE = True
+    _api_v3_error = None
+except ImportError as e:
+    API_V3_AVAILABLE = False
+    _api_v3_error = str(e)
+    api_v3_metrics = None
+
+    # SÉCURITÉ: En production, l'API V3 est OBLIGATOIRE
+    # Fail-fast pour éviter de démarrer avec seulement 6 modules au lieu de 43
+    _settings_check = get_settings()
+    if _settings_check.is_production:
+        raise RuntimeError(
+            f"[FATAL] API V3 import failed in PRODUCTION mode. "
+            f"Cannot start without core modules. Error: {e}"
+        ) from e
 
 from app.services.scheduler import scheduler_service
 
@@ -598,6 +520,9 @@ async def lifespan(app: FastAPI):
             extra=startup_context
         )
 
+    # Initialiser toutes les métriques au démarrage
+    init_all_metrics()
+
     yield
 
     # Arrêter le scheduler à l'arrêt
@@ -673,15 +598,22 @@ logger.info("[MIDDLEWARE] Compression activée", extra={"min_size": 1024, "level
 app.add_middleware(MetricsMiddleware)
 logger.info("[MIDDLEWARE] MetricsMiddleware activé")
 
-# 6. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
+# 6. RBAC Middleware - Contrôle d'accès basé sur les rôles
 # Note: Le middleware RBAC vérifie les permissions après authentification
-# Pour la bêta, les routes non configurées génèrent un warning mais passent
-# En production, activer deny-by-default dans rbac_middleware.py
+# SÉCURITÉ P0: Utiliser RBAC_STRICT_MODE=true en production pour deny-by-default
+import os
+_rbac_strict = os.getenv("RBAC_STRICT_MODE", "false").lower() == "true"
 app.add_middleware(RBACMiddleware)
-logger.warning(
-    "[MIDDLEWARE] RBAC en mode BETA — deny-by-default NON activé",
-    extra={"mode": "beta", "consequence": "rbac_permissive", "action_required": "activer deny-by-default"}
-)
+if _rbac_strict:
+    logger.info(
+        "[MIDDLEWARE] RBAC activé — deny-by-default ACTIF (PRODUCTION)",
+        extra={"mode": "strict", "consequence": "rbac_deny_unconfigured"}
+    )
+else:
+    logger.warning(
+        "[MIDDLEWARE] RBAC en mode permissif — définir RBAC_STRICT_MODE=true pour production",
+        extra={"mode": "permissive", "consequence": "rbac_allow_unconfigured", "action_required": "set RBAC_STRICT_MODE=true"}
+    )
 
 # 7. CoreAuthMiddleware - Parse JWT et crée SaaSContext via CORE
 # IMPORTANT: Doit s'exécuter AVANT RBAC pour que request.state.saas_context soit disponible
@@ -718,9 +650,13 @@ app.include_router(webhooks_router)
 # Ceci expose /auth/login, /auth/register, /auth/bootstrap, etc.
 app.include_router(auth_router)
 
-# ==================== API v1 ====================
-# Toutes les routes metier sous le prefixe /v1
-api_v1 = APIRouter(prefix="/v1")
+# ==================== API v1 - DEPRECATED ====================
+# MIGRATION V3: Les routes v1 sont maintenant servies par v3
+# Le frontend a ete migre vers /v3/
+# Ces lignes sont commentees - a supprimer apres validation complete
+#
+# API sans version - URLs directes
+api_v1 = APIRouter()  # Legacy routes (cockpit, auth, etc.) - sans prefixe de version
 
 # Routes authentification (necessitent X-Tenant-ID mais pas JWT)
 api_v1.include_router(auth_router)
@@ -730,157 +666,77 @@ api_v1.include_router(protected_router)
 api_v1.include_router(journal_router)
 api_v1.include_router(decision_router)
 api_v1.include_router(red_workflow_router)
-api_v1.include_router(accounting_router)
-api_v1.include_router(treasury_router)
 api_v1.include_router(tax_router)
 api_v1.include_router(hr_router)
 api_v1.include_router(legal_router)
-api_v1.include_router(admin_migration_router)  # TEMPORAIRE pour migration
-logger.warning(
-    "[ROUTER] admin_migration_router monté — marqué TEMPORAIRE, à retirer après migration",
-    extra={"router": "admin_migration", "status": "temporary", "action_required": "remove_after_migration"}
-)
 api_v1.include_router(admin_sequences_router)  # Administration des sequences de numerotation
 api_v1.include_router(admin_dashboard_router)  # Administration dashboard (stats systeme)
 api_v1.include_router(partners_router)  # Alias vers module commercial (clients, fournisseurs, contacts)
 api_v1.include_router(invoicing_router)  # Alias vers module commercial (devis, factures, avoirs)
+# commercial_router, projects_router, interventions_router -> v3 uniquement
 api_v1.include_router(branding_router)  # Gestion favicon, logo, branding
 
-# Module T0 - IAM (Gestion Utilisateurs & Roles)
-api_v1.include_router(iam_router)
+# ===========================================================================
+# ROUTES LEGACY SOUS /v1 (non migrées vers v3)
+# ===========================================================================
+api_v1.include_router(audit_api_router)        # Audit UI Events
 
-# Module T1 - Configuration Automatique par Fonction
-api_v1.include_router(autoconfig_router)
-
-# Module T2 - Systeme de Declencheurs & Diffusion
-api_v1.include_router(triggers_router)
-
-# Module T3 - Audit & Benchmark Evolutif
-api_v1.include_router(audit_router)
-
-# API Audit - UI Events (simple endpoint for frontend)
-api_v1.include_router(audit_api_router)
-
-# Module T4 - Controle Qualite Central
-api_v1.include_router(qc_router)
-
-# Module T5 - Packs Pays (Localisation)
-api_v1.include_router(country_packs_router)
-api_v1.include_router(france_pack_router)
-
-# Module T6 - Diffusion d'Information Periodique
-api_v1.include_router(broadcast_router)
-
-# Module T7 - Module Web Transverse
-api_v1.include_router(web_router)
-
-# Module T8 - Site Web Officiel AZALS
-api_v1.include_router(website_router)
-
-# Module T9 - Gestion des Tenants (Multi-Tenancy)
-api_v1.include_router(tenants_router)
-
-# Module M1 - Commercial (CRM & Ventes)
-api_v1.include_router(commercial_router)
-
-# Module M2 - Finance (Comptabilite & Tresorerie)
-api_v1.include_router(finance_router)
-
-# Module M3 - RH (Ressources Humaines)
-api_v1.include_router(hr_module_router)
-
-# Module M4 - Achats (Procurement)
-api_v1.include_router(procurement_router)
-
-# Module M4 - Achats (Purchases) - Backend complet
-api_v1.include_router(purchases_router)
-
-# NOTE: accounting_router et treasury_router déjà montés aux lignes précédentes
-# Suppression des doublons pour éviter conflits de routes en production
-
-# Module M5 - Stock (Inventaire + Logistique)
-api_v1.include_router(inventory_router)
-
-# Module M6 - Production (Manufacturing)
-api_v1.include_router(production_router)
-
-# Module M7 - Qualite (Quality Management)
-api_v1.include_router(quality_router)
-
-# Module M8 - Maintenance (Asset Management / GMAO)
-api_v1.include_router(maintenance_router)
-
-# Module M9 - Projets (Project Management)
-api_v1.include_router(projects_router)
-
-# Module M10 - BI & Reporting (Business Intelligence)
-api_v1.include_router(bi_router)
-
-# Module M11 - Compliance (Conformite Reglementaire)
-api_v1.include_router(compliance_router)
-
-# Module M12 - E-Commerce
-api_v1.include_router(ecommerce_router)
-
-# Module M13 - POS (Point de Vente)
-api_v1.include_router(pos_router)
-
-# Module M14 - Subscriptions (Abonnements)
-api_v1.include_router(subscriptions_router)
-
-# Module M15 - Stripe Integration
-api_v1.include_router(stripe_router)
-
-# Module M16 - Helpdesk (Support Client)
-api_v1.include_router(helpdesk_router)
-
-# Module M17 - Field Service (Interventions Terrain)
-api_v1.include_router(field_service_router)
-
-# Module INTERVENTIONS v1 - Interventions conformes spec
-api_v1.include_router(interventions_router)
-
-# Module M18 - Mobile App Backend
-api_v1.include_router(mobile_router)
-
-# Module IA - Assistant IA Transverse Operationnelle
-api_v1.include_router(ai_router)
-
-# Module IA - Orchestration IA AZALSCORE (Theo, ChatGPT, Claude, Guardian)
-api_v1.include_router(ai_orchestration_router)
-
-# Module GUARDIAN - Correction Automatique Gouvernee & Auditable
-api_v1.include_router(guardian_router)
-
-# Module GUARDIAN AI - Monitoring IA automatisé (Mode A/B/C)
-api_v1.include_router(guardian_ai_router)
-
-# API Incidents - Endpoint simplifie pour frontend Guardian
-api_v1.include_router(incidents_router)
-
-# Module COCKPIT - Tableau de bord dirigeant
-api_v1.include_router(cockpit_router)
-
-# Module EMAIL - Email transactionnel
-api_v1.include_router(email_router)
-
-# Module BACKUP - Sauvegardes chiffrees AES-256
-api_v1.include_router(backup_router)
-
-# Module MARCEAU - Agent IA Polyvalent (Telephonie, Marketing, SEO, Commercial, etc.)
-api_v1.include_router(marceau_router)
-
-# Module ENRICHMENT - Auto-enrichissement via APIs externes (INSEE, Adresse gouv, Open Facts)
-api_v1.include_router(enrichment_router)
-
-# Module MARKETPLACE - Site marchand & provisioning automatique
-api_v1.include_router(marketplace_router)
+# Monter directement sur app avec /api prefix pour cohérence avec tests
+app.include_router(audit_v2_router, prefix="/api")  # Audit v2 Full API -> /api/v2/audit/*
+api_v1.include_router(france_pack_router)      # France Country Pack
+api_v1.include_router(france_einvoicing_router)# France E-Invoicing 2026
+api_v1.include_router(france_fec_router)       # France FEC Export (DGFiP)
+api_v1.include_router(france_pcg_router)       # France PCG 2025 (Plan Comptable Général)
+api_v1.include_router(france_liasses_router)   # France Liasses Fiscales (GAP-049)
+api_v1.include_router(dunning_router)          # Relances Impayés (GAP-021)
+api_v1.include_router(module_settings_router)  # Paramètres dynamiques par module
+api_v1.include_router(ai_orchestration_router) # IA Orchestration
+api_v1.include_router(guardian_ai_router)      # Guardian AI
+api_v1.include_router(incidents_router)        # Incidents
+api_v1.include_router(cockpit_router)          # Cockpit Dashboard
+api_v1.include_router(approval_workflows_router)  # Workflows d'approbation (GAP-093)
 
 # API WORKFLOWS - Orchestration DAG déclarative (AZALSCORE)
 api_v1.include_router(workflows_router)
 
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)
+
+# Module INVENTORY - Gestion stocks et produits
+api_v1.include_router(inventory_router)
+
+# Module POS - Point de Vente
+api_v1.include_router(pos_router)
+
+# Module WEBSITE - Site Web / CMS
+api_v1.include_router(website_router)
+
+# Module ECOMMERCE - Boutique en ligne
+api_v1.include_router(ecommerce_router)
+
+# Module SOCIAL NETWORKS - Administration > Réseaux Sociaux
+api_v1.include_router(social_networks_router)
+
+# Module SOCIAL PUBLICATIONS - Marketing > Publications & Leads
+api_v1.include_router(social_publications_router)
+
+# ===========================================================================
+# MODULES GAP HAUTE PRIORITÉ (Wave 9) - CRUD Multi-tenant
+# ===========================================================================
+# GAP-076: Forecasting - Prévisions financières, budgets, KPIs
+api_v1.include_router(forecasting_router)
+
+# GAP-081: Field Service - Service terrain, techniciens, work orders
+api_v1.include_router(fieldservice_router)
+
+# GAP-083: Approval - Workflow d'approbation multi-niveaux
+api_v1.include_router(approval_router)
+
+# GAP-084: Expenses - Gestion des notes de frais
+api_v1.include_router(expenses_router)
+
+# GAP-086: Integrations - Connecteurs externes (Sage, Odoo, Stripe, QuickBooks...)
+api_v1.include_router(integrations_router)
 
 
 # ==================== UTILITY ENDPOINTS ====================
@@ -905,6 +761,7 @@ def get_active_modules(
         {"code": "interventions", "name": "Interventions", "icon": "build", "active": True},
         {"code": "purchases", "name": "Achats", "icon": "shopping_cart", "active": True},
         {"code": "payments", "name": "Paiements", "icon": "payment", "active": True},
+        {"code": "einvoicing", "name": "E-Factures", "icon": "receipt_long", "active": True},
     ]
     role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     if role in ["DIRIGEANT", "ADMIN"]:
@@ -1129,13 +986,31 @@ def get_admin_user(
     }
 
 
-@api_v1.post("/admin/users")
+@api_v1.post("/admin/users", response_model=AdminUserResponse)
 def create_admin_user(
-    data: dict,
+    data: AdminUserCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Crée un nouvel utilisateur."""
+    """
+    Crée un nouvel utilisateur.
+
+    Conformité:
+    - AZA-SEC-001: Validation Pydantic stricte
+    - AZA-BE-003: Contrat backend obligatoire
+
+    Args:
+        data: Données validées par AdminUserCreate
+        current_user: Utilisateur authentifié (admin requis)
+        db: Session base de données
+
+    Returns:
+        AdminUserResponse avec les informations du nouvel utilisateur
+
+    Raises:
+        HTTPException 400: Email déjà utilisé
+        HTTPException 403: Droits insuffisants pour créer un DIRIGEANT
+    """
     from fastapi import HTTPException
 
     from app.core.security import get_password_hash
@@ -1144,12 +1019,12 @@ def create_admin_user(
     require_admin_role(current_user)
 
     # Vérifier si l'email existe déjà
-    existing = db.query(User).filter(User.email == data.get("email")).first()
+    existing = db.query(User).filter(User.email == data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email déjà utilisé")
 
-    # SÉCURITÉ: Validation et restriction des rôles assignables
-    role_value = data.get("roles", ["EMPLOYE"])[0] if isinstance(data.get("roles"), list) else data.get("roles", "EMPLOYE")
+    # SÉCURITÉ: Extraction du rôle depuis la liste validée
+    role_value = data.roles[0] if data.roles else "EMPLOYE"
 
     # Seul un DIRIGEANT peut créer un autre DIRIGEANT
     current_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
@@ -1159,22 +1034,10 @@ def create_admin_user(
             detail="Seul un DIRIGEANT peut créer un autre DIRIGEANT"
         )
 
-    # Validation du rôle
-    valid_roles = [r.value for r in UserRole]
-    if role_value not in valid_roles:
-        role_value = "EMPLOYE"
-
-    # Validation du mot de passe
-    password = data.get("password")
-    if not password or len(password) < 8:
-        raise HTTPException(
-            status_code=400,
-            detail="Le mot de passe doit contenir au moins 8 caractères"
-        )
-
+    # Création de l'utilisateur (données déjà validées par Pydantic)
     new_user = User(
-        email=data.get("email"),
-        password_hash=get_password_hash(password),
+        email=data.email,
+        password_hash=get_password_hash(data.password),
         tenant_id=current_user.tenant_id,
         role=UserRole(role_value),
         is_active=1,
@@ -1184,13 +1047,13 @@ def create_admin_user(
     db.commit()
     db.refresh(new_user)
 
-    return {
-        "id": str(new_user.id),
-        "email": new_user.email,
-        "name": new_user.email,
-        "roles": [new_user.role.value],
-        "is_active": True,
-    }
+    return AdminUserResponse(
+        id=str(new_user.id),
+        email=new_user.email,
+        name=new_user.email,
+        roles=[new_user.role.value],
+        is_active=True,
+    )
 
 
 # Monter l'API v1 sur l'app principale
@@ -1199,64 +1062,23 @@ app.include_router(api_v1)
 # Trial Registration (public endpoints - no auth required)
 app.include_router(trial_router)
 
-# ==================== ROUTERS V2 (CORE SaaS) ====================
-# Routers migrés vers CORE SaaS v2
-app.include_router(ai_assistant_router_v2)
-app.include_router(autoconfig_router_v2)
-app.include_router(country_packs_router_v2)
-app.include_router(email_router_v2)
-app.include_router(marketplace_router_v2)
-app.include_router(mobile_router_v2)
-app.include_router(stripe_router_v2)
-app.include_router(triggers_router_v2)
-app.include_router(web_router_v2)
-app.include_router(website_router_v2)
-app.include_router(interventions_router_v2)
-app.include_router(contacts_router_v2)
-app.include_router(hr_router_v2)
-app.include_router(subscriptions_router_v2)
-app.include_router(quality_router_v2)
+# ==================== V2 SUPPRIMÉ ====================
+# Migration v3 complète - v2 supprimé le 2026-02-15
 
-# ==================== ROUTERS V2 ADDITIONNELS (24 modules) ====================
-# MODULES CRITIQUES (Sécurité/Admin)
-app.include_router(iam_router_v2)
-app.include_router(backup_router_v2)
-app.include_router(tenants_router_v2)
-app.include_router(guardian_router_v2)
-
-# MODULES FINANCIERS
-app.include_router(accounting_router_v2)
-app.include_router(finance_router_v2)
-app.include_router(treasury_router_v2)
-app.include_router(procurement_router_v2)
-app.include_router(purchases_router_v2)
-app.include_router(pos_router_v2)
-app.include_router(ecommerce_router_v2)
-
-# MODULES OPÉRATIONNELS
-app.include_router(inventory_router_v2)
-app.include_router(production_router_v2)
-app.include_router(projects_router_v2)
-app.include_router(maintenance_router_v2)
-app.include_router(field_service_router_v2)
-app.include_router(helpdesk_router_v2)
-
-# AUTRES MODULES
-app.include_router(commercial_router_v2)
-app.include_router(audit_router_v2)
-app.include_router(bi_router_v2)
-app.include_router(broadcast_router_v2)
-app.include_router(compliance_router_v2)
-app.include_router(qc_router_v2)
-app.include_router(automated_accounting_router_v2)
-app.include_router(invoicing_router_v2)
-app.include_router(cockpit_router_v2)
-app.include_router(partners_router_v2)
-app.include_router(decision_router_v2)
-app.include_router(branding_router_v2)
-
-# Website Tracking API v2 (SEO, Analytics, Leads)
-app.include_router(website_tracking_router, prefix="/api/v2")
+# ==================== API MODULES - CRUDROUTER ====================
+# Routers CRUDRouter avec code minimal (~60% reduction boilerplate)
+# URLs directes sans version: /commercial, /accounting, /projects, etc.
+if API_V3_AVAILABLE:
+    app.include_router(api_v3_router)
+    logger.info(
+        "[API] CRUDRouter activé — 41 modules disponibles (URLs sans version)",
+        extra={"modules_count": 41, "reduction": "60%", "versioning": "none"}
+    )
+else:
+    logger.warning(
+        "[API] Modules CRUDRouter non disponibles — erreur d'import",
+        extra={"error": _api_v3_error, "consequence": "modules_disabled"}
+    )
 
 # ==================== THEO VOICE API ====================
 # WebSocket et REST endpoints pour Théo (assistant vocal)
@@ -1278,6 +1100,9 @@ except ImportError as e:
 app.include_router(health_router)
 app.include_router(health_business_router)
 app.include_router(metrics_router)
+
+# Module MARCEAU - Agent IA polyvalent (telephonie, commercial, support, etc.)
+app.include_router(marceau_router)
 
 
 # Fallback routes for health/metrics if routers don't work

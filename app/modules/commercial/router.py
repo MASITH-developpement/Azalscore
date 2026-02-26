@@ -4,6 +4,8 @@ AZALS MODULE M1 - Router Commercial
 
 API REST pour le CRM et la gestion commerciale.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID
@@ -644,8 +646,8 @@ async def create_product(
     """Créer un produit ou service."""
     service = get_commercial_service(db, current_user.tenant_id)
 
-    # Vérifier unicité du code
-    existing = service.get_product(data.code)
+    # Vérifier unicité du code (isolé par tenant)
+    existing = service.get_product_by_code(data.code)
     if existing:
         raise HTTPException(status_code=400, detail="Code produit déjà utilisé")
 

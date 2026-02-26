@@ -1,6 +1,392 @@
 # AZALSCORE - Memoire de Session
 
-## Derniere mise a jour: 2026-02-14
+## Derniere mise a jour: 2026-02-20
+
+---
+
+## Tâches Complétées [2026-02-20]
+
+### Automatisation Complète Backend → Frontend
+
+##**Objectif :** Synchroniser automatiquement les 66 modules backend avec le frontend (menu + permissions).
+
+#### Ce qui a été fait :
+
+1. **Auto-génération IAM Capabilities** (`app/modules/iam/router.py`)
+   - Fonction `_generate_capabilities_by_module()` parcourt `MODULES` depuis `modules_registry.py`
+   - Génère automatiquement 4 capabilities par module : `view`, `create`, `edit`, `delete`
+   - 326 permissions générées pour 66 modules
+   - Support overrides personnalisés via `_get_custom_capabilities()`
+
+2. **Script génération menu** (`scripts/frontend/generate-menu.js`)
+   - Parse `modules_registry.py` (MODULE_METADATA_OVERRIDES)
+   - Génère `ViewKey` type et `MENU_ITEMS` array
+   - Configuration groupes : `MODULE_GROUP_MAP`
+   - Labels personnalisés : `MODULE_LABELS`
+   - Usage : `node scripts/frontend/generate-menu.js`
+
+3. **Mise à jour UnifiedLayout.tsx**
+   - 63 entrées de menu réparties en 14 groupes
+   - Modules non implémentés → `PlaceholderModule` (message "en cours de développement")
+
+4. **Endpoint PUT permissions** (`app/modules/iam/router_crud.py`)
+   - `PUT /iam/users/{user_id}/permissions` pour sauvegarder les permissions
+
+#### Fichiers modifiés :
+
+| Fichier | Modification |
+|---------|--------------|
+| `app/modules/iam/router.py` | Auto-génération capabilities |
+| `app/modules/iam/router_crud.py` | Ajout PUT endpoint permissions |
+| `app/modules/iam/schemas.py` | Ajout `UserPermissionsUpdate` |
+| `scripts/frontend/generate-menu.js` | NOUVEAU - Générateur menu |
+| `frontend/src/components/UnifiedLayout.tsx` | 63 items menu, 14 groupes |
+| `frontend/src/UnifiedApp.tsx` | PlaceholderModule + mappings |
+| `frontend/src/styles/azalscore.css` | Styles `.azals-placeholder` |
+
+#### Vérification :
+
+- Admin → Tenants → 66/66 modules visibles
+- Admin → Utilisateurs → Accès Modules → 326/326 permissions
+- Menu latéral → 63 entrées dans 14 groupes
+
+---
+
+## Modules à Développer (Interface Frontend) [2026-02-20]
+
+**Résumé :** 28 modules ont un backend complet mais utilisent un PlaceholderModule côté frontend.
+
+### Modules Métier (7 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `contracts` | 1147 | HAUTE | Gestion des contrats clients/fournisseurs |
+| `timesheet` | 1208 | HAUTE | Feuilles de temps, saisie heures |
+| `field-service` | 2694 | MOYENNE | Gestion équipes terrain, planification |
+| `complaints` | 1078 | MOYENNE | Réclamations clients, suivi |
+| `warranty` | 986 | MOYENNE | Garanties produits, SAV |
+| `rfq` | 1015 | MOYENNE | Appels d'offres, réponses |
+| `procurement` | 2753 | HAUTE | Approvisionnement, réapprovisionnement auto |
+
+### Commerce (1 module)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `commercial` | 2794 | HAUTE | Gestion commerciale, objectifs, commissions |
+
+### Digital (2 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `broadcast` | 2015 | BASSE | Diffusion multi-canal, newsletters |
+| `social-networks` | 1119 | BASSE | Gestion réseaux sociaux, publications |
+
+### Communication (2 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `esignature` | 1427 | HAUTE | Signature électronique documents |
+| `email` | 998 | MOYENNE | Gestion emails, templates, campagnes |
+
+### Finance (5 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `assets` | 1195 | HAUTE | Immobilisations, amortissements |
+| `expenses` | 1091 | HAUTE | Notes de frais, remboursements |
+| `finance` | 2820 | MOYENNE | Finance avancée, budgets, prévisions |
+| `consolidation` | 1227 | BASSE | Consolidation multi-sociétés |
+| `automated-accounting` | 2031 | HAUTE | Comptabilisation automatique, OCR |
+
+### Système (11 modules)
+
+| Module | Backend (lignes) | Priorité | Description |
+|--------|------------------|----------|-------------|
+| `audit` | 3112 | HAUTE | Audit logs, traçabilité, conformité |
+| `backup` | 892 | MOYENNE | Sauvegardes, restauration |
+| `guardian` | 3230 | HAUTE | Sécurité, détection anomalies, alertes |
+| `iam` | 4202 | CRITIQUE | Gestion accès (partiellement dans Admin) |
+| `tenants` | 1830 | MOYENNE | Multi-tenants (partiellement dans Admin) |
+| `triggers` | 2624 | HAUTE | Automatisations, workflows déclenchés |
+| `autoconfig` | 1902 | BASSE | Configuration automatique tenant |
+| `hr-vault` | 1110 | MOYENNE | Coffre-fort documents RH sécurisés |
+| `stripe-integration` | 2767 | HAUTE | Paiements Stripe, abonnements SaaS |
+| `country-packs` | 1718 | MOYENNE | Localisations par pays (TVA, formats) |
+
+### Priorités de développement suggérées
+
+**Phase 1 - Critique/Haute (12 modules) :**
+1. `iam` - Gestion des accès avancée
+2. `contracts` - Contrats
+3. `timesheet` - Feuilles de temps
+4. `procurement` - Approvisionnement
+5. `commercial` - Commercial
+6. `esignature` - Signature électronique
+7. `assets` - Immobilisations
+8. `expenses` - Notes de frais
+9. `automated-accounting` - Comptabilité auto
+10. `audit` - Audit & logs
+11. `guardian` - Sécurité
+12. `triggers` - Automatisations
+
+**Phase 2 - Moyenne (10 modules) :**
+- `field-service`, `complaints`, `warranty`, `rfq`, `email`
+- `finance`, `backup`, `tenants`, `hr-vault`, `country-packs`
+
+**Phase 3 - Basse (6 modules) :**
+- `broadcast`, `social-networks`, `consolidation`, `autoconfig`, `stripe-integration`
+
+### Modules avec Interface Implémentée (24 modules)
+
+| Catégorie | Modules |
+|-----------|---------|
+| Saisie | `saisie` |
+| Gestion | `gestion-devis`, `gestion-commandes`, `gestion-factures`, `gestion-paiements`, `gestion-interventions` |
+| Affaires | `affaires` |
+| Modules | `partners`, `crm`, `inventory`, `purchases`, `projects`, `hr` |
+| Logistique | `production`, `maintenance`, `quality`, `qc` |
+| Commerce | `pos`, `ecommerce`, `marketplace`, `subscriptions` |
+| Services | `helpdesk` |
+| Digital | `web`, `website`, `bi`, `compliance` |
+| Finance | `accounting`, `treasury` |
+| Direction | `cockpit` |
+| IA | `marceau`, `ai-assistant` |
+| Import | `import-odoo`, `import-axonaut`, `import-pennylane`, `import-sage`, `import-chorus` |
+| Système | `admin` |
+| Utilisateur | `profile`, `settings` |
+
+---
+
+## Tâches Complétées [2026-02-17]
+
+### #93 Workflows d'Approbation - ANALYSE COMPLÈTE
+
+**Statut:** Analyse terminée, implémentation à ~70% existante
+
+**Ce qui existe déjà:**
+- ✅ Workflow RED (décisions haut risque) - 3 étapes obligatoires, rôle DIRIGEANT
+- ✅ Workflow Engine générique (`/app/core/workflow.py`) - multi-étapes, seuils, escalade
+- ✅ 3 workflows prédéfinis: `journal_entry_approval`, `payment_approval`, `period_close_approval`
+- ✅ Tables DB: `workflow_instances`, `workflow_steps`, `workflow_notifications`
+- ✅ Système IAM complet avec 1765+ permissions et rôles hiérarchiques
+- ✅ Documents avec champs `validated_by`, `validated_at`, `status`
+
+**Ce qui reste à créer:**
+- [ ] Workflows pour documents commerciaux (devis, factures, commandes)
+- [ ] Workflows pour achats (demandes d'achat, commandes fournisseurs)
+- [ ] Ajout `workflow_instance_id` aux modèles documents
+- [ ] Endpoints API: `/documents/{id}/submit-for-approval`, `/approve`, `/reject`
+- [ ] Modèle `ApprovalDelegation` (délégation approbation)
+- [ ] Service d'escalade automatique avec scheduler
+- [ ] Analytics approbation (temps moyen, taux rejet)
+
+**Fichiers clés existants:**
+- `/app/core/workflow.py` - 572 lignes - Moteur principal
+- `/app/services/red_workflow.py` - 297 lignes - Exemple complet
+- `/alembic/versions/20260215_workflow_approval.py` - Migration DB
+
+---
+
+### Module E-Invoicing France 2026 - COMPLET
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| 1 | Implémenter les clients PDP réels (Chorus Pro, PPF, Yooz) | ✅ |
+| 2 | Ajouter les tests unitaires (52 tests passent) | ✅ |
+| 3 | Créer endpoint réception factures entrantes (INBOUND) | ✅ |
+| 4 | Implémenter webhooks notifications de statut | ✅ |
+| 5 | Génération PDF/A-3 avec XML embarqué (Factur-X) | ✅ |
+| 6 | Menu Paramètres dynamique par module | ✅ |
+
+### Fichiers créés/modifiés
+
+**E-Invoicing:**
+- `einvoicing_webhooks.py` - Service notifications webhook (HMAC-SHA256, retry)
+- `einvoicing_pdf_generator.py` - Générateur PDF/A-3 Factur-X (reportlab + factur-x)
+- `tests/test_einvoicing_france_2026.py` - 52 tests unitaires
+- `einvoicing_router.py` - Endpoints INBOUND + PDF + Webhooks
+- `einvoicing_service.py` - Méthodes réception + accept/refuse
+
+**Menu Paramètres Dynamique:**
+- `app/core/module_settings_registry.py` - Registre paramètres par module (9 modules)
+- `app/api/module_settings_router.py` - 6 endpoints REST
+- `app/main.py` - Intégration router
+
+**Dépendances ajoutées (requirements.txt):**
+- `reportlab>=4.0.0`
+- `pypdf>=3.17.0`
+- `factur-x>=3.0`
+
+---
+
+## Module E-Invoicing France 2026 [2026-02-17]
+
+### Vue d'ensemble
+
+Module complet de facturation électronique conforme à la réforme française 2026.
+Architecture multi-tenant avec configuration PDP par entreprise.
+
+### Fichiers créés
+
+| Fichier | Description | Lignes |
+|---------|-------------|--------|
+| `einvoicing_models.py` | Modèles SQLAlchemy (5 tables) | ~380 |
+| `einvoicing_schemas.py` | Schémas Pydantic API | ~500 |
+| `einvoicing_service.py` | Service métier complet | ~900 |
+| `einvoicing_router.py` | 22 endpoints REST | ~450 |
+| `pdp_client.py` | Clients PDP (Chorus, PPF, etc.) | ~800 |
+| `20260217_france_einvoicing_2026.py` | Migration Alembic | ~280 |
+
+### Tables créées
+
+1. **einvoice_pdp_configs** - Configuration PDP par tenant
+   - Provider (Chorus Pro, PPF, Yooz, Docaposte, etc.)
+   - Credentials chiffrés (client_id, client_secret)
+   - Certificats (certificate_ref, private_key_ref)
+   - Options par provider, webhooks
+
+2. **einvoice_records** - Factures électroniques
+   - Direction (OUTBOUND/INBOUND)
+   - Format (Factur-X minimum/basic/EN16931/extended, UBL, CII)
+   - Statut lifecycle (DRAFT → SENT → DELIVERED → ACCEPTED/REFUSED → PAID)
+   - Lien avec documents source (CommercialDocument, LegacyPurchaseInvoice)
+   - Contenu XML et validation
+
+3. **einvoice_lifecycle_events** - Événements cycle de vie
+   - Traçabilité complète des changements de statut
+   - Source (PPF, PDP, WEBHOOK, MANUAL)
+
+4. **ereporting_submissions** - E-reporting B2C
+   - Périodes mensuelles
+   - Types (B2C_DOMESTIC, B2C_EXPORT, B2B_INTERNATIONAL)
+
+5. **einvoice_stats** - Statistiques par tenant/période
+
+### Endpoints API
+
+```
+/v1/france/einvoicing/
+├── pdp-configs/                    # Configuration PDP
+│   ├── GET     /                   # Liste configs
+│   ├── GET     /default            # Config par défaut
+│   ├── GET     /{id}               # Détail config
+│   ├── POST    /                   # Créer config
+│   ├── PUT     /{id}               # Modifier config
+│   └── DELETE  /{id}               # Supprimer config
+├── einvoices/                      # Factures électroniques
+│   ├── GET     /                   # Liste factures
+│   ├── GET     /{id}               # Détail facture
+│   ├── GET     /{id}/xml           # Télécharger XML
+│   ├── POST    /from-source        # Créer depuis document
+│   ├── POST    /manual             # Créer manuellement
+│   ├── POST    /{id}/submit        # Soumettre au PDP
+│   ├── POST    /{id}/validate      # Valider XML
+│   ├── PUT     /{id}/status        # Modifier statut
+│   ├── POST    /bulk/generate      # Génération en masse
+│   └── POST    /bulk/submit        # Soumission en masse
+├── ereporting/                     # E-reporting B2C
+│   ├── GET     /                   # Liste soumissions
+│   ├── POST    /                   # Créer soumission
+│   └── POST    /{id}/submit        # Soumettre au PPF
+├── stats                           # Statistiques
+├── dashboard                       # Dashboard complet
+└── webhook/{config_id}             # Webhook PDP
+```
+
+### Intégration multi-tenant
+
+- Chaque tenant a ses propres configurations PDP
+- Isolation complète des données (tenant_id sur toutes les tables)
+- Configuration par défaut par tenant
+- Statistiques agrégées par période et tenant
+
+### Intégration données financières
+
+Le service s'intègre avec :
+- `CommercialDocument` (factures/avoirs clients)
+- `LegacyPurchaseInvoice` (factures fournisseurs)
+- `Customer` (infos acheteur)
+- `PurchaseSupplier` (infos vendeur)
+
+### Formats supportés
+
+- **Factur-X** (PDF/A-3 + XML)
+  - MINIMUM
+  - BASIC
+  - EN16931 (défaut)
+  - EXTENDED
+- **UBL 2.1**
+- **CII D16B**
+
+### Providers PDP supportés
+
+- Chorus Pro (B2G)
+- PPF (Portail Public de Facturation)
+- Yooz
+- Docaposte
+- Sage
+- Cegid
+- Generix
+- Edicom
+- Basware
+- Custom (générique)
+
+---
+
+## Menu Paramètres Dynamique par Module [2026-02-17]
+
+### Vue d'ensemble
+
+Système de configuration dynamique permettant à chaque tenant de personnaliser les paramètres de ses modules activés.
+
+### Endpoints API
+
+```
+/v1/settings/modules/
+├── GET     /                           # Liste modules configurables
+├── GET     /{module_code}/schema       # Schéma des paramètres
+├── GET     /{module_code}              # Paramètres actuels
+├── PUT     /{module_code}              # Mise à jour paramètres
+├── POST    /{module_code}/reset        # Réinitialiser défauts
+└── GET     /{module_code}/defaults     # Valeurs par défaut
+```
+
+### Modules avec paramètres (9)
+
+| Module | Paramètres | Description |
+|--------|------------|-------------|
+| invoicing | 10 | Préfixe factures, conditions paiement, TVA, relances |
+| einvoicing | 9 | Format Factur-X, auto-submit, webhooks, rétention |
+| payments | 5 | Mode paiement, rapprochement, pénalités retard |
+| partners | 5 | Préfixe client, SIRET obligatoire, doublons |
+| inventory | 7 | Méthode valorisation, alertes stock, lots/séries |
+| purchases | 5 | Préfixe commandes, validation, seuil approbation |
+| hr | 5 | Préfixe matricule, heures hebdo, congés, DSN |
+| accounting | 5 | Début exercice, plan comptable, écritures auto |
+| projects | 6 | Type facturation, suivi temps/dépenses, alertes |
+
+### Types de paramètres supportés
+
+- `string` - Texte (avec max_length, placeholder)
+- `integer` / `number` - Nombre (avec min, max, step)
+- `boolean` - Case à cocher
+- `select` - Liste déroulante (options)
+- `multiselect` - Sélection multiple
+- `date`, `email`, `url`, `password`, `color`
+
+### Catégories
+
+- `general` - Paramètres généraux
+- `display` - Affichage
+- `notifications` - Notifications
+- `integration` - Intégrations
+- `security` - Sécurité
+- `advanced` - Avancé
+
+### Fichiers
+
+- `/app/core/module_settings_registry.py` - Définitions paramètres
+- `/app/api/module_settings_router.py` - Endpoints REST
 
 ---
 
@@ -796,6 +1182,181 @@ for c in db.query(EnrichmentProviderConfig).all():
 19. `/app/modules/treasury/service.py` - Ajout get_summary(), get_forecast()
 20. `/app/modules/accounting/service.py` - Fix references modeles (AccountingJournalEntry, etc.)
 
+### Ajout d'un Nouveau Module [PROCÉDURE COMPLÈTE - AUTOMATISÉE]
+
+Pour ajouter un nouveau module fonctionnel (visible dans tenant + permissions auto-générées) :
+
+#### Étape 1 : Backend - Créer le module
+
+```bash
+# Créer le dossier du module
+mkdir -p app/modules/nom_module
+touch app/modules/nom_module/__init__.py
+touch app/modules/nom_module/router.py
+touch app/modules/nom_module/service.py
+touch app/modules/nom_module/models.py
+touch app/modules/nom_module/schemas.py
+```
+
+#### Étape 2 : Métadonnées Backend - `app/core/modules_registry.py`
+
+```python
+# Dans MODULE_METADATA_OVERRIDES (ligne ~44)
+MODULE_METADATA_OVERRIDES: Dict[str, Dict] = {
+    # ...existant
+    "nom_module": {
+        "name": "Nom Affiché",
+        "description": "Description du module",
+        "category": "Metier",  # ou "Technique" ou "Import"
+        "icon": "icon-name",   # lucide icon (voir liste ci-dessous)
+        "enabled_by_default": False
+    },
+}
+```
+
+**Icônes disponibles** : `book`, `file-text`, `dollar-sign`, `users`, `credit-card`, `briefcase`, `package`, `shopping-cart`, `user`, `settings`, `tool`, `check-circle`, `monitor`, `shopping-bag`, `headphones`, `bar-chart-2`, `shield`, `truck`, `bot`, `building`, `file-signature`, `receipt`, `clock`, `map-pin`, `alert-circle`, `shield-check`, `file-search`, `repeat`, `store`, `pen-tool`, `mail`, `send`, `globe`, `trending-up`, `layers`, `check-square`, `cpu`, `share-2`, `smartphone`, `mic`, `database`, `eye`, `key`, `building-2`, `zap`, `download`, `flag`, `lock`
+
+#### Étape 3 : Capabilities IAM - AUTOMATIQUE !
+
+**Les capabilities sont auto-générées** depuis `modules_registry.py` via `_generate_capabilities_by_module()` dans `app/modules/iam/router.py`.
+
+Chaque module obtient automatiquement :
+- `{module}.view` - Voir le module
+- `{module}.create` - Créer
+- `{module}.edit` - Modifier
+- `{module}.delete` - Supprimer
+
+**Pour des capabilities personnalisées**, ajouter dans `_get_custom_capabilities()` :
+
+```python
+# Dans app/modules/iam/router.py, fonction _get_custom_capabilities()
+"nom_module": {
+    "name": "Nom Module",
+    "icon": "IconName",
+    "capabilities": [
+        {"code": "nom_module.view", "name": "Voir", "description": "..."},
+        {"code": "nom_module.action_speciale", "name": "Action", "description": "..."},
+    ]
+},
+```
+
+#### Étape 4 : Frontend - Scaffolder le module
+
+```bash
+cd frontend
+npm run scaffold:module -- nom-module
+npm run register:modules
+```
+
+#### Étape 5 : Menu Frontend - SEMI-AUTOMATIQUE !
+
+**Option A : Génération automatique** (recommandé)
+
+```bash
+# Générer le code du menu depuis modules_registry.py
+node scripts/frontend/generate-menu.js
+
+# Le script affiche ViewKey et MENU_ITEMS à copier dans UnifiedLayout.tsx
+```
+
+**Option B : Ajout manuel** dans `frontend/src/components/UnifiedLayout.tsx`
+
+```typescript
+// Ajouter dans ViewKey (ligne ~35)
+export type ViewKey =
+  | 'existant'
+  | 'nom-module'  // Ajouter ici
+  | 'admin';
+
+// Ajouter dans MENU_ITEMS (ligne ~120)
+const MENU_ITEMS: MenuItem[] = [
+  // ...existant
+  { key: 'nom-module', label: 'Nom Module', group: 'Modules', capability: 'nom_module.view' },
+];
+```
+
+**Groupes de menu disponibles** : `Saisie`, `Gestion`, `Affaires`, `Modules`, `Logistique`, `Commerce`, `Services`, `Digital`, `Communication`, `Finance`, `Direction`, `IA`, `Système`, `Import`
+
+#### Étape 6 : Build & Redéployer
+
+```bash
+cd /home/ubuntu/azalscore
+docker compose -f docker-compose.prod.yml build frontend --no-cache
+docker compose -f docker-compose.prod.yml up -d frontend
+docker compose -f docker-compose.prod.yml restart api
+```
+
+#### Architecture Auto-Génération (Capabilities + Menu)
+
+```
+                    modules_registry.py
+                    (SOURCE UNIQUE DE VÉRITÉ)
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                                 ▼
+   iam/router.py                    generate-menu.js
+          │                                 │
+          │ _generate_capabilities_         │ Génère ViewKey
+          │ _by_module()                    │ et MENU_ITEMS
+          ▼                                 ▼
+┌──────────────────────┐        ┌──────────────────────┐
+│ CAPABILITIES_BY_MODULE│        │ UnifiedLayout.tsx    │
+│ (auto: view/create/  │        │ (copier le output)   │
+│  edit/delete)        │        │                      │
+│ + custom overrides   │        │ ViewKey type         │
+└──────────────────────┘        │ MENU_ITEMS array     │
+          │                     └──────────────────────┘
+          ▼
+/api/v1/iam/capabilities/modules
+(66 modules, 326+ permissions)
+```
+
+#### Fichiers clés
+
+| Fichier | Rôle |
+|---------|------|
+| `app/core/modules_registry.py` | Source unique modules (auto-découverte depuis app/modules/) |
+| `app/modules/iam/router.py` | Auto-génération capabilities + overrides personnalisés |
+| `scripts/frontend/generate-menu.js` | Génère ViewKey + MENU_ITEMS depuis modules_registry |
+| `frontend/src/components/UnifiedLayout.tsx` | Menu latéral (63 entrées, 14 groupes) |
+
+#### Script generate-menu.js
+
+```bash
+# Usage
+node scripts/frontend/generate-menu.js
+
+# Output exemple:
+# ============================================================
+# ViewKey (copier dans UnifiedLayout.tsx)
+# ============================================================
+# export type ViewKey =
+#   | 'saisie'
+#   | 'accounting'
+#   | 'treasury'
+#   ...
+#
+# ============================================================
+# MENU_ITEMS (copier dans UnifiedLayout.tsx)
+# ============================================================
+# const MENU_ITEMS: MenuItem[] = [
+#   { key: 'saisie', label: 'Nouvelle saisie', group: 'Saisie' },
+#   { key: 'accounting', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },
+#   ...
+# ];
+```
+
+**Configuration dans generate-menu.js :**
+- `MODULE_GROUP_MAP` : Mapping module → groupe menu
+- `MODULE_LABELS` : Labels personnalisés (ex: 'hr' → 'Ressources Humaines')
+- `IGNORED_MODULES` : Modules exclus du menu (utilitaires)
+
+#### Vérification
+
+1. **Modules Tenant** : Admin → Tenants → Modifier tenant → X/X modules
+2. **Accès Modules** : Admin → Utilisateurs → Accès Modules → X/X permissions (auto-généré)
+3. **Menu** : Le module apparaît dans le menu latéral
+
 ### Frontend (frontend/src/)
 1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules", onglet "Enrichissement"
 2. `/modules/admin/types.ts` - Ajout created_by_name dans interface Role
@@ -878,15 +1439,116 @@ Toutes les classes utilitaires Tailwind standard:
    - N'est PAS utilise car l'app charge `UnifiedApp` et non `App.tsx`
    - Reserve pour future migration vers systeme de menu dynamique
 
-### Pour ajouter un nouveau module au menu:
+### Pour ajouter un nouveau module au menu (COMPLET):
 
-1. Modifier `/frontend/src/components/UnifiedLayout.tsx`:
-   - Ajouter la cle dans le type `ViewKey`
-   - Ajouter l'entree dans `MENU_ITEMS` avec label, group et capability
+Il faut modifier **5 fichiers** pour qu'un module apparaisse dans le menu ET dans "Acces Modules":
 
-2. (Optionnel) Modifier `/frontend/src/ui-engine/menu-dynamic/index.tsx`:
-   - Ajouter l'icone dans `ICON_MAP`
-   - Ajouter l'entree dans `MENU_SECTIONS`
+#### 1. Menu ACTIF - `/frontend/src/components/UnifiedLayout.tsx` (OBLIGATOIRE)
+
+C'est le menu utilise en production. Modifier:
+
+```typescript
+// Type ViewKey (ligne ~35)
+export type ViewKey =
+  | 'saisie'
+  // ...existant
+  | 'import-odoo' | 'import-axonaut'  // Ajouter les nouvelles cles
+  | 'admin'
+  | 'profile' | 'settings';
+
+// MENU_ITEMS (ligne ~66)
+const MENU_ITEMS: MenuItem[] = [
+  // ...existant
+  { key: 'import-odoo', label: 'Import Odoo', group: 'Import', capability: 'import.odoo.config' },
+  { key: 'import-axonaut', label: 'Import Axonaut', group: 'Import', capability: 'import.axonaut.config' },
+  { key: 'admin', label: 'Administration', group: 'Système', capability: 'admin.view' },
+];
+```
+
+#### 2. Menu dynamique (optionnel) - `/frontend/src/ui-engine/menu-dynamic/index.tsx`
+
+```typescript
+// Ajouter l'icone dans ICON_MAP (ligne ~50)
+import { Download, /* autres imports */ } from 'lucide-react';
+
+const ICON_MAP = {
+  // ...existant
+  download: Download,
+};
+
+// Ajouter la section dans MENU_SECTIONS (avant 'admin')
+{
+  id: 'import',
+  title: 'Import de Donnees',
+  items: [
+    {
+      id: 'import-odoo',
+      label: 'Import Odoo',
+      icon: 'download',
+      path: '/import/odoo',
+      capability: 'import.odoo.config',  // DOIT correspondre au code dans CAPABILITIES_BY_MODULE
+    },
+    // ... autres items
+  ],
+},
+```
+
+#### 2. Capabilities utilisateur - `/app/api/auth.py`
+
+```python
+# Ajouter dans ALL_CAPABILITIES (ligne ~1040)
+ALL_CAPABILITIES = [
+    # ...existant
+    # Import de donnees
+    "import.config.create", "import.config.read", "import.config.update", "import.config.delete",
+    "import.execute", "import.cancel",
+    "import.odoo.config", "import.odoo.execute", "import.odoo.preview",
+    # ... autres
+]
+```
+
+#### 3. Interface "Acces Modules" - `/app/modules/iam/router.py`
+
+```python
+# Ajouter dans CAPABILITIES_BY_MODULE (ligne ~730)
+CAPABILITIES_BY_MODULE = {
+    # ...existant
+    "import": {
+        "name": "Import de Donnees",
+        "icon": "Download",
+        "capabilities": [
+            {"code": "import.config.create", "name": "Créer config import", "description": "..."},
+            {"code": "import.odoo.config", "name": "Configurer Odoo", "description": "..."},
+            # ... autres
+        ]
+    },
+}
+```
+
+#### 4. Permissions backend - `/app/modules/iam/permissions.py`
+
+```python
+# Ajouter le dictionnaire de permissions (si pas deja present)
+IMPORT_PERMISSIONS = {
+    "import.config.create": "Créer des configurations d'import",
+    "import.config.read": "Voir les configurations d'import",
+    # ... autres
+}
+
+# L'ajouter dans ALL_PERMISSIONS
+ALL_PERMISSIONS = {
+    # ...existant
+    **IMPORT_PERMISSIONS,
+}
+```
+
+#### 5. Deployer
+
+```bash
+./deploy-quick.sh all   # Rebuild frontend + restart API
+```
+
+Puis Ctrl+Shift+R dans le navigateur pour vider le cache.
 
 ### Exemple - Ajout Marceau IA (2026-02-09):
 
@@ -898,9 +1560,44 @@ Toutes les classes utilitaires Tailwind standard:
 { key: 'marceau', label: 'Marceau IA', group: 'IA', capability: 'marceau.view' },
 ```
 
+### Exemple - Ajout Import de Donnees (2026-02-14):
+
+Fichiers modifies:
+- `/frontend/src/ui-engine/menu-dynamic/index.tsx` - Section "Import de Donnees" avec 5 items
+- `/app/api/auth.py` - 18 capabilities ajoutees dans ALL_CAPABILITIES
+- `/app/modules/iam/router.py` - Module "import" dans CAPABILITIES_BY_MODULE avec 19 capabilities
+- `/app/modules/iam/permissions.py` - IMPORT_PERMISSIONS (deja present)
+
 ---
 
 ## Principes de Developpement
+
+### API Sans Version (URLs Stables)
+
+**REGLE:** L'API AZALSCORE n'utilise PAS de prefixe de version (/v1, /v2, /v3).
+
+**URLs:**
+- ✅ Correct: `/commercial/customers`, `/accounting/summary`, `/iam/users`
+- ❌ Incorrect: `/v1/commercial/customers`, `/v3/accounting/summary`
+
+**Avantages:**
+- URLs simples et stables
+- Pas de migration frontend a chaque changement de version
+- Moins de confusion pour les developpeurs
+
+**Implementation:**
+- Backend: Routers montes sans prefixe (`APIRouter()` sans `prefix`)
+- Frontend: Appels API directs (`/commercial/customers`)
+- Legacy: Routes essentielles (auth, cockpit) integrees au router principal
+
+**Fichiers concernes:**
+- `/app/api/v3/__init__.py` - Router principal sans prefixe
+- `/app/main.py` - Montage direct des routers
+- Frontend: Tous les fichiers `.ts/.tsx` utilisent des URLs sans version
+
+**Date d'application:** 2026-02-15
+
+---
 
 ### Reutilisabilite - Sous-Programmes
 **REGLE:** Tout element repete doit faire l'objet d'un sous-programme (composant, hook, fonction, vue) appele au besoin.
@@ -1074,3 +1771,729 @@ def get_forecast(self, days: int = 30) -> List[ForecastData]:
 **Commit:** 6541997
 
 **Note:** Le module Treasury n'a pas encore de modeles de base de donnees (`BankAccount`, `BankTransaction`). Les methodes retournent des donnees vides en attendant l'implementation complete.
+
+### 30. Module Odoo Import [2026-02-14]
+
+**Objectif:** Creer un module d'import de donnees depuis Odoo (versions 8-18) pour permettre la migration des donnees existantes vers AZALSCORE.
+
+**Fonctionnalites:**
+- Configuration de connexion Odoo par tenant (URL, database, API key)
+- Import des produits (`product.product` → `Product`)
+- Import des contacts/clients (`res.partner` → `UnifiedContact`)
+- Import des fournisseurs (`res.partner` avec `supplier_rank > 0`)
+- Delta sync base sur `write_date` Odoo
+- Historique complet des imports
+- Previsualisation des donnees avant import
+- Mapping personnalisable des champs
+
+**Architecture:**
+```
+app/modules/odoo_import/
+├── __init__.py          # Exports du module
+├── models.py            # OdooConnectionConfig, OdooImportHistory, OdooFieldMapping
+├── schemas.py           # Schemas Pydantic pour l'API
+├── connector.py         # Client XML-RPC Odoo (versions 8-18)
+├── mapper.py            # Mapping des champs Odoo → AZALSCORE
+├── service.py           # OdooImportService (orchestration)
+└── router.py            # Endpoints API REST
+```
+
+**Endpoints API:**
+- `POST /api/v1/odoo/config` - Creer une configuration
+- `GET /api/v1/odoo/config` - Lister les configurations
+- `POST /api/v1/odoo/test` - Tester une connexion
+- `POST /api/v1/odoo/import/products` - Importer les produits
+- `POST /api/v1/odoo/import/contacts` - Importer les contacts
+- `POST /api/v1/odoo/import/suppliers` - Importer les fournisseurs
+- `POST /api/v1/odoo/import/full` - Synchronisation complete
+- `GET /api/v1/odoo/history` - Historique des imports
+- `POST /api/v1/odoo/preview` - Previsualiser les donnees
+
+**Compatibilite Odoo:**
+- Versions 8-13: Authentification username/password
+- Versions 14-18: Authentification API key (recommandee)
+- API XML-RPC (`/xmlrpc/2/common`, `/xmlrpc/2/object`)
+
+**Fichiers crees:**
+21. `/app/modules/odoo_import/__init__.py`
+22. `/app/modules/odoo_import/models.py`
+23. `/app/modules/odoo_import/schemas.py`
+24. `/app/modules/odoo_import/connector.py`
+25. `/app/modules/odoo_import/mapper.py`
+26. `/app/modules/odoo_import/service.py`
+27. `/app/modules/odoo_import/router.py`
+28. `/alembic/versions/20260214_odoo_import.py`
+
+**Fichiers modifies:**
+- `/app/main.py` - Import et enregistrement du router
+
+**Multi-tenant:** Isolation complete par `tenant_id` sur toutes les tables et requetes.
+
+**Activation:** Menu Administration > Acces Modules > Import de donnees
+
+**Note:** Ce module servira de base pour les futurs imports (Axonaut, Pennylane, Sage, Chorus, etc.)
+
+---
+
+## TODOLIST COMPLÈTE AZALSCORE — 123 TÂCHES
+
+**Mise à jour:** 2026-02-17
+**Référence:** `/home/ubuntu/azalscore/PROMPT_PHASE_CRITIQUE.md`
+
+> **ALERTE:** Audit du 2026-02-15 révèle que 98.5% des endpoints backend (1090/1107) ne sont PAS utilisés par le frontend.
+> Phase 0.5 ajoutée pour corriger cette situation.
+
+---
+
+### ✅ TÂCHES RÉCEMMENT COMPLÉTÉES
+
+| Date | Tâche | Détails |
+|------|-------|---------|
+| 2026-02-17 | Tests Module Audit v2 | 75/75 tests passent (100%) - Corrections schemas, service, router |
+| 2026-02-17 | Corrections FastAPI Deprecation | `regex=` → `pattern=` dans 6 fichiers (accounting, guardian, audit) |
+| 2026-02-17 | Infrastructure Docker | Rebuild API, fix réseau nginx ↔ api, health check OK |
+| 2026-02-17 | Service Audit - record_metric | Support timestamp, génération UUID, flush DB |
+| 2026-02-17 | Schema AuditLogResponseSchema | Ajout champ `user_agent` manquant |
+| 2026-02-17 | **#97 Audit Secrets** | ✅ COMPLÉTÉ - Rapport `AUDIT_SECRETS_2026-02-17.md` généré |
+| 2026-02-17 | **#96 Analyse Vulnérabilités SCA** | ✅ COMPLÉTÉ - 3 npm fixées, rapport `AUDIT_SCA_2026-02-17.md` |
+| 2026-02-17 | **#117 Pipeline CI/CD** | ✅ DÉJÀ EN PLACE - 6 workflows GitHub Actions complets |
+| 2026-02-17 | **#110 Code Review Process** | ✅ DÉJÀ EN PLACE - CODEOWNERS, PR template, CONTRIBUTING.md |
+| 2026-02-17 | **#109 Analyse Statique SonarQube** | ✅ COMPLÉTÉ - Bandit 0 high réel, B307 eval() et B108 /tmp corrigés |
+| 2026-02-17 | **#113 Environnement Staging** | ✅ COMPLÉTÉ - docker-compose.staging.yml, .env.staging.example, nginx.staging.conf, docs/STAGING.md |
+| 2026-02-17 | **#27 Contrats Partenaires** | 📋 CHECKLIST CRÉÉE - `docs/legal/PARTNER_CONTRACTS_CHECKLIST.md` |
+| 2026-02-17 | **#28 Validation Juridique Finance** | 📋 CHECKLIST CRÉÉE - `docs/legal/FINANCE_SUITE_LEGAL_VALIDATION.md` |
+| 2026-02-17 | **#2,3,9,10,11,21 Finance Suite** | ✅ DÉJÀ IMPLÉMENTÉS - 13 modèles, 50+ schemas, 138 endpoints |
+
+---
+
+### PHASE 0 — FONDATIONS TECHNIQUES (15 tâches) — BLOQUANT
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #117 | Pipeline CI/CD Complet | ✅ EXISTANT |
+| #110 | Processus de Code Review | ✅ EXISTANT |
+| #109 | Analyse Statique de Code (SonarQube) | ✅ COMPLÉTÉ |
+| #113 | Environnement Staging Complet | ✅ COMPLÉTÉ |
+| #96 | Analyse Vulnérabilités Dépendances (SCA) | ✅ COMPLÉTÉ |
+| #97 | Audit Secrets et Credentials | ✅ COMPLÉTÉ |
+| #27 | Négocier et signer contrats partenaires | 📋 CHECKLIST (action humaine requise) |
+| #28 | Validation juridique Finance Suite | 📋 CHECKLIST (action humaine requise) |
+| #2 | Créer les modèles SQLAlchemy Finance Suite | ✅ EXISTANT (13 modèles, tables en BDD) |
+| #3 | Créer les schemas Pydantic Finance Suite | ✅ EXISTANT (50+ schemas) |
+| #11 | Créer la migration Alembic Finance Suite | ✅ EXISTANT (core_init migration) |
+| #9 | Créer le router API Finance Suite | ✅ EXISTANT (138 endpoints) |
+| #10 | Créer le service orchestrateur Finance Suite | ✅ EXISTANT (1570 lignes) |
+| #21 | Implémenter la sécurité Finance Suite | ✅ EXISTANT (tenant isolation) |
+| #93 | Implémenter Validations et Workflows Approbation | 🔄 ANALYSÉ (70% existant) |
+
+**Effort:** 5-6 semaines
+
+---
+
+### PHASE 0.5 — ACTIVATION FRONTEND BACKEND (7 tâches) — CRITIQUE [NOUVEAU]
+
+> **Contexte:** 1090 endpoints backend existent mais ne sont PAS appelés par le frontend.
+
+| # | Tâche | Endpoints | Statut |
+|---|-------|-----------|--------|
+| #118 | Créer frontend Country Packs France (FEC, DSN, TVA, RGPD) | 67 | ⬜ |
+| #119 | Créer frontend eCommerce complet (Panier, Checkout, Coupons) | 60 | ⬜ |
+| #120 | Créer frontend Helpdesk complet (Tickets, SLA, KB) | 60 | ⬜ |
+| #121 | Créer frontend Field Service (GPS, Tournées, Check-in) | 53 | ⬜ |
+| #122 | Créer frontend Compliance (Audits, Politiques, Incidents) | 52 | ⬜ |
+| #123 | Créer frontend BI complet (Dashboards, Analytics, KPIs) | 49 | ⬜ |
+| #124 | Consolider les routers backend (v1 → v2, supprimer doublons) | - | ⬜ |
+
+**Impact:** Active 341 endpoints backend actuellement inutilisés.
+**Effort:** 4-6 semaines
+
+---
+
+### PHASE 1 — CONFORMITÉ LÉGALE (9 tâches) — CRITIQUE
+
+| # | Tâche | Priorité | Statut |
+|---|-------|----------|--------|
+| #49 | Facturation Électronique PDP | CRITIQUE | ⬜ |
+| #52 | FEC conforme formats 2025 | CRITIQUE | ⬜ |
+| #104 | Audit Conformité RGPD | CRITIQUE | ⬜ |
+| #106 | Vérification Conformité NF525 (Caisse) | CRITIQUE | ⬜ |
+| #50 | EDI-TVA automatique | HAUTE | ⬜ |
+| #51 | Liasses Fiscales automatiques | HAUTE | ⬜ |
+| #53 | Plan de Paie conforme France | HAUTE | ⬜ |
+| #37 | Conformité Fiscale Avancée France | HAUTE | ⬜ |
+| #108 | Vérification Conformité Normes AZALSCORE | HAUTE | ⬜ |
+
+**Deadline:** Septembre 2026
+**Effort:** 8-10 semaines
+
+---
+
+### PHASE 2 — FINANCE SUITE CORE (27 tâches) — HAUTE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #1 | Créer le module Finance Suite AZALSCORE | ⬜ |
+| #4 | Implémenter le provider Swan (Banking) | ⬜ |
+| #5 | Implémenter le provider NMI (Paiements) | ⬜ |
+| #6 | Implémenter le provider Defacto (Affacturage) | ⬜ |
+| #7 | Implémenter le provider Solaris (Crédit) | ⬜ |
+| #8 | Implémenter les webhooks Finance Suite | ⬜ |
+| #12 | Créer le frontend Finance Dashboard | ⬜ |
+| #13 | Créer le frontend Banking (Swan) | ⬜ |
+| #14 | Créer le frontend Payments (NMI) | ⬜ |
+| #15 | Créer le frontend Tap to Pay | ⬜ |
+| #16 | Créer le frontend Affacturage (Defacto) | ⬜ |
+| #17 | Créer le frontend Crédit (Solaris) | ⬜ |
+| #18 | Créer le frontend Settings Finance | ⬜ |
+| #65 | Implémenter Cartes Virtuelles | ⬜ |
+| #30 | Rapprochement Bancaire Automatique | ⬜ |
+| #66 | Catégorisation Auto Opérations Bancaires | ⬜ |
+| #67 | Prévisionnel Trésorerie avec Scénarios | ⬜ |
+| #22 | Intégrer Finance Suite avec Comptabilité | ⬜ |
+| #23 | Intégrer Finance Suite avec Facturation | ⬜ |
+| #24 | Intégrer Finance Suite avec POS | ⬜ |
+| #25 | Intégrer Finance Suite avec Trésorerie | ⬜ |
+| #19 | Tests unitaires Finance Suite | ⬜ |
+| #20 | Tests d'intégration Finance Suite | ⬜ |
+| #105 | Audit Conformité PCI DSS | ⬜ |
+| #98 | Audit Authentification et Autorisation | ⬜ |
+| #94 | Audit Sécurité OWASP Top 10 | ⬜ |
+
+**Effort:** 12-14 semaines
+
+---
+
+### PHASE 2.5 — TESTS & QUALITÉ (3 tâches) — HAUTE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #99 | Tests Unitaires - Couverture 80% | 🔄 EN COURS (audit: 75/75 ✅) |
+| #100 | Tests d'Intégration API | 🔄 EN COURS (audit v2: 100%) |
+| #103 | Tests de Régression Automatisés | ⬜ |
+
+**Effort:** 2-3 semaines
+**Progrès:** Module Audit v2 complètement testé (2026-02-17)
+
+---
+
+### PHASE 3 — MODULES MÉTIER (16 tâches) — HAUTE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #29 | OCR Factures Fournisseurs | ⬜ |
+| #31 | Collaboration Comptable Temps Réel | ⬜ |
+| #55 | Abonnements et Facturation Récurrente | ⬜ |
+| #47 | Relances Clients Automatiques | ⬜ |
+| #75 | Bons de Livraison | ⬜ |
+| #78 | Gestion Lots et Numéros de Série | ⬜ |
+| #76 | Contrôle Fabrication/Production | ⬜ |
+| #77 | PLM (Product Lifecycle Management) | ⬜ |
+| #38 | Suivi Temps et Feuilles d'Heures | ⬜ |
+| #39 | Notes de Frais | ⬜ |
+| #79 | Indemnités Kilométriques | ⬜ |
+| #80 | Module Recrutement | ⬜ |
+| #81 | Évaluations Employés | ⬜ |
+| #82 | Gestion Parc Automobile | ⬜ |
+| #36 | Multi-Sociétés et Consolidation | ⬜ |
+
+**Effort:** 8-10 semaines
+
+---
+
+### PHASE 4 — INTERVENTIONS & MAINTENANCE (9 tâches) — MOYENNE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #32 | Gestion Interventions Terrain avec GPS | ⬜ |
+| #33 | Planification Visuelle Techniciens | ⬜ |
+| #61 | Optimisation Tournées et Routes | ⬜ |
+| #64 | Photos dans Interventions | ⬜ |
+| #34 | Maintenance Préventive GMAO | ⬜ |
+| #35 | Gestion Équipements et Parc Matériel | ⬜ |
+| #62 | Capteurs IoT intégrés | ⬜ |
+| #63 | Maintenance Prédictive | ⬜ |
+| #92 | Réalité Augmentée Maintenance | ⬜ |
+
+**Effort:** 6-8 semaines
+
+---
+
+### PHASE 5 — CROISSANCE & E-COMMERCE (10 tâches) — MOYENNE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #54 | eCommerce intégré | ⬜ |
+| #56 | Site Web Builder | ⬜ |
+| #59 | POS Restaurant | ⬜ |
+| #83 | Module Location/Leasing | ⬜ |
+| #57 | Campagnes E-mail Marketing | ⬜ |
+| #60 | Campagnes SMS Marketing | ⬜ |
+| #58 | Marketing Automation | ⬜ |
+| #68 | Marketing Social | ⬜ |
+| #45 | Portail Client Self-Service | ⬜ |
+| #73 | Segmentation Clients Intelligente | ⬜ |
+
+**Effort:** 8-10 semaines
+
+---
+
+### PHASE 6 — COMMUNICATION & CRM (7 tâches) — NORMALE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #69 | WhatsApp Business | ⬜ |
+| #70 | Live Chat Site Web | ⬜ |
+| #84 | Discussion/Chat Interne | ⬜ |
+| #71 | Extension LinkedIn | ⬜ |
+| #72 | Extensions Gmail et Outlook | ⬜ |
+| #74 | VOIP intégrée | ⬜ |
+| #48 | Import Données Concurrents | ⬜ |
+
+**Effort:** 4-6 semaines
+
+---
+
+### PHASE 7 — MOBILE & APPS (2 tâches) — NORMALE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #46 | App Mobile Native Complète (iOS/Android) | ⬜ |
+| #26 | Créer l'app mobile Tap to Pay | ⬜ |
+
+**Effort:** 6-8 semaines
+
+---
+
+### PHASE 8 — AVANCÉ & PERSONNALISATION (6 tâches) — BASSE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #42 | Personnalisation No-Code Formulaires | ⬜ |
+| #43 | Automatisations et Workflows | ⬜ |
+| #44 | Signature Électronique Intégrée | ⬜ |
+| #40 | Tableau de Bord Dirigeant Intelligent | ⬜ |
+| #111 | Documentation Technique Complète | ⬜ |
+| #112 | Gestion de la Dette Technique | 🔄 EN COURS (deprecations FastAPI corrigées) |
+
+**Effort:** 6 semaines
+**Progrès:** Warnings `regex` → `pattern` corrigés (2026-02-17)
+
+---
+
+### PHASE 9 — OPTIONNEL (7 tâches) — OPTIONNEL
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #85 | Base de Connaissances/Wiki | ⬜ |
+| #86 | Rendez-vous en Ligne | ⬜ |
+| #87 | Sondages et Enquêtes | ⬜ |
+| #88 | Gestion Événements | ⬜ |
+| #91 | Module eLearning | ⬜ |
+| #89 | Module Blog | ⬜ |
+| #90 | Module Forum | ⬜ |
+
+**Effort:** 6 semaines (si ressources disponibles)
+
+---
+
+### PHASE 10 — PRÉ-PRODUCTION (7 tâches) — CRITIQUE
+
+| # | Tâche | Priorité | Statut |
+|---|-------|----------|--------|
+| #95 | Tests de Pénétration (Pentest) | CRITIQUE | ⬜ |
+| #115 | Monitoring et Alerting Complet | CRITIQUE | ⬜ |
+| #114 | Plan de Rollback et Procédures | CRITIQUE | ⬜ |
+| #101 | Tests End-to-End (E2E) | HAUTE | ⬜ |
+| #102 | Tests de Charge et Performance | HAUTE | ⬜ |
+| #116 | Tests de Disaster Recovery | HAUTE | ⬜ |
+| #107 | Audit Accessibilité RGAA/WCAG | MOYENNE | ⬜ |
+
+**Effort:** 4-6 semaines
+
+---
+
+### RÉCAPITULATIF
+
+| Phase | Tâches | Effort | Priorité |
+|-------|--------|--------|----------|
+| 0 | 15 | 5-6 sem | BLOQUANT |
+| 0.5 | 7 | 4-6 sem | CRITIQUE |
+| 1 | 9 | 8-10 sem | CRITIQUE |
+| 2 | 27 | 12-14 sem | HAUTE |
+| 2.5 | 3 | 2-3 sem | HAUTE |
+| 3 | 16 | 8-10 sem | HAUTE |
+| 4 | 9 | 6-8 sem | MOYENNE |
+| 5 | 10 | 8-10 sem | MOYENNE |
+| 6 | 7 | 4-6 sem | NORMALE |
+| 7 | 2 | 6-8 sem | NORMALE |
+| 8 | 6 | 6 sem | BASSE |
+| 9 | 7 | 6 sem | OPTIONNEL |
+| 10 | 7 | 4-6 sem | CRITIQUE |
+| **TOTAL** | **123** | **~80-100 sem** | |
+
+---
+
+### TIMELINE
+
+```
+2026
+├── Février-Mars     │ PHASE 0   │ Fondations
+├── Mars-Avril       │ PHASE 0.5 │ Activation Frontend [NOUVEAU]
+├── Mai-Juillet      │ PHASE 1   │ Conformité Légale ← DEADLINE 09/2026
+├── Août-Octobre     │ PHASE 2   │ Finance Suite
+├── Novembre         │ PHASE 2.5 │ Tests & Qualité
+├── Nov-Décembre     │ PHASE 10  │ Pré-Production V1
+└── Décembre         │ 🚀 V1     │ MISE EN PRODUCTION V1
+
+2027
+├── Janvier-Mars     │ PHASE 3   │ Modules Métier
+├── Février-Avril    │ PHASE 4   │ Interventions (parallèle)
+├── Avril-Juin       │ PHASE 5   │ E-Commerce
+├── Juin-Juillet     │ PHASE 10  │ Pré-Production V2
+├── Juillet          │ 🚀 V2     │ MISE EN PRODUCTION V2
+├── Août-Septembre   │ PHASE 6   │ Communication
+├── Octobre-Novembre │ PHASE 7   │ Mobile
+├── Décembre         │ PHASE 8   │ Avancé
+└── Janvier 2028     │ PHASE 9   │ Optionnel
+```
+
+---
+
+**Document de référence complet:** `/home/ubuntu/azalscore/PROMPT_PHASE_CRITIQUE.md`
+
+---
+
+## Vérification des 95 Modules - Checklist Qualité
+
+**Date ajout:** 2026-02-20
+**Objectif:** Vérifier chaque module pour qualité code, sécurité, multi-tenant et intégration B-F
+
+### Légende des statuts
+
+- [ ] Non vérifié
+- [x] Vérifié et conforme
+- [!] Problème détecté (voir notes)
+
+### Critères de vérification
+
+| Critère | Description |
+|---------|-------------|
+| **B-F** | Backend-Frontend connecté (API routes, endpoints) |
+| **QC** | Contrôle qualité code (typing, docstrings, tests) |
+| **MT** | Respect multi-tenant (isolation tenant_id) |
+| **SEC** | Sécurité (auth, validation, injection, OWASP) |
+
+---
+
+### Core / Infrastructure
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `tenants` | [ ] | [ ] | [ ] | [ ] | |
+| `iam` | [ ] | [ ] | [ ] | [ ] | |
+| `audit` | [ ] | [ ] | [ ] | [ ] | |
+| `backup` | [ ] | [ ] | [ ] | [ ] | |
+| `cache` | [ ] | [ ] | [ ] | [ ] | |
+| `storage` | [ ] | [ ] | [ ] | [ ] | |
+| `search` | [ ] | [ ] | [ ] | [ ] | |
+| `i18n` | [ ] | [ ] | [ ] | [ ] | |
+| `gateway` | [ ] | [ ] | [ ] | [ ] | |
+| `guardian` | [ ] | [ ] | [ ] | [ ] | |
+| `autoconfig` | [ ] | [ ] | [ ] | [ ] | |
+
+### Finance & Comptabilité
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `accounting` | [ ] | [ ] | [ ] | [ ] | |
+| `automated_accounting` | [ ] | [ ] | [ ] | [ ] | |
+| `finance` | [ ] | [ ] | [ ] | [ ] | |
+| `treasury` | [ ] | [ ] | [ ] | [ ] | |
+| `budget` | [ ] | [ ] | [ ] | [ ] | |
+| `consolidation` | [ ] | [ ] | [ ] | [ ] | |
+| `currency` | [ ] | [ ] | [ ] | [ ] | |
+| `expense` | [ ] | [ ] | [ ] | [ ] | GAP-084 |
+| `expenses` | [ ] | [ ] | [ ] | [ ] | |
+
+### Commerce & Ventes
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `commercial` | [ ] | [ ] | [ ] | [ ] | |
+| `ecommerce` | [ ] | [ ] | [ ] | [ ] | |
+| `marketplace` | [ ] | [ ] | [ ] | [ ] | |
+| `pos` | [ ] | [ ] | [ ] | [ ] | |
+| `subscriptions` | [ ] | [ ] | [ ] | [ ] | |
+| `loyalty` | [ ] | [ ] | [ ] | [ ] | |
+| `commissions` | [ ] | [ ] | [ ] | [ ] | |
+| `referral` | [ ] | [ ] | [ ] | [ ] | GAP-070 |
+| `gamification` | [ ] | [ ] | [ ] | [ ] | |
+
+### Achats & Approvisionnement
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `purchases` | [ ] | [ ] | [ ] | [ ] | |
+| `procurement` | [ ] | [ ] | [ ] | [ ] | |
+| `rfq` | [ ] | [ ] | [ ] | [ ] | |
+| `requisition` | [ ] | [ ] | [ ] | [ ] | GAP-085 |
+| `inventory` | [ ] | [ ] | [ ] | [ ] | |
+| `shipping` | [ ] | [ ] | [ ] | [ ] | GAP-078 |
+
+### Production & Qualité
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `production` | [ ] | [ ] | [ ] | [ ] | |
+| `manufacturing` | [ ] | [ ] | [ ] | [ ] | GAP-077 |
+| `quality` | [ ] | [ ] | [ ] | [ ] | |
+| `qc` | [ ] | [ ] | [ ] | [ ] | |
+| `compliance` | [ ] | [ ] | [ ] | [ ] | |
+
+### RH & Personnel
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `hr` | [ ] | [ ] | [ ] | [ ] | |
+| `hr_vault` | [ ] | [ ] | [ ] | [ ] | |
+| `timesheet` | [ ] | [ ] | [ ] | [ ] | |
+| `timetracking` | [ ] | [ ] | [ ] | [ ] | GAP-080 |
+| `training` | [ ] | [ ] | [ ] | [ ] | |
+
+### Services & Support
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `helpdesk` | [ ] | [ ] | [ ] | [ ] | |
+| `complaints` | [ ] | [ ] | [ ] | [ ] | |
+| `sla` | [ ] | [ ] | [ ] | [ ] | GAP-074 |
+| `interventions` | [ ] | [ ] | [ ] | [ ] | |
+| `field_service` | [ ] | [ ] | [ ] | [ ] | Legacy |
+| `fieldservice` | [ ] | [ ] | [ ] | [ ] | GAP-081 |
+| `maintenance` | [ ] | [ ] | [ ] | [ ] | |
+| `warranty` | [ ] | [ ] | [ ] | [ ] | |
+
+### Projets & Ressources
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `projects` | [ ] | [ ] | [ ] | [ ] | |
+| `resources` | [ ] | [ ] | [ ] | [ ] | GAP-071 |
+| `contracts` | [ ] | [ ] | [ ] | [ ] | |
+| `rental` | [ ] | [ ] | [ ] | [ ] | |
+| `assets` | [ ] | [ ] | [ ] | [ ] | |
+| `fleet` | [ ] | [ ] | [ ] | [ ] | |
+
+### Planification
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `appointments` | [ ] | [ ] | [ ] | [ ] | |
+| `events` | [ ] | [ ] | [ ] | [ ] | |
+| `scheduler` | [ ] | [ ] | [ ] | [ ] | |
+
+### Analytics & BI
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `bi` | [ ] | [ ] | [ ] | [ ] | |
+| `dashboards` | [ ] | [ ] | [ ] | [ ] | |
+| `forecasting` | [ ] | [ ] | [ ] | [ ] | GAP-076 |
+| `risk` | [ ] | [ ] | [ ] | [ ] | GAP-075 |
+
+### Communication
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `notifications` | [ ] | [ ] | [ ] | [ ] | |
+| `email` | [ ] | [ ] | [ ] | [ ] | |
+| `broadcast` | [ ] | [ ] | [ ] | [ ] | |
+| `social_networks` | [ ] | [ ] | [ ] | [ ] | |
+
+### Documents & Workflow
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `documents` | [ ] | [ ] | [ ] | [ ] | |
+| `templates` | [ ] | [ ] | [ ] | [ ] | |
+| `esignature` | [ ] | [ ] | [ ] | [ ] | |
+| `signatures` | [ ] | [ ] | [ ] | [ ] | |
+| `workflows` | [ ] | [ ] | [ ] | [ ] | |
+| `approval` | [ ] | [ ] | [ ] | [ ] | GAP-083 |
+| `triggers` | [ ] | [ ] | [ ] | [ ] | |
+
+### Web & Mobile
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `web` | [ ] | [ ] | [ ] | [ ] | |
+| `website` | [ ] | [ ] | [ ] | [ ] | |
+| `mobile` | [ ] | [ ] | [ ] | [ ] | |
+
+### Intégrations
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `integration` | [ ] | [ ] | [ ] | [ ] | GAP-086 |
+| `integrations` | [ ] | [ ] | [ ] | [ ] | |
+| `webhooks` | [ ] | [ ] | [ ] | [ ] | |
+| `dataexchange` | [ ] | [ ] | [ ] | [ ] | |
+| `stripe_integration` | [ ] | [ ] | [ ] | [ ] | |
+| `odoo_import` | [ ] | [ ] | [ ] | [ ] | |
+
+### Spécialisés
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `survey` | [ ] | [ ] | [ ] | [ ] | GAP-082 |
+| `surveys` | [ ] | [ ] | [ ] | [ ] | |
+| `visitor` | [ ] | [ ] | [ ] | [ ] | GAP-079 |
+| `contacts` | [ ] | [ ] | [ ] | [ ] | |
+| `enrichment` | [ ] | [ ] | [ ] | [ ] | |
+| `knowledge` | [ ] | [ ] | [ ] | [ ] | |
+| `country_packs` | [ ] | [ ] | [ ] | [ ] | |
+
+### IA & Automatisation
+
+| Module | B-F | QC | MT | SEC | Notes |
+|--------|:---:|:--:|:--:|:---:|-------|
+| `ai_assistant` | [ ] | [ ] | [ ] | [ ] | |
+| `marceau` | [ ] | [ ] | [ ] | [ ] | |
+
+---
+
+### Checklist de vérification détaillée
+
+#### Backend-Frontend (B-F)
+- [ ] Routes API définies dans `/app/api/`
+- [ ] Endpoints RESTful conformes
+- [ ] Schémas Pydantic pour validation
+- [ ] Réponses JSON standardisées
+- [ ] Gestion erreurs HTTP appropriée
+- [ ] Documentation OpenAPI/Swagger
+
+#### Contrôle Qualité Code (QC)
+- [ ] Type hints Python complets
+- [ ] Docstrings pour classes/méthodes
+- [ ] Tests unitaires présents
+- [ ] Tests d'intégration
+- [ ] Pas de code dupliqué
+- [ ] Respect PEP8/conventions
+- [ ] Gestion des exceptions
+
+#### Multi-Tenant (MT)
+- [ ] `tenant_id` sur toutes les entités
+- [ ] Filtrage systématique par tenant
+- [ ] Pas de fuite de données inter-tenant
+- [ ] Indexes DB incluent tenant_id
+- [ ] Tests d'isolation tenant
+
+#### Sécurité (SEC)
+- [ ] Authentification requise
+- [ ] Autorisation par rôle/permission
+- [ ] Validation des entrées
+- [ ] Protection injection SQL
+- [ ] Protection XSS
+- [ ] Protection CSRF
+- [ ] Rate limiting
+- [ ] Audit des actions sensibles
+- [ ] Pas de secrets en clair
+- [ ] HTTPS obligatoire
+
+---
+
+### Résumé de progression
+
+| Catégorie | Total | Vérifié | % |
+|-----------|-------|---------|---|
+| Core/Infrastructure | 11 | 0 | 0% |
+| Finance/Comptabilité | 9 | 0 | 0% |
+| Commerce/Ventes | 9 | 0 | 0% |
+| Achats/Approvisionnement | 6 | 0 | 0% |
+| Production/Qualité | 5 | 0 | 0% |
+| RH/Personnel | 5 | 0 | 0% |
+| Services/Support | 8 | 0 | 0% |
+| Projets/Ressources | 6 | 0 | 0% |
+| Planification | 3 | 0 | 0% |
+| Analytics/BI | 4 | 0 | 0% |
+| Communication | 4 | 0 | 0% |
+| Documents/Workflow | 7 | 0 | 0% |
+| Web/Mobile | 3 | 0 | 0% |
+| Intégrations | 6 | 0 | 0% |
+| Spécialisés | 7 | 0 | 0% |
+| IA/Automatisation | 2 | 0 | 0% |
+| **TOTAL** | **95** | **0** | **0%** |
+
+---
+
+### Modules GAP créés récemment (à vérifier en priorité)
+
+| GAP | Module | Lignes | Priorité |
+|-----|--------|--------|----------|
+| 070 | `referral` | ~900 | Haute |
+| 071 | `resources` | ~850 | Haute |
+| 074 | `sla` | ~800 | Haute |
+| 075 | `risk` | ~900 | Haute |
+| 076 | `forecasting` | ~900 | Haute |
+| 077 | `manufacturing` | ~950 | Haute |
+| 078 | `shipping` | ~1000 | Haute |
+| 079 | `visitor` | ~900 | Haute |
+| 080 | `timetracking` | ~950 | Haute |
+| 081 | `fieldservice` | ~1000 | Haute |
+| 082 | `survey` | ~950 | Haute |
+| 083 | `approval` | ~900 | Haute |
+| 084 | `expense` | ~1000 | Haute |
+| 085 | `requisition` | ~1000 | Haute |
+| 086 | `integration` | ~1100 | Haute |
+
+**Total code GAPs:** ~14,100+ lignes
+
+---
+
+### Historique des vérifications
+
+| Date | Module | Vérificateur | Statut | Commentaires |
+|------|--------|--------------|--------|--------------|
+| | | | | |
+
+
+---
+
+## Référence: Prompts de développement
+
+**Fichier:** `/home/ubuntu/azalscore/PROMPTS_DEVELOPPEMENT_MODULES.md`
+
+Contient 2 prompts complets pour:
+1. **PROMPT 1:** Développement backend module complet
+2. **PROMPT 2:** Intégration frontend & connexion
+
+Principes fondamentaux:
+- Vérité absolue (pas de mensonge)
+- Correction immédiate
+- Référence technique
+- Sécurité & multi-tenant
+- Ne pas casser l'existant
+
+---
+
+## Prompts V4 - Exécution Parallèle Simplifiée
+
+**Fichier:** `/home/ubuntu/azalscore/PROMPTS_MODULES_PARALLELES.md`
+
+**Principe:** N agents = N modules différents (chacun complet)
+
+```
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ Agent 1         │  │ Agent 2         │  │ Agent N         │
+│ Module: survey  │  │ Module: expense │  │ Module: [autre] │
+│ Backend+Frontend│  │ Backend+Frontend│  │ Backend+Frontend│
+│ COMPLET         │  │ COMPLET         │  │ COMPLET         │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+```
+
+**Avantages:**
+- Zéro conflit (fichiers différents)
+- Pas de mocks nécessaires
+- Pas de contrat à définir
+- Pas de phase d'intégration séparée
+- Chaque agent livre un module 100% fonctionnel

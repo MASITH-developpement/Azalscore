@@ -1,9 +1,9 @@
 """Website visitor tracking model for analytics."""
 from sqlalchemy import Column, String, DateTime, Integer, Boolean, Index
-from sqlalchemy.dialects.postgresql import JSON, UUID
 from datetime import datetime
 
 from app.db.base import Base
+from app.core.types import JSON, UniversalUUID
 
 
 class WebsiteVisitor(Base):
@@ -35,7 +35,7 @@ class WebsiteVisitor(Base):
     utm_content = Column(String, nullable=True)
 
     converted_to_lead = Column(Boolean, default=False)
-    lead_id = Column(UUID(as_uuid=True), nullable=True)
+    lead_id = Column(UniversalUUID(), nullable=True)
 
     first_visit = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_visit = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

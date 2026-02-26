@@ -5,15 +5,15 @@
 
 import React from 'react';
 import { Truck, MapPin, Package, Clock, CheckCircle2 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Order } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDateTime } from '@/utils/formatters';
 import {
-  ORDER_STATUS_CONFIG, SHIPPING_STATUS_CONFIG, CARRIERS,
+  ORDER_STATUS_CONFIG, CARRIERS,
   canShipOrder
 } from '../types';
+import type { Order } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderShippingTab - Expedition
@@ -24,11 +24,11 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
   const readyToShip = canShipOrder(order);
 
   const handleCreateShipment = () => {
-    console.log('Create shipment for order:', order.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createShipment', orderId: order.id } }));
   };
 
   const handlePrintLabel = () => {
-    console.log('Print label for order:', order.id);
+    window.print();
   };
 
   return (
@@ -53,7 +53,7 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
           </div>
           {readyToShip && (
             <Button onClick={handleCreateShipment}>
-              Creer l'expedition
+              Creer l&apos;expedition
             </Button>
           )}
         </div>
@@ -69,22 +69,22 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
         <Card title="Suivi colis" icon={<Package size={18} />} className="mt-4">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Transporteur</label>
+              <span className="azals-field__label">Transporteur</span>
               <div className="azals-field__value">{carrierInfo?.label || order.carrier || '-'}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Numero de suivi</label>
+              <span className="azals-field__label">Numero de suivi</span>
               <div className="azals-field__value font-mono">{order.tracking_number}</div>
             </div>
             {order.shipped_at && (
               <div className="azals-field">
-                <label className="azals-field__label">Expedie le</label>
+                <span className="azals-field__label">Expedie le</span>
                 <div className="azals-field__value">{formatDateTime(order.shipped_at)}</div>
               </div>
             )}
             {order.delivered_at && (
               <div className="azals-field">
-                <label className="azals-field__label">Livre le</label>
+                <span className="azals-field__label">Livre le</span>
                 <div className="azals-field__value text-green-600 font-medium">
                   {formatDateTime(order.delivered_at)}
                 </div>
@@ -93,7 +93,7 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
           </Grid>
 
           <div className="mt-4 flex gap-2">
-            <Button variant="secondary" leftIcon={<Truck size={16} />}>
+            <Button variant="secondary" leftIcon={<Truck size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'trackPackage', orderId: order.id, trackingNumber: order.tracking_number, carrier: order.carrier } })); }}>
               Suivre le colis
             </Button>
             <Button variant="ghost" onClick={handlePrintLabel}>
@@ -122,11 +122,11 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
       <Card title="Details expedition" icon={<Truck size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Mode de livraison</label>
+            <span className="azals-field__label">Mode de livraison</span>
             <div className="azals-field__value">{order.shipping_method || 'Standard'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Frais de port</label>
+            <span className="azals-field__label">Frais de port</span>
             <div className="azals-field__value">
               {order.shipping_cost > 0
                 ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: order.currency }).format(order.shipping_cost)

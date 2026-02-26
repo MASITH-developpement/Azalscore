@@ -94,6 +94,49 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str | None = Field(default=None, description="Clé secrète Stripe")
     STRIPE_PUBLISHABLE_KEY: str | None = Field(default=None, description="Clé publique Stripe")
     STRIPE_WEBHOOK_SECRET: str | None = Field(default=None, description="Secret webhook Stripe")
+    STRIPE_API_KEY_LIVE: str | None = Field(default=None, description="Clé API Stripe Live (alternative)")
+    STRIPE_API_KEY_TEST: str | None = Field(default=None, description="Clé API Stripe Test")
+    STRIPE_LIVE_MODE: bool = Field(default=False, description="Mode production Stripe")
+
+    # hCaptcha Configuration (anti-bot)
+    HCAPTCHA_SECRET_KEY: str | None = Field(default=None, description="Clé secrète hCaptcha")
+    HCAPTCHA_SITE_KEY: str | None = Field(default=None, description="Clé site hCaptcha")
+
+    # Resend Configuration (email alternatif)
+    RESEND_API_KEY: str | None = Field(default=None, description="Clé API Resend pour emails")
+    EMAIL_FROM: str | None = Field(default=None, description="Adresse email expéditeur (Resend)")
+
+    # IA / LLM Configuration
+    OPENAI_API_KEY: str | None = Field(default=None, description="Clé API OpenAI")
+    ANTHROPIC_API_KEY: str | None = Field(default=None, description="Clé API Anthropic (Claude)")
+    ELEVENLABS_API_KEY: str | None = Field(default=None, description="Clé API ElevenLabs (TTS)")
+
+    # Fournisseurs de paiement externes
+    SWAN_API_KEY: str | None = Field(default=None, description="Clé API Swan Banking")
+    SWAN_PROJECT_ID: str | None = Field(default=None, description="ID projet Swan")
+    SWAN_WEBHOOK_SECRET: str | None = Field(default=None, description="Secret webhook Swan")
+    SWAN_SANDBOX: bool = Field(default=True, description="Mode sandbox Swan")
+
+    NMI_API_KEY: str | None = Field(default=None, description="Clé API NMI")
+    NMI_WEBHOOK_SECRET: str | None = Field(default=None, description="Secret webhook NMI")
+    NMI_SANDBOX: bool = Field(default=True, description="Mode sandbox NMI")
+
+    SOLARIS_CLIENT_ID: str | None = Field(default=None, description="Client ID Solaris")
+    SOLARIS_CLIENT_SECRET: str | None = Field(default=None, description="Client Secret Solaris")
+    SOLARIS_WEBHOOK_SECRET: str | None = Field(default=None, description="Secret webhook Solaris")
+    SOLARIS_SANDBOX: bool = Field(default=True, description="Mode sandbox Solaris")
+
+    DEFACTO_API_KEY: str | None = Field(default=None, description="Clé API Defacto")
+    DEFACTO_WEBHOOK_SECRET: str | None = Field(default=None, description="Secret webhook Defacto")
+    DEFACTO_SANDBOX: bool = Field(default=True, description="Mode sandbox Defacto")
+
+    # Sécurité avancée
+    TRUSTED_PROXIES: str | None = Field(default=None, description="Liste des proxies de confiance (IPs séparées par virgules)")
+    ALLOWED_REDIRECT_DOMAINS: str | None = Field(default=None, description="Domaines autorisés pour redirections")
+
+    # Guardian / Monitoring
+    AZALS_DATA_DIR: str = Field(default="/var/lib/azalscore", description="Répertoire données AZALS")
+    GUARDIAN_SCREENSHOT_DIR: str | None = Field(default=None, description="Répertoire screenshots Guardian")
 
     # ENCRYPTION_KEY - OBLIGATOIRE EN PRODUCTION pour chiffrement AES-256 au repos
     encryption_key: str | None = Field(

@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product, ProductDocument } from '../types';
 import { formatDate } from '@/utils/formatters';
+import type { Product, ProductDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductDocsTab - Documents de l'article
@@ -20,17 +20,64 @@ import { formatDate } from '@/utils/formatters';
 export const ProductDocsTab: React.FC<TabContentProps<Product>> = ({ data: product }) => {
   const documents = product.documents || [];
 
+  // Handler functions
+  const handlePrint = (): void => {
+    window.print();
+  };
+
+  const handleGenerateLabel = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:product:generate-label', {
+      detail: { productId: product.id, barcode: product.barcode }
+    }));
+  };
+
+  const handleUpload = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:upload', {
+      detail: { type: 'product', id: product.id }
+    }));
+  };
+
+  const handlePreview = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:preview', {
+      detail: { type: 'product', id: product.id }
+    }));
+  };
+
+  const handleDownloadPdf = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:download', {
+      detail: { type: 'product', id: product.id, format: 'pdf' }
+    }));
+  };
+
+  const handlePrintBarcode = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:product:print-barcode', {
+      detail: { productId: product.id, barcode: product.barcode }
+    }));
+  };
+
+  const handleDownloadBarcode = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:product:download-barcode', {
+      detail: { productId: product.id, barcode: product.barcode, format: 'png' }
+    }));
+  };
+
+  const handleOpenTechnicalDoc = (docType: string): void => {
+    window.dispatchEvent(new CustomEvent('azals:product:open-technical-doc', {
+      detail: { productId: product.id, docType }
+    }));
+  };
+
   return (
     <div className="azals-std-tab-content">
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Printer size={16} />}>
+        <Button variant="secondary" leftIcon={<Printer size={16} />} onClick={handlePrint}>
           Imprimer fiche article
         </Button>
-        <Button variant="secondary" leftIcon={<QrCode size={16} />}>
+        <Button variant="secondary" leftIcon={<QrCode size={16} />} onClick={handleGenerateLabel}>
           Générer étiquette
         </Button>
-        <Button variant="ghost" leftIcon={<Upload size={16} />}>
+        <Button variant="ghost" leftIcon={<Upload size={16} />} onClick={handleUpload}>
           Ajouter un document
         </Button>
       </div>
@@ -49,10 +96,10 @@ export const ProductDocsTab: React.FC<TabContentProps<Product>> = ({ data: produ
               </p>
             </div>
             <div className="azals-document-preview__actions">
-              <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />}>
+              <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />} onClick={handlePreview}>
                 Aperçu
               </Button>
-              <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+              <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={handleDownloadPdf}>
                 PDF
               </Button>
             </div>
@@ -74,10 +121,10 @@ export const ProductDocsTab: React.FC<TabContentProps<Product>> = ({ data: produ
                 <p className="text-sm font-mono">{product.barcode}</p>
               </div>
               <div className="azals-document-preview__actions">
-                <Button variant="secondary" size="sm" leftIcon={<Printer size={14} />}>
+                <Button variant="secondary" size="sm" leftIcon={<Printer size={14} />} onClick={handlePrintBarcode}>
                   Imprimer
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={handleDownloadBarcode}>
                   PNG
                 </Button>
               </div>
@@ -98,7 +145,7 @@ export const ProductDocsTab: React.FC<TabContentProps<Product>> = ({ data: produ
           <div className="azals-empty azals-empty--sm">
             <File size={32} className="text-muted" />
             <p className="text-muted">Aucune pièce jointe</p>
-            <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+            <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
               Ajouter un document
             </Button>
           </div>
@@ -112,19 +159,19 @@ export const ProductDocsTab: React.FC<TabContentProps<Product>> = ({ data: produ
         className="mt-4 azals-std-field--secondary"
       >
         <div className="azals-linked-docs">
-          <button className="azals-linked-doc azals-linked-doc--info">
+          <button className="azals-linked-doc azals-linked-doc--info" onClick={() => { handleOpenTechnicalDoc('fiche-technique'); }}>
             <FileText size={16} />
             <span>Fiche technique produit</span>
           </button>
-          <button className="azals-linked-doc azals-linked-doc--info">
+          <button className="azals-linked-doc azals-linked-doc--info" onClick={() => { handleOpenTechnicalDoc('fds'); }}>
             <FileText size={16} />
             <span>Fiche de données de sécurité (FDS)</span>
           </button>
-          <button className="azals-linked-doc azals-linked-doc--info">
+          <button className="azals-linked-doc azals-linked-doc--info" onClick={() => { handleOpenTechnicalDoc('notice'); }}>
             <FileText size={16} />
-            <span>Notice d'utilisation</span>
+            <span>Notice d&apos;utilisation</span>
           </button>
-          <button className="azals-linked-doc azals-linked-doc--info">
+          <button className="azals-linked-doc azals-linked-doc--info" onClick={() => { handleOpenTechnicalDoc('certificat'); }}>
             <FileText size={16} />
             <span>Certificat de conformité</span>
           </button>
@@ -142,6 +189,32 @@ interface DocumentItemProps {
 }
 
 const DocumentItem: React.FC<DocumentItemProps> = ({ document }) => {
+  const handlePreview = (): void => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:preview', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDownload = (): void => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:download', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDelete = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:delete', {
+      detail: { documentId: document.id }
+    }));
+  };
+
   const getIcon = () => {
     switch (document.type) {
       case 'pdf':
@@ -170,13 +243,13 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document }) => {
         </span>
       </div>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Aperçu">
+        <button className="azals-btn-icon" title="Aperçu" onClick={handlePreview}>
           <Eye size={16} />
         </button>
-        <button className="azals-btn-icon" title="Télécharger">
+        <button className="azals-btn-icon" title="Télécharger" onClick={handleDownload}>
           <Download size={16} />
         </button>
-        <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+        <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={handleDelete}>
           <Trash2 size={16} />
         </button>
       </div>

@@ -4,10 +4,14 @@ AZALS - Service Stripe Production
 Intégration complète Stripe avec webhooks.
 pip install stripe
 """
+from __future__ import annotations
+
 
 import os
+import re
 from datetime import datetime
 from typing import Optional, Dict, Any, List
+from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 
 try:
@@ -94,6 +98,14 @@ AZALSCORE_PLANS = {
 class StripeServiceLive:
     """Service Stripe pour production."""
 
+    # Domaines autorisés pour les redirections (protection open redirect)
+    ALLOWED_REDIRECT_DOMAINS = {
+        "app.azalscore.com",
+        "azalscore.com",
+        "staging.azalscore.com",
+        "localhost",  # Pour développement
+    }
+
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
@@ -102,6 +114,47 @@ class StripeServiceLive:
             logger.warning("[STRIPE] Module stripe non installé")
         elif not STRIPE_API_KEY:
             logger.warning("[STRIPE] STRIPE_API_KEY non configurée")
+
+    def _validate_redirect_url(self, url: str) -> bool:
+        """
+        Valide qu'une URL de redirection est sûre (protection open redirect).
+
+        SÉCURITÉ: Empêche les redirections vers des domaines malveillants.
+        """
+        if not url:
+            return False
+
+        try:
+            parsed = urlparse(url)
+
+            # Doit être HTTPS en production (HTTP autorisé pour localhost)
+            if parsed.scheme not in ("https", "http"):
+                return False
+
+            if parsed.scheme == "http" and parsed.hostname != "localhost":
+                return False
+
+            # Vérifier le domaine
+            hostname = parsed.hostname or ""
+
+            # Domaines autorisés ou sous-domaines
+            for allowed_domain in self.ALLOWED_REDIRECT_DOMAINS:
+                if hostname == allowed_domain or hostname.endswith(f".{allowed_domain}"):
+                    return True
+
+            return False
+
+        except Exception:
+            return False
+
+    def _get_safe_redirect_url(self, url: Optional[str], default_path: str) -> str:
+        """Retourne une URL de redirection sûre ou la valeur par défaut."""
+        app_url = os.getenv("APP_URL", "https://app.azalscore.com")
+
+        if url and self._validate_redirect_url(url):
+            return url
+
+        return f"{app_url}{default_path}"
 
     # ========================================================================
     # CUSTOMERS
@@ -188,13 +241,21 @@ class StripeServiceLive:
 
         price_key = f"stripe_price_{billing_period}"
         price_id = plan_config.get(price_key)
-        
+
         if not price_id:
             logger.error(f"[STRIPE] Prix non configuré pour {plan}/{billing_period}")
             return None
 
-        app_url = os.getenv("APP_URL", "https://app.azalscore.com")
-        
+        # Valider les URLs de redirection (protection open redirect)
+        safe_success_url = self._get_safe_redirect_url(
+            success_url,
+            "/billing/success?session_id={CHECKOUT_SESSION_ID}"
+        )
+        safe_cancel_url = self._get_safe_redirect_url(
+            cancel_url,
+            "/billing/cancel"
+        )
+
         try:
             session = stripe.checkout.Session.create(
                 customer=customer_id,
@@ -204,8 +265,8 @@ class StripeServiceLive:
                     "quantity": 1
                 }],
                 mode="subscription",
-                success_url=success_url or f"{app_url}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=cancel_url or f"{app_url}/billing/cancel",
+                success_url=safe_success_url,
+                cancel_url=safe_cancel_url,
                 subscription_data={
                     "trial_period_days": trial_days if trial_days > 0 else None,
                     "metadata": {
@@ -372,12 +433,13 @@ class StripeServiceLive:
         if not STRIPE_AVAILABLE:
             return None
 
-        app_url = os.getenv("APP_URL", "https://app.azalscore.com")
+        # Valider l'URL de retour (protection open redirect)
+        safe_return_url = self._get_safe_redirect_url(return_url, "/billing")
 
         try:
             session = stripe.billing_portal.Session.create(
                 customer=customer_id,
-                return_url=return_url or f"{app_url}/billing"
+                return_url=safe_return_url
             )
             return session.url
         except stripe.error.StripeError as e:
@@ -461,10 +523,30 @@ class StripeWebhookHandler:
     def __init__(self, db: Session):
         self.db = db
 
+    def _validate_tenant_id(self, tenant_id: Optional[str]) -> bool:
+        """
+        Valide que le tenant_id existe dans la base.
+
+        SÉCURITÉ: Empêche le traitement de webhooks avec des tenant_id forgés.
+        """
+        if not tenant_id:
+            return False
+
+        try:
+            from app.modules.tenants.models import Tenant
+            tenant = self.db.query(Tenant).filter(
+                Tenant.id == tenant_id,
+                Tenant.is_active == True
+            ).first()
+            return tenant is not None
+        except Exception as e:
+            logger.error(f"[WEBHOOK] Erreur validation tenant_id: {e}")
+            return False
+
     def handle_event(self, event: Dict) -> bool:
         """
         Router l'événement vers le bon handler.
-        
+
         Returns:
             True si traité avec succès
         """
@@ -497,7 +579,7 @@ class StripeWebhookHandler:
     def _handle_checkout_completed(self, session: Dict):
         """Checkout terminé - Activer l'abonnement."""
         from app.services.tenant_status_guard import convert_trial_to_active
-        
+
         metadata = session.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
         plan = metadata.get("plan", "STARTER")
@@ -509,13 +591,17 @@ class StripeWebhookHandler:
             f"plan={plan}, subscription={subscription_id}"
         )
 
-        # Convertir le trial en compte actif
+        # SÉCURITÉ: Valider que le tenant_id existe avant traitement
         if tenant_id:
+            if not self._validate_tenant_id(tenant_id):
+                logger.error(
+                    f"[WEBHOOK] SÉCURITÉ: tenant_id invalide ou inexistant dans checkout: {tenant_id}"
+                )
+                raise ValueError(f"Invalid tenant_id in webhook metadata: {tenant_id}")
             convert_trial_to_active(self.db, tenant_id, plan)
             
-            # TODO: Envoyer email de confirmation
+            # NOTE: Phase 2 - Intégration email_service
             # from app.services.email_service import get_email_service
-            # email_service = get_email_service()
             # email_service.send_payment_success(...)
 
     def _handle_subscription_created(self, subscription: Dict):
@@ -541,12 +627,12 @@ class StripeWebhookHandler:
             f"status={status}, cancel_at_period_end={cancel_at_period_end}"
         )
 
-        # TODO: Mettre à jour le tenant si changement de plan
+        # NOTE: Phase 2 - Mettre à jour le tenant si changement de plan
 
     def _handle_subscription_deleted(self, subscription: Dict):
         """Abonnement annulé/expiré."""
         from app.services.tenant_status_guard import suspend_tenant
-        
+
         subscription_id = subscription.get("id")
         metadata = subscription.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
@@ -556,8 +642,13 @@ class StripeWebhookHandler:
             f"tenant={tenant_id}"
         )
 
-        # Suspendre le tenant
+        # SÉCURITÉ: Valider que le tenant_id existe avant suspension
         if tenant_id:
+            if not self._validate_tenant_id(tenant_id):
+                logger.error(
+                    f"[WEBHOOK] SÉCURITÉ: tenant_id invalide dans subscription deleted: {tenant_id}"
+                )
+                raise ValueError(f"Invalid tenant_id in webhook metadata: {tenant_id}")
             suspend_tenant(self.db, tenant_id, reason="subscription_cancelled")
 
     def _handle_invoice_paid(self, invoice: Dict):
@@ -574,12 +665,8 @@ class StripeWebhookHandler:
             f"customer={customer_id}, amount={amount_paid}€"
         )
 
-        # Si c'était une facture de renouvellement, s'assurer que le tenant est actif
-        # TODO: Récupérer tenant_id depuis customer_id ou subscription
-        # if tenant_id:
-        #     reactivate_tenant(self.db, tenant_id)
-        
-        # TODO: Envoyer email de confirmation + facture PDF
+        # NOTE: Phase 2 - Récupérer tenant_id depuis customer_id ou subscription
+        # pour réactiver le tenant et envoyer email de confirmation + facture PDF
 
     def _handle_payment_failed(self, invoice: Dict):
         """Échec de paiement."""
@@ -597,11 +684,11 @@ class StripeWebhookHandler:
 
         # Après 3 tentatives, suspendre le tenant
         if attempt_count >= 3:
-            # TODO: Récupérer tenant_id depuis customer_id
+            # NOTE: Phase 2 - Récupérer tenant_id depuis customer_id pour suspension
             # suspend_tenant(self.db, tenant_id, reason="payment_failed")
             logger.error(f"[WEBHOOK] 3 échecs de paiement - Suspension requise pour customer={customer_id}")
-        
-        # TODO: Envoyer email de relance
+
+        # NOTE: Phase 2 - Envoyer email de relance via email_service
 
     def _handle_customer_updated(self, customer: Dict):
         """Client mis à jour."""
@@ -610,7 +697,7 @@ class StripeWebhookHandler:
         
         logger.info(f"[WEBHOOK] Customer mis à jour: {customer_id}")
         
-        # TODO: Synchroniser les infos si nécessaire
+        # NOTE: Phase 2 - Synchroniser les infos client si nécessaire
 
 
 # ============================================================

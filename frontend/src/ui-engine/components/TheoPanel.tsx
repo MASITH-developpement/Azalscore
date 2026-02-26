@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { clsx } from 'clsx';
 import {
   Sparkles,
   X,
@@ -22,7 +23,6 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import { useTheo, type TheoMessage, type TheoState } from '@core/theo';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 

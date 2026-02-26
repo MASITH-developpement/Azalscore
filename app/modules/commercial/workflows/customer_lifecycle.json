@@ -1,0 +1,107 @@
+{
+  "module_id": "azalscore.commercial.customer_lifecycle",
+  "version": "1.0.0",
+  "description": "Workflow d'analyse du cycle de vie client avec segmentation et actions",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_customer_metrics",
+      "use": "azalscore.calculations.commercial.get_customer_metrics@1.0.0",
+      "inputs": {
+        "customer_id": "{{context.customer_id}}",
+        "metrics": ["recency", "frequency", "monetary", "tenure"]
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_ltv",
+      "use": "azalscore.calculations.commercial.calculate_customer_ltv@1.0.0",
+      "inputs": {
+        "customer_id": "{{context.customer_id}}",
+        "historical_revenue": "{{get_customer_metrics.total_revenue}}",
+        "average_margin": "{{get_customer_metrics.average_margin}}",
+        "churn_probability": "{{context.churn_probability}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "segment_customer",
+      "use": "azalscore.calculations.commercial.segment_customer_rfm@1.0.0",
+      "inputs": {
+        "recency_score": "{{get_customer_metrics.recency_score}}",
+        "frequency_score": "{{get_customer_metrics.frequency_score}}",
+        "monetary_score": "{{get_customer_metrics.monetary_score}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "identify_churn_risk",
+      "use": "azalscore.calculations.commercial.predict_churn_risk@1.0.0",
+      "inputs": {
+        "customer_metrics": "{{get_customer_metrics}}",
+        "last_purchase_days": "{{get_customer_metrics.days_since_last_purchase}}",
+        "support_tickets": "{{context.support_ticket_count}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "recommend_actions",
+      "use": "azalscore.calculations.commercial.recommend_lifecycle_actions@1.0.0",
+      "inputs": {
+        "segment": "{{segment_customer.segment}}",
+        "churn_risk": "{{identify_churn_risk.risk_level}}",
+        "ltv": "{{calculate_ltv.ltv}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "alert_high_risk",
+      "condition": "{{identify_churn_risk.risk_level}} == 'high'",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "churn_risk",
+        "severity": "warning",
+        "title": "Client a risque de churn",
+        "message": "Le client {{context.customer_name}} presente un risque eleve de churn",
+        "data": {
+          "customer_id": "{{context.customer_id}}",
+          "risk_score": "{{identify_churn_risk.risk_score}}",
+          "recommended_actions": "{{recommend_actions.actions}}"
+        }
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "update_customer_profile",
+      "use": "azalscore.transformers.customers.update_customer_profile@1.0.0",
+      "inputs": {
+        "customer_id": "{{context.customer_id}}",
+        "segment": "{{segment_customer.segment}}",
+        "ltv": "{{calculate_ltv.ltv}}",
+        "churn_risk": "{{identify_churn_risk.risk_level}}",
+        "last_analysis_date": "{{context.timestamp}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "customer_segment": "{{segment_customer.segment}}",
+    "ltv": "{{calculate_ltv.ltv}}",
+    "churn_risk": "{{identify_churn_risk.risk_level}}",
+    "churn_probability": "{{identify_churn_risk.probability}}",
+    "recommended_actions": "{{recommend_actions.actions}}",
+    "rfm_scores": {
+      "recency": "{{get_customer_metrics.recency_score}}",
+      "frequency": "{{get_customer_metrics.frequency_score}}",
+      "monetary": "{{get_customer_metrics.monetary_score}}"
+    }
+  }
+}

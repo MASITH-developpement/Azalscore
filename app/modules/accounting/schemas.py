@@ -4,6 +4,8 @@ AZALS MODULE - ACCOUNTING: Schémas
 
 Schémas Pydantic pour validation et sérialisation.
 """
+from __future__ import annotations
+
 
 import datetime
 from decimal import Decimal
@@ -155,7 +157,7 @@ class JournalEntryLineResponse(JournalEntryLineBase):
 
 class JournalEntryBase(BaseModel):
     """Schéma de base pour écriture comptable."""
-    piece_number: str = Field(..., max_length=50, description="Numéro de pièce justificative")
+    piece_number: str = Field(..., max_length=255, description="Numéro de pièce justificative")
     journal_code: str = Field(..., max_length=10, description="Code journal (VT, AC, BQ, CA, OD, AN)")
     journal_label: Optional[str] = Field(None, max_length=100, description="Libellé du journal")
     entry_date: datetime.datetime = Field(..., description="Date de l'écriture")
@@ -188,7 +190,7 @@ class JournalEntryCreate(JournalEntryBase):
 
 class JournalEntryUpdate(BaseModel):
     """Mise à jour d'une écriture comptable."""
-    piece_number: Optional[str] = Field(None, max_length=50)
+    piece_number: Optional[str] = Field(None, max_length=255)
     journal_label: Optional[str] = Field(None, max_length=100)
     entry_date: Optional[datetime.datetime] = None
     label: Optional[str] = None

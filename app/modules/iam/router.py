@@ -4,17 +4,25 @@ AZALS MODULE T0 - Router API IAM
 
 Endpoints REST pour la gestion des identités et accès.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
+from app.core.security import decode_access_token
+from app.core.token_blacklist import blacklist_token
+
+# Security scheme pour extraire le token
+security = HTTPBearer()
 
 from .decorators import require_permission
 from .schemas import (
@@ -192,14 +200,34 @@ async def refresh_token(
 @router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     data: LogoutRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
-    """Déconnexion utilisateur."""
-    # TODO: Extraire JTI du token courant
-    # Pour l'instant, on révoque toutes les sessions si demandé
+    """
+    Déconnexion utilisateur.
+
+    - Par défaut : révoque uniquement le token actuel (via JTI)
+    - all_sessions=True : révoque toutes les sessions de l'utilisateur
+    """
     if data.all_sessions:
+        # Révoquer toutes les sessions
         service.revoke_all_sessions(current_user.id, "User logout all")
+    else:
+        # Extraire et révoquer le token actuel via JTI
+        token = credentials.credentials
+        payload = decode_access_token(token)
+
+        if payload:
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+
+            if jti and exp:
+                # Révoquer ce token spécifique
+                blacklist_token(jti, float(exp))
+            else:
+                # Fallback: révoquer toutes les sessions si JTI manquant
+                service.revoke_all_sessions(current_user.id, "User logout (no JTI)")
 
 
 # ============================================================================
@@ -724,11 +752,74 @@ async def revoke_role(
 
 
 # ============================================================================
-# PERMISSIONS
+# PERMISSIONS - Auto-générées depuis modules_registry
 # ============================================================================
 
-# Liste complete des capabilities par module
-CAPABILITIES_BY_MODULE = {
+def _generate_capabilities_by_module() -> dict:
+    """
+    Génère automatiquement CAPABILITIES_BY_MODULE depuis modules_registry.
+    Les modules avec overrides personnalisés sont préservés.
+    """
+    from app.core.modules_registry import MODULES
+
+    # Modules avec capabilities personnalisées (ne pas auto-générer)
+    CUSTOM_CAPABILITIES = _get_custom_capabilities()
+
+    result = dict(CUSTOM_CAPABILITIES)
+
+    # Générer les capabilities pour les modules non personnalisés
+    for module in MODULES:
+        code = module["code"].replace("-", "_")
+
+        # Ignorer les imports (IMP1, IMP2, etc.)
+        if code.startswith("IMP"):
+            continue
+
+        # Ignorer si déjà personnalisé
+        if code in result:
+            continue
+
+        # Générer capabilities par défaut
+        result[code] = {
+            "name": module["name"],
+            "icon": _get_icon_for_module(module.get("icon", "folder")),
+            "capabilities": [
+                {"code": f"{code}.view", "name": f"Voir {module['name']}", "description": f"Accès au module {module['name']}"},
+                {"code": f"{code}.create", "name": f"Créer", "description": f"Créer dans {module['name']}"},
+                {"code": f"{code}.edit", "name": f"Modifier", "description": f"Modifier dans {module['name']}"},
+                {"code": f"{code}.delete", "name": f"Supprimer", "description": f"Supprimer dans {module['name']}"},
+            ]
+        }
+
+    return result
+
+
+def _get_icon_for_module(icon_code: str) -> str:
+    """Convertit le code icône en nom Lucide React."""
+    icon_map = {
+        "book": "BookOpen", "file-text": "FileText", "dollar-sign": "DollarSign",
+        "users": "Users", "credit-card": "CreditCard", "briefcase": "Briefcase",
+        "package": "Package", "shopping-cart": "ShoppingCart", "user": "User",
+        "settings": "Settings", "tool": "Wrench", "check-circle": "CheckCircle",
+        "monitor": "Monitor", "shopping-bag": "ShoppingBag", "headphones": "Headphones",
+        "bar-chart-2": "BarChart2", "shield": "Shield", "truck": "Truck",
+        "bot": "Bot", "building": "Building", "file-signature": "FileSignature",
+        "receipt": "Receipt", "clock": "Clock", "map-pin": "MapPin",
+        "alert-circle": "AlertCircle", "shield-check": "ShieldCheck",
+        "file-search": "FileSearch", "repeat": "Repeat", "store": "Store",
+        "pen-tool": "PenTool", "mail": "Mail", "send": "Send", "globe": "Globe",
+        "trending-up": "TrendingUp", "layers": "Layers", "check-square": "CheckSquare",
+        "cpu": "Cpu", "share-2": "Share2", "smartphone": "Smartphone", "mic": "Mic",
+        "database": "Database", "eye": "Eye", "key": "Key", "building-2": "Building2",
+        "zap": "Zap", "download": "Download", "flag": "Flag", "lock": "Lock",
+        "folder": "Folder",
+    }
+    return icon_map.get(icon_code, "Folder")
+
+
+def _get_custom_capabilities() -> dict:
+    """Capabilities personnalisées pour les modules complexes."""
+    return {
     "cockpit": {
         "name": "Tableau de bord",
         "icon": "LayoutDashboard",
@@ -1101,7 +1192,404 @@ CAPABILITIES_BY_MODULE = {
             {"code": "enrichment.stats", "name": "Statistiques enrichissement", "description": "Voir les statistiques d'utilisation"},
         ]
     },
+    # =========================================================================
+    # NOUVEAUX MODULES (ajoutés automatiquement)
+    # =========================================================================
+    "ai_assistant": {
+        "name": "Assistant IA",
+        "icon": "Bot",
+        "capabilities": [
+            {"code": "ai_assistant.view", "name": "Voir l'assistant IA", "description": "Accès à l'assistant IA"},
+            {"code": "ai_assistant.chat", "name": "Utiliser le chat IA", "description": "Discuter avec l'assistant"},
+            {"code": "ai_assistant.config", "name": "Configurer l'assistant", "description": "Modifier les paramètres"},
+        ]
+    },
+    "assets": {
+        "name": "Immobilisations",
+        "icon": "Building",
+        "capabilities": [
+            {"code": "assets.view", "name": "Voir les immobilisations", "description": "Accès aux immobilisations"},
+            {"code": "assets.create", "name": "Créer des immobilisations", "description": "Créer de nouvelles immobilisations"},
+            {"code": "assets.edit", "name": "Modifier les immobilisations", "description": "Modifier les immobilisations"},
+            {"code": "assets.delete", "name": "Supprimer les immobilisations", "description": "Supprimer des immobilisations"},
+        ]
+    },
+    "audit": {
+        "name": "Audit",
+        "icon": "Eye",
+        "capabilities": [
+            {"code": "audit.view", "name": "Voir les audits", "description": "Accès aux logs d'audit"},
+            {"code": "audit.create", "name": "Créer des audits", "description": "Déclencher des audits"},
+            {"code": "audit.export", "name": "Exporter les audits", "description": "Exporter les données d'audit"},
+        ]
+    },
+    "autoconfig": {
+        "name": "Configuration Auto",
+        "icon": "Settings",
+        "capabilities": [
+            {"code": "autoconfig.view", "name": "Voir la configuration", "description": "Accès à l'auto-configuration"},
+            {"code": "autoconfig.edit", "name": "Modifier la configuration", "description": "Modifier les paramètres"},
+        ]
+    },
+    "automated_accounting": {
+        "name": "Comptabilité Auto",
+        "icon": "Calculator",
+        "capabilities": [
+            {"code": "automated_accounting.view", "name": "Voir la comptabilité auto", "description": "Accès à la comptabilisation automatique"},
+            {"code": "automated_accounting.config", "name": "Configurer les règles", "description": "Gérer les règles de comptabilisation"},
+            {"code": "automated_accounting.execute", "name": "Exécuter la comptabilisation", "description": "Lancer la comptabilisation automatique"},
+        ]
+    },
+    "backup": {
+        "name": "Sauvegardes",
+        "icon": "Database",
+        "capabilities": [
+            {"code": "backup.view", "name": "Voir les sauvegardes", "description": "Accès aux sauvegardes"},
+            {"code": "backup.create", "name": "Créer des sauvegardes", "description": "Créer de nouvelles sauvegardes"},
+            {"code": "backup.restore", "name": "Restaurer", "description": "Restaurer depuis une sauvegarde"},
+            {"code": "backup.delete", "name": "Supprimer des sauvegardes", "description": "Supprimer des sauvegardes"},
+        ]
+    },
+    "broadcast": {
+        "name": "Diffusion",
+        "icon": "Send",
+        "capabilities": [
+            {"code": "broadcast.view", "name": "Voir les diffusions", "description": "Accès aux diffusions"},
+            {"code": "broadcast.create", "name": "Créer des diffusions", "description": "Créer de nouvelles campagnes"},
+            {"code": "broadcast.send", "name": "Envoyer des diffusions", "description": "Envoyer des campagnes"},
+        ]
+    },
+    "commercial": {
+        "name": "Commercial",
+        "icon": "Briefcase",
+        "capabilities": [
+            {"code": "commercial.view", "name": "Voir le commercial", "description": "Accès au module commercial"},
+            {"code": "commercial.create", "name": "Créer des opportunités", "description": "Créer des opportunités commerciales"},
+            {"code": "commercial.edit", "name": "Modifier le commercial", "description": "Modifier les données"},
+        ]
+    },
+    "complaints": {
+        "name": "Réclamations",
+        "icon": "AlertCircle",
+        "capabilities": [
+            {"code": "complaints.view", "name": "Voir les réclamations", "description": "Accès aux réclamations"},
+            {"code": "complaints.create", "name": "Créer des réclamations", "description": "Créer de nouvelles réclamations"},
+            {"code": "complaints.resolve", "name": "Résoudre les réclamations", "description": "Traiter et résoudre"},
+        ]
+    },
+    "consolidation": {
+        "name": "Consolidation",
+        "icon": "Layers",
+        "capabilities": [
+            {"code": "consolidation.view", "name": "Voir la consolidation", "description": "Accès à la consolidation"},
+            {"code": "consolidation.create", "name": "Créer des consolidations", "description": "Créer de nouvelles consolidations"},
+            {"code": "consolidation.execute", "name": "Exécuter la consolidation", "description": "Lancer la consolidation"},
+        ]
+    },
+    "contracts": {
+        "name": "Contrats",
+        "icon": "FileSignature",
+        "capabilities": [
+            {"code": "contracts.view", "name": "Voir les contrats", "description": "Accès aux contrats"},
+            {"code": "contracts.create", "name": "Créer des contrats", "description": "Créer de nouveaux contrats"},
+            {"code": "contracts.edit", "name": "Modifier les contrats", "description": "Modifier les contrats"},
+            {"code": "contracts.delete", "name": "Supprimer les contrats", "description": "Supprimer des contrats"},
+        ]
+    },
+    "country_packs": {
+        "name": "Packs Pays",
+        "icon": "Flag",
+        "capabilities": [
+            {"code": "country_packs.view", "name": "Voir les packs pays", "description": "Accès aux localisations"},
+            {"code": "country_packs.install", "name": "Installer des packs", "description": "Installer de nouvelles localisations"},
+        ]
+    },
+    "email": {
+        "name": "Email",
+        "icon": "Mail",
+        "capabilities": [
+            {"code": "email.view", "name": "Voir les emails", "description": "Accès aux emails"},
+            {"code": "email.send", "name": "Envoyer des emails", "description": "Envoyer des emails"},
+            {"code": "email.config", "name": "Configurer les emails", "description": "Paramètres email"},
+        ]
+    },
+    "esignature": {
+        "name": "Signature Électronique",
+        "icon": "PenTool",
+        "capabilities": [
+            {"code": "esignature.view", "name": "Voir les signatures", "description": "Accès aux signatures"},
+            {"code": "esignature.create", "name": "Créer des demandes", "description": "Créer des demandes de signature"},
+            {"code": "esignature.sign", "name": "Signer des documents", "description": "Signer électroniquement"},
+        ]
+    },
+    "expenses": {
+        "name": "Notes de Frais",
+        "icon": "Receipt",
+        "capabilities": [
+            {"code": "expenses.view", "name": "Voir les notes de frais", "description": "Accès aux notes de frais"},
+            {"code": "expenses.create", "name": "Créer des notes de frais", "description": "Créer de nouvelles notes"},
+            {"code": "expenses.approve", "name": "Approuver les notes", "description": "Approuver/rejeter les notes"},
+            {"code": "expenses.reject", "name": "Rejeter les notes", "description": "Rejeter des notes de frais"},
+        ]
+    },
+    "field_service": {
+        "name": "Service Terrain",
+        "icon": "MapPin",
+        "capabilities": [
+            {"code": "field_service.view", "name": "Voir le service terrain", "description": "Accès aux équipes terrain"},
+            {"code": "field_service.create", "name": "Créer des missions", "description": "Créer de nouvelles missions"},
+            {"code": "field_service.dispatch", "name": "Dispatcher les équipes", "description": "Assigner les techniciens"},
+        ]
+    },
+    "finance": {
+        "name": "Finance",
+        "icon": "TrendingUp",
+        "capabilities": [
+            {"code": "finance.view", "name": "Voir la finance", "description": "Accès au module finance"},
+            {"code": "finance.reports", "name": "Voir les rapports", "description": "Accès aux rapports financiers"},
+            {"code": "finance.edit", "name": "Modifier les données", "description": "Modifier les données financières"},
+        ]
+    },
+    "guardian": {
+        "name": "Guardian",
+        "icon": "Shield",
+        "capabilities": [
+            {"code": "guardian.view", "name": "Voir Guardian", "description": "Accès au module sécurité"},
+            {"code": "guardian.config", "name": "Configurer Guardian", "description": "Paramètres de sécurité"},
+            {"code": "guardian.alerts", "name": "Voir les alertes", "description": "Accès aux alertes de sécurité"},
+        ]
+    },
+    "hr_vault": {
+        "name": "Coffre-fort RH",
+        "icon": "Lock",
+        "capabilities": [
+            {"code": "hr_vault.view", "name": "Voir le coffre RH", "description": "Accès au coffre-fort RH"},
+            {"code": "hr_vault.access", "name": "Accéder aux documents", "description": "Consulter les documents RH"},
+            {"code": "hr_vault.upload", "name": "Déposer des documents", "description": "Ajouter des documents"},
+        ]
+    },
+    "odoo_import": {
+        "name": "Import Odoo",
+        "icon": "Download",
+        "capabilities": [
+            {"code": "odoo_import.view", "name": "Voir les imports", "description": "Accès aux imports Odoo"},
+            {"code": "odoo_import.config", "name": "Configurer l'import", "description": "Paramètres d'import"},
+            {"code": "odoo_import.execute", "name": "Exécuter l'import", "description": "Lancer l'import des données"},
+        ]
+    },
+    "procurement": {
+        "name": "Approvisionnement",
+        "icon": "Truck",
+        "capabilities": [
+            {"code": "procurement.view", "name": "Voir les approvisionnements", "description": "Accès aux approvisionnements"},
+            {"code": "procurement.create", "name": "Créer des demandes", "description": "Créer des demandes d'achat"},
+            {"code": "procurement.edit", "name": "Modifier les demandes", "description": "Modifier les demandes"},
+        ]
+    },
+    "qc": {
+        "name": "Contrôle Qualité",
+        "icon": "CheckSquare",
+        "capabilities": [
+            {"code": "qc.view", "name": "Voir les contrôles", "description": "Accès aux contrôles qualité"},
+            {"code": "qc.create", "name": "Créer des contrôles", "description": "Créer de nouveaux contrôles"},
+            {"code": "qc.validate", "name": "Valider les contrôles", "description": "Valider/rejeter les contrôles"},
+        ]
+    },
+    "rfq": {
+        "name": "Appels d'Offres",
+        "icon": "FileSearch",
+        "capabilities": [
+            {"code": "rfq.view", "name": "Voir les appels d'offres", "description": "Accès aux appels d'offres"},
+            {"code": "rfq.create", "name": "Créer des appels", "description": "Créer de nouveaux appels d'offres"},
+            {"code": "rfq.respond", "name": "Répondre aux appels", "description": "Soumettre des réponses"},
+        ]
+    },
+    "social_networks": {
+        "name": "Réseaux Sociaux",
+        "icon": "Share2",
+        "capabilities": [
+            {"code": "social_networks.view", "name": "Voir les réseaux sociaux", "description": "Accès aux réseaux sociaux"},
+            {"code": "social_networks.post", "name": "Publier", "description": "Publier sur les réseaux"},
+            {"code": "social_networks.config", "name": "Configurer", "description": "Paramètres des réseaux"},
+        ]
+    },
+    "stripe_integration": {
+        "name": "Intégration Stripe",
+        "icon": "CreditCard",
+        "capabilities": [
+            {"code": "stripe_integration.view", "name": "Voir Stripe", "description": "Accès à l'intégration Stripe"},
+            {"code": "stripe_integration.config", "name": "Configurer Stripe", "description": "Paramètres Stripe"},
+        ]
+    },
+    "tenants": {
+        "name": "Multi-Tenants",
+        "icon": "Building2",
+        "capabilities": [
+            {"code": "tenants.view", "name": "Voir les tenants", "description": "Accès aux tenants"},
+            {"code": "tenants.create", "name": "Créer des tenants", "description": "Créer de nouveaux tenants"},
+            {"code": "tenants.edit", "name": "Modifier les tenants", "description": "Modifier les tenants"},
+            {"code": "tenants.delete", "name": "Supprimer les tenants", "description": "Supprimer des tenants"},
+        ]
+    },
+    "timesheet": {
+        "name": "Feuilles de Temps",
+        "icon": "Clock",
+        "capabilities": [
+            {"code": "timesheet.view", "name": "Voir les feuilles de temps", "description": "Accès aux feuilles de temps"},
+            {"code": "timesheet.create", "name": "Créer des entrées", "description": "Saisir du temps"},
+            {"code": "timesheet.approve", "name": "Approuver les feuilles", "description": "Approuver les feuilles de temps"},
+        ]
+    },
+    "triggers": {
+        "name": "Déclencheurs",
+        "icon": "Zap",
+        "capabilities": [
+            {"code": "triggers.view", "name": "Voir les déclencheurs", "description": "Accès aux automatisations"},
+            {"code": "triggers.create", "name": "Créer des déclencheurs", "description": "Créer des automatisations"},
+            {"code": "triggers.edit", "name": "Modifier les déclencheurs", "description": "Modifier les automatisations"},
+        ]
+    },
+    "warranty": {
+        "name": "Garanties",
+        "icon": "ShieldCheck",
+        "capabilities": [
+            {"code": "warranty.view", "name": "Voir les garanties", "description": "Accès aux garanties"},
+            {"code": "warranty.create", "name": "Créer des garanties", "description": "Créer de nouvelles garanties"},
+            {"code": "warranty.claim", "name": "Déclarer des sinistres", "description": "Faire des réclamations"},
+        ]
+    },
+    "website": {
+        "name": "Site Web Builder",
+        "icon": "Globe",
+        "capabilities": [
+            {"code": "website.view", "name": "Voir le site web", "description": "Accès au constructeur de site"},
+            {"code": "website.edit", "name": "Modifier le site", "description": "Éditer le contenu"},
+            {"code": "website.publish", "name": "Publier", "description": "Publier les modifications"},
+        ]
+    },
+    "workflows": {
+        "name": "Workflows",
+        "icon": "GitBranch",
+        "capabilities": [
+            {"code": "workflows.view", "name": "Voir les workflows", "description": "Accès aux workflows"},
+            {"code": "workflows.create", "name": "Créer des workflows", "description": "Créer de nouveaux workflows"},
+            {"code": "workflows.edit", "name": "Modifier les workflows", "description": "Modifier les workflows"},
+        ]
+    },
+    # =========================================================================
+    # MODULES UTILITAIRES ET TECHNIQUES
+    # =========================================================================
+    "cache": {
+        "name": "Cache",
+        "icon": "Database",
+        "capabilities": [
+            {"code": "cache.view", "name": "Voir le cache", "description": "Accès au gestionnaire de cache"},
+            {"code": "cache.clear", "name": "Vider le cache", "description": "Purger le cache"},
+        ]
+    },
+    "currency": {
+        "name": "Devises",
+        "icon": "CircleDollarSign",
+        "capabilities": [
+            {"code": "currency.view", "name": "Voir les devises", "description": "Accès aux devises"},
+            {"code": "currency.edit", "name": "Modifier les taux", "description": "Modifier les taux de change"},
+        ]
+    },
+    "dashboards": {
+        "name": "Tableaux de Bord",
+        "icon": "LayoutDashboard",
+        "capabilities": [
+            {"code": "dashboards.view", "name": "Voir les tableaux", "description": "Accès aux tableaux de bord"},
+            {"code": "dashboards.create", "name": "Créer des tableaux", "description": "Créer des tableaux de bord"},
+            {"code": "dashboards.edit", "name": "Modifier les tableaux", "description": "Modifier les tableaux"},
+        ]
+    },
+    "dataexchange": {
+        "name": "Échange de Données",
+        "icon": "ArrowLeftRight",
+        "capabilities": [
+            {"code": "dataexchange.view", "name": "Voir les échanges", "description": "Accès aux échanges de données"},
+            {"code": "dataexchange.export", "name": "Exporter", "description": "Exporter des données"},
+            {"code": "dataexchange.import", "name": "Importer", "description": "Importer des données"},
+        ]
+    },
+    "gateway": {
+        "name": "Passerelle",
+        "icon": "Network",
+        "capabilities": [
+            {"code": "gateway.view", "name": "Voir la passerelle", "description": "Accès à la passerelle"},
+            {"code": "gateway.config", "name": "Configurer", "description": "Configurer la passerelle"},
+        ]
+    },
+    "i18n": {
+        "name": "Internationalisation",
+        "icon": "Languages",
+        "capabilities": [
+            {"code": "i18n.view", "name": "Voir les traductions", "description": "Accès aux traductions"},
+            {"code": "i18n.edit", "name": "Modifier les traductions", "description": "Modifier les traductions"},
+        ]
+    },
+    "integrations": {
+        "name": "Intégrations",
+        "icon": "Plug",
+        "capabilities": [
+            {"code": "integrations.view", "name": "Voir les intégrations", "description": "Accès aux intégrations"},
+            {"code": "integrations.config", "name": "Configurer", "description": "Configurer les intégrations"},
+        ]
+    },
+    "notifications": {
+        "name": "Notifications",
+        "icon": "Bell",
+        "capabilities": [
+            {"code": "notifications.view", "name": "Voir les notifications", "description": "Accès aux notifications"},
+            {"code": "notifications.config", "name": "Configurer", "description": "Configurer les notifications"},
+            {"code": "notifications.send", "name": "Envoyer", "description": "Envoyer des notifications"},
+        ]
+    },
+    "scheduler": {
+        "name": "Planificateur",
+        "icon": "Calendar",
+        "capabilities": [
+            {"code": "scheduler.view", "name": "Voir les tâches", "description": "Accès aux tâches planifiées"},
+            {"code": "scheduler.create", "name": "Créer des tâches", "description": "Créer des tâches"},
+            {"code": "scheduler.edit", "name": "Modifier les tâches", "description": "Modifier les tâches"},
+        ]
+    },
+    "search": {
+        "name": "Recherche",
+        "icon": "Search",
+        "capabilities": [
+            {"code": "search.view", "name": "Rechercher", "description": "Accès à la recherche globale"},
+            {"code": "search.advanced", "name": "Recherche avancée", "description": "Recherche avancée"},
+        ]
+    },
+    "webhooks": {
+        "name": "Webhooks",
+        "icon": "Webhook",
+        "capabilities": [
+            {"code": "webhooks.view", "name": "Voir les webhooks", "description": "Accès aux webhooks"},
+            {"code": "webhooks.create", "name": "Créer des webhooks", "description": "Créer de nouveaux webhooks"},
+            {"code": "webhooks.edit", "name": "Modifier les webhooks", "description": "Modifier les webhooks"},
+        ]
+    },
+    "import_data": {
+        "name": "Import de Données",
+        "icon": "Download",
+        "capabilities": [
+            {"code": "import_data.view", "name": "Voir les imports", "description": "Accès aux imports"},
+            {"code": "import_data.odoo", "name": "Import Odoo", "description": "Importer depuis Odoo"},
+            {"code": "import_data.axonaut", "name": "Import Axonaut", "description": "Importer depuis Axonaut"},
+            {"code": "import_data.pennylane", "name": "Import Pennylane", "description": "Importer depuis Pennylane"},
+            {"code": "import_data.sage", "name": "Import Sage", "description": "Importer depuis Sage"},
+            {"code": "import_data.chorus", "name": "Import Chorus", "description": "Importer depuis Chorus Pro"},
+        ]
+    },
 }
+
+
+# Générer CAPABILITIES_BY_MODULE au chargement du module
+# Combine les capabilities personnalisées avec celles auto-générées depuis modules_registry
+CAPABILITIES_BY_MODULE = _generate_capabilities_by_module()
 
 
 @router.get("/capabilities/modules")
@@ -1110,7 +1598,7 @@ async def get_capabilities_by_module(
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
-    """Retourne toutes les capabilities groupées par module."""
+    """Retourne toutes les capabilities groupées par module (auto-générées)."""
     return CAPABILITIES_BY_MODULE
 
 
@@ -1438,7 +1926,7 @@ async def list_my_sessions(
                 created_at=s.created_at,
                 expires_at=s.expires_at,
                 last_activity_at=s.last_activity_at,
-                is_current=False  # TODO: comparer avec JTI courant
+                is_current=False  # NOTE: Phase 2 - comparer avec JTI du token
             )
             for s in sessions
         ],

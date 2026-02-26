@@ -15,6 +15,8 @@ Usage:
     def get_csrf_token(request: Request):
         return {"csrf_token": generate_csrf_token(request)}
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac
@@ -48,6 +50,11 @@ CSRF_EXEMPT_PATHS = {
     "/v1/auth/logout",
     "/v1/auth/refresh",
     "/v1/auth/2fa/verify-login",
+    "/api/v1/auth/login",
+    "/api/v1/auth/register",
+    "/api/v1/auth/logout",
+    "/api/v1/auth/refresh",
+    "/api/v1/auth/2fa/verify-login",
     # Health checks
     "/health",
     "/health/live",
@@ -55,19 +62,49 @@ CSRF_EXEMPT_PATHS = {
     # Webhooks (authentifiés différemment)
     "/webhooks/",
     "/api/webhooks/",
+    # Metrics endpoints (internal use)
+    "/metrics/test-ai",
+    "/metrics/test-website",
+    "/metrics/update-tenants",
+    "/metrics/update-users",
+    "/metrics/reset",
+    "/metrics/update-marketing",
+    "/api/metrics/test-ai",
+    "/api/metrics/test-website",
+    "/api/metrics/update-tenants",
+    "/api/metrics/update-users",
+    "/api/metrics/reset",
+    "/api/metrics/update-marketing",
+    # Admin Social Networks endpoints (internal use)
+    "/admin/social-networks/",
+    "/v1/admin/social-networks/",
+    "/api/v1/admin/social-networks/",
 }
 
 
 def _get_csrf_secret() -> str:
     """Récupère le secret CSRF depuis les settings."""
+    import os
     try:
         from app.core.config import get_settings
         settings = get_settings()
         return getattr(settings, 'csrf_secret', None) or settings.secret_key
     except Exception as e:
-        # Fallback pour tests
+        # SÉCURITÉ: En production, JAMAIS de fallback - lever une exception
+        env = os.getenv("ENVIRONMENT", os.getenv("AZALS_ENV", "development"))
+        if env == "production":
+            logger.error(
+                "[CSRF_CONFIG] CRITICAL: Impossible de charger le secret CSRF en production",
+                extra={"error": str(e)[:200]}
+            )
+            raise RuntimeError(
+                "CSRF secret configuration mandatory in production. "
+                "Set CSRF_SECRET or SECRET_KEY environment variable."
+            )
+        # Fallback UNIQUEMENT pour tests/développement
         logger.warning(
-            "[CSRF_CONFIG] Échec chargement secret CSRF depuis settings",
+            "[CSRF_CONFIG] Échec chargement secret CSRF depuis settings (env=%s)",
+            env,
             extra={"error": str(e)[:200], "consequence": "fallback_secret_used"}
         )
         return "csrf-secret-fallback-not-for-production"
@@ -183,10 +220,25 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Bypass si API token (authentification Bearer)
+        # SÉCURITÉ: Les requêtes avec Bearer token sont protégées contre CSRF car:
+        # 1. Les tokens JWT sont stockés côté client (localStorage/sessionStorage)
+        # 2. JavaScript cross-origin ne peut pas accéder à ces storages (Same-Origin Policy)
+        # 3. Le token doit être explicitement ajouté au header Authorization
+        # 4. Contrairement aux cookies, les tokens ne sont PAS envoyés automatiquement
+        # Référence: OWASP - "CSRF tokens are not needed for APIs that use bearer tokens"
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            # Les API calls avec JWT sont protégés différemment
-            return await call_next(request)
+            # Validation supplémentaire: vérifier que le token a un format valide
+            token_parts = auth_header.split(" ", 1)
+            if len(token_parts) == 2 and len(token_parts[1]) > 20:
+                # Token présent et de longueur minimale (JWT = ~100+ chars)
+                return await call_next(request)
+            else:
+                # Token malformé - ne pas bypasser CSRF
+                logger.warning(
+                    "[CSRF] Bearer token malformé détecté",
+                    extra={"path": path, "method": request.method}
+                )
 
         # Extraire le token CSRF
         csrf_token = self._get_csrf_token(request)

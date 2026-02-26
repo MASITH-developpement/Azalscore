@@ -41,7 +41,7 @@ from .models import (
     GuardianConfig,
     TestResult,
 )
-from .router import router as guardian_router
+from .router_crud import router as guardian_router
 from .service import GuardianService, get_guardian_service
 
 __all__ = [

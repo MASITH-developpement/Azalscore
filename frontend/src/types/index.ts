@@ -1,27 +1,139 @@
+import type { ReactNode } from 'react';
+
 /**
- * AZALSCORE UI Engine - Types Globaux
- * Aucune logique métier - Types uniquement
+ * AZALSCORE - Types centralisés
+ * ==============================
+ *
+ * Ce fichier réexporte tous les types API et métier.
+ *
+ * Usage:
+ *   import type { User, Invoice } from '@/types';
+ *
+ * Génération des types API:
+ *   npm run generate:api-types
+ *
+ * Cela génère api.generated.ts depuis le schema OpenAPI du backend.
  */
 
-import React from 'react';
+// Types API générés depuis OpenAPI (à générer avec npm run generate:api-types)
+// export type * from './api.generated';
 
-// ============================================================
-// TYPES D'AUTHENTIFICATION
-// ============================================================
+// ============================================================================
+// TYPES DE BASE
+// ============================================================================
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  tenant_id: string;
-  roles: string[];
-  role?: string; // Alias pour compatibilité - premier rôle
-  capabilities: string[];
-  is_active: boolean;
-  requires_2fa: boolean;
-  last_login?: string;
+/**
+ * Réponse API paginée standard
+ */
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page?: number;
+  page_size?: number;
 }
 
+/**
+ * Réponse API standard
+ * Note: data est requis car l'API retourne toujours des données ou throw une erreur
+ */
+export interface ApiResponse<T> {
+  data: T;
+  items?: T[];
+  total?: number;
+  message?: string;
+  success?: boolean;
+}
+
+/**
+ * Erreur API standard
+ */
+export interface ApiError {
+  code: string;
+  message: string;
+  field?: string;
+  trace_id?: string;
+  path?: string;
+}
+
+/**
+ * Configuration de requête API
+ */
+export interface ApiRequestConfig {
+  timeout?: number;
+  retries?: number;
+  skipAuth?: boolean;
+  headers?: Record<string, string>;
+  responseType?: 'json' | 'blob' | 'text';
+}
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+/**
+ * Décompresse une réponse API en extrayant les données.
+ * Gère les formats: { data: T }, { items: T[] }, ou T directement.
+ */
+export function unwrapApiResponse<T>(response: ApiResponse<T> | T): T | undefined {
+  if (!response) return undefined;
+
+  // Si c'est déjà le type attendu (pas un wrapper)
+  if (typeof response !== 'object') return response as T;
+
+  const r = response as ApiResponse<T>;
+
+  // Format { data: T }
+  if ('data' in r && r.data !== undefined) {
+    return r.data;
+  }
+
+  // Format { items: T[] } - retourne le tableau
+  if ('items' in r && Array.isArray(r.items)) {
+    return r as unknown as T;
+  }
+
+  // Sinon retourne tel quel
+  return response as T;
+}
+
+// ============================================================================
+// TYPES MÉTIER COMMUNS
+// ============================================================================
+
+/**
+ * Entité avec tenant_id (base multi-tenant)
+ */
+export interface TenantEntity {
+  id: string;
+  tenant_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Utilisateur simplifié
+ */
+export interface User extends TenantEntity {
+  email: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  display_name?: string;
+  name?: string;
+  role?: string;
+  roles?: string[];
+  is_active: boolean;
+  requires_2fa?: boolean;
+  capabilities?: string[];
+  default_view?: string;
+  preferences?: Record<string, unknown>;
+  last_login?: string;
+  avatar_url?: string;
+}
+
+/**
+ * Tokens d'authentification
+ */
 export interface AuthTokens {
   access_token: string;
   refresh_token: string;
@@ -29,6 +141,9 @@ export interface AuthTokens {
   expires_in: number;
 }
 
+/**
+ * État d'authentification
+ */
 export interface AuthState {
   user: User | null;
   tokens: AuthTokens | null;
@@ -37,18 +152,34 @@ export interface AuthState {
   error: string | null;
 }
 
-// ============================================================
-// TYPES DE CAPACITÉS
-// ============================================================
+/**
+ * État d'authentification typé (discriminated union)
+ */
+export type TypedAuthState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; error: string }
+  | { status: 'authenticated'; user: User; tenantId: string }
+  | { status: 'unauthenticated' };
 
+// ============================================================================
+// TYPES CAPACITÉS (RBAC)
+// ============================================================================
+
+/**
+ * Capacité utilisateur
+ */
 export interface Capability {
-  code: string;
+  id: string;
   name: string;
-  description: string;
-  module: string;
-  is_sensitive: boolean;
+  description?: string;
+  module?: string;
+  is_sensitive?: boolean;
 }
 
+/**
+ * État des capacités
+ */
 export interface CapabilitiesState {
   capabilities: string[];
   isLoading: boolean;
@@ -57,42 +188,179 @@ export interface CapabilitiesState {
   hasAllCapabilities: (caps: string[]) => boolean;
 }
 
-// ============================================================
-// TYPES API
-// ============================================================
+// ============================================================================
+// TYPES RECHERCHE
+// ============================================================================
 
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  errors?: ApiError[];
+/**
+ * Résultat recherche client
+ */
+export interface SearchClientResult {
+  id: string;
+  code?: string;
+  name: string;
+  type?: string;
+  city?: string;
+  email?: string;
+  phone?: string;
 }
 
-export interface ApiError {
-  code: string;
+/**
+ * Résultat recherche document
+ */
+export interface SearchDocumentResult {
+  id: string;
+  number: string;
+  type: string;
+  document_type?: string;
+  status?: string;
+  client_name?: string;
+  customer_name?: string;
+  total?: number;
+  total_ttc?: number;
+  date?: string;
+}
+
+/**
+ * Résultat recherche produit
+ */
+export interface SearchProductResult {
+  id: string;
+  code?: string;
+  sku?: string;
+  name: string;
+  price?: number;
+  stock_qty?: number;
+  category?: string;
+}
+
+// ============================================================================
+// TYPES ERREURS
+// ============================================================================
+
+/**
+ * Erreur de mutation API
+ */
+export interface ApiMutationError {
   message: string;
+  code?: string;
   field?: string;
   details?: Record<string, unknown>;
+  response?: {
+    status?: number;
+    data?: {
+      detail?: string;
+      message?: string;
+    };
+  };
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
+/**
+ * Type Result pour gestion d'erreurs fonctionnelle
+ */
+export type Result<T, E = { code: string; message: string }> =
+  | { ok: true; data: T; error?: never }
+  | { ok: false; data?: never; error: E };
+
+// ============================================================================
+// TYPES AUDIT
+// ============================================================================
+
+/**
+ * Événement d'audit UI
+ */
+export interface UIAuditEvent {
+  event_type: string;
+  component: string;
+  action: string;
+  target?: string;
+  metadata?: Record<string, unknown>;
+  timestamp?: string;
+  user_id?: string;
+  session_id?: string;
+  success?: boolean;
+  error?: string;
+  duration?: number;
 }
 
-export interface ApiRequestConfig {
-  skipAuth?: boolean;
-  timeout?: number;
-  retries?: number;
-  headers?: Record<string, string>;
+/**
+ * Tenant
+ */
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  subscription_tier?: string;
+  created_at?: string;
 }
 
-// ============================================================
-// TYPES MENU / NAVIGATION
-// ============================================================
+/**
+ * Statuts de workflow génériques
+ */
+export type WorkflowStatus =
+  | 'DRAFT'
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'BLOCKED';
 
+/**
+ * Niveaux de priorité
+ */
+export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+/**
+ * Devises supportées
+ */
+export type Currency = 'EUR' | 'USD' | 'GBP' | 'CHF';
+
+// ============================================================================
+// TYPES UI ENGINE
+// ============================================================================
+
+/**
+ * Colonne de tableau générique
+ */
+export interface TableColumn<T> {
+  id: string;
+  header: string | ReactNode;
+  accessor: keyof T | string | ((row: T) => unknown);
+  sortable?: boolean;
+  align?: 'left' | 'center' | 'right';
+  width?: string | number;
+  render?: (value: unknown, row: T) => ReactNode;
+}
+
+/**
+ * Action de tableau (menu contextuel)
+ */
+export interface TableAction<T> {
+  id: string;
+  label: string;
+  icon?: string | ReactNode;
+  onClick: (row: T) => void;
+  visible?: (row: T) => boolean;
+  isHidden?: (row: T) => boolean;
+  disabled?: (row: T) => boolean;
+  isDisabled?: (row: T) => boolean;
+  variant?: 'default' | 'danger' | 'warning';
+  capability?: string;
+}
+
+/**
+ * Badge de menu
+ */
+export interface MenuBadge {
+  count: number | string;
+  color?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
+  pulse?: boolean;
+}
+
+/**
+ * Item de menu navigation
+ */
 export interface MenuItem {
   id: string;
   label: string;
@@ -101,15 +369,12 @@ export interface MenuItem {
   capability?: string;
   children?: MenuItem[];
   badge?: MenuBadge;
-  isExternal?: boolean;
+  external?: boolean;
 }
 
-export interface MenuBadge {
-  count?: number;
-  color: 'red' | 'orange' | 'green' | 'blue' | 'gray';
-  pulse?: boolean;
-}
-
+/**
+ * Section de menu navigation
+ */
 export interface MenuSection {
   id: string;
   title: string;
@@ -117,256 +382,161 @@ export interface MenuSection {
   capability?: string;
 }
 
-// ============================================================
-// TYPES ALERTES / DASHBOARD
-// ============================================================
-
-export type AlertSeverity = 'RED' | 'ORANGE' | 'GREEN';
-
-export interface Alert {
+/**
+ * Entité générique avec ID
+ */
+export interface EntityItem {
   id: string;
-  severity: AlertSeverity;
-  title: string;
-  message: string;
-  module: string;
-  created_at: string;
-  requires_action: boolean;
-  action_url?: string;
-  acknowledged: boolean;
-  acknowledged_by?: string;
-  acknowledged_at?: string;
+  [key: string]: unknown;
 }
 
+/**
+ * Information module ERP
+ */
+export interface ModuleInfo {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  is_active: boolean;
+  is_available: boolean;
+  version?: string;
+  capabilities?: string[];
+}
+
+/**
+ * Intervenant (technicien, employé assigné)
+ */
+export interface Intervenant {
+  id: string;
+  name?: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  skills?: string[];
+  is_available?: boolean;
+  color?: string;
+}
+
+// ============================================================================
+// TYPES DASHBOARD
+// ============================================================================
+
+/**
+ * Sévérité des alertes
+ */
+export type AlertSeverity = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL' | 'SUCCESS' | 'RED' | 'ORANGE' | 'GREEN';
+
+/**
+ * KPI Dashboard
+ */
 export interface DashboardKPI {
   id: string;
   label: string;
   value: number | string;
   unit?: string;
-  trend?: 'up' | 'down' | 'stable';
+  trend?: 'up' | 'down' | 'neutral';
   trend_value?: number;
-  severity?: AlertSeverity;
   period?: string;
-  icon?: React.ReactNode;
-  variant?: 'default' | 'success' | 'warning' | 'danger';
+  severity?: AlertSeverity;
+  link?: string;
+  icon?: ReactNode;
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
 }
 
+/**
+ * Widget Dashboard
+ */
 export interface DashboardWidget {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'alerts' | 'actions';
+  type: 'kpi' | 'chart' | 'table' | 'list' | 'custom';
   title: string;
-  capability?: string;
+  span?: number;
   data?: unknown;
   config?: Record<string, unknown>;
+  capability?: string;
 }
 
-// ============================================================
-// TYPES TABLES
-// ============================================================
-
-export interface TableColumn<T> {
-  id: string | keyof T;
-  header: string | React.ReactNode;
-  accessor?: keyof T | ((row: T) => unknown);
-  sortable?: boolean;
-  filterable?: boolean;
-  width?: string;
-  align?: 'left' | 'center' | 'right';
-  render?: (value: unknown, row: T) => React.ReactNode;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IconType = string | React.ReactNode | React.ForwardRefExoticComponent<any> | React.FC<any>;
-
-export interface TableAction<T> {
+/**
+ * Alerte système
+ */
+export interface Alert {
   id: string;
-  label: string;
-  icon?: IconType;
-  capability?: string;
-  onClick: (row: T) => void;
-  isDisabled?: (row: T) => boolean;
-  isHidden?: (row: T) => boolean;
-  variant?: 'default' | 'danger' | 'warning';
+  title: string;
+  message: string;
+  severity: AlertSeverity;
+  timestamp?: string;
+  created_at?: string;
+  read?: boolean;
+  acknowledged?: boolean;
+  requires_action?: boolean;
+  link?: string;
+  source?: string;
+  module?: string;
 }
 
-export interface TableState {
-  page: number;
-  pageSize: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  filters: Record<string, unknown>;
-  search?: string;
-}
-
-// ============================================================
-// TYPES FORMULAIRES
-// ============================================================
-
-export interface FormField {
-  name: string;
-  label: string;
-  type: 'text' | 'number' | 'email' | 'password' | 'select' | 'checkbox' | 'date' | 'textarea' | 'file';
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
-  options?: SelectOption[];
-  validation?: FormValidation;
-  capability?: string;
-  helpText?: string;
-}
-
-export interface SelectOption {
-  value: string | number;
-  label: string;
-  disabled?: boolean;
-}
-
-export interface FormValidation {
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  custom?: (value: unknown) => string | undefined;
-}
-
-// ============================================================
-// TYPES ACTIONS / WORKFLOW
-// ============================================================
-
+/**
+ * Bouton d'action configurable
+ */
 export interface ActionButton {
   id: string;
   label: string;
+  variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost' | 'success';
   icon?: string;
   capability?: string;
-  variant: 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost';
-  onClick: () => void | Promise<void>;
-  isLoading?: boolean;
+  onClick?: () => void | Promise<void>;
+  confirm?: {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+  };
+  disabled?: boolean;
+  loading?: boolean;
+  // Aliases for compatibility
   isDisabled?: boolean;
+  isLoading?: boolean;
   requiresConfirmation?: boolean;
   confirmationMessage?: string;
 }
 
-export interface WorkflowStep {
-  id: string;
+// ============================================================================
+// TYPES FORMULAIRES
+// ============================================================================
+
+/**
+ * Option de select
+ */
+export interface SelectOption {
+  value: string;
   label: string;
-  status: 'pending' | 'current' | 'completed' | 'error';
-  description?: string;
+  disabled?: boolean;
+  group?: string;
 }
-
-// ============================================================
-// TYPES BREAK-GLASS
-// ============================================================
-
-export interface BreakGlassScope {
-  tenant_id?: string;
-  module?: string;
-  start_date?: string;
-  end_date?: string;
-}
-
-export interface BreakGlassRequest {
-  scope: BreakGlassScope;
-  confirmation_phrase: string;
-  reason?: string;
-  password: string;
-  totp_code?: string;
-}
-
-export interface BreakGlassChallenge {
-  challenge_id: string;
-  confirmation_phrase: string;
-  expires_at: string;
-}
-
-// ============================================================
-// TYPES MODULE
-// ============================================================
-
-export interface ModuleInfo {
-  id: string;
-  name: string;
-  version: string;
-  is_active: boolean;
-  is_available: boolean;
-  required_capability: string;
-  icon?: string;
-  description?: string;
-}
-
-export interface ModuleState {
-  modules: ModuleInfo[];
-  isLoading: boolean;
-  isModuleActive: (moduleId: string) => boolean;
-  isModuleAvailable: (moduleId: string) => boolean;
-}
-
-// ============================================================
-// TYPES TENANT
-// ============================================================
-
-export interface Tenant {
-  id: string;
-  name: string;
-  slug: string;
-  is_active: boolean;
-  plan: string;
-  modules: string[];
-  settings: Record<string, unknown>;
-  created_at: string;
-}
-
-// ============================================================
-// TYPES AUDIT UI
-// ============================================================
-
-export interface UIAuditEvent {
-  event_type: string;
-  component: string;
-  action: string;
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================
-// TYPES UTILITAIRES
-// ============================================================
-
-export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
-
-export interface AsyncState<T> {
-  data: T | null;
-  status: LoadingState;
-  error: string | null;
-}
-
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
-
-// ============================================================
-// RESULT PATTERN
-// ============================================================
 
 /**
- * Discriminated union pour les resultats d'operations async.
- * Remplace T | null avec information d'erreur preservee.
+ * Champ de formulaire
  */
-export type Result<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: ApiError };
-
-// ============================================================
-// AUTH DISCRIMINATED UNION
-// ============================================================
-
-/**
- * Etat d'authentification type-safe.
- * Garantit qu'un utilisateur authentifie a TOUJOURS un user et un tenantId.
- * Usage: const auth = useTypedAuth();
- * if (auth.status === 'authenticated') { auth.user.email } // garanti non-null
- */
-export type TypedAuthState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'authenticated'; user: User; tenantId: string }
-  | { status: 'unauthenticated' }
-  | { status: 'error'; error: string };
+export interface FormField {
+  name: string;
+  label: string;
+  type: 'text' | 'email' | 'password' | 'number' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'time' | 'datetime' | 'file' | 'hidden';
+  required?: boolean;
+  placeholder?: string;
+  helpText?: string;
+  defaultValue?: unknown;
+  options?: SelectOption[];
+  validation?: {
+    min?: number;
+    max?: number;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+  };
+  disabled?: boolean;
+  readOnly?: boolean;
+  className?: string;
+}

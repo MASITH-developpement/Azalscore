@@ -4,20 +4,19 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthenticatedQuery } from '@/ui-engine/hooks';
 import {
   Package, ShoppingCart, Truck, Tag, Euro, TrendingUp, AlertTriangle,
   ArrowLeft, Edit, Printer, Clock, FileText, Sparkles
 } from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
+import { serializeFilters } from '@core/query-keys';
 import { Button } from '@ui/actions';
-import { Select } from '@ui/forms';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -26,14 +25,10 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
 
 // Types et helpers
-import type { Product, Order, Category, Shipping, OrderItem } from './types';
-import {
-  PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, SHIPPING_STATUS_CONFIG,
-  isLowStock, isOutOfStock, calculateMargin
-} from './types';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
 
 // Composants tabs
@@ -41,6 +36,11 @@ import {
   ProductInfoTab, ProductStockTab, ProductDocumentsTab, ProductHistoryTab, ProductIATab,
   OrderInfoTab, OrderItemsTab, OrderShippingTab, OrderDocumentsTab, OrderHistoryTab, OrderIATab
 } from './components';
+import {
+  PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, SHIPPING_STATUS_CONFIG,
+  isLowStock, isOutOfStock, calculateMargin
+} from './types';
+import type { Product, Order, Category, Shipping, OrderItem } from './types';
 
 // ============================================================================
 // TYPES LOCAUX (extensions pour compatibilite)
@@ -126,7 +126,7 @@ const useEcommerceStats = () => {
   return useQuery({
     queryKey: ['ecommerce', 'stats'],
     queryFn: async () => {
-      const response = await api.get<EcommerceStats>('/v1/ecommerce/summary');
+      const response = await api.get<EcommerceStats>('/ecommerce/summary');
       return response.data;
     }
   });
@@ -134,12 +134,12 @@ const useEcommerceStats = () => {
 
 const useProducts = (filters?: { status?: string; category_id?: string }) => {
   return useQuery({
-    queryKey: ['ecommerce', 'products', filters],
+    queryKey: ['ecommerce', 'products', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.category_id) params.append('category_id', filters.category_id);
-      const response = await api.get<{ items: Product[] } | Product[]>(`/v1/ecommerce/products?${params}`);
+      const response = await api.get<{ items: Product[] } | Product[]>(`/ecommerce/products?${params}`);
       const data = response.data;
       return Array.isArray(data) ? data : data.items || [];
     }
@@ -150,7 +150,7 @@ const useProduct = (id: string) => {
   return useQuery({
     queryKey: ['ecommerce', 'product', id],
     queryFn: async () => {
-      const response = await api.get<Product>(`/v1/ecommerce/products/${id}`);
+      const response = await api.get<Product>(`/ecommerce/products/${id}`);
       return response.data;
     },
     enabled: !!id
@@ -159,12 +159,12 @@ const useProduct = (id: string) => {
 
 const useOrders = (filters?: { status?: string; payment_status?: string }) => {
   return useQuery({
-    queryKey: ['ecommerce', 'orders', filters],
+    queryKey: ['ecommerce', 'orders', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.payment_status) params.append('payment_status', filters.payment_status);
-      const response = await api.get<{ items: Order[] } | Order[]>(`/v1/ecommerce/orders?${params}`);
+      const response = await api.get<{ items: Order[] } | Order[]>(`/ecommerce/orders?${params}`);
       const data = response.data;
       return Array.isArray(data) ? data : data.items || [];
     }
@@ -175,7 +175,7 @@ const useOrder = (id: string) => {
   return useQuery({
     queryKey: ['ecommerce', 'order', id],
     queryFn: async () => {
-      const response = await api.get<Order>(`/v1/ecommerce/orders/${id}`);
+      const response = await api.get<Order>(`/ecommerce/orders/${id}`);
       return response.data;
     },
     enabled: !!id
@@ -186,7 +186,7 @@ const useCategories = () => {
   return useQuery({
     queryKey: ['ecommerce', 'categories'],
     queryFn: async () => {
-      const response = await api.get<Category[]>('/v1/ecommerce/categories');
+      const response = await api.get<Category[]>('/ecommerce/categories');
       return response.data;
     }
   });
@@ -194,21 +194,21 @@ const useCategories = () => {
 
 const useShippings = (filters?: { status?: string }) => {
   return useQuery({
-    queryKey: ['ecommerce', 'shippings', filters],
+    queryKey: ['ecommerce', 'shippings', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
-      const response = await api.get<Shipping[]>(`/v1/ecommerce/shippings?${params}`);
+      const response = await api.get<Shipping[]>(`/ecommerce/shippings?${params}`);
       return response.data;
     }
   });
 };
 
-const useUpdateOrderStatus = () => {
+const _useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v1/ecommerce/orders/${id}/status`, { status });
+      return api.patch(`/ecommerce/orders/${id}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ecommerce', 'orders'] });
@@ -302,7 +302,7 @@ const ProductDetailView: React.FC = () => {
   // Actions
   const headerActions: ActionDefinition[] = [
     { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost', onClick: () => navigate('/ecommerce') },
-    { id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' }
+    { id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary', onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editProduct', productId: product.id } })); } }
   ];
 
   return (
@@ -409,7 +409,7 @@ const OrderDetailView: React.FC = () => {
   // Actions
   const headerActions: ActionDefinition[] = [
     { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost', onClick: () => navigate('/ecommerce') },
-    { id: 'print', label: 'Imprimer', icon: <Printer size={16} />, variant: 'secondary' }
+    { id: 'print', label: 'Imprimer', icon: <Printer size={16} />, variant: 'secondary', onClick: () => { window.print(); } }
   ];
 
   return (
@@ -475,7 +475,7 @@ const ProductsView: React.FC = () => {
   ];
 
   return (
-    <Card title="Produits" actions={<Button>Nouveau produit</Button>}>
+    <Card title="Produits" actions={<Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createProduct' } })); }}>Nouveau produit</Button>}>
       <div className="azals-filter-bar mb-4">
         <Select
           value={filterCategory}
@@ -490,7 +490,7 @@ const ProductsView: React.FC = () => {
           placeholder="Statut"
         />
       </div>
-      <DataTable columns={columns} data={products} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucun produit" />
+      <DataTable columns={columns} data={products} keyField="id" filterable isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucun produit" />
     </Card>
   );
 };
@@ -553,7 +553,7 @@ const OrdersView: React.FC = () => {
           placeholder="Statut"
         />
       </div>
-      <DataTable columns={columns} data={orders} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune commande" />
+      <DataTable columns={columns} data={orders} keyField="id" filterable isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune commande" />
     </Card>
   );
 };
@@ -569,8 +569,8 @@ const CategoriesView: React.FC = () => {
   ];
 
   return (
-    <Card title="Categories" actions={<Button>Nouvelle categorie</Button>}>
-      <DataTable columns={columns} data={categories} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune categorie" />
+    <Card title="Categories" actions={<Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createCategory' } })); }}>Nouvelle categorie</Button>}>
+      <DataTable columns={columns} data={categories} keyField="id" filterable isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune categorie" />
     </Card>
   );
 };
@@ -603,7 +603,7 @@ const ShippingsView: React.FC = () => {
           placeholder="Statut"
         />
       </div>
-      <DataTable columns={columns} data={shippings} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune expedition" />
+      <DataTable columns={columns} data={shippings} keyField="id" filterable isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune expedition" />
     </Card>
   );
 };

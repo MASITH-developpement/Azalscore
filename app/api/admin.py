@@ -3,12 +3,14 @@ AZALS - Admin Dashboard API
 ===========================
 API pour le tableau de bord d'administration.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -17,6 +19,11 @@ from app.core.cache import cached, invalidate_cache
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
+from app.core.modules_registry import (
+    get_all_modules,
+    get_modules_grouped_by_category,
+    get_categories,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +43,68 @@ class AdminDashboard(BaseModel):
     storage_used_gb: float = 0
     api_calls_today: int = 0
     errors_today: int = 0
+
+
+class AdminUserCreate(BaseModel):
+    """
+    Schéma de création d'utilisateur via l'interface admin.
+
+    Conformité:
+    - AZA-SEC-001: Validation stricte des entrées
+    - AZA-BE-003: Contrat backend obligatoire
+
+    Note: Ce schéma est moins strict que IAM.UserCreate (8 vs 12 caractères)
+    car il est utilisé par des admins pour créer des comptes initiaux.
+    """
+    email: EmailStr = Field(..., description="Adresse email unique")
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Mot de passe (8-128 caractères)"
+    )
+    roles: list[str] = Field(
+        default=["EMPLOYE"],
+        description="Liste des rôles (EMPLOYE, COMPTABLE, ADMIN, DIRIGEANT)"
+    )
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """
+        Validation basique du mot de passe.
+        Pour une validation complète, utiliser le module IAM.
+        """
+        if len(v) < 8:
+            raise ValueError("Le mot de passe doit contenir au moins 8 caractères")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins une majuscule")
+        if not any(c.islower() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins une minuscule")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins un chiffre")
+        return v
+
+    @field_validator('roles')
+    @classmethod
+    def validate_roles(cls, v: list[str]) -> list[str]:
+        """Validation des rôles."""
+        valid_roles = {"EMPLOYE", "COMPTABLE", "ADMIN", "DIRIGEANT"}
+        for role in v:
+            if role not in valid_roles:
+                raise ValueError(f"Rôle invalide: {role}. Valeurs autorisées: {valid_roles}")
+        return v
+
+
+class AdminUserResponse(BaseModel):
+    """Réponse après création d'utilisateur admin."""
+    id: str
+    email: str
+    name: str
+    roles: list[str]
+    is_active: bool
 
 
 # ============================================================================
@@ -86,20 +155,22 @@ def _get_admin_dashboard_data(db: Session, tenant_id: str) -> dict:
         except Exception:
             pass
 
-    # Compter les tenants
+    # SÉCURITÉ: Chaque admin ne voit QUE son propre tenant
+    # La requête précédente comptait TOUS les tenants (fuite cross-tenant)
+    # Correction: On ne montre que les stats du tenant courant
     try:
         result = db.execute(text("""
             SELECT
-                COUNT(*) as total,
-                COUNT(*) FILTER (WHERE status = 'ACTIVE') as active
+                CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END as is_active
             FROM tenants
-        """))
+            WHERE tenant_id = :tenant_id
+        """), {"tenant_id": tenant_id})
         row = result.fetchone()
-        if row:
-            dashboard.total_tenants = row[0] or 0
-            dashboard.active_tenants = row[1] or 0
+        # Un admin ne voit que SON tenant
+        dashboard.total_tenants = 1
+        dashboard.active_tenants = 1 if (row and row[0] == 1) else 0
     except Exception as e:
-        logger.warning(f"[ADMIN] Erreur comptage tenants: {e}")
+        logger.warning(f"[ADMIN] Erreur vérification tenant: {e}")
         dashboard.total_tenants = 1
         dashboard.active_tenants = 1
 
@@ -163,3 +234,38 @@ def get_admin_dashboard(
     """Dashboard d'administration avec statistiques systeme (cache 5min)."""
     data = _get_admin_dashboard_data(db, tenant_id)
     return AdminDashboard(**data)
+
+
+# ============================================================================
+# MODULES DISPONIBLES (source unique de verite)
+# ============================================================================
+
+@router.get("/modules/available")
+def get_available_modules(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Liste tous les modules disponibles groupes par categorie.
+
+    C'est la SOURCE UNIQUE DE VERITE pour les modules.
+    Le frontend doit utiliser cet endpoint au lieu de listes codees en dur.
+
+    SÉCURITÉ: Authentification requise.
+    """
+    return {
+        "categories": get_categories(),
+        "modules": get_all_modules(),
+        "modules_by_category": get_modules_grouped_by_category(),
+    }
+
+
+@router.get("/modules/list")
+def get_modules_list(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Liste simple des modules (pour compatibilite).
+
+    SÉCURITÉ: Authentification requise.
+    """
+    return {"items": get_all_modules()}

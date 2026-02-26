@@ -8,7 +8,7 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import { Loader2, ArrowLeft, Search, Plus, Eye, Edit, Trash2, Check } from 'lucide-react';
+import { Loader2, ArrowLeft, Search, Check } from 'lucide-react';
 
 // ============================================================
 // LOADING
@@ -138,6 +138,7 @@ interface SimpleTableProps<T> {
   emptyMessage?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function SimpleTable<T extends Record<string, any>>({
   columns,
   data,

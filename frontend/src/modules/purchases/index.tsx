@@ -6,8 +6,7 @@
  * Exclusions: Paiements, comptabilité, PDF, réceptions, devis
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -16,9 +15,7 @@ import {
   Users,
   Edit,
   Trash2,
-  Eye,
   CheckCircle2,
-  Download,
   Search,
   Filter,
   X,
@@ -27,57 +24,58 @@ import {
   AlertTriangle,
   AlertCircle,
   Clock,
-  RefreshCw,
   Building2,
   List,
   Euro,
   Paperclip,
   Sparkles,
-  CreditCard,
+  Shield,
 } from 'lucide-react';
+import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard } from '@core/capabilities';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup, Modal, ConfirmDialog, DropdownMenu } from '@ui/actions';
+import { serializeFilters } from '@core/query-keys';
+import { Button, ButtonGroup, ConfirmDialog } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
-import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
-import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
+import { DataTable } from '@ui/tables';
+import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 
 // Import tab components
+
+// Auto-enrichissement fournisseur (SIRET + Adresse)
+import { SiretLookup, AddressAutocomplete, CompanyAutocomplete } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion, RiskData } from '@/modules/enrichment';
+import { unwrapApiResponse } from '@/types';
+import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
+
+// Import types from module types file
+import {
+  formatCurrency as formatCurrencyFn,
+  formatDate as formatDateFn,
+} from '@/utils/formatters';
 import {
   SupplierInfoTab, SupplierOrdersTab, SupplierInvoicesTab,
-  SupplierDocumentsTab, SupplierHistoryTab, SupplierIATab,
+  SupplierDocumentsTab, SupplierHistoryTab, SupplierRiskTab, SupplierIATab,
   OrderInfoTab, OrderLinesTab, OrderFinancialTab,
   OrderDocumentsTab, OrderHistoryTab, OrderIATab,
   InvoiceInfoTab, InvoiceLinesTab, InvoiceFinancialTab,
   InvoiceDocumentsTab, InvoiceHistoryTab, InvoiceIATab,
 } from './components';
-
-// Auto-enrichissement fournisseur (SIRET + Adresse)
-import { SiretLookup, AddressAutocomplete, CompanyAutocomplete } from '@/modules/enrichment';
-import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
-
-// Import types from module types file
+import {
+  ORDER_STATUS_CONFIG as ORDER_STATUS,
+  INVOICE_STATUS_CONFIG as INVOICE_STATUS,
+  canEditOrder, canValidateOrder, canCreateInvoiceFromOrder,
+  canEditInvoice, canValidateInvoice,
+  isOverdue,
+} from './types';
 import type {
   Supplier as SupplierType,
   PurchaseOrder as PurchaseOrderType,
   PurchaseInvoice as PurchaseInvoiceType,
 } from './types';
-import {
-  SUPPLIER_STATUS_CONFIG as SUPPLIER_STATUS,
-  ORDER_STATUS_CONFIG as ORDER_STATUS,
-  INVOICE_STATUS_CONFIG as INVOICE_STATUS,
-  canEditOrder, canValidateOrder, canCreateInvoiceFromOrder,
-  canEditInvoice, canValidateInvoice, canPayInvoice,
-  isOverdue,
-} from './types';
-import {
-  formatCurrency as formatCurrencyFn,
-  formatDate as formatDateFn,
-} from '@/utils/formatters';
+import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
 
 // ============================================================================
 // TYPES
@@ -282,13 +280,12 @@ const useSuppliers = (page = 1, pageSize = 25, filters?: FilterState) => {
   if (filters?.status) params.append('status', filters.status);
 
   return useQuery({
-    queryKey: ['purchases', 'suppliers', page, pageSize, filters],
+    queryKey: ['purchases', 'suppliers', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
-        `/v1/purchases/suppliers?${params.toString()}`
+        `/purchases/suppliers?${params.toString()}`
       );
-      // Handle both wrapped { data: ... } and direct response formats
-      return (response as any)?.data ?? response ?? { items: [], total: 0, page: 1, pages: 0 };
+      return unwrapApiResponse<PaginatedResponse<Supplier>>(response) ?? { items: [], total: 0, page: 1, pages: 0 };
     },
   });
 };
@@ -297,8 +294,8 @@ const useSupplier = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'suppliers', id],
     queryFn: async () => {
-      const response = await api.get<Supplier>(`/v1/purchases/suppliers/${id}`);
-      return (response as any)?.data ?? response;
+      const response = await api.get<Supplier>(`/purchases/suppliers/${id}`);
+      return unwrapApiResponse<Supplier>(response);
     },
     enabled: !!id && id !== 'new',
   });
@@ -309,9 +306,9 @@ const useSuppliersLookup = () => {
     queryKey: ['purchases', 'suppliers', 'lookup'],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
-        '/v1/purchases/suppliers?page_size=500&status=APPROVED'
+        '/purchases/suppliers?page_size=500&status=APPROVED'
       );
-      const data = (response as any)?.data ?? response;
+      const data = unwrapApiResponse<PaginatedResponse<Supplier>>(response);
       return data?.items ?? [];
     },
   });
@@ -322,8 +319,8 @@ const useCreateSupplier = () => {
 
   return useMutation({
     mutationFn: async (data: SupplierCreate) => {
-      const response = await api.post<Supplier>('/v1/purchases/suppliers', data);
-      return (response as any)?.data ?? response;
+      const response = await api.post<Supplier>('/purchases/suppliers', data);
+      return unwrapApiResponse<Supplier>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -336,8 +333,8 @@ const useUpdateSupplier = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<SupplierCreate> }) => {
-      const response = await api.put<Supplier>(`/v1/purchases/suppliers/${id}`, data);
-      return (response as any)?.data ?? response;
+      const response = await api.put<Supplier>(`/purchases/suppliers/${id}`, data);
+      return unwrapApiResponse<Supplier>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -350,10 +347,16 @@ const useDeleteSupplier = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/purchases/suppliers/${id}`);
+      const response = await api.delete(`/purchases/suppliers/${id}`);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
+    },
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+      const message = error.response?.data?.detail || error.message || 'Erreur lors de la suppression';
+      alert(`Erreur: ${message}`);
+      console.error('[DELETE_SUPPLIER] Erreur:', error);
     },
   });
 };
@@ -366,7 +369,7 @@ const usePurchaseSummary = () => {
   return useQuery({
     queryKey: ['purchases', 'summary'],
     queryFn: async () => {
-      const response = await api.get<PurchaseSummary>('/v1/purchases/summary');
+      const response = await api.get<PurchaseSummary>('/purchases/summary');
       return response.data;
     },
   });
@@ -384,10 +387,10 @@ const usePurchaseOrders = (page = 1, pageSize = 25, filters?: FilterState) => {
   if (filters?.date_to) params.append('date_to', filters.date_to);
 
   return useQuery({
-    queryKey: ['purchases', 'orders', page, pageSize, filters],
+    queryKey: ['purchases', 'orders', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseOrder>>(
-        `/v1/purchases/orders?${params.toString()}`
+        `/purchases/orders?${params.toString()}`
       );
       return response.data;
     },
@@ -398,7 +401,7 @@ const usePurchaseOrder = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'orders', id],
     queryFn: async () => {
-      const response = await api.get<PurchaseOrder>(`/v1/purchases/orders/${id}`);
+      const response = await api.get<PurchaseOrder>(`/purchases/orders/${id}`);
       return response.data;
     },
     enabled: !!id && id !== 'new',
@@ -417,7 +420,7 @@ const useCreatePurchaseOrder = () => {
       notes?: string;
       lines: Omit<PurchaseOrderLine, 'id'>[];
     }) => {
-      const response = await api.post<PurchaseOrder>('/v1/purchases/orders', data);
+      const response = await api.post<PurchaseOrder>('/purchases/orders', data);
       return response.data;
     },
     onSuccess: () => {
@@ -432,7 +435,7 @@ const useUpdatePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PurchaseOrder> }) => {
-      const response = await api.put<PurchaseOrder>(`/v1/purchases/orders/${id}`, data);
+      const response = await api.put<PurchaseOrder>(`/purchases/orders/${id}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -447,7 +450,7 @@ const useDeletePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/purchases/orders/${id}`);
+      await api.delete(`/purchases/orders/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'orders'] });
@@ -461,7 +464,7 @@ const useValidatePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<PurchaseOrder>(`/v1/purchases/orders/${id}/validate`);
+      const response = await api.post<PurchaseOrder>(`/purchases/orders/${id}/validate`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -478,7 +481,7 @@ const useCreateInvoiceFromOrder = () => {
   return useMutation({
     mutationFn: async (orderId: string) => {
       const response = await api.post<PurchaseInvoice>(
-        `/v1/purchases/orders/${orderId}/create-invoice`
+        `/purchases/orders/${orderId}/create-invoice`
       );
       return response.data;
     },
@@ -506,10 +509,10 @@ const usePurchaseInvoices = (page = 1, pageSize = 25, filters?: FilterState) => 
   if (filters?.date_to) params.append('date_to', filters.date_to);
 
   return useQuery({
-    queryKey: ['purchases', 'invoices', page, pageSize, filters],
+    queryKey: ['purchases', 'invoices', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseInvoice>>(
-        `/v1/purchases/invoices?${params.toString()}`
+        `/purchases/invoices?${params.toString()}`
       );
       return response.data;
     },
@@ -520,7 +523,7 @@ const usePurchaseInvoice = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'invoices', id],
     queryFn: async () => {
-      const response = await api.get<PurchaseInvoice>(`/v1/purchases/invoices/${id}`);
+      const response = await api.get<PurchaseInvoice>(`/purchases/invoices/${id}`);
       return response.data;
     },
     enabled: !!id && id !== 'new',
@@ -540,7 +543,7 @@ const useCreatePurchaseInvoice = () => {
       notes?: string;
       lines: Omit<PurchaseOrderLine, 'id'>[];
     }) => {
-      const response = await api.post<PurchaseInvoice>('/v1/purchases/invoices', data);
+      const response = await api.post<PurchaseInvoice>('/purchases/invoices', data);
       return response.data;
     },
     onSuccess: () => {
@@ -555,7 +558,7 @@ const useUpdatePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PurchaseInvoice> }) => {
-      const response = await api.put<PurchaseInvoice>(`/v1/purchases/invoices/${id}`, data);
+      const response = await api.put<PurchaseInvoice>(`/purchases/invoices/${id}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -570,7 +573,7 @@ const useDeletePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/purchases/invoices/${id}`);
+      await api.delete(`/purchases/invoices/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'invoices'] });
@@ -584,7 +587,7 @@ const useValidatePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<PurchaseInvoice>(`/v1/purchases/invoices/${id}/validate`);
+      const response = await api.post<PurchaseInvoice>(`/purchases/invoices/${id}/validate`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -1178,6 +1181,7 @@ export const SuppliersListPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -1208,6 +1212,21 @@ export const SupplierFormPage: React.FC = () => {
   const { data: supplier, isLoading } = useSupplier(id || '');
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
+  const deleteMutation = useDeleteSupplier();
+
+  const handleDelete = async () => {
+    if (!supplier) return;
+
+    if (window.confirm(`Supprimer le fournisseur "${supplier.name}" ?\n\nCette action est irréversible.`)) {
+      try {
+        await deleteMutation.mutateAsync(supplier.id);
+        navigate('/purchases/suppliers');
+      } catch (error) {
+        // L'erreur est déjà gérée par onError du mutation
+        console.error('[SUPPLIER_DELETE] Échec:', error);
+      }
+    }
+  };
 
   const [form, setForm] = useState<SupplierCreate>({
     code: '',
@@ -1223,6 +1242,9 @@ export const SupplierFormPage: React.FC = () => {
     payment_terms: 'NET30',
     notes: '',
   });
+
+  // État pour les données de risque BODACC (mis à jour automatiquement via onRiskData)
+  const [riskData, setRiskData] = useState<RiskData | null>(null);
 
   useEffect(() => {
     if (supplier) {
@@ -1247,7 +1269,7 @@ export const SupplierFormPage: React.FC = () => {
     e.preventDefault();
     if (isNew) {
       const result = await createMutation.mutateAsync(form);
-      navigate(`/purchases/suppliers/${result.id}`);
+      if (result?.id) navigate(`/purchases/suppliers/${result.id}`);
     } else {
       await updateMutation.mutateAsync({ id: id!, data: form });
       navigate(`/purchases/suppliers/${id}`);
@@ -1264,6 +1286,19 @@ export const SupplierFormPage: React.FC = () => {
       postal_code: fields.postal_code || prev.postal_code,
       tax_id: fields.siret || fields.siren || prev.tax_id,
     }));
+
+    // Stocker les données de risque BODACC
+    if (fields._bodacc_risk_level || fields._risk_level) {
+      setRiskData({
+        level: fields._bodacc_risk_level || fields._risk_level,
+        label: fields._bodacc_risk_label || fields._risk_label,
+        reason: fields._bodacc_risk_reason || fields._risk_reason,
+        score: fields._bodacc_risk_score ?? fields._risk_score,
+        alerts: fields._bodacc_critical_alerts || [],
+      });
+    } else {
+      setRiskData(null);
+    }
   };
 
   // Handler pour l'enrichissement SIRET/SIREN (reutilise le meme handler)
@@ -1321,6 +1356,7 @@ export const SupplierFormPage: React.FC = () => {
                 value={form.name}
                 onChange={(value: string) => setForm({ ...form, name: value })}
                 onSelect={handleCompanySelect}
+                onRiskData={setRiskData}
                 placeholder="Tapez le nom d'une entreprise..."
               />
             </div>
@@ -1356,6 +1392,7 @@ export const SupplierFormPage: React.FC = () => {
               <SiretLookup
                 value={form.tax_id}
                 onEnrich={handleSiretEnrich}
+                onRiskData={setRiskData}
               />
             </div>
             <div className="azals-field">
@@ -1426,17 +1463,77 @@ export const SupplierFormPage: React.FC = () => {
           </div>
         </Card>
 
-        <div className="azals-form__actions">
-          <Button variant="secondary" onClick={() => navigate(-1)}>
-            Annuler
-          </Button>
-          <Button
-            type="submit"
-            leftIcon={<Save size={16} />}
-            isLoading={isSubmitting}
+        {/* Encadré Analyse de risque BODACC */}
+        {riskData && (
+          <Card
+            title="Analyse de risque"
+            className={riskData.level === 'critical' ? 'azals-card--danger' : riskData.level === 'high' ? 'azals-card--warning' : ''}
           >
-            {isNew ? 'Créer le fournisseur' : 'Enregistrer'}
-          </Button>
+            <div style={{
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              background: riskData.level === 'critical' ? 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' :
+                         riskData.level === 'high' ? 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' : '#f0fdf4',
+              border: riskData.level === 'critical' ? '2px solid #ef4444' :
+                     riskData.level === 'high' ? '2px solid #f59e0b' : '2px solid #22c55e'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '1.5rem' }}>
+                  {riskData.level === 'critical' ? '⛔' : riskData.level === 'high' ? '⚠️' : '✅'}
+                </span>
+                <div>
+                  <div style={{
+                    fontWeight: 700,
+                    color: riskData.level === 'critical' ? '#dc2626' : riskData.level === 'high' ? '#d97706' : '#16a34a'
+                  }}>
+                    {riskData.level === 'critical' ? 'RISQUE CRITIQUE' :
+                     riskData.level === 'high' ? 'RISQUE ÉLEVÉ' : 'RISQUE FAIBLE'}
+                  </div>
+                  <div style={{ fontWeight: 500, color: '#374151' }}>
+                    {riskData.reason || riskData.label}
+                  </div>
+                </div>
+              </div>
+              {riskData.alerts && riskData.alerts.length > 0 && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                  {riskData.alerts.map((alert, idx) => (
+                    <div key={idx}>• {alert.type} ({alert.date})</div>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#9ca3af' }}>
+                Sources: {riskData.sources && riskData.sources.length > 0
+                  ? riskData.sources.join(', ')
+                  : 'INSEE, BODACC'}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        <div className="azals-form__actions" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Button variant="secondary" onClick={() => navigate(-1)}>
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              leftIcon={<Save size={16} />}
+              isLoading={isSubmitting}
+            >
+              {isNew ? 'Créer le fournisseur' : 'Enregistrer'}
+            </Button>
+          </div>
+          {!isNew && (
+            <Button
+              type="button"
+              variant="danger"
+              leftIcon={<Trash2 size={16} />}
+              onClick={handleDelete}
+              isLoading={deleteMutation.isPending}
+            >
+              Supprimer
+            </Button>
+          )}
         </div>
       </form>
     </PageWrapper>
@@ -1474,7 +1571,7 @@ export const SupplierDetailPage: React.FC = () => {
     return (
       <PageWrapper title="Fournisseur introuvable">
         <Card>
-          <p>Ce fournisseur n'existe pas ou a été supprimé.</p>
+          <p>Ce fournisseur n&apos;existe pas ou a ete supprime.</p>
           <Button onClick={() => navigate('/purchases/suppliers')}>Retour à la liste</Button>
         </Card>
       </PageWrapper>
@@ -1673,6 +1770,7 @@ export const OrdersListPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -1813,7 +1911,7 @@ export const OrderFormPage: React.FC = () => {
                 secondaryField="code"
                 entityName="fournisseur"
                 entityIcon={<Building2 size={16} />}
-                createEndpoint="/v1/purchases/suppliers"
+                createEndpoint="/purchases/suppliers"
                 createFields={SUPPLIER_CREATE_FIELDS}
                 queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
@@ -1943,7 +2041,7 @@ export const OrderDetailPage: React.FC = () => {
     return (
       <PageWrapper title="Commande introuvable">
         <Card>
-          <p>Cette commande n'existe pas ou a été supprimée.</p>
+          <p>Cette commande n&apos;existe pas ou a ete supprimee.</p>
           <Button onClick={() => navigate('/purchases/orders')}>Retour à la liste</Button>
         </Card>
       </PageWrapper>
@@ -2183,6 +2281,7 @@ export const InvoicesListPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -2323,7 +2422,7 @@ export const InvoiceFormPage: React.FC = () => {
                 secondaryField="code"
                 entityName="fournisseur"
                 entityIcon={<Building2 size={16} />}
-                createEndpoint="/v1/purchases/suppliers"
+                createEndpoint="/purchases/suppliers"
                 createFields={SUPPLIER_CREATE_FIELDS}
                 queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
@@ -2342,7 +2441,7 @@ export const InvoiceFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Date d'échéance</label>
+              <label className="azals-field__label">Date d&apos;echeance</label>
               <input
                 type="date"
                 className="azals-input"
@@ -2448,7 +2547,7 @@ export const InvoiceDetailPage: React.FC = () => {
     return (
       <PageWrapper title="Facture introuvable">
         <Card>
-          <p>Cette facture n'existe pas ou a été supprimée.</p>
+          <p>Cette facture n&apos;existe pas ou a ete supprimee.</p>
           <Button onClick={() => navigate('/purchases/invoices')}>Retour à la liste</Button>
         </Card>
       </PageWrapper>
@@ -2598,6 +2697,7 @@ const SupplierDetailView: React.FC = () => {
     { id: 'invoices', label: 'Factures', icon: <FileText size={16} />, badge: supplier.total_invoices, component: SupplierInvoicesTab },
     { id: 'documents', label: 'Documents', icon: <Paperclip size={16} />, component: SupplierDocumentsTab },
     { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: SupplierHistoryTab },
+    { id: 'risk', label: 'Risque', icon: <Shield size={16} />, component: SupplierRiskTab },
     { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: SupplierIATab },
   ];
 
@@ -2814,7 +2914,6 @@ const InvoiceDetailView: React.FC = () => {
     { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost' as const, onClick: () => navigate('/purchases/invoices') },
     ...(canEditInvoice(invoice) ? [{ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' as const, onClick: () => navigate(`/purchases/invoices/${id}/edit`) }] : []),
     ...(canValidateInvoice(invoice) ? [{ id: 'validate', label: 'Valider', icon: <CheckCircle2 size={16} />, variant: 'primary' as const, onClick: () => validateMutation.mutate(id!) }] : []),
-    ...(canPayInvoice(invoice) ? [{ id: 'pay', label: 'Payer', icon: <CreditCard size={16} />, variant: 'primary' as const, onClick: () => console.log('Pay invoice:', id) }] : []),
     ...(canEditInvoice(invoice) ? [{ id: 'delete', label: 'Supprimer', icon: <Trash2 size={16} />, variant: 'danger' as const, onClick: async () => { if (window.confirm('Supprimer cette facture ?')) { await deleteMutation.mutateAsync(id!); navigate('/purchases/invoices'); } } }] : []),
   ];
 

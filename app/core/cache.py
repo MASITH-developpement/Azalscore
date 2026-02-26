@@ -157,12 +157,16 @@ class RedisCache(CacheBackend):
 
 
 class MemoryCache(CacheBackend):
-    """Cache mémoire pour développement/test."""
+    """Cache mémoire pour développement/test avec limite de taille (LRU)."""
+
+    # Limite pour éviter memory leak si Redis indisponible
+    MAX_SIZE = 10_000
 
     def __init__(self):
-        self._store: dict = {}
-        self._expires: dict = {}
+        from collections import OrderedDict
         import time
+        self._store: OrderedDict = OrderedDict()
+        self._expires: dict = {}
         self._time = time
 
     def _is_expired(self, key: str) -> bool:
@@ -177,12 +181,26 @@ class MemoryCache(CacheBackend):
             return True
         return False
 
+    def _evict_oldest(self):
+        """Éviction LRU: supprime les entrées les plus anciennes si limite atteinte."""
+        while len(self._store) >= self.MAX_SIZE:
+            oldest_key, _ = self._store.popitem(last=False)
+            self._expires.pop(oldest_key, None)
+
     def get(self, key: str) -> str | None:
         self._cleanup(key)
-        return self._store.get(key)
+        value = self._store.get(key)
+        if value is not None:
+            # Marquer comme récemment utilisé (LRU)
+            self._store.move_to_end(key)
+        return value
 
     def set(self, key: str, value: str, ttl: int = 300) -> bool:
+        # Éviction si limite atteinte
+        if key not in self._store:
+            self._evict_oldest()
         self._store[key] = value
+        self._store.move_to_end(key)  # Marquer comme récent
         self._expires[key] = self._time.time() + ttl
         return True
 

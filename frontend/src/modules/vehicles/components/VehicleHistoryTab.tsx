@@ -9,13 +9,13 @@ import {
   Wrench, CheckCircle, Fuel, MapPin, Car, AlertTriangle
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Vehicule, VehicleHistoryEntry, MaintenanceLog, MileageLog } from '../types';
 import { formatDateTime, formatDate, formatCurrency } from '@/utils/formatters';
 import {
   formatKilometers,
   MAINTENANCE_TYPE_CONFIG
 } from '../types';
+import type { Vehicule, VehicleHistoryEntry, MaintenanceLog, MileageLog } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * VehicleHistoryTab - Historique du vehicule

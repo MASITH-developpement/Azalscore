@@ -8,12 +8,12 @@ import {
   FileText, CheckCircle, Euro, Clock, AlertTriangle, Star
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import { formatCurrency, formatDuration } from '@/utils/formatters';
 import {
   getActualDuration, getAmountVariance, getDurationVariance
 } from '../types';
-import { formatCurrency, formatDuration } from '@/utils/formatters';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionReportTab - Compte-rendu
@@ -31,7 +31,7 @@ export const InterventionReportTab: React.FC<TabContentProps<Intervention>> = ({
           <FileText size={48} className="text-muted" />
           <h3>Compte-rendu non disponible</h3>
           <p className="text-muted">
-            Le compte-rendu sera disponible une fois l'intervention terminee.
+            Le compte-rendu sera disponible une fois l&apos;intervention terminee.
           </p>
         </div>
       </div>

@@ -2,6 +2,9 @@
 AZALS MODULE - Marceau Juridique
 =================================
 
-Module d'analyse juridique et conformite.
-TODO: Implementation Phase 2
+Module d'assistance juridique automatisee.
 """
+
+from .service import JuridiqueService
+
+__all__ = ["JuridiqueService"]

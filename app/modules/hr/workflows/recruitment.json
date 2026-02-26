@@ -1,0 +1,108 @@
+{
+  "module_id": "azalscore.hr.recruitment",
+  "version": "1.0.0",
+  "description": "Workflow de recrutement de la candidature a l'embauche",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_job_opening",
+      "use": "azalscore.validators.hr.validate_job_opening@1.0.0",
+      "inputs": {
+        "job_id": "{{context.job_id}}",
+        "department_id": "{{context.department_id}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "screen_application",
+      "use": "azalscore.calculations.hr.screen_candidate@1.0.0",
+      "inputs": {
+        "candidate_data": "{{context.candidate_data}}",
+        "job_requirements": "{{validate_job_opening.requirements}}",
+        "screening_criteria": "{{context.screening_criteria}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "score_candidate",
+      "use": "azalscore.calculations.hr.calculate_candidate_score@1.0.0",
+      "inputs": {
+        "candidate_data": "{{context.candidate_data}}",
+        "screening_results": "{{screen_application}}",
+        "scoring_model": "{{context.scoring_model}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "check_duplicate",
+      "use": "azalscore.validators.hr.check_duplicate_candidate@1.0.0",
+      "inputs": {
+        "email": "{{context.candidate_data.email}}",
+        "phone": "{{context.candidate_data.phone}}",
+        "job_id": "{{context.job_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_candidate_profile",
+      "use": "azalscore.transformers.hr.create_candidate_record@1.0.0",
+      "inputs": {
+        "candidate_data": "{{context.candidate_data}}",
+        "job_id": "{{context.job_id}}",
+        "score": "{{score_candidate.total_score}}",
+        "source": "{{context.application_source}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "auto_reject",
+      "condition": "{{score_candidate.total_score}} < {{context.minimum_score}}",
+      "use": "azalscore.transformers.hr.reject_candidate@1.0.0",
+      "inputs": {
+        "candidate_id": "{{create_candidate_profile.candidate_id}}",
+        "reason": "Below minimum score threshold",
+        "send_notification": true
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "schedule_interview",
+      "condition": "{{score_candidate.total_score}} >= {{context.minimum_score}}",
+      "use": "azalscore.generators.hr.schedule_interview@1.0.0",
+      "inputs": {
+        "candidate_id": "{{create_candidate_profile.candidate_id}}",
+        "job_id": "{{context.job_id}}",
+        "interviewers": "{{context.interviewer_ids}}",
+        "interview_type": "{{context.first_interview_type}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "notify_recruiter",
+      "use": "azalscore.generators.communications.notify_new_application@1.0.0",
+      "inputs": {
+        "recruiter_email": "{{context.recruiter_email}}",
+        "candidate": "{{create_candidate_profile}}",
+        "job_title": "{{validate_job_opening.title}}",
+        "score": "{{score_candidate.total_score}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "candidate_id": "{{create_candidate_profile.candidate_id}}",
+    "screening_passed": "{{screen_application.passed}}",
+    "candidate_score": "{{score_candidate.total_score}}",
+    "status": "{{auto_reject.status || 'interview_scheduled'}}",
+    "interview_id": "{{schedule_interview.interview_id}}"
+  }
+}

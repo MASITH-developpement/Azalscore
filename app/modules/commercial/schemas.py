@@ -4,6 +4,8 @@ AZALS MODULE M1 - Schémas Commercial
 
 Schémas Pydantic pour le CRM et la gestion commerciale.
 """
+from __future__ import annotations
+
 
 import datetime
 import json

@@ -4,6 +4,8 @@ AZALS MODULE T9 - Service Tenants
 
 Logique métier pour la gestion des tenants.
 """
+from __future__ import annotations
+
 
 import logging
 import secrets

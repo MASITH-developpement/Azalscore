@@ -3,6 +3,8 @@ AZALS MODULE 13 - POS Service
 ==============================
 Logique métier pour le Point de Vente.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime

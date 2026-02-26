@@ -18,6 +18,8 @@ Exemples:
 - "invoicing.invoice.approve"
 - "iam.user.delete"
 """
+from __future__ import annotations
+
 
 import json
 import logging

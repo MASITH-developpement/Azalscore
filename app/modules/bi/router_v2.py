@@ -2,6 +2,8 @@
 AZALS - Module M10: BI & Reporting
 Router FastAPI v2 pour Business Intelligence - CORE SaaS v2
 """
+from __future__ import annotations
+
 
 from datetime import date
 
@@ -832,11 +834,12 @@ def get_export(
 # ============================================================================
 
 @router.get("/overview", response_model=BIOverview)
+@router.get("/stats", response_model=BIOverview)
 def get_overview(
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):
-    """Vue d'ensemble BI."""
+    """Vue d'ensemble BI (alias: /stats)."""
     service = get_bi_service(db, context.tenant_id, str(context.user_id))
     data = service.get_overview()
 

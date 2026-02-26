@@ -5,14 +5,14 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { Card, Grid } from '@ui/layout';
-import { Button, Modal } from '@ui/actions';
-import { Input, Select } from '@ui/forms';
 import {
   Database, Settings, Key, CheckCircle, XCircle, AlertTriangle,
   Globe, Play, Trash2, Edit3, Plus, ExternalLink, RefreshCw
 } from 'lucide-react';
+import { api } from '@core/api-client';
+import { Button, Modal } from '@ui/actions';
+import { Input } from '@ui/forms';
+import { Card, Grid } from '@ui/layout';
 
 // ============================================================================
 // TYPES
@@ -74,7 +74,7 @@ const useProviders = () => {
   return useQuery<ProvidersListResponse>({
     queryKey: ['enrichment', 'providers'],
     queryFn: async () => {
-      const response = await api.get('/v1/enrichment/admin/providers');
+      const response = await api.get('/enrichment/admin/providers');
       return (response as any)?.data ?? response;
     },
   });
@@ -84,7 +84,7 @@ const useCreateProvider = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const response = await api.post('/v1/enrichment/admin/providers', data);
+      const response = await api.post('/enrichment/admin/providers', data);
       return (response as any)?.data ?? response;
     },
     onSuccess: () => {
@@ -97,7 +97,7 @@ const useUpdateProvider = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ provider, data }: { provider: string; data: Record<string, unknown> }) => {
-      const response = await api.patch(`/v1/enrichment/admin/providers/${provider}`, data);
+      const response = await api.patch(`/enrichment/admin/providers/${provider}`, data);
       return (response as any)?.data ?? response;
     },
     onSuccess: () => {
@@ -110,7 +110,7 @@ const useDeleteProvider = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (provider: string) => {
-      const response = await api.delete(`/v1/enrichment/admin/providers/${provider}`);
+      const response = await api.delete(`/enrichment/admin/providers/${provider}`);
       return (response as any)?.data ?? response;
     },
     onSuccess: () => {
@@ -122,7 +122,7 @@ const useDeleteProvider = () => {
 const useTestProvider = () => {
   return useMutation<TestResult, Error, string>({
     mutationFn: async (provider: string) => {
-      const response = await api.post(`/v1/enrichment/admin/providers/${provider}/test`);
+      const response = await api.post(`/enrichment/admin/providers/${provider}/test`);
       return (response as any)?.data ?? response;
     },
   });
@@ -441,7 +441,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, provider, is
     >
       <form onSubmit={handleSubmit} className="azals-form">
         <div className="azals-form__group">
-          <label className="azals-form__label">Statut</label>
+          <span className="azals-form__label">Statut</span>
           <div className="azals-form__checkbox">
             <input
               type="checkbox"
@@ -466,10 +466,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, provider, is
         </div>
 
         <div className="azals-form__group">
-          <label className="azals-form__label">
+          <label className="azals-form__label" htmlFor="provider-priority">
             Priorite (1-999, plus bas = plus prioritaire)
           </label>
           <Input
+            id="provider-priority"
             type="number"
             value={formData.priority}
             onChange={(value) => updateField('priority', parseInt(value) || 100)}
@@ -479,10 +480,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, provider, is
         </div>
 
         <div className="azals-form__group">
-          <label className="azals-form__label">
+          <label className="azals-form__label" htmlFor="provider-api-key">
             <Key size={14} /> Cle API
           </label>
           <Input
+            id="provider-api-key"
             type="password"
             value={formData.api_key}
             onChange={(value) => updateField('api_key', value)}
@@ -491,10 +493,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, provider, is
         </div>
 
         <div className="azals-form__group">
-          <label className="azals-form__label">
+          <label className="azals-form__label" htmlFor="provider-api-secret">
             Secret API (optionnel)
           </label>
           <Input
+            id="provider-api-secret"
             type="password"
             value={formData.api_secret}
             onChange={(value) => updateField('api_secret', value)}
@@ -504,10 +507,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, provider, is
 
         <Grid cols={2} gap="md">
           <div className="azals-form__group">
-            <label className="azals-form__label">
+            <label className="azals-form__label" htmlFor="provider-limit-minute">
               Limite / minute
             </label>
             <Input
+              id="provider-limit-minute"
               type="number"
               value={formData.custom_requests_per_minute}
               onChange={(value) => updateField('custom_requests_per_minute', value)}
@@ -516,10 +520,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, provider, is
           </div>
 
           <div className="azals-form__group">
-            <label className="azals-form__label">
+            <label className="azals-form__label" htmlFor="provider-limit-day">
               Limite / jour
             </label>
             <Input
+              id="provider-limit-day"
               type="number"
               value={formData.custom_requests_per_day}
               onChange={(value) => updateField('custom_requests_per_day', value)}

@@ -47,18 +47,13 @@ scrape_configs:
           service: node
           instance: host
 
-  # cAdvisor — Métriques containers (CPU, RAM, I/O par container)
-  - job_name: 'cadvisor'
+  # Docker Stats Exporter — Métriques containers via Docker API
+  - job_name: 'docker'
     static_configs:
-      - targets: ['cadvisor:8080']
+      - targets: ['docker-exporter:9487']
         labels:
-          service: cadvisor
-          instance: docker
-    metric_relabel_configs:
-      # Garder uniquement les containers azals_*
-      - source_labels: [container_label_com_docker_compose_service]
-        regex: '.+'
-        action: keep
+          service: docker
+          instance: containers
 
   # ----------------------------------------------------------
   # DONNÉES

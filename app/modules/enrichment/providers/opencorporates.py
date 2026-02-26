@@ -5,6 +5,8 @@ AZALS MODULE - Auto-Enrichment - OpenCorporates Provider
 Provider pour l'API OpenCorporates - registres d'entreprises mondiaux.
 Documentation: https://api.opencorporates.com/documentation
 """
+from __future__ import annotations
+
 
 import logging
 import re

@@ -8,10 +8,10 @@ import {
   Camera, FileText, Download, ExternalLink, Upload, Image, File
 } from 'lucide-react';
 import { Button } from '@ui/actions';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import { Card } from '@ui/layout';
 import { formatDate } from '@/utils/formatters';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionPhotosTab - Photos et documents
@@ -23,11 +23,9 @@ export const InterventionPhotosTab: React.FC<TabContentProps<Intervention>> = ({
   const documents = intervention.documents || [];
 
   const handleAddPhoto = () => {
-    console.log('Add photo to intervention', intervention.id);
   };
 
   const handleAddDocument = () => {
-    console.log('Add document to intervention', intervention.id);
   };
 
   return (

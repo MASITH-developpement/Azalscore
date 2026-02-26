@@ -4,8 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { MainLayout } from '@/ui-engine/layouts/MainLayout';
 import { Key, ShieldCheck, Smartphone, User, Save, Edit, X } from 'lucide-react';
+import { MainLayout } from '@/ui-engine/layouts/MainLayout';
 
 export default function ProfileModule() {
   const [user, setUser] = useState({
@@ -54,30 +54,32 @@ export default function ProfileModule() {
 
             <div style={{ display: 'grid', gap: 'var(--azals-spacing-md)' }}>
               <div className="azals-form-field">
-                <label>Nom complet</label>
+                <label htmlFor="profile-name">Nom complet</label>
                 {editing ? (
                   <input
+                    id="profile-name"
                     type="text"
                     className="azals-input"
                     value={user.name}
                     onChange={(e) => setUser({ ...user, name: e.target.value })}
                   />
                 ) : (
-                  <p>{user.name}</p>
+                  <p id="profile-name">{user.name}</p>
                 )}
               </div>
 
               <div className="azals-form-field">
-                <label>Email</label>
+                <label htmlFor="profile-email">Email</label>
                 {editing ? (
                   <input
+                    id="profile-email"
                     type="email"
                     className="azals-input"
                     value={user.email}
                     onChange={(e) => setUser({ ...user, email: e.target.value })}
                   />
                 ) : (
-                  <p>{user.email}</p>
+                  <p id="profile-email">{user.email}</p>
                 )}
               </div>
 
@@ -101,15 +103,15 @@ export default function ProfileModule() {
             </h2>
 
             <div style={{ display: 'grid', gap: 'var(--azals-spacing-md)' }}>
-              <button className="azals-btn azals-btn--primary" style={{ justifyContent: 'flex-start' }}>
+              <button className="azals-btn azals-btn--primary" style={{ justifyContent: 'flex-start' }} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'changePassword' } })); }}>
                 <Key size={16} /> Changer le mot de passe
               </button>
 
-              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }}>
+              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'configure2FA' } })); }}>
                 <ShieldCheck size={16} /> Configurer l'authentification à deux facteurs
               </button>
 
-              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }}>
+              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'manageSessions' } })); }}>
                 <Smartphone size={16} /> Gérer les sessions actives
               </button>
             </div>

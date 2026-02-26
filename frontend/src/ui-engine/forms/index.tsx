@@ -5,11 +5,11 @@
  */
 
 import React, { useId, useRef } from 'react';
-import { useForm, Controller, UseFormReturn, FieldValues, Path, DefaultValues, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { clsx } from 'clsx';
-import { Eye, EyeOff, Calendar, Upload, X } from 'lucide-react';
+import { Eye, EyeOff, Calendar, X } from 'lucide-react';
+import { useForm, Controller, UseFormReturn, FieldValues, Path, DefaultValues, SubmitHandler } from 'react-hook-form';
+import { z } from 'zod';
 import type { FormField, SelectOption } from '@/types';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
@@ -455,6 +455,7 @@ export const useFormState = <T extends FieldValues>(
 // ============================================================
 
 interface InputProps {
+  id?: string;
   value: string | number;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -469,6 +470,7 @@ interface InputProps {
 }
 
 export const Input: React.FC<InputProps> = ({
+  id,
   value,
   onChange,
   placeholder,
@@ -486,6 +488,7 @@ export const Input: React.FC<InputProps> = ({
       <div className={clsx('azals-input-wrapper', className)}>
         {leftIcon && <span className="azals-input__icon azals-input__icon--left">{leftIcon}</span>}
         <input
+          id={id}
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -501,6 +504,7 @@ export const Input: React.FC<InputProps> = ({
   }
   return (
     <input
+      id={id}
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -514,6 +518,7 @@ export const Input: React.FC<InputProps> = ({
 };
 
 interface TextAreaProps {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -524,6 +529,7 @@ interface TextAreaProps {
 }
 
 export const TextArea: React.FC<TextAreaProps> = ({
+  id,
   value,
   onChange,
   placeholder,
@@ -534,6 +540,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
 }) => {
   return (
     <textarea
+      id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -545,6 +552,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
 };
 
 interface SelectProps {
+  id?: string;
   value: string | number;
   onChange: (value: string) => void;
   options: SelectOption[];
@@ -555,6 +563,7 @@ interface SelectProps {
 }
 
 export const Select: React.FC<SelectProps> = ({
+  id,
   value,
   onChange,
   options,
@@ -565,6 +574,7 @@ export const Select: React.FC<SelectProps> = ({
 }) => {
   return (
     <select
+      id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
@@ -607,11 +617,17 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="azals-modal-overlay" onClick={onClose}>
+    <div
+      className="azals-modal-overlay"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+      role="presentation"
+    >
       <div
         ref={dialogRef}
         className={clsx('azals-modal', `azals-modal--${size}`)}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >

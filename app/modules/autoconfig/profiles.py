@@ -4,6 +4,8 @@ AZALS MODULE T1 - Profils Métier Prédéfinis
 
 Définitions des profils métier standard pour l'auto-configuration.
 """
+from __future__ import annotations
+
 
 from typing import Any
 

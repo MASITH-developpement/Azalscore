@@ -9,13 +9,12 @@ import {
   Briefcase, Calendar, Euro, CheckCircle, XCircle
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Employee, EmployeeHistoryEntry } from '../types';
-import {
-  getFullName,
-  CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG
-} from '../types';
 import { formatDateTime, formatDate } from '@/utils/formatters';
+import {
+  CONTRACT_TYPE_CONFIG
+} from '../types';
+import type { Employee, EmployeeHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EmployeeHistoryTab - Historique de l'employe

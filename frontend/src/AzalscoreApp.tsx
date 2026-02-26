@@ -11,15 +11,17 @@
  */
 
 import React, { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
-import { QueryClient, QueryClientProvider, useMutation, useQueryClient } from '@tanstack/react-query';
+import { QueryClientProvider, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LogOut, Loader2, ChevronDown, Plus, Users, Package, Truck, Wrench, X, LayoutGrid, User, Search, FileText, Star, Clock, Database, AlertTriangle } from 'lucide-react';
 import { BrowserRouter } from 'react-router-dom';
 import { tokenManager, api } from '@core/api-client';
-import { useTranslation } from './modules/i18n';
-import { LogOut, Loader2, ChevronDown, Plus, Users, Package, Truck, Wrench, X, LayoutGrid, User, Settings, Search, FileText, ShoppingCart, Star, Clock, Copy, ArrowRight, Database, AlertTriangle } from 'lucide-react';
-import { setInterfaceMode } from './utils/interfaceMode';
-import { isDemoMode, setDemoMode } from './utils/demoMode';
+import { useAuthStore } from '@core/auth';
 import { COLORS } from '@core/design-tokens';
-import { logError } from '@core/error-handling';
+import { queryClient } from '@core/query-client';
+import type { SearchClientResult, SearchDocumentResult, SearchProductResult, ApiMutationError } from '@/types';
+import { useTranslation } from './modules/i18n';
+import { isDemoMode, setDemoMode } from './utils/demoMode';
+import { setInterfaceMode } from './utils/interfaceMode';
 import { getRecents, addRecent, getFavorites, toggleFavorite, isFavorite, type RecentItem, type FavoriteItem } from './utils/recentsFavorites';
 import './styles/azalscore.css';
 
@@ -77,52 +79,52 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
     const searchTimeout = setTimeout(async () => {
       setIsSearching(true);
       try {
+        const encodedQuery = encodeURIComponent(query);
+
+        // Lancer les 3 recherches en parallèle (Promise.all)
+        const [clientsRes, docsRes, productsRes] = await Promise.all([
+          api.get<{ items: SearchClientResult[] }>(`/partners/clients?search=${encodedQuery}&page_size=5`).catch(() => ({ items: [] as SearchClientResult[] })),
+          api.get<{ items: SearchDocumentResult[] }>(`/commercial/documents?search=${encodedQuery}&page_size=5`).catch(() => ({ items: [] as SearchDocumentResult[] })),
+          api.get<{ items: SearchProductResult[] }>(`/inventory/products?search=${encodedQuery}&page_size=5`).catch(() => ({ items: [] as SearchProductResult[] })),
+        ]);
+
         const searchResults: SearchResult[] = [];
 
-        // Search clients
-        try {
-          const clientsRes = await api.get<{ items: any[] }>(`/v1/partners/clients?search=${encodeURIComponent(query)}&page_size=5`);
-          const clients = (clientsRes as any)?.items || [];
-          clients.forEach((c: any) => {
-            searchResults.push({
-              id: c.id,
-              type: 'client',
-              title: c.name,
-              subtitle: c.email || c.phone || c.code,
-              icon: <Users size={16} />,
-            });
+        // Process clients
+        const clients = (clientsRes as { items?: SearchClientResult[] })?.items || [];
+        clients.forEach((c) => {
+          searchResults.push({
+            id: c.id,
+            type: 'client',
+            title: c.name,
+            subtitle: c.email || c.phone || c.code,
+            icon: <Users size={16} />,
           });
-        } catch (e) { logError(e, 'GlobalSearch.searchClients'); }
+        });
 
-        // Search documents (invoices/quotes)
-        try {
-          const docsRes = await api.get<{ items: any[] }>(`/v1/commercial/documents?search=${encodeURIComponent(query)}&page_size=5`);
-          const docs = (docsRes as any)?.items || [];
-          docs.forEach((d: any) => {
-            searchResults.push({
-              id: d.id,
-              type: 'document',
-              title: `${d.document_type} ${d.number || d.id.slice(0, 8)}`,
-              subtitle: d.customer_name || d.total_ttc?.toFixed(2) + ' €',
-              icon: <FileText size={16} />,
-            });
+        // Process documents
+        const docs = (docsRes as { items?: SearchDocumentResult[] })?.items || [];
+        docs.forEach((d) => {
+          searchResults.push({
+            id: d.id,
+            type: 'document',
+            title: `${d.document_type || 'Document'} ${d.number || d.id.slice(0, 8)}`,
+            subtitle: d.customer_name || (d.total_ttc?.toFixed(2) + ' €'),
+            icon: <FileText size={16} />,
           });
-        } catch (e) { logError(e, 'GlobalSearch.searchDocuments'); }
+        });
 
-        // Search products
-        try {
-          const productsRes = await api.get<{ items: any[] }>(`/v1/inventory/products?search=${encodeURIComponent(query)}&page_size=5`);
-          const products = (productsRes as any)?.items || [];
-          products.forEach((p: any) => {
-            searchResults.push({
-              id: p.id,
-              type: 'article',
-              title: p.name,
-              subtitle: p.sku || p.code,
-              icon: <Package size={16} />,
-            });
+        // Process products
+        const products = (productsRes as { items?: SearchProductResult[] })?.items || [];
+        products.forEach((p) => {
+          searchResults.push({
+            id: p.id,
+            type: 'article',
+            title: p.name,
+            subtitle: p.sku || p.code,
+            icon: <Package size={16} />,
           });
-        } catch (e) { logError(e, 'GlobalSearch.searchProducts'); }
+        });
 
         setResults(searchResults);
         setSelectedIndex(0);
@@ -175,7 +177,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
   const handleSelect = (type: string, id: string, title: string, subtitle?: string) => {
     // Add to recents
-    addRecent({ id, type: type as any, title, subtitle });
+    addRecent({ id, type: type as 'client' | 'document' | 'article', title, subtitle });
     onNavigate(type, id);
     setQuery('');
     onClose();
@@ -183,7 +185,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
   const handleToggleFavorite = (e: React.MouseEvent, item: { id: string; type: string; title: string; subtitle?: string }) => {
     e.stopPropagation();
-    toggleFavorite({ id: item.id, type: item.type as any, title: item.title, subtitle: item.subtitle });
+    toggleFavorite({ id: item.id, type: item.type as 'client' | 'document' | 'article', title: item.title, subtitle: item.subtitle });
     setFavorites(getFavorites());
   };
 
@@ -310,7 +312,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         {query.length >= 2 && results.length === 0 && !isSearching && (
           <div className="azals-global-search__empty">
-            Aucun résultat pour "{query}"
+            Aucun résultat pour &quot;{query}&quot;
           </div>
         )}
       </div>
@@ -338,22 +340,9 @@ const VehiculesModule = lazy(() => import('./modules/vehicles'));
 const AffairesModule = lazy(() => import('./modules/affaires'));
 
 // ============================================================
-// QUERY CLIENT
-// ============================================================
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-// ============================================================
 // CONFIGURATION DU MENU
 // ============================================================
+// Note: QueryClient importé depuis @core/query-client (singleton)
 
 type ViewKey =
   // Saisie
@@ -417,6 +406,116 @@ const MENU_ITEMS: MenuItem[] = [
 ];
 
 // ============================================================
+// VUE PAR DÉFAUT SELON LE RÔLE
+// ============================================================
+
+/**
+ * Détermine la vue par défaut en fonction du rôle de l'utilisateur.
+ * Priorité: premier rôle trouvé dans la liste des rôles de l'utilisateur.
+ */
+const ROLE_DEFAULT_VIEWS: Record<string, ViewKey> = {
+  // Rôles direction/management → Cockpit dirigeant
+  'dirigeant': 'cockpit',
+  'directeur': 'cockpit',
+  'gerant': 'cockpit',
+  'manager': 'cockpit',
+  'executive': 'cockpit',
+
+  // Rôles administration → Administration
+  'administrateur': 'admin',
+  'admin': 'admin',
+  'superadmin': 'admin',
+  'root': 'admin',
+
+  // Rôles comptabilité → Comptabilité
+  'comptable': 'compta',
+  'accountant': 'compta',
+
+  // Rôles trésorerie → Trésorerie
+  'tresorier': 'tresorerie',
+  'treasurer': 'tresorerie',
+
+  // Rôles RH → RH
+  'rh': 'rh',
+  'hr': 'rh',
+
+  // Rôles commerciaux → CRM
+  'commercial': 'crm',
+  'sales': 'crm',
+  'vendeur': 'crm',
+
+  // Rôles logistique/stock → Stock
+  'logisticien': 'stock',
+  'magasinier': 'stock',
+  'warehouse': 'stock',
+
+  // Rôles achats → Achats
+  'acheteur': 'achats',
+  'buyer': 'achats',
+
+  // Rôles techniciens/interventions → Interventions
+  'technicien': 'gestion-interventions',
+  'technician': 'gestion-interventions',
+  'intervenant': 'gestion-interventions',
+
+  // Rôles projets → Projets
+  'chef_projet': 'projets',
+  'project_manager': 'projets',
+
+  // Rôle par défaut (utilisateur standard) → Saisie
+  'user': 'saisie',
+  'utilisateur': 'saisie',
+};
+
+/**
+ * Liste des vues disponibles pour la configuration admin.
+ * Utilisée pour le sélecteur de vue par défaut.
+ */
+export const AVAILABLE_VIEWS: { key: ViewKey; label: string }[] = [
+  { key: 'saisie', label: 'Nouvelle saisie' },
+  { key: 'cockpit', label: 'Cockpit (Tableau de bord)' },
+  { key: 'admin', label: 'Administration' },
+  { key: 'gestion-devis', label: 'Gestion - Devis' },
+  { key: 'gestion-commandes', label: 'Gestion - Commandes' },
+  { key: 'gestion-interventions', label: 'Gestion - Interventions' },
+  { key: 'gestion-factures', label: 'Gestion - Factures' },
+  { key: 'gestion-paiements', label: 'Gestion - Paiements' },
+  { key: 'affaires', label: 'Affaires' },
+  { key: 'crm', label: 'CRM' },
+  { key: 'stock', label: 'Stock' },
+  { key: 'achats', label: 'Achats' },
+  { key: 'projets', label: 'Projets' },
+  { key: 'rh', label: 'Ressources Humaines' },
+  { key: 'vehicules', label: 'Véhicules' },
+  { key: 'compta', label: 'Comptabilité' },
+  { key: 'tresorerie', label: 'Trésorerie' },
+];
+
+/**
+ * Retourne la vue par défaut pour un utilisateur.
+ * Priorité: 1) default_view configuré par admin, 2) rôle, 3) 'saisie'
+ */
+const getDefaultViewForUser = (defaultView?: string, roles?: string[]): ViewKey => {
+  // 1. Priorité: vue configurée par l'administrateur
+  if (defaultView && AVAILABLE_VIEWS.some(v => v.key === defaultView)) {
+    return defaultView as ViewKey;
+  }
+
+  // 2. Fallback: vue basée sur le rôle
+  if (roles && roles.length > 0) {
+    const normalizedRoles = roles.map(r => r.toLowerCase().trim());
+    for (const role of normalizedRoles) {
+      if (ROLE_DEFAULT_VIEWS[role]) {
+        return ROLE_DEFAULT_VIEWS[role];
+      }
+    }
+  }
+
+  // 3. Défaut: saisie
+  return 'saisie';
+};
+
+// ============================================================
 // CONTEXT ACTIONS - Configuration par vue
 // ============================================================
 
@@ -460,17 +559,17 @@ interface QuickCreateModalProps {
 }
 
 const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ type, onClose, onSuccess }) => {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
 
   const getEndpoint = () => {
     switch (type) {
-      case 'client': return '/v1/commercial/customers';
-      case 'supplier': return '/v1/commercial/suppliers';
-      case 'article': return '/v1/inventory/products';
-      case 'intervenant': return '/v1/hr/employees';
+      case 'client': return '/commercial/customers';
+      case 'supplier': return '/commercial/suppliers';
+      case 'article': return '/inventory/products';
+      case 'intervenant': return '/hr/employees';
     }
   };
 
@@ -507,7 +606,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ type, onClose, onSu
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, string>) => {
       // Préparer les données selon le type
-      const payload: Record<string, any> = { ...data };
+      const payload: Record<string, string | number> = { ...data };
       if (type === 'article') {
         if (data.sale_price) payload.sale_price = parseFloat(data.sale_price);
         if (data.purchase_price) payload.purchase_price = parseFloat(data.purchase_price);
@@ -524,7 +623,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ type, onClose, onSu
       onSuccess();
       onClose();
     },
-    onError: (err: any) => {
+    onError: (err: ApiMutationError) => {
       setError(err.message || 'Erreur lors de la création');
     },
   });
@@ -663,7 +762,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/v1/auth/login', {
+      const response = await fetch('/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -745,15 +844,29 @@ const TopBar: React.FC<TopBarProps> = ({
 
   // Handle search navigation
   const handleSearchNavigate = (type: string, id: string) => {
-    // Navigate based on type
+    // Navigate based on type and dispatch detail view event
     if (type === 'client') {
       onViewChange('crm');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('azals:navigate', {
+          detail: { view: 'crm', params: { id } }
+        }));
+      }, 100);
     } else if (type === 'document') {
       onViewChange('gestion-factures');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('azals:navigate', {
+          detail: { view: 'factures', params: { id } }
+        }));
+      }, 100);
     } else if (type === 'article') {
       onViewChange('stock');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('azals:navigate', {
+          detail: { view: 'inventory', params: { id } }
+        }));
+      }, 100);
     }
-    // TODO: Open specific item detail
   };
 
   // Grouper les items
@@ -951,10 +1064,26 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
 // ============================================================
 
 const AppContent: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-  const [currentView, setCurrentView] = useState<ViewKey>('saisie');
+  // Récupérer l'utilisateur du store auth pour déterminer la vue par défaut
+  const user = useAuthStore((state) => state.user);
+  const computedDefaultView = getDefaultViewForUser(user?.default_view, user?.roles);
+
+  const [currentView, setCurrentView] = useState<ViewKey>(computedDefaultView);
   const [searchOpen, setSearchOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Ref pour tracker si la vue initiale a été appliquée
+  const initialViewApplied = useRef(false);
+
+  // Appliquer la vue par défaut au premier chargement
+  useEffect(() => {
+    if (user && !initialViewApplied.current) {
+      const userDefaultView = getDefaultViewForUser(user.default_view, user.roles);
+      setCurrentView(userDefaultView);
+      initialViewApplied.current = true;
+    }
+  }, [user]);
 
   // Listen for custom navigation events from child modules
   useEffect(() => {

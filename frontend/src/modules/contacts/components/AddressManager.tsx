@@ -15,6 +15,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { AddressAutocomplete } from '@/modules/enrichment';
+import type { AddressSuggestion } from '@/modules/enrichment';
 import { contactAddressesApi } from '../api';
 import {
   AddressType,
@@ -25,8 +27,6 @@ import type {
   ContactAddressCreate,
   ContactAddressUpdate,
 } from '../types';
-import { AddressAutocomplete } from '@/modules/enrichment';
-import type { AddressSuggestion } from '@/modules/enrichment';
 
 interface AddressManagerProps {
   /** ID du contact parent */
@@ -46,7 +46,7 @@ interface AddressManagerProps {
 export const AddressManager: React.FC<AddressManagerProps> = ({
   contactId,
   types,
-  allowMultiple = true,
+  allowMultiple: _allowMultiple = true,
   readOnly = false,
   className = '',
   onChange,

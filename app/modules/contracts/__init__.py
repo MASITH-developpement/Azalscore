@@ -1,0 +1,406 @@
+"""
+Module de Gestion des Contrats (CLM) - GAP-035
+
+Contract Lifecycle Management complet:
+- Creation et redaction de contrats
+- Templates et clauses reutilisables
+- Workflow d'approbation multi-niveaux
+- Signature electronique integree
+- Suivi des obligations et jalons
+- Alertes de renouvellement/echeance
+- Gestion des avenants
+- Archivage et recherche
+
+Integration des meilleures pratiques:
+- Sage, Odoo, Microsoft Dynamics 365, Axonaut, Pennylane
+"""
+
+# Enumerations from models
+from .models import (
+    ContractType,
+    ContractStatus,
+    PartyType,
+    PartyRole,
+    BillingFrequency,
+    BillingType,
+    RenewalType,
+    RenewalStatus,
+    AmendmentType,
+    AmendmentStatus,
+    ObligationType,
+    ObligationStatus,
+    MilestoneStatus,
+    AlertType,
+    AlertPriority,
+    AlertStatus,
+    ApprovalStatus,
+    ClauseType,
+    ClauseCategory,
+    ClauseStatus,
+    DocumentType,
+)
+
+# Models SQLAlchemy
+from .models import (
+    ContractCategory,
+    ContractTemplate,
+    ClauseTemplate,
+    Contract,
+    ContractParty,
+    ContractLine,
+    ContractClause,
+    ContractObligation,
+    ContractMilestone,
+    ContractAmendment,
+    ContractRenewal,
+    ContractDocument,
+    ContractAlert,
+    ContractApproval,
+    ContractHistory,
+    ContractMetrics,
+)
+
+# Schemas Pydantic
+from .schemas import (
+    # Category
+    ContractCategoryCreate,
+    ContractCategoryUpdate,
+    ContractCategoryResponse,
+    # Template
+    ContractTemplateCreate,
+    ContractTemplateUpdate,
+    ContractTemplateResponse,
+    ClauseTemplateCreate,
+    ClauseTemplateUpdate,
+    ClauseTemplateResponse,
+    # Contract
+    ContractCreate,
+    ContractUpdate,
+    ContractResponse,
+    ContractListResponse,
+    ContractSummaryResponse,
+    ContractFilters,
+    # Party
+    ContractPartyCreate,
+    ContractPartyUpdate,
+    ContractPartyResponse,
+    ContractRecordSignatureRequest,
+    # Line
+    ContractLineCreate,
+    ContractLineUpdate,
+    ContractLineResponse,
+    # Clause
+    ContractClauseCreate,
+    ContractClauseUpdate,
+    ContractClauseResponse,
+    # Obligation
+    ContractObligationCreate,
+    ContractObligationUpdate,
+    ContractObligationResponse,
+    ObligationCompleteRequest,
+    # Milestone
+    ContractMilestoneCreate,
+    ContractMilestoneUpdate,
+    ContractMilestoneResponse,
+    MilestoneCompleteRequest,
+    # Amendment
+    ContractAmendmentCreate,
+    ContractAmendmentUpdate,
+    ContractAmendmentResponse,
+    # Document
+    ContractDocumentCreate,
+    ContractDocumentUpdate,
+    ContractDocumentResponse,
+    # Alert
+    ContractAlertCreate,
+    ContractAlertUpdate,
+    ContractAlertResponse,
+    AlertAcknowledgeRequest,
+    # Approval
+    ContractApprovalCreate,
+    ContractApprovalResponse,
+    ApprovalDecisionRequest,
+    ApprovalDelegateRequest,
+    # Workflow
+    ContractSubmitForApprovalRequest,
+    ContractSignatureRequest,
+    ContractTerminateRequest,
+    ContractRenewRequest,
+    # Stats
+    ContractStatsResponse,
+    ContractDashboardResponse,
+    ContractHistoryResponse,
+)
+
+# Exceptions
+from .exceptions import (
+    ContractError,
+    ContractNotFoundError,
+    ContractDuplicateError,
+    ContractValidationError,
+    ContractStateError,
+    ContractNotEditableError,
+    ContractAlreadySignedError,
+    ContractNotReadyForSignatureError,
+    ContractExpiredError,
+    ContractTerminatedError,
+    PartyNotFoundError,
+    PartyAlreadySignedError,
+    PartySignatureRequiredError,
+    MissingPartyError,
+    ContractLineNotFoundError,
+    ContractLineValidationError,
+    ClauseNotFoundError,
+    MandatoryClauseMissingError,
+    ClauseNegotiationError,
+    ObligationNotFoundError,
+    ObligationAlreadyCompletedError,
+    ObligationOverdueError,
+    MilestoneNotFoundError,
+    MilestoneAlreadyCompletedError,
+    MilestoneDependencyError,
+    AmendmentNotFoundError,
+    AmendmentNotAllowedError,
+    AmendmentAlreadyAppliedError,
+    RenewalNotAllowedError,
+    MaxRenewalsReachedError,
+    RenewalNoticePeriodError,
+    ApprovalNotFoundError,
+    ApprovalNotAuthorizedError,
+    ApprovalAlreadyProcessedError,
+    ApprovalRequiredError,
+    ApprovalLevelError,
+    TemplateNotFoundError,
+    TemplateDuplicateError,
+    TemplateValidationError,
+    ClauseTemplateNotFoundError,
+    CategoryNotFoundError,
+    CategoryDuplicateError,
+    CategoryHasChildrenError,
+    CategoryHasContractsError,
+    DocumentNotFoundError,
+    DocumentUploadError,
+    DocumentSignatureError,
+    AlertNotFoundError,
+    AlertAlreadyAcknowledgedError,
+    SignatureServiceError,
+    SignatureRequestError,
+    SignatureVerificationError,
+    BillingCalculationError,
+    RecurringBillingError,
+    PriceRevisionError,
+    WorkflowError,
+    WorkflowStepError,
+    ContractAccessDeniedError,
+    ConfidentialContractError,
+    ContractVersionConflictError,
+)
+
+# Repository
+from .repository import (
+    ContractRepository,
+    ContractPartyRepository,
+    ContractLineRepository,
+    ContractObligationRepository,
+    ContractMilestoneRepository,
+    ContractAmendmentRepository,
+    ContractAlertRepository,
+    ContractApprovalRepository,
+    ContractCategoryRepository,
+    ContractTemplateRepository,
+    ContractMetricsRepository,
+)
+
+# Service
+from .service import ContractService
+
+# Router
+from .router import router as contracts_router
+
+
+__all__ = [
+    # Enums
+    "ContractType",
+    "ContractStatus",
+    "PartyType",
+    "PartyRole",
+    "BillingFrequency",
+    "BillingType",
+    "RenewalType",
+    "RenewalStatus",
+    "AmendmentType",
+    "AmendmentStatus",
+    "ObligationType",
+    "ObligationStatus",
+    "MilestoneStatus",
+    "AlertType",
+    "AlertPriority",
+    "AlertStatus",
+    "ApprovalStatus",
+    "ClauseType",
+    "ClauseCategory",
+    "ClauseStatus",
+    "DocumentType",
+    # Models
+    "ContractCategory",
+    "ContractTemplate",
+    "ClauseTemplate",
+    "Contract",
+    "ContractParty",
+    "ContractLine",
+    "ContractClause",
+    "ContractObligation",
+    "ContractMilestone",
+    "ContractAmendment",
+    "ContractRenewal",
+    "ContractDocument",
+    "ContractAlert",
+    "ContractApproval",
+    "ContractHistory",
+    "ContractMetrics",
+    # Schemas - Category
+    "ContractCategoryCreate",
+    "ContractCategoryUpdate",
+    "ContractCategoryResponse",
+    # Schemas - Template
+    "ContractTemplateCreate",
+    "ContractTemplateUpdate",
+    "ContractTemplateResponse",
+    "ClauseTemplateCreate",
+    "ClauseTemplateUpdate",
+    "ClauseTemplateResponse",
+    # Schemas - Contract
+    "ContractCreate",
+    "ContractUpdate",
+    "ContractResponse",
+    "ContractListResponse",
+    "ContractSummaryResponse",
+    "ContractFilters",
+    # Schemas - Party
+    "ContractPartyCreate",
+    "ContractPartyUpdate",
+    "ContractPartyResponse",
+    "ContractRecordSignatureRequest",
+    # Schemas - Line
+    "ContractLineCreate",
+    "ContractLineUpdate",
+    "ContractLineResponse",
+    # Schemas - Clause
+    "ContractClauseCreate",
+    "ContractClauseUpdate",
+    "ContractClauseResponse",
+    # Schemas - Obligation
+    "ContractObligationCreate",
+    "ContractObligationUpdate",
+    "ContractObligationResponse",
+    "ObligationCompleteRequest",
+    # Schemas - Milestone
+    "ContractMilestoneCreate",
+    "ContractMilestoneUpdate",
+    "ContractMilestoneResponse",
+    "MilestoneCompleteRequest",
+    # Schemas - Amendment
+    "ContractAmendmentCreate",
+    "ContractAmendmentUpdate",
+    "ContractAmendmentResponse",
+    # Schemas - Document
+    "ContractDocumentCreate",
+    "ContractDocumentUpdate",
+    "ContractDocumentResponse",
+    # Schemas - Alert
+    "ContractAlertCreate",
+    "ContractAlertUpdate",
+    "ContractAlertResponse",
+    "AlertAcknowledgeRequest",
+    # Schemas - Approval
+    "ContractApprovalCreate",
+    "ContractApprovalResponse",
+    "ApprovalDecisionRequest",
+    "ApprovalDelegateRequest",
+    # Schemas - Workflow
+    "ContractSubmitForApprovalRequest",
+    "ContractSignatureRequest",
+    "ContractTerminateRequest",
+    "ContractRenewRequest",
+    # Schemas - Stats
+    "ContractStatsResponse",
+    "ContractDashboardResponse",
+    "ContractHistoryResponse",
+    # Exceptions
+    "ContractError",
+    "ContractNotFoundError",
+    "ContractDuplicateError",
+    "ContractValidationError",
+    "ContractStateError",
+    "ContractNotEditableError",
+    "ContractAlreadySignedError",
+    "ContractNotReadyForSignatureError",
+    "ContractExpiredError",
+    "ContractTerminatedError",
+    "PartyNotFoundError",
+    "PartyAlreadySignedError",
+    "PartySignatureRequiredError",
+    "MissingPartyError",
+    "ContractLineNotFoundError",
+    "ContractLineValidationError",
+    "ClauseNotFoundError",
+    "MandatoryClauseMissingError",
+    "ClauseNegotiationError",
+    "ObligationNotFoundError",
+    "ObligationAlreadyCompletedError",
+    "ObligationOverdueError",
+    "MilestoneNotFoundError",
+    "MilestoneAlreadyCompletedError",
+    "MilestoneDependencyError",
+    "AmendmentNotFoundError",
+    "AmendmentNotAllowedError",
+    "AmendmentAlreadyAppliedError",
+    "RenewalNotAllowedError",
+    "MaxRenewalsReachedError",
+    "RenewalNoticePeriodError",
+    "ApprovalNotFoundError",
+    "ApprovalNotAuthorizedError",
+    "ApprovalAlreadyProcessedError",
+    "ApprovalRequiredError",
+    "ApprovalLevelError",
+    "TemplateNotFoundError",
+    "TemplateDuplicateError",
+    "TemplateValidationError",
+    "ClauseTemplateNotFoundError",
+    "CategoryNotFoundError",
+    "CategoryDuplicateError",
+    "CategoryHasChildrenError",
+    "CategoryHasContractsError",
+    "DocumentNotFoundError",
+    "DocumentUploadError",
+    "DocumentSignatureError",
+    "AlertNotFoundError",
+    "AlertAlreadyAcknowledgedError",
+    "SignatureServiceError",
+    "SignatureRequestError",
+    "SignatureVerificationError",
+    "BillingCalculationError",
+    "RecurringBillingError",
+    "PriceRevisionError",
+    "WorkflowError",
+    "WorkflowStepError",
+    "ContractAccessDeniedError",
+    "ConfidentialContractError",
+    "ContractVersionConflictError",
+    # Repository
+    "ContractRepository",
+    "ContractPartyRepository",
+    "ContractLineRepository",
+    "ContractObligationRepository",
+    "ContractMilestoneRepository",
+    "ContractAmendmentRepository",
+    "ContractAlertRepository",
+    "ContractApprovalRepository",
+    "ContractCategoryRepository",
+    "ContractTemplateRepository",
+    "ContractMetricsRepository",
+    # Service
+    "ContractService",
+    # Router
+    "contracts_router",
+]

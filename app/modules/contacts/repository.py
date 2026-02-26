@@ -7,6 +7,8 @@ Demontre l'utilisation de BaseRepository avec methodes metier.
 
 Proof of Concept pour le Pattern Repository AZALSCORE.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional, List

@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Phone, Clock, Star, ChevronDown, ChevronUp, AlertCircle, Play } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Phone, Clock, User, MessageSquare, Star, ChevronDown, ChevronUp, AlertCircle, Play } from 'lucide-react';
 
 interface MarceauConversation {
   id: string;
@@ -60,10 +60,10 @@ export function MarceauConversations() {
       params.append('limit', String(pageSize));
 
       const response = await api.get<{ items: MarceauConversation[]; total: number }>(
-        `/v1/marceau/conversations?${params}`
+        `/marceau/conversations?${params}`
       );
-      setConversations(response.data.items || []);
-      setTotal(response.data.total || 0);
+      setConversations(response.data?.items || []);
+      setTotal(response.data?.total || 0);
       setError(null);
     } catch (e: any) {
       setError(e.message || 'Erreur chargement');
@@ -191,7 +191,7 @@ export function MarceauConversations() {
 
                 {conv.recording_url && (
                   <div>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                    <button className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700" onClick={() => { if (conv.recording_url) window.open(conv.recording_url, '_blank'); }}>
                       <Play size={14} />
                       Ecouter l'enregistrement
                     </button>

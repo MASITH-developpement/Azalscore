@@ -299,14 +299,20 @@ def mock_ai_service(tenant_id, user_id):
         return MockAIService(db, tenant_id, user_id)
 
     # Override via module-level assignment (before test runs)
-    from app.modules.ai_assistant import router_v2
-    original_get_service = router_v2.get_ai_service
+    # Mock both router_v2 and router_crud for compatibility
+    from app.modules.ai_assistant import router_v2, router_crud
+
+    original_get_service_v2 = router_v2.get_ai_service
+    original_get_service_crud = router_crud.get_ai_service
+
     router_v2.get_ai_service = mock_get_service
+    router_crud.get_ai_service = mock_get_service
 
     yield MockAIService(None, tenant_id, user_id)
 
     # Restore original after test
-    router_v2.get_ai_service = original_get_service
+    router_v2.get_ai_service = original_get_service_v2
+    router_crud.get_ai_service = original_get_service_crud
 
 
 # Fixtures de données
@@ -372,8 +378,8 @@ def sample_prediction_data():
         "prediction_type": "financial",
         "target_metric": "revenue",
         "module_source": "finance",
-        "prediction_start": datetime.utcnow().date(),
-        "prediction_end": (datetime.utcnow() + timedelta(days=30)).date(),
+        "prediction_start": datetime.utcnow().date().isoformat(),
+        "prediction_end": (datetime.utcnow() + timedelta(days=30)).date().isoformat(),
         "granularity": "daily"
     }
 
@@ -396,6 +402,6 @@ def sample_synthesis_data():
         "title": "Monthly Synthesis",
         "synthesis_type": "monthly",
         "modules": ["finance", "commercial"],
-        "period_start": datetime.utcnow().date(),
-        "period_end": datetime.utcnow().date()
+        "period_start": datetime.utcnow().date().isoformat(),
+        "period_end": datetime.utcnow().date().isoformat()
     }

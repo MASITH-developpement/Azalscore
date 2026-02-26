@@ -1,0 +1,107 @@
+{
+  "module_id": "azalscore.inventory.goods_receipt",
+  "version": "1.0.0",
+  "description": "Workflow de reception de marchandises avec controle qualite et mise en stock",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_purchase_order",
+      "use": "azalscore.validators.inventory.validate_purchase_order@1.0.0",
+      "inputs": {
+        "purchase_order_id": "{{context.purchase_order_id}}",
+        "expected_delivery_date": "{{context.delivery_date}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "scan_received_items",
+      "use": "azalscore.transformers.inventory.process_received_items@1.0.0",
+      "inputs": {
+        "items": "{{context.received_items}}",
+        "purchase_order_lines": "{{validate_purchase_order.order_lines}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "check_quantity_variance",
+      "use": "azalscore.validators.inventory.check_quantity_variance@1.0.0",
+      "inputs": {
+        "ordered": "{{validate_purchase_order.order_lines}}",
+        "received": "{{scan_received_items.items}}",
+        "tolerance_percent": 5
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "perform_quality_check",
+      "condition": "{{context.require_quality_check}} == true",
+      "use": "azalscore.validators.inventory.perform_quality_inspection@1.0.0",
+      "inputs": {
+        "items": "{{scan_received_items.items}}",
+        "quality_criteria": "{{context.quality_criteria}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "assign_lot_numbers",
+      "use": "azalscore.generators.inventory.assign_lot_numbers@1.0.0",
+      "inputs": {
+        "items": "{{scan_received_items.items}}",
+        "supplier_lots": "{{context.supplier_lot_numbers}}",
+        "expiry_dates": "{{context.expiry_dates}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "create_stock_movements",
+      "use": "azalscore.generators.inventory.create_receipt_movements@1.0.0",
+      "inputs": {
+        "items": "{{assign_lot_numbers.items}}",
+        "warehouse_id": "{{context.warehouse_id}}",
+        "location_id": "{{context.location_id}}",
+        "receipt_date": "{{context.receipt_date}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "update_purchase_order_status",
+      "use": "azalscore.transformers.status.update_po_receipt_status@1.0.0",
+      "inputs": {
+        "purchase_order_id": "{{context.purchase_order_id}}",
+        "received_quantities": "{{scan_received_items.quantities}}",
+        "is_complete": "{{check_quantity_variance.fully_received}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "alert_variance",
+      "condition": "{{check_quantity_variance.has_variance}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "receipt_variance",
+        "severity": "warning",
+        "title": "Ecart de reception",
+        "message": "Ecart detecte sur la commande {{context.purchase_order_id}}",
+        "data": "{{check_quantity_variance.variance_details}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    }
+  ],
+  "outputs": {
+    "receipt_id": "{{create_stock_movements.receipt_id}}",
+    "items_received": "{{scan_received_items.count}}",
+    "total_quantity": "{{scan_received_items.total_quantity}}",
+    "quality_passed": "{{perform_quality_check.all_passed}}",
+    "variance_detected": "{{check_quantity_variance.has_variance}}",
+    "po_status": "{{update_purchase_order_status.new_status}}"
+  }
+}

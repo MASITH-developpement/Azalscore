@@ -4,6 +4,8 @@ AZALS MODULE M5 - Service Inventaire
 
 Logique métier pour la gestion des stocks et logistique.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime, timedelta

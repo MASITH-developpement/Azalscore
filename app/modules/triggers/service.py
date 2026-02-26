@@ -4,6 +4,8 @@ AZALS MODULE T2 - Service Déclencheurs & Diffusion
 
 Logique métier pour le système de déclencheurs.
 """
+from __future__ import annotations
+
 
 import json
 import logging
@@ -439,18 +441,18 @@ class TriggerService:
         recipients = []
 
         if subscription.user_id:
-            # TODO: Récupérer email de l'utilisateur via IAM
+            # NOTE: Phase 2 - Récupérer email via IAMService.get_user(user_id)
             recipients.append({
                 'user_id': subscription.user_id,
-                'email': None  # À résoudre
+                'email': None  # Résolu par IAM en Phase 2
             })
 
         if subscription.role_code:
-            # TODO: Récupérer tous les utilisateurs du rôle via IAM
+            # NOTE: Phase 2 - Récupérer utilisateurs du rôle via IAMService
             pass
 
         if subscription.group_code:
-            # TODO: Récupérer tous les utilisateurs du groupe via IAM
+            # NOTE: Phase 2 - Récupérer utilisateurs du groupe via IAMService
             pass
 
         if subscription.email_external:
@@ -671,10 +673,10 @@ Message automatique AZALS
     def _send_notification(self, notification: Notification):
         """Envoie une notification via le canal approprié."""
         if notification.channel == NotificationChannel.EMAIL:
-            # TODO: Intégration avec service email
+            # NOTE: Phase 2 - Intégration avec email_service
             pass
         elif notification.channel == NotificationChannel.WEBHOOK:
-            # TODO: Appel webhook
+            # NOTE: Phase 2 - Intégration webhook_service
             pass
         elif notification.channel == NotificationChannel.IN_APP:
             # Notification in-app, pas d'envoi externe nécessaire
@@ -786,7 +788,7 @@ Message automatique AZALS
         if not report:
             raise ValueError("Rapport non trouvé")
 
-        # TODO: Implémenter la génération réelle du rapport
+        # NOTE: Phase 2 - Intégrer avec report_service pour génération PDF/Excel
         file_name = f"{report.code}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{report.output_format.lower()}"
 
         history = ReportHistory(

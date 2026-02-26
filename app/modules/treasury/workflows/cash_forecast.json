@@ -1,0 +1,73 @@
+{
+  "module_id": "azalscore.treasury.cash_forecast",
+  "version": "1.0.0",
+  "description": "Workflow de prevision de tresorerie",
+  "steps": [
+    {
+      "id": "get_current_balances",
+      "use": "azalscore.treasury.get_all_balances@1.0.0",
+      "inputs": {
+        "as_of_date": "{{context.start_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "get_scheduled_receipts",
+      "use": "azalscore.treasury.get_scheduled_receipts@1.0.0",
+      "inputs": {
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "get_scheduled_payments",
+      "use": "azalscore.treasury.get_scheduled_payments@1.0.0",
+      "inputs": {
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "calculate_forecast",
+      "use": "azalscore.calculations.finance.calculate_cash_forecast@1.0.0",
+      "inputs": {
+        "current_balance": "{{get_current_balances.total}}",
+        "receipts": "{{get_scheduled_receipts.data}}",
+        "payments": "{{get_scheduled_payments.data}}",
+        "forecast_period": "{{context.forecast_period}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "detect_shortfalls",
+      "use": "azalscore.treasury.detect_cash_shortfalls@1.0.0",
+      "inputs": {
+        "forecast": "{{calculate_forecast.data}}",
+        "minimum_balance": "{{context.minimum_balance}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_report",
+      "use": "azalscore.generators.reports.generate_cash_forecast_report@1.0.0",
+      "inputs": {
+        "forecast": "{{calculate_forecast.data}}",
+        "shortfalls": "{{detect_shortfalls.data}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    }
+  ],
+  "outputs": {
+    "forecast": "{{calculate_forecast.data}}",
+    "shortfalls": "{{detect_shortfalls.data}}",
+    "report_url": "{{generate_report.url}}"
+  }
+}

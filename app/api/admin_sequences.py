@@ -5,6 +5,8 @@ AZALSCORE - API Administration des Sequences
 Endpoints pour parametrer les numerotations automatiques.
 Accessible uniquement aux administrateurs.
 """
+from __future__ import annotations
+
 
 from typing import Optional
 from pydantic import BaseModel, Field
@@ -174,9 +176,13 @@ async def list_sequences(
 
 
 @router.get("/entity-types", response_model=list[EntityTypeInfo])
-async def list_entity_types():
+async def list_entity_types(
+    context: SaaSContext = Depends(get_saas_context)
+):
     """
     Liste les types d'entites disponibles avec leurs descriptions.
+
+    SÉCURITÉ: Authentification requise.
     """
     return [
         EntityTypeInfo(

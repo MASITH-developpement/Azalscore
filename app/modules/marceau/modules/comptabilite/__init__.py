@@ -3,5 +3,8 @@ AZALS MODULE - Marceau Comptabilite
 ====================================
 
 Module de comptabilite automatisee.
-TODO: Implementation Phase 2
 """
+
+from .service import ComptabiliteService
+
+__all__ = ["ComptabiliteService"]

@@ -4,6 +4,8 @@ AZALS MODULE T7 - Router API Web Transverse
 
 Points d'entrée REST pour la gestion des composants web.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

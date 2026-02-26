@@ -1,0 +1,124 @@
+{
+  "module_id": "azalscore.finance.create_invoice",
+  "version": "1.0.0",
+  "description": "Workflow de creation de facture client avec validation, calculs et generation PDF",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_customer",
+      "use": "azalscore.validators.commercial.validate_customer@1.0.0",
+      "inputs": {
+        "customer_id": "{{context.customer_id}}",
+        "check_credit_limit": true
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "generate_invoice_number",
+      "use": "azalscore.generators.sequences.generate_sequence_number@1.0.0",
+      "inputs": {
+        "sequence_type": "invoice",
+        "prefix": "{{context.invoice_prefix}}",
+        "fiscal_year": "{{context.fiscal_year}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "calculate_lines",
+      "use": "azalscore.calculations.commercial.calculate_line_totals@1.0.0",
+      "inputs": {
+        "lines": "{{context.invoice_lines}}",
+        "currency": "{{context.currency}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "calculate_vat",
+      "use": "azalscore.calculations.tax.calculate_vat_amount@1.0.0",
+      "inputs": {
+        "amount_ht": "{{calculate_lines.total_ht}}",
+        "vat_rates": "{{calculate_lines.vat_breakdown}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "calculate_totals",
+      "use": "azalscore.calculations.commercial.calculate_document_total@1.0.0",
+      "inputs": {
+        "total_ht": "{{calculate_lines.total_ht}}",
+        "total_vat": "{{calculate_vat.total_vat}}",
+        "discount": "{{context.discount_amount}}"
+      },
+      "retry": 1,
+      "timeout": 1000
+    },
+    {
+      "id": "create_accounting_entry",
+      "use": "azalscore.generators.accounting.create_journal_entry@1.0.0",
+      "inputs": {
+        "journal_code": "VT",
+        "date": "{{context.invoice_date}}",
+        "description": "Facture {{generate_invoice_number.number}}",
+        "lines": [
+          {
+            "account": "411000",
+            "debit": "{{calculate_totals.total_ttc}}",
+            "credit": 0
+          },
+          {
+            "account": "701000",
+            "debit": 0,
+            "credit": "{{calculate_lines.total_ht}}"
+          },
+          {
+            "account": "445710",
+            "debit": 0,
+            "credit": "{{calculate_vat.total_vat}}"
+          }
+        ]
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_pdf",
+      "use": "azalscore.generators.documents.generate_invoice_pdf@1.0.0",
+      "inputs": {
+        "invoice_number": "{{generate_invoice_number.number}}",
+        "customer": "{{validate_customer.customer_data}}",
+        "lines": "{{context.invoice_lines}}",
+        "totals": "{{calculate_totals}}",
+        "template": "{{context.template_id}}"
+      },
+      "retry": 2,
+      "timeout": 10000,
+      "fallback": "azalscore.generators.documents.generate_basic_pdf"
+    },
+    {
+      "id": "send_notification",
+      "condition": "{{context.send_email}} == true",
+      "use": "azalscore.generators.communications.generate_invoice_email@1.0.0",
+      "inputs": {
+        "recipient": "{{validate_customer.customer_data.email}}",
+        "invoice_number": "{{generate_invoice_number.number}}",
+        "total_ttc": "{{calculate_totals.total_ttc}}",
+        "pdf_url": "{{generate_pdf.url}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "invoice_number": "{{generate_invoice_number.number}}",
+    "total_ht": "{{calculate_lines.total_ht}}",
+    "total_vat": "{{calculate_vat.total_vat}}",
+    "total_ttc": "{{calculate_totals.total_ttc}}",
+    "pdf_url": "{{generate_pdf.url}}",
+    "accounting_entry_id": "{{create_accounting_entry.entry_id}}"
+  }
+}

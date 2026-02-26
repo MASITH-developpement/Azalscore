@@ -5,16 +5,18 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
-import { useVerifyEmail } from './api';
+import { Helmet } from 'react-helmet-async';
 import { COLORS } from '@core/design-tokens';
+import { useVerifyEmail } from './api';
 import { ProgressBar } from './components/ProgressBar';
-import { StepPersonalInfo } from './components/StepPersonalInfo';
 import { StepCompanyInfo } from './components/StepCompanyInfo';
-import { StepPricingReminder } from './components/StepPricingReminder';
-import { StepValidation } from './components/StepValidation';
 import { StepEmailVerification } from './components/StepEmailVerification';
 import { StepPayment } from './components/StepPayment';
+import { StepPersonalInfo } from './components/StepPersonalInfo';
+import { StepPricingReminder } from './components/StepPricingReminder';
 import { StepSuccess } from './components/StepSuccess';
+import { StepValidation } from './components/StepValidation';
+import { initialFormData, TRIAL_STEPS } from './types';
 import type {
   TrialStep,
   TrialFormData,
@@ -23,7 +25,6 @@ import type {
   PricingInfo,
   TrialCompleteResponse,
 } from './types';
-import { initialFormData, TRIAL_STEPS } from './types';
 import './trial.css';
 
 // Logo AZALSCORE
@@ -247,11 +248,39 @@ export const TrialRegistration: React.FC = () => {
   };
 
   return (
-    <div className="trial-page">
-      {/* Header */}
-      <header className="trial-header">
-        <div className="trial-header-content">
-          <Link to="/" className="trial-logo">
+    <>
+      <Helmet>
+        <title>Essai Gratuit 30 Jours | Azalscore ERP - Sans Engagement</title>
+        <meta name="description" content="Démarrez votre essai gratuit de 30 jours d'Azalscore ERP. Pas de carte bancaire requise. Accès à tous les modules : CRM, Facturation, Comptabilité, Stock." />
+        <meta name="keywords" content="essai gratuit erp, test logiciel gestion, azalscore gratuit, demo erp pme" />
+        <link rel="canonical" href="https://azalscore.com/essai-gratuit" />
+        <meta property="og:title" content="Essai Gratuit 30 Jours - Azalscore ERP" />
+        <meta property="og:description" content="Testez gratuitement toutes les fonctionnalités d'Azalscore pendant 30 jours. Sans engagement." />
+        <meta property="og:url" content="https://azalscore.com/essai-gratuit" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Essai Gratuit Azalscore",
+            "description": "Inscription à l'essai gratuit de 30 jours",
+            "url": "https://azalscore.com/essai-gratuit",
+            "mainEntity": {
+              "@type": "Offer",
+              "name": "Essai Gratuit 30 jours",
+              "price": "0",
+              "priceCurrency": "EUR",
+              "availability": "https://schema.org/InStock",
+              "description": "Accès complet à tous les modules pendant 30 jours"
+            }
+          })}
+        </script>
+      </Helmet>
+      <div className="trial-page">
+        {/* Header */}
+        <header className="trial-header">
+          <div className="trial-header-content">
+            <Link to="/" className="trial-logo">
             <AzalscoreLogo size={36} />
             <span className="trial-logo-text">AZALSCORE</span>
           </Link>
@@ -293,6 +322,7 @@ export const TrialRegistration: React.FC = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 

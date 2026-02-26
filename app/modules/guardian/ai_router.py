@@ -14,6 +14,8 @@ Endpoints:
 - GET /guardian/ai/dashboard - Données dashboard
 - GET /guardian/ai/scores - Scores des modules
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import List, Optional

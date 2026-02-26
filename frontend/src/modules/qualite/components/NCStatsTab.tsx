@@ -8,13 +8,13 @@ import {
   BarChart3, TrendingUp, Clock, Calendar, Target, AlertTriangle
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { NonConformance } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   getNCAgeDays, isNCOverdue,
   NC_STATUS_CONFIG, SEVERITY_CONFIG
 } from '../types';
-import { formatDate } from '@/utils/formatters';
+import type { NonConformance } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * NCStatsTab - Statistiques
@@ -22,7 +22,7 @@ import { formatDate } from '@/utils/formatters';
 export const NCStatsTab: React.FC<TabContentProps<NonConformance>> = ({ data: nc }) => {
   const ageDays = getNCAgeDays(nc);
   const isOverdue = isNCOverdue(nc);
-  const statusConfig = NC_STATUS_CONFIG[nc.status];
+  const _statusConfig = NC_STATUS_CONFIG[nc.status];
   const severityConfig = SEVERITY_CONFIG[nc.severity];
 
   // Calculer les metriques

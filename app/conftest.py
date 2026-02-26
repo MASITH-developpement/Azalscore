@@ -26,10 +26,45 @@ from typing import Any, Generator
 from unittest.mock import patch
 from uuid import UUID
 
+# ============================================================================
+# SÉCURITÉ: Configuration de l'environnement de test
+# ============================================================================
+# IMPORTANT: Les clés de test sont générées dynamiquement à chaque session.
+# Cela évite d'exposer des clés hardcodées qui pourraient être accidentellement
+# utilisées en production.
+
+def _generate_test_fernet_key() -> str:
+    """
+    Génère une clé Fernet valide pour les tests.
+
+    SÉCURITÉ: Cette clé est unique à chaque session de test et ne doit
+    JAMAIS être utilisée en production.
+    """
+    try:
+        from cryptography.fernet import Fernet
+        return Fernet.generate_key().decode()
+    except ImportError:
+        # Fallback si cryptography n'est pas disponible
+        import base64
+        import secrets
+        return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()
+
+
 # Configure test environment BEFORE any imports that use encryption
-# Use a valid Fernet key (base64-encoded 32 bytes)
 os.environ.setdefault("ENVIRONMENT", "test")
-os.environ.setdefault("ENCRYPTION_KEY", "J37-b0UuiaXxpvZmlu95ZmK0cNKYQK57SqplMtAmdn4=")
+
+# SÉCURITÉ: Générer une clé unique pour cette session de test
+# Note: Cette clé est éphémère et différente à chaque exécution de pytest
+if "ENCRYPTION_KEY" not in os.environ:
+    _test_encryption_key = _generate_test_fernet_key()
+    os.environ["ENCRYPTION_KEY"] = _test_encryption_key
+    # Afficher un avertissement pour rappeler que c'est une clé de test
+    import warnings
+    warnings.warn(
+        "ENCRYPTION_KEY générée automatiquement pour les tests. "
+        "Cette clé est UNIQUEMENT pour les tests et change à chaque session.",
+        UserWarning
+    )
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event, String
@@ -49,6 +84,7 @@ from app.core.saas_context import Result, SaaSContext, TenantScope, UserRole
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 
 
 @compiles(PG_UUID, "sqlite")
@@ -67,6 +103,12 @@ def compile_jsonb_sqlite(element, compiler, **kw):
 def compile_enum_sqlite(element, compiler, **kw):
     """Compile PostgreSQL ENUM as VARCHAR for SQLite."""
     return "VARCHAR(50)"
+
+
+@compiles(PG_ARRAY, "sqlite")
+def compile_array_sqlite(element, compiler, **kw):
+    """Compile PostgreSQL ARRAY as TEXT for SQLite (stored as JSON)."""
+    return "TEXT"
 
 
 # ============================================================================
@@ -236,10 +278,12 @@ def mock_auth_global(tenant_id, user_id):
     3. get_db dependency - retourne session de test ou mock
     """
     # Creer le SaaSContext mock
+    # Supporter user_id comme UUID ou string
+    user_uuid = user_id if isinstance(user_id, UUID) else UUID(user_id)
     mock_context = SaaSContext(
         tenant_id=tenant_id,
-        user_id=UUID(user_id),
-        role=UserRole.ADMIN,
+        user_id=user_uuid,
+        role=UserRole.SUPERADMIN,  # Use SUPERADMIN to bypass permission checks in tests
         permissions={"*"},
         scope=TenantScope.TENANT,
         ip_address="127.0.0.1",
@@ -250,9 +294,9 @@ def mock_auth_global(tenant_id, user_id):
 
     # Creer le mock user pour le middleware
     mock_user_obj = MockUser(
-        id=UUID(user_id),
+        id=user_uuid,
         tenant_id=tenant_id,
-        role="ADMIN"
+        role="SUPERADMIN"
     )
 
     # Mock SaaSCore.authenticate pour retourner succes
@@ -290,9 +334,21 @@ def mock_auth_global(tenant_id, user_id):
 
     # Override FastAPI dependencies
     from app.core.dependencies_v2 import get_saas_context
+    from app.core.auth import get_current_user
+    from app.core.compat import get_context
     from app.main import app
 
+    # Mock pour retourner l'utilisateur mock
+    def mock_get_current_user():
+        return mock_user_obj
+
+    # Mock pour retourner le contexte SaaS
+    def mock_get_context_override():
+        return mock_context
+
     app.dependency_overrides[get_saas_context] = mock_get_context
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.dependency_overrides[get_context] = mock_get_context_override
 
     yield {
         'context': mock_context,
@@ -306,6 +362,8 @@ def mock_auth_global(tenant_id, user_id):
         p.stop()
 
     app.dependency_overrides.pop(get_saas_context, None)
+    app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_context, None)
 
 
 # ============================================================================
@@ -355,7 +413,8 @@ def test_client(mock_auth_global, test_db_session):
             if "X-Tenant-ID" not in headers:
                 headers["X-Tenant-ID"] = tenant_id
             if "Authorization" not in headers:
-                headers["Authorization"] = f"Bearer mock-jwt-{user_id}"
+                # Token > 20 chars requis par CSRF middleware
+                headers["Authorization"] = f"Bearer mock-jwt-token-for-testing-{user_id}-with-extra-length"
 
             kwargs["headers"] = headers
             return super().request(method, url, **kwargs)

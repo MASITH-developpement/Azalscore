@@ -18,32 +18,28 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Shield, Clock, Key, ArrowLeft, Check, X } from 'lucide-react';
-import { api } from '@core/api-client';
-import { useCanBreakGlass } from '@core/capabilities';
+import { useNavigate } from 'react-router-dom';
 import { trackBreakGlassEvent } from '@core/audit-ui';
-import { PageWrapper, Card } from '@ui/layout';
+import { useCanBreakGlass } from '@core/capabilities';
 import { Button } from '@ui/actions';
+import { PageWrapper } from '@ui/layout';
+import {
+  breakGlassApi,
+  type BreakGlassScope,
+  type BreakGlassChallenge,
+  type BreakGlassRequest,
+  type TenantOption,
+  type ModuleOption,
+} from './api';
 import { ErrorState } from '../../ui-engine/components/StateViews';
-import type { BreakGlassScope, BreakGlassChallenge, BreakGlassRequest } from '@/types';
 
 // ============================================================
 // TYPES
 // ============================================================
 
 type BreakGlassStep = 'intention' | 'confirmation' | 'authentication' | 'executing' | 'complete';
-
-interface TenantOption {
-  id: string;
-  name: string;
-}
-
-interface ModuleOption {
-  id: string;
-  name: string;
-}
 
 // ============================================================
 // API HOOKS
@@ -52,7 +48,7 @@ interface ModuleOption {
 const useBreakGlassChallenge = () => {
   return useMutation({
     mutationFn: async (scope: BreakGlassScope) => {
-      const response = await api.post<BreakGlassChallenge>('/v1/admin/break-glass/challenge', scope);
+      const response = await breakGlassApi.requestChallenge(scope);
       return response.data;
     },
   });
@@ -61,7 +57,7 @@ const useBreakGlassChallenge = () => {
 const useExecuteBreakGlass = () => {
   return useMutation({
     mutationFn: async (request: BreakGlassRequest) => {
-      await api.post('/v1/admin/break-glass/execute', request);
+      await breakGlassApi.execute(request);
     },
   });
 };
@@ -70,7 +66,7 @@ const useTenantsList = () => {
   return useQuery({
     queryKey: ['break-glass', 'tenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: TenantOption[] }>('/v1/admin/tenants?page_size=1000');
+      const response = await breakGlassApi.listTenants();
       return response.data.items;
     },
   });
@@ -80,7 +76,7 @@ const useModulesList = () => {
   return useQuery({
     queryKey: ['break-glass', 'modules'],
     queryFn: async () => {
-      const response = await api.get<{ items: ModuleOption[] }>('/v1/admin/modules');
+      const response = await breakGlassApi.listModules();
       return response.data.items;
     },
   });
@@ -109,8 +105,8 @@ const Level1Intention: React.FC<Level1Props> = ({ onProceed, onCancel }) => {
           <strong>AVERTISSEMENT CRITIQUE</strong>
         </p>
         <p>
-          Vous êtes sur le point d'initier une procédure Break-Glass.
-          Cette procédure est réservée aux situations d'urgence absolue
+          Vous êtes sur le point d&apos;initier une procédure Break-Glass.
+          Cette procédure est réservée aux situations d&apos;urgence absolue
           nécessitant un accès exceptionnel aux données ou fonctionnalités protégées.
         </p>
         <p>
@@ -118,15 +114,15 @@ const Level1Intention: React.FC<Level1Props> = ({ onProceed, onCancel }) => {
         </p>
         <p>
           En continuant, vous engagez votre responsabilité personnelle
-          et professionnelle sur l'utilisation de cette procédure.
+          et professionnelle sur l&apos;utilisation de cette procédure.
         </p>
       </div>
 
       <div className="azals-break-glass__rules">
-        <h3>Règles d'utilisation</h3>
+        <h3>Règles d&apos;utilisation</h3>
         <ul>
-          <li>Utilisation uniquement en cas d'urgence absolue</li>
-          <li>Justification obligatoire de l'accès</li>
+          <li>Utilisation uniquement en cas d&apos;urgence absolue</li>
+          <li>Justification obligatoire de l&apos;accès</li>
           <li>Traçabilité complète et inviolable</li>
           <li>Audit externe automatique</li>
           <li>Responsabilité personnelle engagée</li>
@@ -191,7 +187,7 @@ const Level2Confirmation: React.FC<Level2Props> = ({
 
       {/* Sélection du périmètre */}
       <div className="azals-break-glass__section">
-        <h3>Périmètre d'intervention</h3>
+        <h3>Périmètre d&apos;intervention</h3>
 
         {(tenantsError || modulesError) && (
           <ErrorState
@@ -207,8 +203,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
         )}
 
         <div className="azals-break-glass__form-group">
-          <label>Client (tenant)</label>
+          <label htmlFor="bg-scope-tenant">Client (tenant)</label>
           <select
+            id="bg-scope-tenant"
             value={scope.tenant_id || ''}
             onChange={(e) => onScopeChange({ ...scope, tenant_id: e.target.value || undefined })}
             className="azals-select"
@@ -221,8 +218,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
         </div>
 
         <div className="azals-break-glass__form-group">
-          <label>Module</label>
+          <label htmlFor="bg-scope-module">Module</label>
           <select
+            id="bg-scope-module"
             value={scope.module || ''}
             onChange={(e) => onScopeChange({ ...scope, module: e.target.value || undefined })}
             className="azals-select"
@@ -236,8 +234,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
 
         <div className="azals-break-glass__form-row">
           <div className="azals-break-glass__form-group">
-            <label>Date début</label>
+            <label htmlFor="bg-scope-start-date">Date début</label>
             <input
+              id="bg-scope-start-date"
               type="date"
               value={scope.start_date || ''}
               onChange={(e) => onScopeChange({ ...scope, start_date: e.target.value || undefined })}
@@ -245,8 +244,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
             />
           </div>
           <div className="azals-break-glass__form-group">
-            <label>Date fin</label>
+            <label htmlFor="bg-scope-end-date">Date fin</label>
             <input
+              id="bg-scope-end-date"
               type="date"
               value={scope.end_date || ''}
               onChange={(e) => onScopeChange({ ...scope, end_date: e.target.value || undefined })}
@@ -279,8 +279,9 @@ const Level2Confirmation: React.FC<Level2Props> = ({
           </div>
 
           <div className="azals-break-glass__form-group">
-            <label>Tapez la phrase ci-dessus</label>
+            <label htmlFor="bg-confirm-phrase">Tapez la phrase ci-dessus</label>
             <input
+              id="bg-confirm-phrase"
               type="text"
               value={typedPhrase}
               onChange={(e) => onTypedPhraseChange(e.target.value)}
@@ -510,7 +511,7 @@ export const BreakGlassPage: React.FC = () => {
     if (step === 'intention') {
       trackBreakGlassEvent('initiated');
     }
-  }, []);
+  }, [step]);
 
   // Countdown timer
   useEffect(() => {

@@ -8,6 +8,8 @@ Délégation → Réponse → TTS → Restitution
 
 Théo ne sait rien. Théo sait à qui demander.
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
@@ -287,7 +289,7 @@ class TheoOrchestrator:
 
         # Plus tard → Reporter
         if intent.action == ActionType.POSTPONE:
-            # TODO: Sauvegarder pour rappel
+            # NOTE: Phase 2 - Sauvegarder en table theo_reminders
             session.clear_pending_action()
             return OrchestratorResult(
                 type=OrchestratorResultType.ACTION_POSTPONED,

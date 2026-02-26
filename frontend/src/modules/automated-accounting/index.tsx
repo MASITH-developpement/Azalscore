@@ -23,11 +23,11 @@ import { useAuthStore } from '@core/auth';
 import { CapabilityGuard } from '@core/capabilities';
 
 // Views
-import { DirigeantDashboard } from './components/DirigeantDashboard';
 import { AssistanteDashboard } from './components/AssistanteDashboard';
-import { ExpertDashboard } from './components/ExpertDashboard';
-import { DocumentDetail } from './components/DocumentDetail';
 import { BankConnections } from './components/BankConnections';
+import { DirigeantDashboard } from './components/DirigeantDashboard';
+import { DocumentDetail } from './components/DocumentDetail';
+import { ExpertDashboard } from './components/ExpertDashboard';
 import { ReconciliationView } from './components/ReconciliationView';
 
 // ============================================================

@@ -7,6 +7,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Shield, Check, Save, Search } from 'lucide-react';
 import { api } from '@core/api-client';
 
+// Type for user in permissions manager
+interface PermUser {
+  id: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+// API Response types
+interface UsersResponse {
+  items?: PermUser[];
+  data?: { items?: PermUser[] };
+}
+
+interface PermissionsResponse {
+  data?: string[] | { capabilities?: string[] };
+  capabilities?: string[];
+}
+
 // Liste des modules et leurs permissions
 const MODULES = [
   { id: 'projects', name: 'Affaires', perms: ['view', 'create', 'edit', 'delete'] },
@@ -31,16 +50,17 @@ export const PermissionsManager: React.FC = () => {
   const [saved, setSaved] = useState(false);
 
   // Charger utilisateurs
-  const { data: users = [] } = useQuery({
+  const { data: users = [] } = useQuery<PermUser[]>({
     queryKey: ['iam-users'],
-    queryFn: async () => {
+    queryFn: async (): Promise<PermUser[]> => {
       try {
-        const r = await api.get('/v1/iam/users?page_size=100', {
+        const r = await api.get<UsersResponse>('/iam/users?page_size=100', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles
-        const data = r && typeof r === 'object' && 'data' in r ? (r as any).data : r;
-        return data?.items || [];
+        const res = r as UsersResponse;
+        const data = res?.data || res;
+        return (data as { items?: PermUser[] })?.items || [];
       } catch {
         return [];
       }
@@ -48,17 +68,19 @@ export const PermissionsManager: React.FC = () => {
   });
 
   // Charger permissions de l'utilisateur sélectionné
-  const { data: serverPerms } = useQuery({
+  const { data: serverPerms } = useQuery<string[]>({
     queryKey: ['perms', userId],
-    queryFn: async () => {
+    queryFn: async (): Promise<string[]> => {
       try {
-        const r = await api.get(`/v1/iam/users/${userId}/permissions`, {
+        const r = await api.get<string[] | PermissionsResponse>(`/iam/users/${userId}/permissions`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // L'API retourne directement un tableau de permissions
         if (Array.isArray(r)) return r;
-        const data = r && typeof r === 'object' && 'data' in r ? (r as any).data : r;
-        return Array.isArray(data) ? data : (data?.capabilities || []);
+        const res = r as PermissionsResponse;
+        const data = res?.data || res;
+        if (Array.isArray(data)) return data;
+        return (data as { capabilities?: string[] })?.capabilities || [];
       } catch {
         return [];
       }
@@ -68,7 +90,7 @@ export const PermissionsManager: React.FC = () => {
 
   // Sauvegarder
   const saveMutation = useMutation({
-    mutationFn: () => api.put(`/v1/iam/users/${userId}/permissions`, { capabilities: perms }),
+    mutationFn: () => api.put(`/iam/users/${userId}/permissions`, { capabilities: perms }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['perms', userId] }); setSaved(true); setTimeout(() => setSaved(false), 2000); },
   });
 
@@ -76,12 +98,12 @@ export const PermissionsManager: React.FC = () => {
   useEffect(() => { if (serverPerms) setPerms(serverPerms); }, [serverPerms]);
 
   // Filtrer utilisateurs
-  const filtered = users.filter((u: any) =>
+  const filtered = users.filter((u: PermUser) =>
     !search || u.email?.toLowerCase().includes(search.toLowerCase()) ||
     u.first_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const user = users.find((u: any) => u.id === userId);
+  const user = users.find((u: PermUser) => u.id === userId);
 
   // Toggle permission
   const toggle = (cap: string) => {
@@ -98,7 +120,7 @@ export const PermissionsManager: React.FC = () => {
           <input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="azals-pm-users__list" role="listbox" aria-label="Liste des utilisateurs">
-          {filtered.map((u: any) => (
+          {filtered.map((u: PermUser) => (
             <div
               key={u.id}
               role="option"

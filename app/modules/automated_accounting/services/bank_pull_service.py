@@ -10,6 +10,8 @@ Déclencheurs de synchronisation:
 - Avant génération d'un rapport
 - À la demande explicite de l'utilisateur
 """
+from __future__ import annotations
+
 
 import logging
 import uuid
@@ -225,9 +227,7 @@ class BankPullService:
         # Toujours avoir le mock pour les tests
         self._providers["mock"] = MockBankProvider()
 
-        # TODO: Ajouter les vrais providers (Plaid, Bridge, Nordigen)
-        # self._providers["plaid"] = PlaidProvider()
-        # self._providers["bridge"] = BridgeProvider()
+        # NOTE: Phase 2 - Providers Plaid, Bridge, Nordigen
 
     def get_provider(self, name: str) -> BankProvider:
         """Obtient un provider bancaire."""

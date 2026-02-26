@@ -4,6 +4,8 @@ AZALS MODULE - Auto-Enrichment - Router
 
 Endpoints API pour l'enrichissement automatique.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional
@@ -226,6 +228,78 @@ async def analyze_risk(
 
 
 # ============================================================================
+# BODACC ENDPOINTS (Annonces légales)
+# ============================================================================
+
+@router.get("/bodacc/{identifier}")
+async def check_bodacc(
+    identifier: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Vérifie les annonces BODACC pour un SIREN/SIRET.
+
+    Détecte les événements critiques:
+    - **Dissolution**: Entreprise dissoute
+    - **Liquidation judiciaire**: Procédure de liquidation en cours
+    - **Redressement judiciaire**: Procédure de redressement en cours
+    - **Radiation**: Entreprise radiée du RCS
+
+    Args:
+        identifier: SIREN (9 chiffres) ou SIRET (14 chiffres)
+
+    Returns:
+        Analyse de risque basée sur les annonces BODACC officielles
+    """
+    service = get_service(request, db)
+
+    try:
+        result = await service.check_bodacc(identifier)
+        return result
+
+    except Exception as e:
+        logger.exception(f"[BODACC] Erreur vérification: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/risk-combined/{identifier}")
+async def get_combined_risk(
+    identifier: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Analyse de risque combinée (INSEE + BODACC + Pappers si disponible).
+
+    Combine les données de plusieurs sources officielles pour une
+    analyse de risque complète et fiable.
+
+    Sources vérifiées:
+    - **BODACC**: Annonces légales (dissolutions, liquidations, procédures)
+    - **INSEE**: Données entreprise (statut, activité)
+    - **Pappers**: Données RCS enrichies (si clé API configurée)
+
+    Args:
+        identifier: SIREN (9 chiffres) ou SIRET (14 chiffres)
+
+    Returns:
+        Score combiné et détails par source
+    """
+    service = get_service(request, db)
+
+    try:
+        result = await service.get_combined_risk_score(identifier)
+        return result
+
+    except Exception as e:
+        logger.exception(f"[RISK] Erreur analyse combinée: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
 # ACCEPT/REJECT ENDPOINT
 # ============================================================================
 
@@ -365,7 +439,7 @@ async def get_risk_alerts(
     Utilise pour les alertes du tableau de bord.
     """
     from .models import EnrichmentHistory
-    from datetime import timedelta
+    from datetime import datetime, timedelta
 
     tenant_id = getattr(request.state, "tenant_id", None)
     if not tenant_id:

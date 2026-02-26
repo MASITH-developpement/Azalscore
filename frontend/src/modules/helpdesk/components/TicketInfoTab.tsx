@@ -5,18 +5,18 @@
 
 import React from 'react';
 import {
-  User, Mail, Phone, Building, Tag, Clock,
+  User, Mail, Building, Tag, Clock,
   Calendar, Target, AlertTriangle, CheckCircle
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Ticket } from '../types';
-import { formatDate, formatDateTime } from '@/utils/formatters';
+import { formatDateTime } from '@/utils/formatters';
 import {
   PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
   isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
   getTicketAge, getFirstResponseTime, getResolutionTime
 } from '../types';
+import type { Ticket } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * TicketInfoTab - Informations generales du ticket
@@ -235,7 +235,7 @@ export const TicketInfoTab: React.FC<TabContentProps<Ticket>> = ({ data: ticket 
               )}
             </div>
           ) : (
-            <p className="text-muted">En attente d'evaluation</p>
+            <p className="text-muted">En attente d&apos;evaluation</p>
           )}
         </Card>
       )}

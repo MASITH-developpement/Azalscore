@@ -5,15 +5,16 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, FileSpreadsheet, BarChart3, FileText, Download, Filter } from 'lucide-react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { CapabilityGuard } from '@core/capabilities';
+import { API_CONFIG, MODULES } from '@core/api-client/config';
+import { serializeFilters } from '@core/query-keys';
+import { Button, ButtonGroup } from '@ui/actions';
+import { KPICard } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
-import { KPICard, MetricComparison } from '@ui/dashboards';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 
@@ -67,35 +68,35 @@ interface AccountingSummary {
 }
 
 // ============================================================
-// API HOOKS
+// API HOOKS - Utilise API_CONFIG pour version automatique (v1→v2)
 // ============================================================
+
+const MODULE = MODULES.ACCOUNTING;
 
 const useAccountingSummary = (period?: string) => {
   return useQuery({
     queryKey: ['accounting', 'summary', period],
     queryFn: async () => {
-      const url = period
-        ? `/v1/accounting/summary?period=${period}`
-        : '/v1/accounting/summary';
-      const response = await api.get<AccountingSummary>(url);
-      return response.data;
+      const queryStr = period ? `?period=${period}` : '';
+      const url = API_CONFIG.getUrl(MODULE, `/summary${queryStr}`);
+      const result = await api.get(url);
+      return result as unknown as AccountingSummary;
     },
   });
 };
 
 const useJournalEntries = (page = 1, pageSize = 50, filters?: Record<string, string>) => {
   return useQuery({
-    queryKey: ['accounting', 'journal', page, pageSize, filters],
+    queryKey: ['accounting', 'journal', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         page_size: pageSize.toString(),
         ...filters,
       });
-      const response = await api.get<PaginatedResponse<JournalEntry>>(
-        `/v1/accounting/journal?${params}`
-      );
-      return response.data;
+      const url = API_CONFIG.getUrl(MODULE, `/journal?${params}`);
+      const result = await api.get(url);
+      return result as unknown as PaginatedResponse<JournalEntry>;
     },
   });
 };
@@ -104,11 +105,10 @@ const useLedger = (accountNumber?: string) => {
   return useQuery({
     queryKey: ['accounting', 'ledger', accountNumber],
     queryFn: async () => {
-      const url = accountNumber
-        ? `/v1/accounting/ledger/${accountNumber}`
-        : '/v1/accounting/ledger';
-      const response = await api.get<PaginatedResponse<LedgerAccount>>(url);
-      return response.data;
+      const path = accountNumber ? `/ledger/${accountNumber}` : '/ledger';
+      const url = API_CONFIG.getUrl(MODULE, path);
+      const result = await api.get(url);
+      return result as unknown as PaginatedResponse<LedgerAccount>;
     },
   });
 };
@@ -117,11 +117,10 @@ const useBalance = (period?: string) => {
   return useQuery({
     queryKey: ['accounting', 'balance', period],
     queryFn: async () => {
-      const url = period
-        ? `/v1/accounting/balance?period=${period}`
-        : '/v1/accounting/balance';
-      const response = await api.get<PaginatedResponse<BalanceEntry>>(url);
-      return response.data;
+      const queryStr = period ? `?period=${period}` : '';
+      const url = API_CONFIG.getUrl(MODULE, `/balance${queryStr}`);
+      const result = await api.get(url);
+      return result as unknown as PaginatedResponse<BalanceEntry>;
     },
   });
 };
@@ -170,7 +169,7 @@ export const AccountingDashboard: React.FC = () => {
       subtitle="Vue d'ensemble comptable"
       actions={
         <ButtonGroup>
-          <Button variant="ghost" leftIcon={<Download size={16} />}>
+          <Button variant="ghost" leftIcon={<Download size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:export', { detail: { module: 'accounting', type: 'summary' } })); }}>
             Exporter
           </Button>
         </ButtonGroup>
@@ -326,10 +325,10 @@ export const JournalPage: React.FC = () => {
       title="Journal Comptable"
       actions={
         <ButtonGroup>
-          <Button variant="ghost" leftIcon={<Filter size={16} />}>
+          <Button variant="ghost" leftIcon={<Filter size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:filter', { detail: { module: 'accounting', type: 'journal' } })); }}>
             Filtrer
           </Button>
-          <Button variant="ghost" leftIcon={<Download size={16} />}>
+          <Button variant="ghost" leftIcon={<Download size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:export', { detail: { module: 'accounting', type: 'journal' } })); }}>
             Exporter
           </Button>
         </ButtonGroup>
@@ -340,6 +339,7 @@ export const JournalPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -416,7 +416,7 @@ export const LedgerPage: React.FC = () => {
     <PageWrapper
       title="Grand Livre"
       actions={
-        <Button variant="ghost" leftIcon={<Download size={16} />}>
+        <Button variant="ghost" leftIcon={<Download size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:export', { detail: { module: 'accounting', type: 'ledger' } })); }}>
           Exporter
         </Button>
       }
@@ -426,6 +426,7 @@ export const LedgerPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="account_number"
+          filterable
           isLoading={isLoading}
           error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
           onRetry={() => refetch()}
@@ -497,7 +498,7 @@ export const BalancePage: React.FC = () => {
     <PageWrapper
       title="Balance Générale"
       actions={
-        <Button variant="ghost" leftIcon={<Download size={16} />}>
+        <Button variant="ghost" leftIcon={<Download size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:export', { detail: { module: 'accounting', type: 'balance' } })); }}>
           Exporter
         </Button>
       }
@@ -507,6 +508,7 @@ export const BalancePage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="account_number"
+          filterable
           isLoading={isLoading}
           error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
           onRetry={() => refetch()}
@@ -527,28 +529,28 @@ export const ReportsPage: React.FC = () => {
       <Grid cols={2} gap="md">
         <Card title="Bilan">
           <p>Génération du bilan comptable</p>
-          <Button variant="secondary" className="azals-mt-4">
+          <Button variant="secondary" className="azals-mt-4" onClick={() => { window.dispatchEvent(new CustomEvent('azals:generate', { detail: { module: 'accounting', type: 'bilan' } })); }}>
             Générer le bilan
           </Button>
         </Card>
 
         <Card title="Compte de Résultat">
           <p>Génération du compte de résultat</p>
-          <Button variant="secondary" className="azals-mt-4">
+          <Button variant="secondary" className="azals-mt-4" onClick={() => { window.dispatchEvent(new CustomEvent('azals:generate', { detail: { module: 'accounting', type: 'compte-resultat' } })); }}>
             Générer le compte de résultat
           </Button>
         </Card>
 
         <Card title="Annexes">
           <p>Documents annexes réglementaires</p>
-          <Button variant="secondary" className="azals-mt-4">
+          <Button variant="secondary" className="azals-mt-4" onClick={() => { window.dispatchEvent(new CustomEvent('azals:generate', { detail: { module: 'accounting', type: 'annexes' } })); }}>
             Générer les annexes
           </Button>
         </Card>
 
         <Card title="Liasse Fiscale">
           <p>Préparation de la liasse fiscale</p>
-          <Button variant="secondary" className="azals-mt-4">
+          <Button variant="secondary" className="azals-mt-4" onClick={() => { window.dispatchEvent(new CustomEvent('azals:generate', { detail: { module: 'accounting', type: 'liasse-fiscale' } })); }}>
             Préparer la liasse
           </Button>
         </Card>

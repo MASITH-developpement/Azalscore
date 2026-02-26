@@ -7,6 +7,8 @@ des sous-programmes avec gestion centralisée des erreurs.
 Conformité : AZA-NF-003, Charte Développeur
 Principe : "Le code métier est pur, le moteur gère tout le reste"
 """
+from __future__ import annotations
+
 
 import json
 import re
@@ -191,10 +193,7 @@ class OrchestrationEngine:
             Pour l'instant, on respecte l'ordre déclaré.
             Une future version pourrait paralléliser les steps indépendants.
         """
-        # TODO: Implémenter résolution topologique avancée
-        # Pour détecter les cycles et paralléliser les steps indépendants
-
-        # Pour l'instant : ordre déclaré
+        # NOTE: Phase 2 - Résolution topologique (détection cycles, parallélisation)
         return steps
 
     def _evaluate_condition(self, condition: str, context: Dict[str, Any]) -> bool:

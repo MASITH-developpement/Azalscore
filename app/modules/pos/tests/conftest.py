@@ -3,6 +3,8 @@ Fixtures pour les tests POS v2 - CORE SaaS
 
 Hérite des fixtures globales de app/conftest.py.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from decimal import Decimal

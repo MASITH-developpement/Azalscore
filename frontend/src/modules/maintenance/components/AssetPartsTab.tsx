@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
+import { formatFrequency } from '../types';
 import type { Asset, SparePart, MaintenancePlan } from '../types';
-import { formatFrequency, FREQUENCY_CONFIG } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AssetPartsTab - Pieces de rechange et plans de maintenance
@@ -58,7 +58,7 @@ export const AssetPartsTab: React.FC<TabContentProps<Asset>> = ({ data: asset })
             <div className="azals-empty azals-empty--sm">
               <Package size={32} className="text-muted" />
               <p className="text-muted">Aucune piece de rechange definie</p>
-              <Button size="sm" variant="ghost" leftIcon={<Package size={14} />}>
+              <Button size="sm" variant="ghost" leftIcon={<Package size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addSparePart', assetId: asset.id } })); }}>
                 Ajouter
               </Button>
             </div>
@@ -77,7 +77,7 @@ export const AssetPartsTab: React.FC<TabContentProps<Asset>> = ({ data: asset })
             <div className="azals-empty azals-empty--sm">
               <CheckCircle size={32} className="text-muted" />
               <p className="text-muted">Aucun plan de maintenance</p>
-              <Button size="sm" variant="ghost">
+              <Button size="sm" variant="ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMaintenancePlan', assetId: asset.id } })); }}>
                 Creer un plan
               </Button>
             </div>
@@ -113,7 +113,7 @@ export const AssetPartsTab: React.FC<TabContentProps<Asset>> = ({ data: asset })
         </div>
         {lowStockParts.length > 0 && (
           <div className="mt-4">
-            <Button variant="secondary" leftIcon={<ShoppingCart size={16} />}>
+            <Button variant="secondary" leftIcon={<ShoppingCart size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'orderMissingParts', assetId: asset.id } })); }}>
               Commander les pieces manquantes
             </Button>
           </div>

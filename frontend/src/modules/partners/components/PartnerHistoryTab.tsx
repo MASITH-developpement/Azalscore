@@ -9,9 +9,9 @@ import {
   UserPlus, Mail, Phone, ShoppingCart, Receipt
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner, PartnerHistoryEntry } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { Partner, PartnerHistoryEntry, Client } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PartnerHistoryTab - Historique
@@ -174,7 +174,7 @@ function generateHistoryFromPartner(partner: Partner): PartnerHistoryEntry[] {
 
   // Stats - premiere commande
   if (partner.type === 'client') {
-    const client = partner as any;
+    const client = partner as Client;
     if (client.first_order_date) {
       history.push({
         id: 'first-order',

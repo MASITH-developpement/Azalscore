@@ -10,13 +10,6 @@ import {
   TrendingUp, AlertTriangle, ChevronRight, Zap,
   CreditCard, Send, FileText
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Facture } from '../types';
-import { isOverdue, getDaysUntilDue } from '../types';
-import { formatCurrency } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -25,6 +18,13 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import { isOverdue, getDaysUntilDue } from '../types';
+import type { Facture } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * FactureIATab - Assistant IA pour la facture
@@ -114,7 +114,7 @@ export const FactureIATab: React.FC<TabContentProps<Facture>> = ({ data: facture
           <div className="azals-analysis-item">
             <h4>Risque client</h4>
             <p className="text-lg font-medium text-success">Faible</p>
-            <p className="text-sm text-muted">Basé sur l'historique</p>
+            <p className="text-sm text-muted">Basé sur l&apos;historique</p>
           </div>
           <div className="azals-analysis-item">
             <h4>Encours client</h4>

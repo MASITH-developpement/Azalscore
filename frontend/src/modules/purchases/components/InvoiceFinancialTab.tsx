@@ -5,15 +5,15 @@
 
 import React from 'react';
 import { Euro, TrendingUp, CreditCard, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { PurchaseInvoice } from '../types';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
 import {
-  calculateVATBreakdown, INVOICE_STATUS_CONFIG,
+  calculateVATBreakdown,
   canPayInvoice, isOverdue, getDaysUntilDue
 } from '../types';
-import { formatCurrency } from '@/utils/formatters';
+import type { PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoiceFinancialTab - Financier
@@ -104,7 +104,7 @@ export const InvoiceFinancialTab: React.FC<TabContentProps<PurchaseInvoice>> = (
 
         {canPayInvoice(invoice) && (
           <div className="mt-4">
-            <Button leftIcon={<CreditCard size={16} />}>
+            <Button leftIcon={<CreditCard size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'recordPayment', invoiceId: invoice.id } })); }}>
               Enregistrer un paiement
             </Button>
           </div>

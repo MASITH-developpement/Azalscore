@@ -7,6 +7,8 @@ Provider pour l'API Pappers (donnees entreprises et analyse de risque).
 API Documentation: https://www.pappers.fr/api/documentation
 Version gratuite: 100 requetes/mois
 """
+from __future__ import annotations
+
 
 import logging
 import re
@@ -297,7 +299,30 @@ class PappersProvider(BaseProvider):
 
         siege = insee_data.get("siege", {})
 
-        # 1. Statut administratif
+        # 0. Statut de l'entreprise (niveau entreprise, pas seulement siege)
+        # L'API INSEE renvoie etat_administratif au niveau entreprise aussi
+        etat_entreprise = insee_data.get("etat_administratif", "").upper()
+        statut_diffusion = insee_data.get("statut_diffusion", "").lower()
+
+        # Verifier si entreprise dissoute/cessée (différent du siège fermé)
+        if etat_entreprise == "C":  # Cessé = entreprise dissoute
+            score -= 100  # Score minimum pour entreprise dissoute
+            factors.append({
+                "factor": "Entreprise dissoute/cessée",
+                "impact": -100,
+                "severity": "critical"
+            })
+            alerts.append("ENTREPRISE DISSOUTE")
+        elif "partiel" in statut_diffusion:
+            # Diffusion partielle = souvent signe de problemes
+            score -= 10
+            factors.append({
+                "factor": "Diffusion partielle (données limitées)",
+                "impact": -10,
+                "severity": "low"
+            })
+
+        # 1. Statut administratif du siège
         etat = siege.get("etat_administratif", "").upper()
         if etat == "F":  # Ferme
             score -= 80
@@ -307,7 +332,7 @@ class PappersProvider(BaseProvider):
                 "severity": "critical"
             })
             alerts.append("ETABLISSEMENT FERME")
-        elif etat == "A":  # Actif
+        elif etat == "A" and etat_entreprise != "C":  # Actif (et entreprise non dissoute)
             factors.append({
                 "factor": "Etablissement actif",
                 "impact": 0,
@@ -448,8 +473,19 @@ class PappersProvider(BaseProvider):
         # 1. Statut de l'entreprise
         statut = data.get("statut_rcs", "").lower()
         date_radiation = data.get("date_radiation_rcs")
+        date_dissolution = data.get("date_cessation") or data.get("date_dissolution")
+        etat_administratif = data.get("etat_administratif", "").upper()
 
-        if date_radiation or "radie" in statut:
+        # Entreprise dissoute = risque maximum
+        if date_dissolution or "dissout" in statut or "dissol" in statut or etat_administratif == "C":
+            score -= 100
+            factors.append({
+                "factor": "Entreprise dissoute",
+                "impact": -100,
+                "severity": "critical"
+            })
+            alerts.append("ENTREPRISE DISSOUTE")
+        elif date_radiation or "radie" in statut:
             score -= 80
             factors.append({
                 "factor": "Entreprise radiée",
@@ -457,7 +493,7 @@ class PappersProvider(BaseProvider):
                 "severity": "critical"
             })
             alerts.append("ENTREPRISE RADIEE DU RCS")
-        elif "en sommeil" in statut or "cessation" in statut.lower():
+        elif "en sommeil" in statut or "cessation" in statut:
             score -= 40
             factors.append({
                 "factor": "Entreprise en sommeil/cessation",

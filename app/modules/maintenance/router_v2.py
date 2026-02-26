@@ -87,7 +87,7 @@ def get_maintenance_service(
     context: SaaSContext = Depends(get_saas_context)
 ) -> MaintenanceService:
     """✅ MIGRÉ CORE SaaS: Utilise context.tenant_id et context.user_id avec conversion int."""
-    return MaintenanceService(db, int(context.tenant_id), int(context.user_id))
+    return MaintenanceService(db, context.tenant_id, str(context.user_id))
 
 
 # ============================================================================

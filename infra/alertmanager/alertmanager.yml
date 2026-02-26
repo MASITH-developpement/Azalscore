@@ -10,11 +10,11 @@ global:
   resolve_timeout: 5m
 
   # Configuration SMTP pour emails
-  # TODO: Configurer en production
-  smtp_smarthost: 'smtp.example.com:587'
-  smtp_from: 'alertmanager@azals.io'
-  smtp_auth_username: 'CHANGE_ME'
-  smtp_auth_password: 'CHANGE_ME'
+  # Utilise variables d'environnement (définir dans docker-compose ou .env)
+  smtp_smarthost: '${SMTP_HOST:smtp.example.com}:587'
+  smtp_from: '${SMTP_FROM:alertmanager@azals.io}'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
   smtp_require_tls: true
 
   # Configuration Slack (optionnel)

@@ -13,6 +13,8 @@ Vues disponibles:
 - /expert: Validation, contrôle, certification
 - /common: Endpoints communs (documents, alertes)
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

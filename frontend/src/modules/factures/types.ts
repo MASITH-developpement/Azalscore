@@ -59,6 +59,16 @@ export interface Facture {
   customer_id: string;
   customer_name?: string;
   customer_code?: string;
+  // Customer enrichment fields
+  customer_siret?: string;
+  customer_siren?: string;
+  customer_vat_number?: string;
+  customer_legal_form?: string;
+  customer_capital?: number;
+  customer_employee_count?: number;
+  customer_naf_code?: string;
+  customer_creation_date?: string;
+  // Source document
   parent_id?: string; // Commande ou intervention source
   parent_number?: string;
   parent_type?: 'ORDER' | 'INTERVENTION';
@@ -97,6 +107,20 @@ export interface Customer {
   legal_name?: string;
   email?: string;
   phone?: string;
+  // Enrichment fields
+  siret?: string;
+  siren?: string;
+  vat_number?: string;
+  legal_form?: string;
+  capital?: number;
+  employee_count?: number;
+  naf_code?: string;
+  creation_date?: string;
+  address_line1?: string;
+  address_line2?: string;
+  postal_code?: string;
+  city?: string;
+  country?: string;
 }
 
 export interface FactureDocument {

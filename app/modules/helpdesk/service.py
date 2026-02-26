@@ -3,6 +3,8 @@ AZALS MODULE 16 - Helpdesk Service
 ===================================
 Logique métier pour le système de support client.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

@@ -4,6 +4,8 @@ AZALS - Machine Learning Predictions ÉLITE
 Prédictions ML pour ERP: trésorerie, ventes, risques.
 Utilise des modèles simples mais efficaces.
 """
+from __future__ import annotations
+
 
 from collections import deque
 from dataclasses import dataclass

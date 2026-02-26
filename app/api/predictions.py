@@ -3,6 +3,8 @@ AZALS - API Predictions ML ÉLITE
 =================================
 Endpoints pour les prédictions ML.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, timedelta
 

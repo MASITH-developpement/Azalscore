@@ -10,10 +10,8 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft,
   FileText,
   Brain,
   Calculator,
@@ -24,8 +22,6 @@ import {
   Eye,
   Download,
   MessageSquare,
-  Link2,
-  Edit3,
   History,
   User,
   Building,
@@ -35,13 +31,14 @@ import {
   Receipt,
   Tag,
 } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
+import { useAuth } from '@core/auth';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
-import { Modal, Input, TextArea, Select } from '@ui/forms';
+import { Modal, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { ErrorState } from '../../../ui-engine/components/StateViews';
-import { useAuth } from '@core/auth';
 
 // ============================================================
 // TYPES
@@ -747,8 +744,9 @@ const ContextModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} title="Ajouter du contexte">
       <div className="azals-auto-accounting__context-form">
         <div className="azals-form-group">
-          <label className="azals-form-label">Notes / Commentaire</label>
+          <label htmlFor="context-notes" className="azals-form-label">Notes / Commentaire</label>
           <TextArea
+            id="context-notes"
             value={notes}
             onChange={(value) => setNotes(value)}
             placeholder="Ajouter des informations utiles..."
@@ -757,8 +755,9 @@ const ContextModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Tags (séparés par virgule)</label>
+          <label htmlFor="context-tags" className="azals-form-label">Tags (séparés par virgule)</label>
           <Input
+            id="context-tags"
             value={tagsInput}
             onChange={(value) => setTagsInput(value)}
             placeholder="projet-x, urgent, à vérifier..."
@@ -912,7 +911,7 @@ export const DocumentDetail: React.FC = () => {
         <Card>
           <div className="azals-empty-state">
             <AlertTriangle size={48} />
-            <p>Ce document n'existe pas ou vous n'y avez pas accès.</p>
+            <p>Ce document n&apos;existe pas ou vous n&apos;y avez pas accès.</p>
             <Button onClick={() => navigate(-1)}>Retour</Button>
           </div>
         </Card>

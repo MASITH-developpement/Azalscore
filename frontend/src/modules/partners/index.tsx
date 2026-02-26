@@ -3,18 +3,18 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Users, Building, Contact as ContactIcon,
   User, FileText, Clock, ShoppingCart, Sparkles, Shield
-} from 'lucide-react';
+, ArrowLeft , ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, TrendingUp, TrendingDown, History } from 'lucide-react';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { z } from 'zod';
 import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { DynamicForm } from '@ui/forms';
 import { Button, Modal } from '@ui/actions';
+import { DynamicForm } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -23,14 +23,12 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
-import { z } from 'zod';
-import type { PaginatedResponse, TableColumn } from '@/types';
-import type { Partner, Client } from './types';
-import {
-  PARTNER_TYPE_CONFIG, CLIENT_TYPE_CONFIG,
-  getPartnerAgeDays, hasContacts, getContactsCount
-} from './types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import { DataTable } from '@ui/tables';
+import { CompanyAutocomplete, AddressAutocomplete, useRiskAnalysis, useInternalScore, ScoreGauge } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
+import type { PaginatedResponse, TableColumn, ApiMutationError } from '@/types';
+import { unwrapApiResponse } from '@/types';
+import { formatCurrency } from '@/utils/formatters';
 import {
   PartnerInfoTab,
   PartnerContactsTab,
@@ -40,12 +38,13 @@ import {
   PartnerIATab,
   PartnerRiskTab
 } from './components';
-import { ArrowLeft } from 'lucide-react';
+import {
+  PARTNER_TYPE_CONFIG, CLIENT_TYPE_CONFIG,
+  getPartnerAgeDays, getContactsCount
+} from './types';
+import type { Partner, Client, Contact } from './types';
 
 // Auto-enrichissement (SIRET + Adresse + Analyse de risque)
-import { CompanyAutocomplete, AddressAutocomplete, useRiskAnalysis, useInternalScore, ScoreGauge } from '@/modules/enrichment';
-import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
-import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, TrendingUp, TrendingDown, History } from 'lucide-react';
 
 // Legacy Partner interface for list views (backward compatibility)
 interface PartnerLegacy {
@@ -70,7 +69,7 @@ const usePartners = (type: 'client' | 'supplier' | 'contact', page = 1, pageSize
     queryKey: ['partners', type, page, pageSize],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PartnerLegacy>>(
-        `/v1/partners/${type}s?page=${page}&page_size=${pageSize}`
+        `/partners/${type}s?page=${page}&page_size=${pageSize}`
       );
       return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
@@ -81,7 +80,7 @@ const usePartner = (type: 'client' | 'supplier' | 'contact', id: string | undefi
   return useQuery({
     queryKey: ['partner', type, id],
     queryFn: async () => {
-      const response = await api.get<Partner>(`/v1/partners/${type}s/${id}`);
+      const response = await api.get<Partner>(`/partners/${type}s/${id}`);
       return response as unknown as Partner;
     },
     enabled: !!id,
@@ -92,7 +91,7 @@ const useCreatePartner = (type: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<PartnerLegacy>) => {
-      const response = await api.post<PartnerLegacy>(`/v1/partners/${type}s`, data);
+      const response = await api.post<PartnerLegacy>(`/partners/${type}s`, data);
       return response as unknown as PartnerLegacy;
     },
     onSuccess: () => {
@@ -184,6 +183,7 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -227,7 +227,7 @@ export const ClientsPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'clients', page, pageSize],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<PartnerLegacy>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
+      const response = await api.get<PaginatedResponse<PartnerLegacy>>(`/partners/clients?page=${page}&page_size=${pageSize}`);
       return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
   });
@@ -281,6 +281,7 @@ export const ClientsPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -313,7 +314,7 @@ export const ContactsPage: React.FC = () => {
   const { data: clientsData, isLoading: loadingClients } = useQuery({
     queryKey: ['partners', 'clients-for-select'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<PartnerLegacy>>('/v1/partners/clients?page=1&page_size=100&is_active=true');
+      const response = await api.get<PaginatedResponse<PartnerLegacy>>('/partners/clients?page=1&page_size=100&is_active=true');
       return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
   });
@@ -322,32 +323,32 @@ export const ContactsPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'contacts', page, pageSize],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<any>>(`/v1/partners/contacts?page=${page}&page_size=${pageSize}`);
-      return response as unknown as PaginatedResponse<any>;
+      const response = await api.get<PaginatedResponse<Contact>>(`/partners/contacts?page=${page}&page_size=${pageSize}`);
+      return response as unknown as PaginatedResponse<Contact>;
     },
   });
 
   // Mutation pour créer un contact
   const createContact = useMutation({
-    mutationFn: async (contactData: any) => {
-      const response = await api.post('/v1/partners/contacts', contactData);
+    mutationFn: async (contactData: Partial<Contact>) => {
+      const response = await api.post<Contact>('/partners/contacts', contactData);
       return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'contacts'] });
       setShowCreate(false);
     },
-    onError: (error: any) => {
+    onError: (error: ApiMutationError) => {
       console.error('Erreur création contact:', error);
       alert('Erreur lors de la création du contact: ' + (error.response?.data?.detail || error.message));
     },
   });
 
-  const columns: TableColumn<any>[] = [
+  const columns: TableColumn<Contact>[] = [
     {
       id: 'name',
       header: 'Nom',
-      accessor: (row: any) => `${row.first_name || ''} ${row.last_name || ''}`.trim() || row.name || '-',
+      accessor: (row: Contact) => `${row.first_name || ''} ${row.last_name || ''}`.trim() || '-',
       sortable: true
     },
     { id: 'email', header: 'Email', accessor: 'email' },
@@ -370,13 +371,13 @@ export const ContactsPage: React.FC = () => {
     {
       id: 'view',
       label: 'Voir',
-      onClick: (row: any) => navigate(`/partners/contacts/${row.id}`),
+      onClick: (row: Contact) => navigate(`/partners/contacts/${row.id}`),
     },
     {
       id: 'edit',
       label: 'Modifier',
       capability: 'partners.contacts.edit',
-      onClick: (row: any) => navigate(`/partners/contacts/${row.id}/edit`),
+      onClick: (row: Contact) => navigate(`/partners/contacts/${row.id}/edit`),
     },
   ];
 
@@ -425,6 +426,7 @@ export const ContactsPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -455,7 +457,6 @@ export const ContactsPage: React.FC = () => {
               fields={contactFields}
               schema={contactSchema}
               onSubmit={async (formData) => {
-                console.log('Contact form data:', formData);
                 await createContact.mutateAsync(formData);
               }}
               onCancel={() => setShowCreate(false)}
@@ -735,8 +736,8 @@ const useClient = (id: string) => {
   return useQuery({
     queryKey: ['partners', 'clients', id],
     queryFn: async () => {
-      const response = await api.get<Client>(`/v1/partners/clients/${id}`);
-      return (response as any)?.data ?? response;
+      const response = await api.get<Client>(`/partners/clients/${id}`);
+      return unwrapApiResponse<Client>(response);
     },
     enabled: !!id && id !== 'new',
   });
@@ -746,8 +747,8 @@ const useCreateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<ClientFormData>) => {
-      const response = await api.post<Client>('/v1/partners/clients', data);
-      return (response as any)?.data ?? response;
+      const response = await api.post<Client>('/partners/clients', data);
+      return unwrapApiResponse<Client>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
@@ -759,8 +760,8 @@ const useUpdateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ClientFormData> }) => {
-      const response = await api.put<Client>(`/v1/partners/clients/${id}`, data);
-      return (response as any)?.data ?? response;
+      const response = await api.put<Client>(`/partners/clients/${id}`, data);
+      return unwrapApiResponse<Client>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
@@ -814,15 +815,15 @@ export const ClientFormPage: React.FC = () => {
       setForm({
         code: client.code || '',
         name: client.name || '',
-        type: (client as any).customer_type || (client as any).type || 'CUSTOMER',
+        type: client.client_type || 'CUSTOMER',
         email: client.email || '',
         phone: client.phone || '',
-        address_line1: (client as any).address_line1 || (client as any).address || '',
+        address_line1: client.address_line1 || client.address || '',
         city: client.city || '',
         postal_code: client.postal_code || '',
-        country_code: (client as any).country_code || 'FR',
-        tax_id: (client as any).tax_id || '',
-        notes: (client as any).notes || '',
+        country_code: client.country_code || 'FR',
+        tax_id: client.tax_id || '',
+        notes: client.notes || '',
       });
     }
   }, [client]);
@@ -832,7 +833,7 @@ export const ClientFormPage: React.FC = () => {
     try {
       if (isNew) {
         const result = await createMutation.mutateAsync(form);
-        navigate(`/partners/clients/${(result as any).id}`);
+        if (result?.id) navigate(`/partners/clients/${result.id}`);
       } else {
         await updateMutation.mutateAsync({ id: id!, data: form });
         navigate(`/partners/clients/${id}`);
@@ -889,8 +890,9 @@ export const ClientFormPage: React.FC = () => {
         <Card title="Informations générales">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Code (auto-généré)</label>
+              <label className="azals-field__label" htmlFor="partner-code">Code (auto-généré)</label>
               <input
+                id="partner-code"
                 type="text"
                 className="azals-input"
                 value={form.code}
@@ -901,8 +903,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Type</label>
+              <label className="azals-field__label" htmlFor="partner-type">Type</label>
               <select
+                id="partner-type"
                 className="azals-input"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
@@ -915,7 +918,7 @@ export const ClientFormPage: React.FC = () => {
               </select>
             </div>
             <div className="azals-field" style={{ gridColumn: 'span 2' }}>
-              <label className="azals-field__label">Nom / Raison sociale * (autocomplete entreprise)</label>
+              <span className="azals-field__label">Nom / Raison sociale * (autocomplete entreprise)</span>
               <CompanyAutocomplete
                 value={form.name}
                 onChange={(value: string) => setForm({ ...form, name: value })}
@@ -924,8 +927,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Email</label>
+              <label className="azals-field__label" htmlFor="partner-email">Email</label>
               <input
+                id="partner-email"
                 type="email"
                 className="azals-input"
                 value={form.email}
@@ -933,8 +937,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Téléphone</label>
+              <label className="azals-field__label" htmlFor="partner-phone">Téléphone</label>
               <input
+                id="partner-phone"
                 type="text"
                 className="azals-input"
                 value={form.phone}
@@ -947,7 +952,7 @@ export const ClientFormPage: React.FC = () => {
         <Card title="Adresse" className="mt-4">
           <Grid cols={2} gap="md">
             <div className="azals-field" style={{ gridColumn: 'span 2' }}>
-              <label className="azals-field__label">Adresse (autocomplete)</label>
+              <span className="azals-field__label">Adresse (autocomplete)</span>
               <AddressAutocomplete
                 value={form.address_line1}
                 onChange={(value: string) => setForm({ ...form, address_line1: value })}
@@ -956,8 +961,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Code postal</label>
+              <label className="azals-field__label" htmlFor="partner-postal">Code postal</label>
               <input
+                id="partner-postal"
                 type="text"
                 className="azals-input"
                 value={form.postal_code}
@@ -965,8 +971,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Ville</label>
+              <label className="azals-field__label" htmlFor="partner-city">Ville</label>
               <input
+                id="partner-city"
                 type="text"
                 className="azals-input"
                 value={form.city}
@@ -974,8 +981,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Pays</label>
+              <label className="azals-field__label" htmlFor="partner-country">Pays</label>
               <input
+                id="partner-country"
                 type="text"
                 className="azals-input"
                 value={form.country_code}
@@ -983,8 +991,9 @@ export const ClientFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">N° SIRET / TVA</label>
+              <label className="azals-field__label" htmlFor="partner-tax">N° SIRET / TVA</label>
               <input
+                id="partner-tax"
                 type="text"
                 className="azals-input"
                 value={form.tax_id}

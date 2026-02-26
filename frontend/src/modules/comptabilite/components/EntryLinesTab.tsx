@@ -6,10 +6,10 @@
 import React from 'react';
 import { List, Calculator, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Entry, EntryLine } from '../types';
-import { formatAccountCode, isEntryBalanced } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import { formatAccountCode, isEntryBalanced } from '../types';
+import type { Entry, EntryLine } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EntryLinesTab - Lignes de l'ecriture
@@ -55,7 +55,7 @@ export const EntryLinesTab: React.FC<TabContentProps<Entry>> = ({ data: entry })
           <CheckCircle2 size={20} />
           <div>
             <strong>Ecriture equilibree</strong>
-            <p className="text-sm">L'ecriture peut etre validee</p>
+            <p className="text-sm">L&apos;ecriture peut etre validee</p>
           </div>
         </div>
       )}

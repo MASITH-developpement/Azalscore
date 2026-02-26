@@ -17,36 +17,32 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle,
-  XCircle,
   AlertTriangle,
   TrendingUp,
   TrendingDown,
   Brain,
   Target,
   Link2,
-  Clock,
-  Filter,
   Check,
   X,
   Eye,
-  ChevronRight,
   BarChart3,
-  RefreshCw,
   Calendar,
   Lock,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button, ButtonGroup } from '@ui/actions';
+import { StatusBadge } from '@ui/dashboards';
+import { Modal, Select, TextArea } from '@ui/forms';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
-import { StatusBadge, StatCard } from '@ui/dashboards';
-import { Modal, Select, TextArea } from '@ui/forms';
-import { ErrorState } from '../../../ui-engine/components/StateViews';
 import type { TableColumn } from '@/types';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES
@@ -136,7 +132,7 @@ const useValidationQueue = (
   filters: Record<string, string> = {}
 ) => {
   return useQuery<ValidationQueueResponse>({
-    queryKey: ['accounting', 'expert', 'validation-queue', page, pageSize, filters],
+    queryKey: ['accounting', 'expert', 'validation-queue', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -231,7 +227,7 @@ const getConfidenceVariant = (
   }
 };
 
-const getConfidenceLabel = (confidence: string): string => {
+const _getConfidenceLabel = (confidence: string): string => {
   const labels: Record<string, string> = {
     HIGH: 'Haute',
     MEDIUM: 'Moyenne',
@@ -607,7 +603,7 @@ export const ExpertDashboard: React.FC = () => {
   >(null);
 
   const { data: dashboard, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useExpertDashboard();
-  const { data: validationQueue, isLoading: queueLoading, error: queueError, refetch: refetchQueue } = useValidationQueue(
+  const { data: validationQueue, isLoading: queueLoading, error: _queueError, refetch: _refetchQueue } = useValidationQueue(
     page,
     20,
     confidenceFilter ? { confidence: confidenceFilter } : {}
@@ -859,7 +855,8 @@ export const ExpertDashboard: React.FC = () => {
             columns={columns}
             data={validationQueue?.items || dashboard?.validation_queue || []}
             keyField="id"
-            isLoading={queueLoading}
+          filterable
+          isLoading={queueLoading}
             actions={rowActions}
             pagination={{
               page,

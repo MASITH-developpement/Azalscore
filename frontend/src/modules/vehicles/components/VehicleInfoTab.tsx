@@ -5,18 +5,18 @@
 
 import React from 'react';
 import {
-  Car, MapPin, User, Calendar, Settings, Gauge,
+  Car, User, Calendar, Settings, Gauge,
   Fuel, Shield, Award
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Vehicule } from '../types';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   formatKilometers,
   FUEL_TYPE_CONFIG, FUEL_TYPE_ICONS,
   getVehicleAge, getAverageYearlyMileage
 } from '../types';
+import type { Vehicule } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * VehicleInfoTab - Informations generales du vehicule

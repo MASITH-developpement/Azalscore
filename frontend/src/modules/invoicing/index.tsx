@@ -17,22 +17,21 @@
  * Types T0: QUOTE (Devis), INVOICE (Facture)
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Plus, FileText, Check, Download, Eye, Edit, Trash2,
+  Plus, FileText, Check, Edit, Trash2,
   ArrowRight, Filter, Search, X, FileSpreadsheet,
   AlertCircle, CheckCircle2, Clock, UserPlus, Copy, ShoppingCart,
-  DollarSign, Link2, Sparkles
+  DollarSign, Link2, Sparkles, Shield
 } from 'lucide-react';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
+import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard, useHasCapability } from '@core/capabilities';
+import { serializeFilters } from '@core/query-keys';
+import { Button, ButtonGroup, ConfirmDialog } from '@ui/actions';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -41,14 +40,9 @@ import {
   type ActionDefinition,
   type SemanticColor
 } from '@ui/standards';
-import { z } from 'zod';
+import { DataTable } from '@ui/tables';
+import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import type { PaginatedResponse, TableColumn, TableAction } from '@/types';
-import type { Document as InvoicingDocument } from './types';
-import {
-  DOCUMENT_STATUS_CONFIG, DOCUMENT_TYPE_CONFIG,
-  TRANSFORM_WORKFLOW as TRANSFORM_WORKFLOW_TYPES,
-  getDaysUntilDue, isDocumentOverdue, canTransformDocument
-} from './types';
 import { formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '@/utils/formatters';
 import {
   InvoicingInfoTab,
@@ -57,9 +51,15 @@ import {
   InvoicingDocumentsTab,
   InvoicingHistoryTab,
   InvoicingIATab,
+  InvoicingRiskTab,
   LineEditor as LineEditorModal
 } from './components';
-import type { LineFormData } from './types';
+import {
+  DOCUMENT_STATUS_CONFIG, DOCUMENT_TYPE_CONFIG,
+  TRANSFORM_WORKFLOW as TRANSFORM_WORKFLOW_TYPES,
+  getDaysUntilDue, isDocumentOverdue, canTransformDocument
+} from './types';
+import type { Document as InvoicingDocument , LineFormData } from './types';
 
 // ============================================================
 // TYPES - Alignés avec le backend
@@ -154,7 +154,7 @@ const TRANSFORM_WORKFLOW: Partial<Record<DocumentType, { target: DocumentType; l
   ORDER: { target: 'INVOICE', label: 'Transformer en facture', icon: <FileText size={14} /> },
 };
 
-const TVA_RATES = [
+const _TVA_RATES = [
   { value: 0, label: '0%' },
   { value: 5.5, label: '5,5%' },
   { value: 10, label: '10%' },
@@ -207,10 +207,10 @@ const useDocuments = (
   });
 
   return useQuery({
-    queryKey: ['documents', type, page, pageSize, filters],
+    queryKey: ['documents', type, page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Document>>(
-        `/v1/commercial/documents?${queryParams}`
+        `/commercial/documents?${queryParams}`
       );
       // api.get retourne déjà response.data
       return response as unknown as PaginatedResponse<Document>;
@@ -222,7 +222,7 @@ const useDocument = (id: string) => {
   return useQuery({
     queryKey: ['document', id],
     queryFn: async () => {
-      const response = await api.get<Document>(`/v1/commercial/documents/${id}`);
+      const response = await api.get<Document>(`/commercial/documents/${id}`);
       // api.get retourne déjà response.data
       return response as unknown as Document;
     },
@@ -234,9 +234,9 @@ const useCustomers = () => {
   return useQuery({
     queryKey: ['customers', 'list'],
     queryFn: async () => {
-      // Utiliser /v1/partners/clients au lieu de /v1/commercial/customers
+      // Utiliser /partners/clients au lieu de /commercial/customers
       const response = await api.get<PaginatedResponse<Customer>>(
-        '/v1/partners/clients?page_size=500&is_active=true'
+        '/partners/clients?page_size=500&is_active=true'
       );
       // api.get retourne déjà response.data
       return (response as unknown as PaginatedResponse<Customer>).items;
@@ -257,7 +257,7 @@ const useCreateDocument = () => {
       notes?: string;
       lines: Omit<LineFormData, 'id'>[];
     }) => {
-      const response = await api.post<Document>('/v1/commercial/documents', data);
+      const response = await api.post<Document>('/commercial/documents', data);
       // api.post retourne déjà response.data
       return response as unknown as Document;
     },
@@ -275,7 +275,7 @@ const useUpdateDocument = () => {
       id: string;
       data: Omit<Partial<Document>, 'lines'> & { lines?: LineFormData[] };
     }) => {
-      const response = await api.put<Document>(`/v1/commercial/documents/${id}`, data);
+      const response = await api.put<Document>(`/commercial/documents/${id}`, data);
       // api.put retourne déjà response.data
       return response as unknown as Document;
     },
@@ -291,7 +291,7 @@ const useDeleteDocument = () => {
 
   return useMutation({
     mutationFn: async ({ id, type }: { id: string; type: DocumentType }) => {
-      await api.delete(`/v1/commercial/documents/${id}`);
+      await api.delete(`/commercial/documents/${id}`);
       return { id, type };
     },
     onSuccess: (_, variables) => {
@@ -305,7 +305,7 @@ const useValidateDocument = () => {
 
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
-      const response = await api.post<Document>(`/v1/commercial/documents/${id}/validate`);
+      const response = await api.post<Document>(`/commercial/documents/${id}/validate`);
       // api.post retourne déjà response.data
       return response as unknown as Document;
     },
@@ -321,7 +321,7 @@ const useConvertQuoteToInvoice = () => {
 
   return useMutation({
     mutationFn: async ({ quoteId }: { quoteId: string }) => {
-      const response = await api.post<Document>(`/v1/commercial/quotes/${quoteId}/convert`);
+      const response = await api.post<Document>(`/commercial/quotes/${quoteId}/convert`);
       // api.post retourne déjà response.data
       return response as unknown as Document;
     },
@@ -355,7 +355,7 @@ const useDuplicateDocument = () => {
           tax_rate: l.tax_rate,
         })),
       };
-      const response = await api.post<Document>('/v1/commercial/documents', payload);
+      const response = await api.post<Document>('/commercial/documents', payload);
       return response as unknown as Document;
     },
     onSuccess: (data) => {
@@ -385,7 +385,7 @@ const useTransformDocument = () => {
           tax_rate: l.tax_rate,
         })),
       };
-      const response = await api.post<Document>('/v1/commercial/documents', payload);
+      const response = await api.post<Document>('/commercial/documents', payload);
       return response as unknown as Document;
     },
     onSuccess: (data, variables) => {
@@ -406,8 +406,8 @@ const useExportDocuments = () => {
       });
 
       const response = await api.get<Blob>(
-        `/v1/commercial/documents/export?${queryParams}`,
-        { responseType: 'blob' } as any
+        `/commercial/documents/export?${queryParams}`,
+        { responseType: 'blob' }
       );
       // api.get retourne déjà response.data
       return response as unknown as Blob;
@@ -424,7 +424,7 @@ interface StatusBadgeProps {
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const config = STATUS_CONFIG[status];
+  const config = STATUS_CONFIG[status] || { label: status, color: 'gray', icon: null };
 
   return (
     <span className={`azals-badge azals-badge--${config.color}`}>
@@ -690,8 +690,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onExport, isEx
       {showFilters && (
         <div className="azals-filter-bar__panel">
           <div className="azals-filter-bar__field">
-            <label>Statut</label>
+            <label htmlFor="inv-filter-status">Statut</label>
             <select
+              id="inv-filter-status"
               value={filters.status || ''}
               onChange={(e) => onChange({
                 ...filters,
@@ -706,8 +707,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onExport, isEx
           </div>
 
           <div className="azals-filter-bar__field">
-            <label>Date début</label>
+            <label htmlFor="inv-filter-date-from">Date début</label>
             <input
+              id="inv-filter-date-from"
               type="date"
               value={filters.date_from || ''}
               onChange={(e) => onChange({ ...filters, date_from: e.target.value })}
@@ -716,8 +718,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onExport, isEx
           </div>
 
           <div className="azals-filter-bar__field">
-            <label>Date fin</label>
+            <label htmlFor="inv-filter-date-to">Date fin</label>
             <input
+              id="inv-filter-date-to"
               type="date"
               value={filters.date_to || ''}
               onChange={(e) => onChange({ ...filters, date_to: e.target.value })}
@@ -765,7 +768,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
   const transformDocument = useTransformDocument();
   const exportDocuments = useExportDocuments();
 
-  const typeConfig = TYPE_CONFIG[type];
+  const typeConfig = TYPE_CONFIG[type] || { label: type, color: 'gray', prefix: 'DOC' };
   // Utiliser les capabilities générales (invoicing.create) plutôt que granulaires (invoicing.quotes.create)
   const canCreate = useHasCapability('invoicing.create');
   const canEdit = useHasCapability('invoicing.edit');
@@ -775,7 +778,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
   const handleExport = async () => {
     try {
       const blob = await exportDocuments.mutateAsync({ type, filters });
-      const url = window.URL.createObjectURL(new Blob([blob as any]));
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `${type.toLowerCase()}s_export_${new Date().toISOString().split('T')[0]}.csv`);
@@ -910,6 +913,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -1071,7 +1075,7 @@ const DocumentFormPage: React.FC<DocumentFormPageProps> = ({ type }) => {
   const createDocument = useCreateDocument();
   const updateDocument = useUpdateDocument();
 
-  const typeConfig = TYPE_CONFIG[type];
+  const typeConfig = TYPE_CONFIG[type] || { label: type, color: 'gray', prefix: 'DOC' };
 
   // Form state
   const [customerId, setCustomerId] = useState('');
@@ -1198,7 +1202,7 @@ const DocumentFormPage: React.FC<DocumentFormPageProps> = ({ type }) => {
                 secondaryField="code"
                 entityName="client"
                 entityIcon={<UserPlus size={16} />}
-                createEndpoint="/v1/partners/clients"
+                createEndpoint="/partners/clients"
                 createFields={CUSTOMER_CREATE_FIELDS}
                 createUrl="/partners/clients/new"
                 queryKeys={['customers', 'clients']}
@@ -1312,7 +1316,7 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({ type }) => {
   const validateDocument = useValidateDocument();
   const convertQuote = useConvertQuoteToInvoice();
 
-  const typeConfig = TYPE_CONFIG[type];
+  const typeConfig = TYPE_CONFIG[type] || { label: type, color: 'gray', prefix: 'DOC' };
   const canEdit = useHasCapability('invoicing.edit');
   const canValidate = useHasCapability('invoicing.edit');
 
@@ -1646,8 +1650,8 @@ const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
     );
   }
 
-  const typeConfig = DOCUMENT_TYPE_CONFIG[document.type];
-  const statusConfig = DOCUMENT_STATUS_CONFIG[document.status];
+  const typeConfig = DOCUMENT_TYPE_CONFIG[document.type] || { label: document.type, color: 'gray' };
+  const statusConfig = DOCUMENT_STATUS_CONFIG[document.status] || { label: document.status, color: 'gray' };
 
   // Configuration des onglets
   const tabs: TabDefinition<InvoicingDocument>[] = [
@@ -1669,6 +1673,12 @@ const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
       label: 'Financier',
       icon: <DollarSign size={16} />,
       component: InvoicingFinancialTab
+    },
+    {
+      id: 'risk',
+      label: 'Risque Client',
+      icon: <Shield size={16} />,
+      component: InvoicingRiskTab
     },
     {
       id: 'documents',
@@ -1792,7 +1802,7 @@ const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
         id: 'transform',
         label: transformConfig.label,
         variant: 'primary',
-        onClick: () => console.log('Transform to', transformConfig.target)
+        onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'transformDocument', documentId: document.id, targetType: transformConfig.target } })); },
       });
     }
   }

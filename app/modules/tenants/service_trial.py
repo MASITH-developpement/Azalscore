@@ -4,6 +4,8 @@ AZALS MODULE T9 - Service Trial Registration
 
 Service pour gérer le flux d'inscription à l'essai gratuit.
 """
+from __future__ import annotations
+
 
 import logging
 import secrets

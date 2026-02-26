@@ -1,0 +1,3 @@
+"""
+Tests du module Gamification.
+"""

@@ -4,6 +4,8 @@ AZALS MODULE - Auto-Enrichment - Schemas
 
 Schemas Pydantic pour l'API d'enrichissement.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

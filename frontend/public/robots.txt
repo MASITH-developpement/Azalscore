@@ -1,46 +1,199 @@
-# Azalscore ERP - Accessible à tous les bots
+# =============================================================================
+# AZALSCORE ERP - robots.txt
+# Site: https://azalscore.com
+# Contact: contact@azalscore.com
+# =============================================================================
+
+# Regles par defaut pour tous les robots
 User-agent: *
 Allow: /
+Allow: /features
+Allow: /pricing
+Allow: /demo
+Allow: /contact
+Allow: /about
+Allow: /docs
+Allow: /essai-gratuit
+Allow: /mentions-legales
+Allow: /confidentialite
+Allow: /cgv
+Allow: /login
+
+# Pages privees - Ne pas indexer
 Disallow: /cockpit
+Disallow: /cockpit/
 Disallow: /admin
-Disallow: /api
-Disallow: /v1
-Disallow: /auth
+Disallow: /admin/
+Disallow: /api/
+Disallow: /v1/
+Disallow: /v2/
+Disallow: /v3/
+Disallow: /auth/
 Disallow: /health
 Disallow: /metrics
 Disallow: /profile
 Disallow: /settings
+Disallow: /_/
+Disallow: /share
+Disallow: /*?token=
+Disallow: /*?session=
 
-# Bots IA - Accès complet aux pages publiques
+# Delai entre les requetes (en secondes) - Politesse
+Crawl-delay: 1
+
+# =============================================================================
+# GOOGLE - Googlebot
+# =============================================================================
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Googlebot-Image
+Allow: /og-image.png
+Allow: /twitter-image.png
+Allow: /pwa-512x512.png
+
+# =============================================================================
+# MICROSOFT - Bingbot
+# =============================================================================
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: msnbot
+Allow: /
+
+# =============================================================================
+# APPLE
+# =============================================================================
+User-agent: Applebot
+Allow: /
+
+# =============================================================================
+# BOTS IA - Acces complet aux pages publiques
+# =============================================================================
+
+# OpenAI
 User-agent: GPTBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
+# Anthropic
 User-agent: Claude-Web
 Allow: /
 
 User-agent: anthropic-ai
 Allow: /
 
-User-agent: Googlebot
+User-agent: ClaudeBot
 Allow: /
 
-User-agent: Bingbot
+# Google AI
+User-agent: Google-Extended
 Allow: /
 
-User-agent: Applebot
+# Perplexity
+User-agent: PerplexityBot
 Allow: /
 
-User-agent: Perplexity
-Allow: /
-
+# You.com
 User-agent: YouBot
 Allow: /
 
+# Diffbot
 User-agent: Diffbot
 Allow: /
 
-# Sitemap
+# Meta AI
+User-agent: FacebookBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+# Cohere
+User-agent: cohere-ai
+Allow: /
+
+# Amazon
+User-agent: Amazonbot
+Allow: /
+
+# =============================================================================
+# RESEAUX SOCIAUX
+# =============================================================================
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# =============================================================================
+# OUTILS SEO - Acces autorise pour analyse
+# =============================================================================
+User-agent: AhrefsBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: SemrushBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Screaming Frog SEO Spider
+Allow: /
+
+User-agent: rogerbot
+Allow: /
+
+User-agent: MozBot
+Allow: /
+
+User-agent: DotBot
+Allow: /
+Crawl-delay: 5
+
+User-agent: MJ12bot
+Allow: /
+Crawl-delay: 5
+
+User-agent: BLEXBot
+Allow: /
+Crawl-delay: 5
+
+# =============================================================================
+# BOTS MALVEILLANTS A BLOQUER
+# =============================================================================
+User-agent: AdsBot-Google-Mobile-Apps
+Disallow: /cockpit
+Disallow: /admin
+
+User-agent: SurveyBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+# =============================================================================
+# RESSOURCES
+# =============================================================================
+
+# Sitemap principal
 Sitemap: https://azalscore.com/sitemap.xml
+
+# IndexNow pour notifications de mises a jour
+# Host: azalscore.com
+

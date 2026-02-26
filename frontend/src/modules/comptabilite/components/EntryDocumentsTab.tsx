@@ -5,12 +5,11 @@
 
 import React from 'react';
 import { FileText, Link2, Upload, ArrowRight, File } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Entry, RelatedEntry } from '../types';
-import { ENTRY_STATUS_CONFIG } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate, formatCurrency } from '@/utils/formatters';
+import type { Entry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EntryDocumentsTab - Documents lies
@@ -19,7 +18,7 @@ export const EntryDocumentsTab: React.FC<TabContentProps<Entry>> = ({ data: entr
   const relatedEntries = entry.related_entries || [];
 
   const handleUpload = () => {
-    console.log('Upload attachment for entry:', entry.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addJustificatif', entryId: entry.id } }));
   };
 
   return (
@@ -35,7 +34,7 @@ export const EntryDocumentsTab: React.FC<TabContentProps<Entry>> = ({ data: entr
                 {entry.source_document_type || 'Document commercial'}
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'invoicing', params: { documentId: entry.source_document_id } } })); }}>
               Voir
             </Button>
           </div>
@@ -73,7 +72,7 @@ export const EntryDocumentsTab: React.FC<TabContentProps<Entry>> = ({ data: entr
                 <div className="text-right font-medium">
                   {formatCurrency(related.total_debit)}
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'comptabilite', params: { entryId: related.id } } })); }}>
                   Voir
                 </Button>
               </div>
@@ -125,17 +124,17 @@ export const EntryDocumentsTab: React.FC<TabContentProps<Entry>> = ({ data: entr
       >
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{entry.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDate(entry.created_at)}</div>
           </div>
           {entry.updated_at && entry.updated_at !== entry.created_at && (
             <>
               <div className="azals-field">
-                <label className="azals-field__label">Modifie le</label>
+                <span className="azals-field__label">Modifie le</span>
                 <div className="azals-field__value">{formatDate(entry.updated_at)}</div>
               </div>
             </>

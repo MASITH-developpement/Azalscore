@@ -55,9 +55,12 @@ def main():
     print(f"\nDATABASE_URL: {database_url[:50]}...")
 
     # Configuration admin
-    admin_email = "admin@azals.local"
-    admin_password = "admin123"
-    tenant_id = "default"
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@azals.local")
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    if not admin_password:
+        import getpass
+        admin_password = getpass.getpass("Enter admin password (default: admin123): ") or "admin123"
+    tenant_id = os.environ.get("TENANT_ID", "default")
 
     # Generate valid bcrypt hash
     password_hash = get_password_hash(admin_password)

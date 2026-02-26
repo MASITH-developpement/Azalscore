@@ -7,27 +7,17 @@ import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, AlertCircle, Search, CheckCircle,
-  Plus, Edit, FileText, Clock, Shield
+  Edit, FileText, Clock, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
+import { serializeFilters } from '@core/query-keys';
 import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { Select, Input, TextArea } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-import type {
-  NonConformance, QCRule, QCInspection, QCParameter, QualityDashboard,
-  NCType, NCOrigin, NCSeverity, NCStatus, QCType, InspectionStatus
-} from './types';
-import {
-  getNCAge, getNCAgeDays, isNCOverdue, canEditNC, canCloseNC, getDocumentCount,
-  NC_TYPE_CONFIG, NC_ORIGIN_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG,
-  QC_TYPE_CONFIG, INSPECTION_STATUS_CONFIG,
-  NC_TYPES, NC_ORIGINS, SEVERITIES, NC_STATUSES, QC_TYPES, INSPECTION_STATUSES
-} from './types';
 import { formatDate } from '@/utils/formatters';
 import {
   NCInfoTab,
@@ -37,7 +27,17 @@ import {
   NCStatsTab,
   NCIATab
 } from './components';
+import {
+  getNCAge, getNCAgeDays, isNCOverdue, canEditNC, canCloseNC, getDocumentCount,
+  NC_TYPE_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG,
+  NC_TYPES, NC_ORIGINS, SEVERITIES, NC_STATUSES, QC_TYPES, INSPECTION_STATUSES
+} from './types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
+import type {
+  NonConformance, QCRule, QCInspection, QCParameter, QualityDashboard,
+  NCType, NCOrigin, NCSeverity
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -75,21 +75,21 @@ const useQualityDashboard = () => {
   return useQuery({
     queryKey: ['quality', 'dashboard'],
     queryFn: async () => {
-      return api.get<QualityDashboard>('/v1/quality/dashboard').then(r => r.data);
+      return api.get<QualityDashboard>('/quality/dashboard').then(r => r.data);
     }
   });
 };
 
 const useNonConformances = (filters?: { type?: string; status?: string; severity?: string }) => {
   return useQuery({
-    queryKey: ['quality', 'non-conformances', filters],
+    queryKey: ['quality', 'non-conformances', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       if (filters?.severity) params.append('severity', filters.severity);
       const query = params.toString();
-      return api.get<NonConformance[]>(`/v1/quality/non-conformances${query ? `?${query}` : ''}`).then(r => r.data);
+      return api.get<NonConformance[]>(`/quality/non-conformances${query ? `?${query}` : ''}`).then(r => r.data);
     }
   });
 };
@@ -98,7 +98,7 @@ const useNonConformance = (id: string) => {
   return useQuery({
     queryKey: ['quality', 'non-conformances', id],
     queryFn: async () => {
-      return api.get<NonConformance>(`/v1/quality/non-conformances/${id}`).then(r => r.data);
+      return api.get<NonConformance>(`/quality/non-conformances/${id}`).then(r => r.data);
     },
     enabled: !!id,
   });
@@ -106,23 +106,23 @@ const useNonConformance = (id: string) => {
 
 const useQCRules = (filters?: { type?: string }) => {
   return useQuery({
-    queryKey: ['qc', 'rules', filters],
+    queryKey: ['qc', 'rules', serializeFilters(filters)],
     queryFn: async () => {
       const query = filters?.type ? `?type=${encodeURIComponent(filters.type)}` : '';
-      return api.get<QCRule[]>(`/v1/qc/rules${query}`).then(r => r.data);
+      return api.get<QCRule[]>(`/qc/rules${query}`).then(r => r.data);
     }
   });
 };
 
 const useQCInspections = (filters?: { type?: string; status?: string }) => {
   return useQuery({
-    queryKey: ['qc', 'inspections', filters],
+    queryKey: ['qc', 'inspections', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const query = params.toString();
-      return api.get<QCInspection[]>(`/v1/qc/inspections${query ? `?${query}` : ''}`).then(r => r.data);
+      return api.get<QCInspection[]>(`/qc/inspections${query ? `?${query}` : ''}`).then(r => r.data);
     }
   });
 };
@@ -131,7 +131,7 @@ const useCreateNonConformance = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<NonConformance>) => {
-      return api.post<NonConformance>('/v1/quality/non-conformances', data).then(r => r.data);
+      return api.post<NonConformance>('/quality/non-conformances', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });
@@ -141,7 +141,7 @@ const useUpdateNCStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v1/quality/non-conformances/${id}`, { status }).then(r => r.data);
+      return api.patch(`/quality/non-conformances/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });
@@ -151,7 +151,7 @@ const useCloseNC = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v1/quality/non-conformances/${id}/close`).then(r => r.data);
+      return api.post(`/quality/non-conformances/${id}/close`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });
@@ -175,7 +175,7 @@ const NCDetailView: React.FC<{
   onEdit: (id: string) => void;
 }> = ({ ncId, onBack, onEdit }) => {
   const { data: nc, isLoading, error, refetch } = useNonConformance(ncId);
-  const updateStatus = useUpdateNCStatus();
+  const _updateStatus = useUpdateNCStatus();
   const closeNC = useCloseNC();
 
   if (isLoading) {
@@ -245,8 +245,8 @@ const NCDetailView: React.FC<{
     },
     {
       id: 'ia',
-      label: 'IA',
-      icon: <Shield size={16} />,
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
       component: NCIATab,
     },
   ];
@@ -364,7 +364,7 @@ const NonConformancesView: React.FC<{ onSelectNC: (id: string) => void }> = ({ o
     severity: filterSeverity || undefined
   });
   const createNC = useCreateNonConformance();
-  const updateStatus = useUpdateNCStatus();
+  const _updateStatus = useUpdateNCStatus();
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<NonConformance>>({});
 
@@ -428,7 +428,7 @@ const NonConformancesView: React.FC<{ onSelectNC: (id: string) => void }> = ({ o
           <Button onClick={() => setShowModal(true)}>Nouvelle NC</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={ncs} isLoading={isLoading} keyField="id" error={ncsError instanceof Error ? ncsError : null} onRetry={() => refetchNCs()} />
+      <DataTable columns={columns} data={ncs} isLoading={isLoading} keyField="id" filterable error={ncsError instanceof Error ? ncsError : null} onRetry={() => refetchNCs()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvelle non-conformite" size="lg">
         <form onSubmit={handleSubmit}>
@@ -526,10 +526,10 @@ const QCRulesView: React.FC = () => {
             options={[{ value: '', label: 'Tous les types' }, ...QC_TYPES]}
             className="w-40"
           />
-          <Button>Nouvelle regle</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createQCRule' } })); }}>Nouvelle regle</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={rules} isLoading={isLoading} keyField="id" error={rulesError instanceof Error ? rulesError : null} onRetry={() => refetchRules()} />
+      <DataTable columns={columns} data={rules} isLoading={isLoading} keyField="id" filterable error={rulesError instanceof Error ? rulesError : null} onRetry={() => refetchRules()} />
     </Card>
   );
 };
@@ -581,10 +581,10 @@ const InspectionsView: React.FC = () => {
             options={[{ value: '', label: 'Tous les statuts' }, ...INSPECTION_STATUSES]}
             className="w-40"
           />
-          <Button>Nouvelle inspection</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createInspection' } })); }}>Nouvelle inspection</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={inspections} isLoading={isLoading} keyField="id" error={inspectionsError instanceof Error ? inspectionsError : null} onRetry={() => refetchInspections()} />
+      <DataTable columns={columns} data={inspections} isLoading={isLoading} keyField="id" filterable error={inspectionsError instanceof Error ? inspectionsError : null} onRetry={() => refetchInspections()} />
     </Card>
   );
 };
@@ -625,7 +625,7 @@ const QualiteModule: React.FC = () => {
       <NCDetailView
         ncId={navState.ncId}
         onBack={navigateToNCList}
-        onEdit={(id) => console.log('Edit NC', id)}
+        onEdit={navigateToNCDetail}
       />
     );
   }

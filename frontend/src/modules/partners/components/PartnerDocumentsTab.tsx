@@ -7,11 +7,11 @@ import React from 'react';
 import {
   FileText, Upload, Download, Trash2, File, Image, FileSpreadsheet
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner, PartnerDocument } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate } from '@/utils/formatters';
+import type { Partner, PartnerDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PartnerDocumentsTab - Documents
@@ -20,7 +20,7 @@ export const PartnerDocumentsTab: React.FC<TabContentProps<Partner>> = ({ data: 
   const documents = partner.documents || [];
 
   const handleUpload = () => {
-    console.log('Upload document for partner:', partner.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadDocument', partnerId: partner.id } }));
   };
 
   return (
@@ -155,10 +155,10 @@ const DocumentRow: React.FC<DocumentRowProps> = ({ document }) => {
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" onClick={() => { window.open(document.url, '_blank'); }}>
           <Download size={16} />
         </Button>
-        <Button variant="ghost" size="sm" className="text-danger">
+        <Button variant="ghost" size="sm" className="text-danger" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'deleteDocument', documentId: document.id } })); }}>
           <Trash2 size={16} />
         </Button>
       </div>

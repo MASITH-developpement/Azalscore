@@ -3,6 +3,8 @@ AZALS - Module Email - Service
 ==============================
 Service d'envoi d'emails transactionnels avec file d'attente et retry.
 """
+from __future__ import annotations
+
 
 import logging
 import re

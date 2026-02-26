@@ -9,28 +9,17 @@ import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Wrench, Plus, Edit, Search, Download, FileText,
-  Calendar, Clock, Play, CheckCircle2, X, Trash2, Users
+  Calendar, Clock, Play, CheckCircle2, X, Trash2, Users, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
+import { serializeFilters } from '@core/query-keys';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-import type {
-  Intervention, DonneurOrdre, InterventionStats,
-  InterventionStatut, InterventionPriorite, TypeIntervention, CorpsEtat, CanalDemande
-} from './types';
-import {
-  STATUT_CONFIG, PRIORITE_CONFIG, STATUTS, PRIORITES,
-  TYPES_INTERVENTION, CORPS_ETATS, CANAUX_DEMANDE,
-  TYPE_INTERVENTION_CONFIG,
-  canEditIntervention, canStartIntervention, canCompleteIntervention, canInvoiceIntervention,
-  getInterventionAge, getActualDuration, getPhotoCount, getFullAddress
-} from './types';
-import { formatDate, formatDateTime, formatCurrency, formatDuration } from '@/utils/formatters';
+import { formatDateTime, formatCurrency, formatDuration } from '@/utils/formatters';
 import {
   InterventionInfoTab,
   InterventionPlanningTab,
@@ -39,6 +28,18 @@ import {
   InterventionHistoryTab,
   InterventionIATab
 } from './components';
+import {
+  STATUT_CONFIG, PRIORITE_CONFIG, STATUTS, PRIORITES,
+  TYPES_INTERVENTION, CORPS_ETATS, CANAUX_DEMANDE,
+  TYPE_INTERVENTION_CONFIG,
+  canEditIntervention, canStartIntervention, canCompleteIntervention, canInvoiceIntervention,
+  getInterventionAge, getActualDuration, getPhotoCount, getFullAddress
+} from './types';
+import type {
+  Intervention, DonneurOrdre, InterventionStats,
+  InterventionStatut, InterventionPriorite, TypeIntervention, CorpsEtat, CanalDemande
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================
 // API HOOKS
@@ -46,13 +47,13 @@ import {
 
 const useInterventionsList = (page = 1, pageSize = 25, filters?: { statut?: string; priorite?: string; search?: string }) => {
   return useQuery({
-    queryKey: ['interventions', page, pageSize, filters],
+    queryKey: ['interventions', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.statut) params.append('statut', filters.statut);
       if (filters?.priorite) params.append('priorite', filters.priorite);
       if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Intervention>>(`/v1/interventions?${params}`);
+      const response = await api.get<PaginatedResponse<Intervention>>(`/interventions?${params}`);
       return response.data;
     },
   });
@@ -62,7 +63,7 @@ const useIntervention = (id: string) => {
   return useQuery({
     queryKey: ['interventions', id],
     queryFn: async () => {
-      const response = await api.get<Intervention>(`/v1/interventions/${id}`);
+      const response = await api.get<Intervention>(`/interventions/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -73,7 +74,7 @@ const useInterventionStats = () => {
   return useQuery({
     queryKey: ['interventions', 'stats'],
     queryFn: async () => {
-      const response = await api.get<InterventionStats>('/v1/interventions/stats');
+      const response = await api.get<InterventionStats>('/interventions/stats');
       return response.data;
     },
   });
@@ -83,7 +84,7 @@ const useDonneursOrdre = () => {
   return useQuery({
     queryKey: ['interventions', 'donneurs-ordre'],
     queryFn: async () => {
-      const response = await api.get<DonneurOrdre[]>('/v1/interventions/donneurs-ordre');
+      const response = await api.get<DonneurOrdre[]>('/interventions/donneurs-ordre');
       return response.data;
     },
   });
@@ -99,7 +100,7 @@ const useClients = () => {
   return useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const response = await api.get<Client[] | { items: Client[] }>('/v1/crm/customers');
+      const response = await api.get<Client[] | { items: Client[] }>('/crm/customers');
       const data = response.data;
       return Array.isArray(data) ? data : (data?.items || []);
     },
@@ -116,7 +117,7 @@ const useIntervenants = () => {
   return useQuery({
     queryKey: ['intervenants'],
     queryFn: async () => {
-      const response = await api.get<Intervenant[] | { items: Intervenant[] }>('/v2/hr/employees');
+      const response = await api.get<Intervenant[] | { items: Intervenant[] }>('/hr/employees');
       const data = response.data;
       return Array.isArray(data) ? data : (data?.items || []);
     },
@@ -128,7 +129,7 @@ const useCreateDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<DonneurOrdre>) => {
-      const response = await api.post<DonneurOrdre>('/v1/interventions/donneurs-ordre', data);
+      const response = await api.post<DonneurOrdre>('/interventions/donneurs-ordre', data);
       return response.data;
     },
     onSuccess: () => {
@@ -141,7 +142,7 @@ const useUpdateDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<DonneurOrdre> }) => {
-      const response = await api.put<DonneurOrdre>(`/v1/interventions/donneurs-ordre/${id}`, data);
+      const response = await api.put<DonneurOrdre>(`/interventions/donneurs-ordre/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -154,7 +155,7 @@ const useDeleteDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/interventions/donneurs-ordre/${id}`);
+      await api.delete(`/interventions/donneurs-ordre/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions', 'donneurs-ordre'] });
@@ -167,7 +168,7 @@ const useDeleteIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/interventions/${id}`);
+      await api.delete(`/interventions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -179,7 +180,7 @@ const useCreateIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Intervention>) => {
-      const response = await api.post<Intervention>('/v1/interventions', data);
+      const response = await api.post<Intervention>('/interventions', data);
       return response.data;
     },
     onSuccess: () => {
@@ -192,7 +193,7 @@ const useUpdateIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Intervention> }) => {
-      const response = await api.put<Intervention>(`/v1/interventions/${id}`, data);
+      const response = await api.put<Intervention>(`/interventions/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -205,7 +206,7 @@ const useDemarrerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Intervention>(`/v1/interventions/${id}/demarrer`);
+      const response = await api.post<Intervention>(`/interventions/${id}/demarrer`);
       return response.data;
     },
     onSuccess: () => {
@@ -218,7 +219,7 @@ const useTerminerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: { commentaire_cloture?: string; montant_reel?: number } }) => {
-      const response = await api.post<Intervention>(`/v1/interventions/${id}/terminer`, data);
+      const response = await api.post<Intervention>(`/interventions/${id}/terminer`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -297,7 +298,7 @@ const ODSListView: React.FC<{
   const [filters, setFilters] = useState<{ statut?: string; search?: string }>({});
   const deleteIntervention = useDeleteIntervention();
 
-  const { data, isLoading, error, refetch } = useInterventionsList(page, pageSize, filters);
+  const { data, isLoading, error: _error, refetch } = useInterventionsList(page, pageSize, filters);
 
   const columns: TableColumn<Intervention>[] = [
     {
@@ -350,7 +351,7 @@ const ODSListView: React.FC<{
       id: 'date_prevue',
       header: 'Date prevue',
       accessor: 'date_prevue_debut',
-      render: (value, row) => {
+      render: (value, _row) => {
         if (!value) return <span className="text-muted">-</span>;
         return formatDateTime(value as string);
       },
@@ -444,6 +445,7 @@ const ODSListView: React.FC<{
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -546,8 +548,8 @@ const InterventionDetailView: React.FC<{
     },
     {
       id: 'ia',
-      label: 'IA',
-      icon: <Wrench size={16} />,
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
       component: InterventionIATab,
     },
   ];
@@ -659,7 +661,7 @@ const InterventionDetailView: React.FC<{
       label: 'PDF',
       variant: 'ghost',
       icon: <Download size={16} />,
-      onClick: () => console.log('Download PDF'),
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadPDF', interventionId } })); },
     },
   ];
 
@@ -1314,6 +1316,7 @@ const DonneursOrdreView: React.FC<{
           columns={columns}
           data={donneursOrdre || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           onRefresh={refetch}
           emptyMessage="Aucun donneur d'ordre"

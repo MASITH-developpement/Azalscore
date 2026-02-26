@@ -4,6 +4,8 @@ AZALS MODULE - TREASURY: Schémas
 
 Schémas Pydantic pour validation et sérialisation.
 """
+from __future__ import annotations
+
 
 import datetime
 from decimal import Decimal
@@ -137,6 +139,15 @@ class ReconciliationRequest(BaseModel):
 # TREASURY SUMMARY & FORECAST
 # ============================================================================
 
+class AccountSummary(BaseModel):
+    """Résumé simplifié d'un compte pour le dashboard."""
+    id: str
+    name: str
+    bank_name: str = ""
+    balance: Decimal
+    currency: str = "EUR"
+
+
 class TreasurySummary(BaseModel):
     """Résumé de trésorerie pour dashboard."""
     total_balance: Decimal = Field(..., description="Solde total")
@@ -144,7 +155,7 @@ class TreasurySummary(BaseModel):
     total_pending_out: Decimal = Field(..., description="Décaissements en attente")
     forecast_7d: Decimal = Field(..., description="Prévision 7 jours")
     forecast_30d: Decimal = Field(..., description="Prévision 30 jours")
-    accounts: List[BankAccountResponse] = Field(default_factory=list)
+    accounts: List[AccountSummary] = Field(default_factory=list)
 
 
 class ForecastData(BaseModel):

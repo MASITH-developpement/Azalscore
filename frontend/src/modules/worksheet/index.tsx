@@ -12,12 +12,14 @@
  * - NO-CODE côté utilisateur
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Plus, Trash2, ChevronDown, Loader2, X, UserPlus, Package } from 'lucide-react';
+import { Check, Plus, Trash2, ChevronDown, Loader2, UserPlus, Package } from 'lucide-react';
 import { api } from '@core/api-client';
-import { useTranslation } from '../i18n';
+import { unwrapApiResponse } from '@/types';
+import type { ApiMutationError } from '@/types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
+import { useTranslation } from '../i18n';
 
 // ============================================================
 // TYPES
@@ -72,9 +74,10 @@ const useClients = () => {
     queryKey: ['clients', 'lookup'],
     queryFn: async () => {
       const response = await api.get<{ items: Client[] }>(
-        '/v1/commercial/customers?page_size=100&is_active=true'
+        '/commercial/customers?page_size=100&is_active=true'
       );
-      return (response as any).items || [];
+      const data = unwrapApiResponse<{ items: Client[] }>(response);
+      return data?.items || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
@@ -86,8 +89,8 @@ const useSaveDocument = () => {
   return useMutation({
     mutationFn: async (data: DocumentData) => {
       const endpoint = data.type === 'INTERVENTION'
-        ? '/v1/interventions'
-        : '/v1/commercial/documents';
+        ? '/interventions'
+        : '/commercial/documents';
 
       const payload = data.type === 'INTERVENTION'
         ? {
@@ -123,7 +126,7 @@ const useCreateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Client>) => {
-      const response = await api.post<Client>('/v1/commercial/customers', data);
+      const response = await api.post<Client>('/commercial/customers', data);
       return response as unknown as Client;
     },
     onSuccess: () => {
@@ -137,9 +140,10 @@ const useProducts = () => {
     queryKey: ['products', 'lookup'],
     queryFn: async () => {
       const response = await api.get<{ items: Product[] }>(
-        '/v1/inventory/products?page_size=100&is_active=true'
+        '/inventory/products?page_size=100&is_active=true'
       );
-      return (response as any).items || [];
+      const data = unwrapApiResponse<{ items: Product[] }>(response);
+      return data?.items || [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -149,7 +153,7 @@ const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Product>) => {
-      const response = await api.post<Product>('/v1/inventory/products', data);
+      const response = await api.post<Product>('/inventory/products', data);
       return response as unknown as Product;
     },
     onSuccess: () => {
@@ -206,8 +210,9 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({
       setShowCreate(false);
       setIsOpen(false);
       setNewClient({ name: '', email: '', phone: '', city: '' });
-    } catch (err: any) {
-      setCreateError(err.message || 'Erreur lors de la création');
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      setCreateError(error.message || 'Erreur lors de la création');
     }
   };
 
@@ -394,8 +399,9 @@ const ProductSelectorInline: React.FC<ProductSelectorInlineProps> = ({
       setShowCreate(false);
       setIsOpen(false);
       setNewProduct({ code: '', name: '', sale_price: '' });
-    } catch (err: any) {
-      setCreateError(err.message || 'Erreur lors de la création');
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      setCreateError(error.message || 'Erreur lors de la création');
     }
   };
 
@@ -521,7 +527,7 @@ const LinesEditor: React.FC<LinesEditorProps> = ({ lines, products, onChange, t 
     ]);
   }, [lines, onChange]);
 
-  const updateLine = useCallback((index: number, field: keyof LineData, value: any) => {
+  const updateLine = useCallback((index: number, field: keyof LineData, value: LineData[keyof LineData]) => {
     const updated = [...lines];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);

@@ -7,15 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, Target, ChevronRight, Calendar, Euro, AlertTriangle } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Affaire } from '../types';
-import {
-  isLate, getDaysRemaining, getBudgetStatus, getProgressStatus
-} from '../types';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -24,6 +15,15 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
+import {
+  isLate, getDaysRemaining, getBudgetStatus, getProgressStatus
+} from '../types';
+import type { Affaire } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * AffaireIATab - Assistant IA pour l'affaire

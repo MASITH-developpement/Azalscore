@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Service
 Logique métier pour la plateforme e-commerce.
 Intégration avec: Inventory, Finance, Commercial, Country Packs
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

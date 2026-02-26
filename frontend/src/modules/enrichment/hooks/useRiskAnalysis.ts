@@ -7,7 +7,7 @@
  * Acces restreint par capability 'enrichment.risk_analysis'.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { analyzeRisk } from '../api';
 import type { RiskAnalysis, EnrichedRiskFields } from '../types';
@@ -35,9 +35,16 @@ export function useRiskAnalysis(options?: UseRiskAnalysisOptions): UseRiskAnalys
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [cached, setCached] = useState(false);
 
+  // Track analyzed identifier to prevent duplicate requests
+  const analyzedIdentifierRef = useRef<string | null>(null);
+  const isPendingRef = useRef(false);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
   const mutation = useMutation({
     mutationFn: analyzeRisk,
     onSuccess: (response) => {
+      isPendingRef.current = false;
       if (response.success) {
         const fields = response.enriched_fields as EnrichedRiskFields;
         const riskData = fields._pappers_risk_analysis || null;
@@ -48,8 +55,8 @@ export function useRiskAnalysis(options?: UseRiskAnalysisOptions): UseRiskAnalys
         setCached(response.cached);
         setError(null);
 
-        if (riskData && options?.onSuccess) {
-          options.onSuccess(riskData);
+        if (riskData && optionsRef.current?.onSuccess) {
+          optionsRef.current.onSuccess(riskData);
         }
       } else {
         setError(response.error || 'Analyse de risque echouee');
@@ -58,23 +65,33 @@ export function useRiskAnalysis(options?: UseRiskAnalysisOptions): UseRiskAnalys
       }
     },
     onError: (err: Error) => {
+      isPendingRef.current = false;
       const message = err.message || 'Erreur lors de l\'analyse';
       setError(message);
       setAnalysis(null);
       setEnrichedFields(null);
-      options?.onError?.(err);
+      optionsRef.current?.onError?.(err);
     },
   });
 
+  // Stable analyze function that won't change between renders
   const analyze = useCallback(async (identifier: string) => {
     const cleaned = identifier.replace(/\s/g, '');
     if (!cleaned || (cleaned.length !== 9 && cleaned.length !== 14)) {
       setError('SIREN (9 chiffres) ou SIRET (14 chiffres) requis');
       return;
     }
+    // Prevent duplicate requests for same identifier or while loading
+    // CRITICAL: Check BEFORE any async operation
+    if (isPendingRef.current || analyzedIdentifierRef.current === cleaned) {
+      return;
+    }
+    // CRITICAL: Set flags BEFORE calling async mutation
+    isPendingRef.current = true;
+    analyzedIdentifierRef.current = cleaned;
     setError(null);
     await mutation.mutateAsync(cleaned);
-  }, [mutation]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
     setAnalysis(null);
@@ -82,6 +99,8 @@ export function useRiskAnalysis(options?: UseRiskAnalysisOptions): UseRiskAnalys
     setError(null);
     setHistoryId(null);
     setCached(false);
+    analyzedIdentifierRef.current = null;
+    isPendingRef.current = false;
   }, []);
 
   return {

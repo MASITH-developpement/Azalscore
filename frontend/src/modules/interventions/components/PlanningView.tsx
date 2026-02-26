@@ -5,27 +5,28 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { LoadingState, ErrorState } from '@ui/components/StateViews';
-import {
-  ChevronLeft, ChevronRight, Calendar, User, X, AlertCircle
-} from 'lucide-react';
 import {
   startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval,
   format, isSameDay, parseISO, isWeekend
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-
-import type { Intervention } from '../types';
-import { PRIORITE_CONFIG, CORPS_ETAT_CONFIG, STATUT_CONFIG } from '../types';
-import type { CorpsEtat } from '../types';
+import {
+  ChevronLeft, ChevronRight, Calendar, User, X, AlertCircle
+} from 'lucide-react';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { Badge } from '@ui/simple';
+import { unwrapApiResponse } from '@/types';
+import type { Intervenant, ApiMutationError } from '@/types';
 import {
   usePlanifierIntervention,
   useModifierPlanification,
   useAnnulerPlanification,
   buildPlanificationData,
 } from '../hooks/usePlanningActions';
+import { PRIORITE_CONFIG, CORPS_ETAT_CONFIG } from '../types';
+import type { Intervention , CorpsEtat } from '../types';
 
 // ============================================================================
 // HOOKS (inline, same pattern as index.tsx)
@@ -33,16 +34,16 @@ import {
 
 const useInterventions = (filters?: { statut?: string }) => {
   return useQuery({
-    queryKey: ['interventions', 'list', filters],
+    queryKey: ['interventions', 'list', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.statut) params.append('statut', filters.statut);
       params.append('page_size', '200');
       const queryString = params.toString();
-      const url = `/v2/interventions${queryString ? `?${queryString}` : ''}`;
+      const url = `/interventions${queryString ? `?${queryString}` : ''}`;
       const response = await api.get<{ items: Intervention[]; total: number }>(url);
-      const items = (response as any)?.items || [];
-      return items;
+      const data = unwrapApiResponse<{ items: Intervention[]; total: number }>(response);
+      return data?.items || [];
     },
   });
 };
@@ -51,9 +52,9 @@ const useIntervenants = () => {
   return useQuery({
     queryKey: ['intervenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v1/hr/employees');
-      const items = (response as any)?.items || [];
-      return items;
+      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/hr/employees');
+      const data = unwrapApiResponse<{ items: { id: string; first_name: string; last_name: string }[] }>(response);
+      return data?.items || [];
     },
   });
 };
@@ -279,7 +280,7 @@ const PlanningView: React.FC = () => {
       }
       const data = buildPlanificationData(targetDay, intervenantId, intervention.duree_prevue_minutes);
       planifier.mutate({ id: intervention.id, data }, {
-        onError: (err: any) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur planification'),
+        onError: (err: ApiMutationError) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur planification'),
       });
     } else if (intervention.statut === 'PLANIFIEE') {
       // Scenario B: replanifier (or place for the first time if no dates)
@@ -298,7 +299,7 @@ const PlanningView: React.FC = () => {
       }
       const data = buildPlanificationData(targetDay, intervenantId, intervention.duree_prevue_minutes);
       modifier.mutate({ id: intervention.id, data }, {
-        onError: (err: any) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur modification'),
+        onError: (err: ApiMutationError) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur modification'),
       });
     }
   }, [draggedIntervention, selectedIntervenantId, planifier, modifier]);
@@ -313,7 +314,7 @@ const PlanningView: React.FC = () => {
     if (intervention.statut === 'PLANIFIEE') {
       // Scenario C: deplanifier
       annuler.mutate(intervention.id, {
-        onError: (err: any) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur annulation'),
+        onError: (err: ApiMutationError) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur annulation'),
       });
     }
   }, [draggedIntervention, annuler]);
@@ -330,7 +331,7 @@ const PlanningView: React.FC = () => {
     const intervention = [...unplanned, ...planned].find(i => i.id === pendingDrop.interventionId);
     const mutationFn = intervention?.statut === 'PLANIFIEE' ? modifier : planifier;
     mutationFn.mutate({ id: pendingDrop.interventionId, data }, {
-      onError: (err: any) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur planification'),
+      onError: (err: ApiMutationError) => setDropError(err?.response?.data?.detail || err?.message || 'Erreur planification'),
     });
     setPendingDrop(null);
     setModalIntervenantId('');
@@ -395,7 +396,7 @@ const PlanningView: React.FC = () => {
           onChange={(e) => setSelectedIntervenantId(e.target.value)}
         >
           <option value="">Tous les intervenants</option>
-          {intervenants.map((i: any) => (
+          {intervenants.map((i: Intervenant) => (
             <option key={i.id} value={i.id}>{i.first_name} {i.last_name}</option>
           ))}
         </select>
@@ -480,7 +481,7 @@ const PlanningView: React.FC = () => {
               onChange={(e) => setModalIntervenantId(e.target.value)}
             >
               <option value="">Choisir...</option>
-              {intervenants.map((i: any) => (
+              {intervenants.map((i: Intervenant) => (
                 <option key={i.id} value={i.id}>{i.first_name} {i.last_name}</option>
               ))}
             </select>

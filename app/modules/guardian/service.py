@@ -13,6 +13,8 @@ PRINCIPES FONDAMENTAUX:
 
 GUARDIAN agit. GUARDIAN explique. GUARDIAN assume.
 """
+from __future__ import annotations
+
 
 import hashlib
 from datetime import datetime, timedelta

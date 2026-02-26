@@ -5,6 +5,8 @@ Permet d'exécuter des workflows DAG déclaratifs
 
 Conformité : AZA-NF-003, Architecture cible
 """
+from __future__ import annotations
+
 
 import logging
 from fastapi import APIRouter, HTTPException, Depends
@@ -20,6 +22,56 @@ from app.core.dependencies import get_current_user
 from app.core.models import User
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
+
+
+class DAGStepSchema(BaseModel):
+    """Schéma de validation d'un step DAG"""
+    id: str
+    use: str
+    inputs: Optional[Dict[str, Any]] = None
+    retry: Optional[int] = 0
+    timeout: Optional[int] = 30000
+    fallback: Optional[str] = None
+    condition: Optional[str] = None
+
+    class Config:
+        extra = "forbid"  # Rejeter les champs inconnus
+
+
+class DAGSchema(BaseModel):
+    """
+    Schéma de validation d'un DAG JSON.
+
+    SÉCURITÉ: Valide strictement la structure pour prévenir:
+    - Injection de champs malveillants
+    - DoS via structures trop grandes
+    - Execution de code arbitraire
+    """
+    module_id: str
+    version: Optional[str] = "1.0.0"
+    description: Optional[str] = None
+    steps: list[DAGStepSchema]
+
+    class Config:
+        extra = "forbid"
+
+    @classmethod
+    def validate_dag(cls, dag: Dict[str, Any]) -> "DAGSchema":
+        """Valide un DAG et retourne une instance validée."""
+        # SÉCURITÉ: Limites pour prévenir DoS
+        MAX_STEPS = 50
+        MAX_INPUT_DEPTH = 5
+        MAX_CONDITION_LENGTH = 500
+
+        if len(dag.get("steps", [])) > MAX_STEPS:
+            raise ValueError(f"DAG ne peut pas avoir plus de {MAX_STEPS} steps")
+
+        for step in dag.get("steps", []):
+            condition = step.get("condition", "")
+            if len(str(condition)) > MAX_CONDITION_LENGTH:
+                raise ValueError(f"Condition trop longue (max {MAX_CONDITION_LENGTH} chars)")
+
+        return cls(**dag)
 
 
 class WorkflowExecutionRequest(BaseModel):
@@ -75,10 +127,37 @@ async def execute_workflow(
             )
 
         module_name, workflow_name = parts
+
+        # SÉCURITÉ: Validation anti-path-traversal
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', module_name):
+            raise HTTPException(
+                status_code=400,
+                detail="Nom de module invalide"
+            )
+        if not re.match(r'^[a-zA-Z0-9_-]+$', workflow_name):
+            raise HTTPException(
+                status_code=400,
+                detail="Nom de workflow invalide"
+            )
+
         workflow_path = (
             Path(__file__).parent.parent / "modules" / module_name /
             "workflows" / f"{workflow_name}.json"
         )
+
+        # SÉCURITÉ: Vérifier que le chemin résolu est bien dans le dossier modules
+        modules_base = (Path(__file__).parent.parent / "modules").resolve()
+        resolved_path = workflow_path.resolve()
+        if not str(resolved_path).startswith(str(modules_base)):
+            logger.warning(
+                "[WORKFLOWS] Tentative de path traversal détectée",
+                extra={"workflow_id": request.workflow_id, "resolved": str(resolved_path)}
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Chemin de workflow invalide"
+            )
 
         if not workflow_path.exists():
             raise HTTPException(
@@ -91,7 +170,21 @@ async def execute_workflow(
 
     elif request.dag:
         # Mode 2 : DAG fourni directement
-        dag = request.dag
+        # SÉCURITÉ: Validation stricte du schéma DAG
+        try:
+            validated_dag = DAGSchema.validate_dag(request.dag)
+            dag = validated_dag.model_dump()
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"DAG invalide: {str(e)}"
+            )
+        except Exception as e:
+            logger.warning(f"[WORKFLOWS] Erreur validation DAG: {e}")
+            raise HTTPException(
+                status_code=400,
+                detail="Format DAG invalide"
+            )
 
     else:
         raise HTTPException(
@@ -128,9 +221,15 @@ async def execute_workflow(
         )
 
     except Exception as e:
+        # SÉCURITÉ: Ne pas exposer les détails d'erreur internes
+        logger.error(
+            "[WORKFLOWS] Erreur exécution workflow",
+            extra={"error": str(e)[:200], "module_id": dag.get("module_id")},
+            exc_info=True
+        )
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de l'exécution du workflow : {str(e)}"
+            detail="Erreur lors de l'exécution du workflow"
         )
 
 

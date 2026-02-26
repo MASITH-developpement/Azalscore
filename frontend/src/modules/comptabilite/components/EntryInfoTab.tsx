@@ -6,12 +6,10 @@
 import React from 'react';
 import { FileText, Calendar, Book, User, Link2 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Entry } from '../types';
 import { formatDate, formatDateTime } from '@/utils/formatters';
-import {
-  ENTRY_STATUS_CONFIG, JOURNAL_TYPE_CONFIG, getJournalTypeLabel
-} from '../types';
+import { ENTRY_STATUS_CONFIG } from '../types';
+import type { Entry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EntryInfoTab - Informations generales
@@ -25,11 +23,11 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
       <Card title="Informations de l'ecriture" icon={<FileText size={18} />}>
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Numero</label>
+            <span className="azals-field__label">Numero</span>
             <div className="azals-field__value font-mono font-medium">{entry.number}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Statut</label>
+            <span className="azals-field__label">Statut</span>
             <div className="azals-field__value">
               <span className={`azals-badge azals-badge--${statusConfig.color}`}>
                 {statusConfig.label}
@@ -37,11 +35,11 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Description</label>
+            <span className="azals-field__label">Description</span>
             <div className="azals-field__value">{entry.description || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Reference</label>
+            <span className="azals-field__label">Reference</span>
             <div className="azals-field__value">{entry.reference || '-'}</div>
           </div>
         </Grid>
@@ -51,11 +49,11 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
       <Card title="Journal" icon={<Book size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Code</label>
+            <span className="azals-field__label">Code</span>
             <div className="azals-field__value font-mono">{entry.journal_code || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Nom</label>
+            <span className="azals-field__label">Nom</span>
             <div className="azals-field__value">{entry.journal_name || '-'}</div>
           </div>
         </Grid>
@@ -65,15 +63,15 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
       <Card title="Dates" icon={<Calendar size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Date comptable</label>
+            <span className="azals-field__label">Date comptable</span>
             <div className="azals-field__value font-medium">{formatDate(entry.date)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Periode</label>
+            <span className="azals-field__label">Periode</span>
             <div className="azals-field__value">{entry.period || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Exercice</label>
+            <span className="azals-field__label">Exercice</span>
             <div className="azals-field__value">{entry.fiscal_year || '-'}</div>
           </div>
         </Grid>
@@ -84,11 +82,11 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
         <Card title="Document source" icon={<Link2 size={18} />} className="mt-4">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Type</label>
+              <span className="azals-field__label">Type</span>
               <div className="azals-field__value">{entry.source_document_type || '-'}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Numero</label>
+              <span className="azals-field__label">Numero</span>
               <div className="azals-field__value font-mono">{entry.source_document_number || '-'}</div>
             </div>
           </Grid>
@@ -104,11 +102,11 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
         >
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Valide le</label>
+              <span className="azals-field__label">Valide le</span>
               <div className="azals-field__value">{formatDateTime(entry.validated_at)}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Valide par</label>
+              <span className="azals-field__label">Valide par</span>
               <div className="azals-field__value">{entry.validated_by_name || '-'}</div>
             </div>
           </Grid>
@@ -124,11 +122,11 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
         >
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Comptabilise le</label>
+              <span className="azals-field__label">Comptabilise le</span>
               <div className="azals-field__value">{formatDateTime(entry.posted_at)}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Comptabilise par</label>
+              <span className="azals-field__label">Comptabilise par</span>
               <div className="azals-field__value">{entry.posted_by_name || '-'}</div>
             </div>
           </Grid>
@@ -140,11 +138,11 @@ export const EntryInfoTab: React.FC<TabContentProps<Entry>> = ({ data: entry }) 
         <Card title="Annulation" icon={<User size={18} />} className="mt-4">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Annule le</label>
+              <span className="azals-field__label">Annule le</span>
               <div className="azals-field__value text-danger">{formatDateTime(entry.cancelled_at)}</div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Raison</label>
+              <span className="azals-field__label">Raison</span>
               <div className="azals-field__value">{entry.cancelled_reason || '-'}</div>
             </div>
           </Grid>

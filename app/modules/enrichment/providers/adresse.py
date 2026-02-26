@@ -7,6 +7,8 @@ Autocomplete et geocodage d'adresses francaises.
 
 API Documentation: https://adresse.data.gouv.fr/api-doc/adresse
 """
+from __future__ import annotations
+
 
 import logging
 import time

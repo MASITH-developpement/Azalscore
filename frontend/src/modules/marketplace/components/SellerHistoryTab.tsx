@@ -5,14 +5,14 @@
 
 import React from 'react';
 import {
-  Clock, User, CheckCircle2, XCircle, AlertTriangle,
+  Clock, User, CheckCircle2,
   UserPlus, UserCheck, UserX, ArrowRight
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Seller, SellerHistoryEntry } from '../types';
-import { SELLER_STATUS_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { SELLER_STATUS_CONFIG } from '../types';
+import type { Seller, SellerHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SellerHistoryTab - Historique

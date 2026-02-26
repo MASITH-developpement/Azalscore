@@ -6,8 +6,11 @@ Rate limiting strict sur tous les endpoints auth.
 
 SÉCURITÉ P1-4: Rate limiting distribué via Redis en production.
 """
+from __future__ import annotations
+
 
 from datetime import timedelta
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -20,20 +23,116 @@ from app.core.models import User, UserRole
 from app.core.rate_limiter import auth_rate_limiter  # P1-4: Redis-backed rate limiter
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.core.two_factor import TwoFactorService
+from app.core.metrics import record_auth_attempt, TENANTS_ACTIVE
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# Import pour la validation d'IP
+import ipaddress
+import logging
+
+_ip_logger = logging.getLogger("app.auth.ip_security")
+
+
+def _is_valid_ip(ip_str: str) -> bool:
+    """
+    Valide qu'une chaîne est une adresse IP valide (IPv4 ou IPv6).
+
+    SÉCURITÉ: Empêche l'injection de valeurs malveillantes via les headers.
+    """
+    if not ip_str:
+        return False
+    try:
+        ipaddress.ip_address(ip_str.strip())
+        return True
+    except ValueError:
+        return False
+
+
+def _is_private_ip(ip_str: str) -> bool:
+    """Vérifie si une IP est privée (RFC 1918 / loopback)."""
+    try:
+        ip = ipaddress.ip_address(ip_str.strip())
+        return ip.is_private or ip.is_loopback
+    except ValueError:
+        return False
+
 
 def get_client_ip(request: Request) -> str:
-    """Extrait l'IP client de manière sécurisée."""
+    """
+    Extrait l'IP client de manière sécurisée.
+
+    SÉCURITÉ - AVERTISSEMENT:
+    Les headers X-Forwarded-For et X-Real-IP peuvent être spoofés par un attaquant
+    si l'application n'est pas derrière un reverse proxy de confiance.
+
+    ARCHITECTURE RECOMMANDÉE:
+    1. L'application doit être derrière un reverse proxy (nginx, Caddy, etc.)
+    2. Le reverse proxy doit être configuré pour:
+       - Supprimer/écraser les headers X-Forwarded-For entrants
+       - Ajouter l'IP réelle du client au header
+    3. Seules les connexions depuis le reverse proxy sont acceptées
+
+    COMPORTEMENT:
+    - Si X-Forwarded-For est présent et valide → utilise la première IP
+    - Sinon si X-Real-IP est présent et valide → utilise cette IP
+    - Sinon → utilise l'IP de la connexion TCP (request.client.host)
+    - En dernier recours → "unknown"
+
+    La fonction valide le format des IPs pour éviter les injections.
+    """
+    socket_ip = request.client.host if request.client else None
+
+    # Option 1: X-Forwarded-For (standard de facto pour les proxies)
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        # X-Forwarded-For peut contenir plusieurs IPs: "client, proxy1, proxy2"
+        # La première est censée être l'IP du client original
+        first_ip = forwarded.split(",")[0].strip()
+
+        if _is_valid_ip(first_ip):
+            # Log si l'IP socket et l'IP forwarded sont différentes (normal derrière un proxy)
+            # mais suspect si l'IP socket n'est pas privée (pas de proxy)
+            if socket_ip and not _is_private_ip(socket_ip) and socket_ip != first_ip:
+                _ip_logger.warning(
+                    "[IP_SECURITY] X-Forwarded-For reçu sans proxy de confiance",
+                    extra={
+                        "socket_ip": socket_ip,
+                        "forwarded_ip": first_ip,
+                        "risk": "possible_spoofing"
+                    }
+                )
+            return first_ip
+        else:
+            # Header malformé - possible tentative d'injection
+            _ip_logger.warning(
+                "[IP_SECURITY] X-Forwarded-For invalide détecté",
+                extra={
+                    "raw_value": forwarded[:100],  # Tronquer pour éviter log injection
+                    "socket_ip": socket_ip
+                }
+            )
+
+    # Option 2: X-Real-IP (utilisé par nginx)
     real_ip = request.headers.get("X-Real-IP")
     if real_ip:
-        return real_ip
-    if request.client:
-        return request.client.host
+        real_ip_clean = real_ip.strip()
+        if _is_valid_ip(real_ip_clean):
+            return real_ip_clean
+        else:
+            _ip_logger.warning(
+                "[IP_SECURITY] X-Real-IP invalide détecté",
+                extra={
+                    "raw_value": real_ip[:100],
+                    "socket_ip": socket_ip
+                }
+            )
+
+    # Option 3: IP de la connexion TCP directe
+    if socket_ip and _is_valid_ip(socket_ip):
+        return socket_ip
+
+    # Fallback
     return "unknown"
 
 
@@ -90,7 +189,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """Schema de reponse utilisateur."""
-    id: int
+    id: UUID
     email: str
     tenant_id: str
     role: str
@@ -223,14 +322,6 @@ def login(
     client_ip = get_client_ip(request)
     auth_rate_limiter.check_login_rate(client_ip, user_data.email)
 
-    # DEBUG TEMPORAIRE: diagnostiquer les échecs de login navigateur
-    import logging
-    _login_logger = logging.getLogger("app.auth.login_debug")
-    _login_logger.warning(
-        f"[LOGIN_DEBUG] email='{user_data.email}' email_len={len(user_data.email)} "
-        f"pwd_len={len(user_data.password)} tenant={tenant_id} ip={client_ip}"
-    )
-
     # SÉCURITÉ P0-3: Recherche de l'utilisateur DANS LE TENANT UNIQUEMENT
     # Correction: ajout du filtre tenant_id pour isolation multi-tenant
     user = db.query(User).filter(
@@ -240,8 +331,8 @@ def login(
 
     if not user:
         # Enregistrer l'échec (timing constant pour éviter user enumeration)
-        _login_logger.warning(f"[LOGIN_DEBUG] USER NOT FOUND for email='{user_data.email}' tenant={tenant_id}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
+        record_auth_attempt(method="password", success=False, tenant_id=tenant_id)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -249,8 +340,8 @@ def login(
 
     # Vérification du mot de passe
     if not verify_password(user_data.password, user.password_hash):
-        _login_logger.warning(f"[LOGIN_DEBUG] PASSWORD MISMATCH for email='{user_data.email}' pwd_len={len(user_data.password)}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
+        record_auth_attempt(method="password", success=False, tenant_id=tenant_id)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -305,6 +396,8 @@ def login(
 
     # Enregistrer le succes (reset du compteur d'echecs)
     auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=True)
+    record_auth_attempt(method="password", success=True, tenant_id=tenant_id)
+    TENANTS_ACTIVE.inc()  # Incrémenter les tenants actifs
 
     # Vérifier si changement de mot de passe obligatoire
     must_change = getattr(user, 'must_change_password', 0) == 1
@@ -319,7 +412,8 @@ def login(
             "email": user.email,
             "tenant_id": user.tenant_id,
             "role": user.role.value,
-            "full_name": getattr(user, 'full_name', None)
+            "full_name": getattr(user, 'full_name', None),
+            "default_view": getattr(user, 'default_view', None)
         },
         "tokens": {
             "access_token": access_token,
@@ -890,7 +984,8 @@ def get_current_user_info(
             "role": current_user.role.value,
             "full_name": getattr(current_user, 'full_name', None),
             "is_active": current_user.is_active == 1,
-            "totp_enabled": current_user.totp_enabled == 1
+            "totp_enabled": current_user.totp_enabled == 1,
+            "default_view": getattr(current_user, 'default_view', None)
         }
 
     except HTTPException:
@@ -931,11 +1026,17 @@ def get_user_capabilities(
     logger = logging.getLogger(__name__)
 
     # Vérifier si l'utilisateur a des permissions IAM personnalisées
+    # SÉCURITÉ: Filtrer par tenant_id pour éviter les fuites cross-tenant
     try:
         result = db.execute(text("""
             SELECT permission_code FROM iam_user_permissions
             WHERE user_id = :user_id
-        """), {"user_id": str(current_user.id)})
+            AND tenant_id = :tenant_id
+            AND is_active = true
+        """), {
+            "user_id": str(current_user.id),
+            "tenant_id": current_user.tenant_id
+        })
         iam_permissions = [row[0] for row in result]
 
         logger.info(f"[AUTH] User {current_user.id}: found {len(iam_permissions)} IAM permissions")
@@ -976,9 +1077,10 @@ def get_user_capabilities(
         "treasury.accounts.view", "treasury.accounts.create", "treasury.accounts.edit", "treasury.accounts.delete",
         # Accounting
         "accounting.view", "accounting.journal.view", "accounting.journal.delete",
-        # Purchases - generiques ET specifiques (orders)
-        "purchases.view", "purchases.create", "purchases.edit",
+        # Purchases - generiques ET specifiques (orders, invoices)
+        "purchases.view", "purchases.create", "purchases.edit", "purchases.delete",
         "purchases.orders.view", "purchases.orders.create", "purchases.orders.edit", "purchases.orders.delete",
+        "purchases.invoices.view", "purchases.invoices.create", "purchases.invoices.edit", "purchases.invoices.delete",
         # Projects
         "projects.view", "projects.create", "projects.edit", "projects.delete",
         # HR - Ressources Humaines
@@ -1045,6 +1147,46 @@ def get_user_capabilities(
         "marceau.memory.view", "marceau.memory.manage",
         "marceau.settings.view", "marceau.settings.manage",
         "marceau.admin",
+        # Import de données
+        "import.config.create", "import.config.read", "import.config.update", "import.config.delete",
+        "import.execute", "import.cancel",
+        "import.history.read", "import.history.export",
+        "import.odoo.config", "import.odoo.execute", "import.odoo.preview",
+        "import.axonaut.config", "import.axonaut.execute",
+        "import.pennylane.config", "import.pennylane.execute",
+        "import.sage.config", "import.sage.execute",
+        "import.chorus.config", "import.chorus.execute",
+        "import.admin",
+        # Nouveaux modules frontend
+        "ai_assistant.view",
+        "assets.view", "assets.create", "assets.edit", "assets.delete",
+        "audit.view", "audit.create",
+        "autoconfig.view", "autoconfig.edit",
+        "backup.view", "backup.create", "backup.restore",
+        "broadcast.view", "broadcast.create", "broadcast.send",
+        "commercial.view", "commercial.create", "commercial.edit",
+        "complaints.view", "complaints.create", "complaints.edit", "complaints.resolve",
+        "consolidation.view", "consolidation.create",
+        "contracts.view", "contracts.create", "contracts.edit", "contracts.delete",
+        "country_packs.view", "country_packs.install",
+        "email.view", "email.send", "email.config",
+        "esignature.view", "esignature.create", "esignature.sign",
+        "expenses.view", "expenses.create", "expenses.approve", "expenses.reject",
+        "finance.view", "finance.reports",
+        "guardian.view", "guardian.config",
+        "hr_vault.view", "hr_vault.access",
+        "iam.view",
+        "odoo_import.view", "odoo_import.execute",
+        "procurement.view", "procurement.create", "procurement.edit",
+        "qc.view", "qc.create", "qc.validate",
+        "rfq.view", "rfq.create", "rfq.respond",
+        "stripe_integration.view", "stripe_integration.config",
+        "tenants.view", "tenants.create", "tenants.edit",
+        "timesheet.view", "timesheet.create", "timesheet.approve",
+        "triggers.view", "triggers.create", "triggers.edit", "triggers.delete",
+        "warranty.view", "warranty.create", "warranty.claim",
+        "website.view", "website.edit", "website.publish",
+        "field_service.view", "field_service.create", "field_service.dispatch",
     ]
 
     # Capacites basees sur le role
@@ -1084,7 +1226,19 @@ def get_user_capabilities(
 class ChangePasswordRequest(BaseModel):
     """Schema pour changement de mot de passe."""
     current_password: str
-    new_password: str = Field(..., min_length=8)
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Nouveau mot de passe sécurisé"
+    )
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v):
+        """Valide le nouveau mot de passe avec les règles de sécurité."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 class ChangePasswordResponse(BaseModel):

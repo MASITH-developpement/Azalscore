@@ -9,14 +9,14 @@ import {
   Tag, FileText, Users
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Project, TeamMember } from '../types';
-import { formatDate, formatCurrency, formatPercent } from '@/utils/formatters';
+import { formatDate, formatPercent } from '@/utils/formatters';
 import {
   formatProjectDuration,
   PROJECT_STATUS_CONFIG, PRIORITY_CONFIG, TEAM_ROLE_CONFIG,
   getDaysRemaining, isProjectOverdue, isProjectNearDeadline
 } from '../types';
+import type { Project, TeamMember } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProjectInfoTab - Informations generales du projet
@@ -33,34 +33,34 @@ export const ProjectInfoTab: React.FC<TabContentProps<Project>> = ({ data: proje
         <Card title="Informations principales" icon={<Folder size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Code projet</label>
+              <span className="azals-field__label">Code projet</span>
               <span className="azals-field__value font-mono">{project.code}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Nom</label>
+              <span className="azals-field__label">Nom</span>
               <span className="azals-field__value">{project.name}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Statut</label>
+              <span className="azals-field__label">Statut</span>
               <span className={`azals-badge azals-badge--${PROJECT_STATUS_CONFIG[project.status].color}`}>
                 {PROJECT_STATUS_CONFIG[project.status].label}
               </span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Priorite</label>
+              <span className="azals-field__label">Priorite</span>
               <span className={`azals-badge azals-badge--${PRIORITY_CONFIG[project.priority].color}`}>
                 {PRIORITY_CONFIG[project.priority].label}
               </span>
             </div>
             {project.description && (
               <div className="azals-field azals-field--full">
-                <label className="azals-field__label">Description</label>
+                <span className="azals-field__label">Description</span>
                 <p className="azals-field__value text-muted">{project.description}</p>
               </div>
             )}
             {project.tags && project.tags.length > 0 && (
               <div className="azals-field azals-field--full">
-                <label className="azals-field__label">Tags</label>
+                <span className="azals-field__label">Tags</span>
                 <div className="flex flex-wrap gap-1">
                   {project.tags.map((tag, idx) => (
                     <span key={idx} className="azals-badge azals-badge--gray">
@@ -78,11 +78,11 @@ export const ProjectInfoTab: React.FC<TabContentProps<Project>> = ({ data: proje
         <Card title="Client et responsable" icon={<Building2 size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Client</label>
+              <span className="azals-field__label">Client</span>
               <span className="azals-field__value">{project.client_name || '-'}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Responsable projet</label>
+              <span className="azals-field__label">Responsable projet</span>
               <span className="azals-field__value">
                 {project.manager_name ? (
                   <span className="flex items-center gap-1">
@@ -99,11 +99,11 @@ export const ProjectInfoTab: React.FC<TabContentProps<Project>> = ({ data: proje
         <Card title="Dates et planning" icon={<Calendar size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field">
-              <label className="azals-field__label">Date de debut</label>
+              <span className="azals-field__label">Date de debut</span>
               <span className="azals-field__value">{formatDate(project.start_date)}</span>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Date de fin prevue</label>
+              <span className="azals-field__label">Date de fin prevue</span>
               <span className={`azals-field__value ${isOverdue ? 'text-danger' : isNearDeadline ? 'text-warning' : ''}`}>
                 {formatDate(project.end_date)}
                 {isOverdue && ' (En retard)'}
@@ -112,17 +112,17 @@ export const ProjectInfoTab: React.FC<TabContentProps<Project>> = ({ data: proje
             </div>
             {project.actual_end_date && (
               <div className="azals-field">
-                <label className="azals-field__label">Date de fin reelle</label>
+                <span className="azals-field__label">Date de fin reelle</span>
                 <span className="azals-field__value">{formatDate(project.actual_end_date)}</span>
               </div>
             )}
             <div className="azals-field">
-              <label className="azals-field__label">Duree</label>
+              <span className="azals-field__label">Duree</span>
               <span className="azals-field__value">{formatProjectDuration(project)}</span>
             </div>
             {daysRemaining !== null && project.status === 'ACTIVE' && (
               <div className="azals-field">
-                <label className="azals-field__label">Jours restants</label>
+                <span className="azals-field__label">Jours restants</span>
                 <span className={`azals-field__value font-medium ${daysRemaining < 0 ? 'text-danger' : daysRemaining <= 7 ? 'text-warning' : 'text-success'}`}>
                   {daysRemaining < 0 ? `${Math.abs(daysRemaining)} jours de retard` : `${daysRemaining} jours`}
                 </span>
@@ -135,7 +135,7 @@ export const ProjectInfoTab: React.FC<TabContentProps<Project>> = ({ data: proje
         <Card title="Avancement" icon={<Target size={18} />}>
           <div className="azals-field-group">
             <div className="azals-field azals-field--full">
-              <label className="azals-field__label">Progression globale</label>
+              <span className="azals-field__label">Progression globale</span>
               <div className="mt-2">
                 <div className="flex items-center gap-3">
                   <div className="flex-1 bg-gray-200 rounded-full h-3">

@@ -8,13 +8,13 @@ import {
   DollarSign, User, Mail, FileText, Calendar, CreditCard
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Payment } from '../types';
-import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
+import { formatCurrency, formatDateTime } from '@/utils/formatters';
 import {
   getMethodLabel, getMethodIcon, getNetAmount, getRefundTotal,
   PAYMENT_STATUS_CONFIG
 } from '../types';
+import type { Payment } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PaymentInfoTab - Informations generales
@@ -48,25 +48,25 @@ export const PaymentInfoTab: React.FC<TabContentProps<Payment>> = ({ data: payme
         <Card title="Informations de base" icon={<DollarSign size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Reference</label>
+              <span>Reference</span>
               <div className="font-mono">{payment.reference}</div>
             </div>
             <div className="azals-std-field">
-              <label>Methode de paiement</label>
+              <span>Methode de paiement</span>
               <div>
                 <span className="mr-2">{getMethodIcon(payment.method)}</span>
                 {getMethodLabel(payment.method)}
               </div>
             </div>
             <div className="azals-std-field">
-              <label>Statut</label>
+              <span>Statut</span>
               <div className={`font-medium text-${statusConfig.color}`}>
                 {statusConfig.label}
               </div>
             </div>
             {payment.description && (
               <div className="azals-std-field">
-                <label>Description</label>
+                <span>Description</span>
                 <div className="text-muted">{payment.description}</div>
               </div>
             )}
@@ -79,12 +79,12 @@ export const PaymentInfoTab: React.FC<TabContentProps<Payment>> = ({ data: payme
             {payment.customer_name ? (
               <>
                 <div className="azals-std-field">
-                  <label>Nom</label>
+                  <span>Nom</span>
                   <div className="font-medium">{payment.customer_name}</div>
                 </div>
                 {payment.customer_email && (
                   <div className="azals-std-field">
-                    <label>Email</label>
+                    <span>Email</span>
                     <div className="flex items-center gap-2">
                       <Mail size={14} className="text-muted" />
                       {payment.customer_email}
@@ -93,7 +93,7 @@ export const PaymentInfoTab: React.FC<TabContentProps<Payment>> = ({ data: payme
                 )}
                 {payment.customer_id && (
                   <div className="azals-std-field azals-std-field--secondary">
-                    <label>ID Client</label>
+                    <span>ID Client</span>
                     <div className="font-mono text-sm">{payment.customer_id}</div>
                   </div>
                 )}
@@ -111,11 +111,11 @@ export const PaymentInfoTab: React.FC<TabContentProps<Payment>> = ({ data: payme
           <Card title="Facture liee" icon={<FileText size={18} />}>
             <div className="space-y-3">
               <div className="azals-std-field">
-                <label>Numero de facture</label>
+                <span>Numero de facture</span>
                 <div className="font-mono">{payment.invoice_number || payment.invoice_id}</div>
               </div>
               <div className="azals-std-field azals-std-field--secondary">
-                <label>ID Facture</label>
+                <span>ID Facture</span>
                 <div className="font-mono text-sm">{payment.invoice_id}</div>
               </div>
             </div>
@@ -126,18 +126,18 @@ export const PaymentInfoTab: React.FC<TabContentProps<Payment>> = ({ data: payme
         <Card title="Dates" icon={<Calendar size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Date de creation</label>
+              <span>Date de creation</span>
               <div>{formatDateTime(payment.created_at)}</div>
             </div>
             {payment.processed_at && (
               <div className="azals-std-field">
-                <label>Date de traitement</label>
+                <span>Date de traitement</span>
                 <div>{formatDateTime(payment.processed_at)}</div>
               </div>
             )}
             {payment.updated_at && (
               <div className="azals-std-field azals-std-field--secondary">
-                <label>Derniere modification</label>
+                <span>Derniere modification</span>
                 <div>{formatDateTime(payment.updated_at)}</div>
               </div>
             )}

@@ -6,10 +6,9 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSiretLookup, isValidSiret, isValidSiren } from '../hooks';
 import { acceptEnrichment, searchCompanyByName } from '../api';
-import type { CompanySuggestion } from '../types';
-import type { EnrichedContactFields, SiretLookupProps } from '../types';
+import { useSiretLookup, isValidSiret, isValidSiren } from '../hooks';
+import type { CompanySuggestion , EnrichedContactFields, SiretLookupProps, RiskData } from '../types';
 
 // ============================================================================
 // COMPONENT
@@ -19,6 +18,7 @@ export function SiretLookup({
   value = '',
   onEnrich,
   onHistoryId,
+  onRiskData,
   disabled = false,
   className = '',
 }: SiretLookupProps): JSX.Element {
@@ -69,6 +69,24 @@ export function SiretLookup({
       setShowPreview(true);
     }
   }, [fields]);
+
+  // Notifier automatiquement le parent quand les données de risque arrivent
+  useEffect(() => {
+    if (fields && onRiskData) {
+      if (fields._bodacc_risk_level || fields._risk_level) {
+        onRiskData({
+          level: fields._bodacc_risk_level || fields._risk_level,
+          label: fields._bodacc_risk_label || fields._risk_label,
+          reason: fields._bodacc_risk_reason || fields._risk_reason,
+          score: fields._bodacc_risk_score ?? fields._risk_score,
+          alerts: fields._bodacc_critical_alerts || [],
+          sources: fields._sources || [],
+        });
+      } else {
+        onRiskData(null);
+      }
+    }
+  }, [fields, onRiskData]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -140,24 +158,18 @@ export function SiretLookup({
   );
 
   const handleSelectSuggestion = useCallback((suggestion: CompanySuggestion) => {
-    setInputValue(suggestion.siret || suggestion.siren);
+    const siretValue = suggestion.siret || suggestion.siren;
+    setInputValue(siretValue);
     setShowSuggestions(false);
     setSuggestions([]);
     setSearchMode('siret');
 
-    // Create enriched fields from suggestion
-    const enrichedFields: EnrichedContactFields = {
-      name: suggestion.name,
-      company_name: suggestion.name,
-      siret: suggestion.siret,
-      siren: suggestion.siren,
-      address_line1: suggestion.address,
-      city: suggestion.city,
-      postal_code: suggestion.postal_code,
-    };
-
-    onEnrich?.(enrichedFields);
-  }, [onEnrich]);
+    // Declencher un lookup SIRET pour obtenir les donnees BODACC
+    // Le lookup appellera le backend qui verifie BODACC automatiquement
+    if (siretValue) {
+      lookup(siretValue);
+    }
+  }, [lookup]);
 
   const handleAccept = useCallback(async () => {
     if (fields && historyId) {
@@ -268,13 +280,41 @@ export function SiretLookup({
         </div>
       )}
 
+      {/* ALERTE RISQUE BODACC */}
+      {showPreview && fields && (fields._bodacc_risk_level === 'critical' || fields._bodacc_risk_level === 'high' || fields._risk_level === 'critical' || fields._risk_level === 'high') && (
+        <div className={`siret-lookup__risk-alert siret-lookup__risk-alert--${fields._bodacc_risk_level || fields._risk_level}`}>
+          <div className="siret-lookup__risk-icon">
+            {(fields._bodacc_risk_level === 'critical' || fields._risk_level === 'critical') ? '⛔' : '⚠️'}
+          </div>
+          <div className="siret-lookup__risk-content">
+            <div className="siret-lookup__risk-title">
+              {(fields._bodacc_risk_level === 'critical' || fields._risk_level === 'critical')
+                ? 'RISQUE CRITIQUE - Ne pas travailler avec cette entreprise'
+                : 'RISQUE ELEVE - Vigilance requise'}
+            </div>
+            <div className="siret-lookup__risk-reason">
+              {fields._bodacc_risk_reason || fields._risk_reason || 'Alerte BODACC detectee'}
+            </div>
+            {fields._bodacc_critical_alerts && fields._bodacc_critical_alerts.length > 0 && (
+              <div className="siret-lookup__risk-details">
+                {fields._bodacc_critical_alerts.map((alert: any, idx: number) => (
+                  <div key={idx} className="siret-lookup__risk-detail">
+                    • {alert.type} ({alert.date})
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Preview Panel */}
       {showPreview && fields && (
         <div className="siret-lookup__preview">
           <div className="siret-lookup__preview-header">
             <span>Donnees trouvees</span>
             <span className="siret-lookup__preview-source">
-              Source: INSEE
+              Source: INSEE + BODACC
             </span>
           </div>
 
@@ -306,6 +346,15 @@ export function SiretLookup({
               <div className="siret-lookup__preview-field">
                 <label>Code NAF</label>
                 <span>{fields.naf_code} - {fields.naf_label}</span>
+              </div>
+            )}
+            {/* Score de risque */}
+            {(fields._bodacc_risk_level || fields._risk_level) && (
+              <div className="siret-lookup__preview-field">
+                <label>Score risque</label>
+                <span className={`siret-lookup__risk-badge siret-lookup__risk-badge--${fields._bodacc_risk_level || fields._risk_level}`}>
+                  {fields._bodacc_risk_label || fields._risk_label || (fields._bodacc_risk_level || fields._risk_level)}
+                </span>
               </div>
             )}
           </div>
@@ -522,6 +571,94 @@ export function SiretLookup({
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        /* Risk Alert Styles */
+        .siret-lookup__risk-alert {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 0.5rem;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          animation: pulse-alert 2s infinite;
+        }
+
+        .siret-lookup__risk-alert--critical {
+          background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+          border: 2px solid #ef4444;
+        }
+
+        .siret-lookup__risk-alert--high {
+          background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+          border: 2px solid #f59e0b;
+        }
+
+        .siret-lookup__risk-icon {
+          font-size: 1.5rem;
+          flex-shrink: 0;
+        }
+
+        .siret-lookup__risk-content {
+          flex: 1;
+        }
+
+        .siret-lookup__risk-title {
+          font-weight: 700;
+          font-size: 0.875rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .siret-lookup__risk-alert--critical .siret-lookup__risk-title {
+          color: #dc2626;
+        }
+
+        .siret-lookup__risk-alert--high .siret-lookup__risk-title {
+          color: #d97706;
+        }
+
+        .siret-lookup__risk-reason {
+          font-size: 0.875rem;
+          color: #374151;
+          font-weight: 500;
+        }
+
+        .siret-lookup__risk-details {
+          margin-top: 0.5rem;
+          font-size: 0.75rem;
+          color: #6b7280;
+        }
+
+        .siret-lookup__risk-detail {
+          margin-top: 0.125rem;
+        }
+
+        .siret-lookup__risk-badge {
+          display: inline-block;
+          padding: 0.125rem 0.5rem;
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .siret-lookup__risk-badge--critical {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        .siret-lookup__risk-badge--high {
+          background: #fef3c7;
+          color: #d97706;
+        }
+
+        .siret-lookup__risk-badge--none,
+        .siret-lookup__risk-badge--low {
+          background: #d1fae5;
+          color: #059669;
+        }
+
+        @keyframes pulse-alert {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.85; }
         }
       `}</style>
     </div>

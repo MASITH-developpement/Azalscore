@@ -5,30 +5,22 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button } from '@ui/actions';
-import { Select } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   List, Users, DollarSign, TrendingDown, Gift, PlusCircle,
   ArrowLeft, Info, Package, Receipt, FileText, History, Sparkles,
   AlertCircle
 } from 'lucide-react';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn } from '@/types';
 
 // Import types
-import type {
-  Plan, Subscription, SubscriptionInvoice, SubscriptionStats,
-  SubscriptionStatus
-} from './types';
-import {
-  INTERVALS, SUBSCRIPTION_STATUS, INVOICE_STATUS,
-  SUBSCRIPTION_STATUS_CONFIG, INTERVAL_CONFIG,
-  getDaysUntilRenewal, willCancel, getPaidInvoicesCount
-} from './types';
 import { formatCurrency, formatDate, formatPercent } from '@/utils/formatters';
 
 // Import tab components
@@ -40,6 +32,15 @@ import {
   SubscriptionHistoryTab,
   SubscriptionIATab
 } from './components';
+import {
+  INTERVALS, SUBSCRIPTION_STATUS, INVOICE_STATUS,
+  SUBSCRIPTION_STATUS_CONFIG, INTERVAL_CONFIG,
+  getDaysUntilRenewal, willCancel, getPaidInvoicesCount
+} from './types';
+import type {
+  Plan, Subscription, SubscriptionInvoice, SubscriptionStats,
+  SubscriptionStatus
+} from './types';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -87,7 +88,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 // Navigation inter-modules
-const navigateTo = (view: string, params?: Record<string, any>) => {
+const _navigateTo = (view: string, params?: Record<string, any>) => {
   window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
 };
 
@@ -99,19 +100,19 @@ const useSubscriptionStats = () => {
   return useQuery({
     queryKey: ['subscriptions', 'stats'],
     queryFn: async () => {
-      return api.get<SubscriptionStats>('/v2/subscriptions/stats').then(r => r.data);
+      return api.get<SubscriptionStats>('/subscriptions/stats').then(r => r.data);
     }
   });
 };
 
 const usePlans = (filters?: { is_active?: boolean }) => {
   return useQuery({
-    queryKey: ['subscriptions', 'plans', filters],
+    queryKey: ['subscriptions', 'plans', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
       const queryString = params.toString();
-      const url = queryString ? `/v2/subscriptions/plans?${queryString}` : '/v2/subscriptions/plans';
+      const url = queryString ? `/subscriptions/plans?${queryString}` : '/subscriptions/plans';
       return api.get<Plan[]>(url).then(r => r.data);
     }
   });
@@ -119,13 +120,13 @@ const usePlans = (filters?: { is_active?: boolean }) => {
 
 const useSubscriptions = (filters?: { status?: string; plan_id?: string }) => {
   return useQuery({
-    queryKey: ['subscriptions', 'list', filters],
+    queryKey: ['subscriptions', 'list', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.plan_id) params.append('plan_id', filters.plan_id);
       const queryString = params.toString();
-      const url = queryString ? `/v2/subscriptions?${queryString}` : '/v2/subscriptions';
+      const url = queryString ? `/subscriptions?${queryString}` : '/subscriptions';
       return api.get<Subscription[]>(url).then(r => r.data);
     }
   });
@@ -135,7 +136,7 @@ const useSubscription = (id: string) => {
   return useQuery({
     queryKey: ['subscriptions', 'detail', id],
     queryFn: async () => {
-      return api.get<Subscription>(`/v2/subscriptions/${id}`).then(r => r.data);
+      return api.get<Subscription>(`/subscriptions/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -143,12 +144,12 @@ const useSubscription = (id: string) => {
 
 const useInvoices = (filters?: { status?: string }) => {
   return useQuery({
-    queryKey: ['subscriptions', 'invoices', filters],
+    queryKey: ['subscriptions', 'invoices', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v2/subscriptions/invoices?${queryString}` : '/v2/subscriptions/invoices';
+      const url = queryString ? `/subscriptions/invoices?${queryString}` : '/subscriptions/invoices';
       return api.get<SubscriptionInvoice[]>(url).then(r => r.data);
     }
   });
@@ -158,7 +159,7 @@ const useCancelSubscription = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, immediately }: { id: string; immediately?: boolean }) => {
-      return api.post<void>(`/v2/subscriptions/${id}/cancel`, { immediately }).then(r => r.data);
+      return api.post<void>(`/subscriptions/${id}/cancel`, { immediately }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
@@ -357,8 +358,8 @@ const PlansView: React.FC = () => {
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
     )},
-    { id: 'actions', header: 'Actions', accessor: 'id', render: () => (
-      <Button size="sm" variant="secondary">Modifier</Button>
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
+      <Button size="sm" variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:edit', { detail: { module: 'subscriptions', type: 'plan', id: (row as Plan).id } })); }}>Modifier</Button>
     )}
   ];
 
@@ -375,10 +376,10 @@ const PlansView: React.FC = () => {
             />
             Afficher inactifs
           </label>
-          <Button>Nouveau plan</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'subscriptions', type: 'plan' } })); }}>Nouveau plan</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={plans} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={plans} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -459,7 +460,7 @@ const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({ onViewSubscriptio
           />
         </div>
       </div>
-      <DataTable columns={columns} data={subscriptions} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={subscriptions} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -483,10 +484,10 @@ const InvoicesView: React.FC = () => {
     }},
     { id: 'due_date', header: 'Echeance', accessor: 'due_date', render: (v) => formatDate(v as string) },
     { id: 'paid_at', header: 'Payee le', accessor: 'paid_at', render: (v) => (v as string) ? formatDate(v as string) : '-' },
-    { id: 'actions', header: 'Actions', accessor: 'id', render: () => (
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
       <div className="flex gap-1">
-        <Button size="sm" variant="secondary">Voir</Button>
-        <Button size="sm" variant="secondary">PDF</Button>
+        <Button size="sm" variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'subscriptions', type: 'invoice', id: (row as SubscriptionInvoice).id } })); }}>Voir</Button>
+        <Button size="sm" variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:download', { detail: { module: 'subscriptions', type: 'invoice-pdf', id: (row as SubscriptionInvoice).id } })); }}>PDF</Button>
       </div>
     )}
   ];
@@ -502,7 +503,7 @@ const InvoicesView: React.FC = () => {
           className="w-36"
         />
       </div>
-      <DataTable columns={columns} data={invoices} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={invoices} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };

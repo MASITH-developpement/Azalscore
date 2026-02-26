@@ -1,0 +1,103 @@
+{
+  "module_id": "azalscore.finance.budget_control",
+  "version": "1.0.0",
+  "description": "Workflow de controle budgetaire avec alertes de depassement",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_budget_data",
+      "use": "azalscore.calculations.finance.get_budget_amounts@1.0.0",
+      "inputs": {
+        "budget_id": "{{context.budget_id}}",
+        "period": "{{context.period}}",
+        "cost_centers": "{{context.cost_centers}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "get_actual_spending",
+      "use": "azalscore.calculations.finance.get_actual_spending@1.0.0",
+      "inputs": {
+        "accounts": "{{get_budget_data.expense_accounts}}",
+        "cost_centers": "{{context.cost_centers}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_variance",
+      "use": "azalscore.calculations.finance.calculate_budget_variance@1.0.0",
+      "inputs": {
+        "budgeted": "{{get_budget_data.amounts}}",
+        "actual": "{{get_actual_spending.amounts}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "check_thresholds",
+      "use": "azalscore.validators.finance.check_budget_thresholds@1.0.0",
+      "inputs": {
+        "variances": "{{calculate_variance.by_account}}",
+        "warning_threshold": 80,
+        "critical_threshold": 100
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "send_warning_alerts",
+      "condition": "{{check_thresholds.has_warnings}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "budget_warning",
+        "severity": "warning",
+        "title": "Alerte budget - Seuil 80% atteint",
+        "message": "{{check_thresholds.warning_count}} postes ont depasse 80% du budget",
+        "data": "{{check_thresholds.warning_details}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    },
+    {
+      "id": "send_critical_alerts",
+      "condition": "{{check_thresholds.has_critical}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "budget_exceeded",
+        "severity": "critical",
+        "title": "ALERTE - Budget depasse",
+        "message": "{{check_thresholds.critical_count}} postes ont depasse le budget",
+        "data": "{{check_thresholds.critical_details}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_budget_report",
+      "use": "azalscore.generators.documents.generate_budget_report@1.0.0",
+      "inputs": {
+        "budget_id": "{{context.budget_id}}",
+        "period": "{{context.period}}",
+        "budgeted": "{{get_budget_data}}",
+        "actual": "{{get_actual_spending}}",
+        "variance": "{{calculate_variance}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "total_budgeted": "{{get_budget_data.total}}",
+    "total_actual": "{{get_actual_spending.total}}",
+    "total_variance": "{{calculate_variance.total_variance}}",
+    "variance_percent": "{{calculate_variance.variance_percent}}",
+    "warnings_count": "{{check_thresholds.warning_count}}",
+    "critical_count": "{{check_thresholds.critical_count}}",
+    "report_url": "{{generate_budget_report.url}}"
+  }
+}

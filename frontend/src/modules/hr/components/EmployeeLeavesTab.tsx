@@ -5,18 +5,18 @@
 
 import React from 'react';
 import {
-  Calendar, Clock, CheckCircle, XCircle, AlertCircle,
+  Calendar, Clock, CheckCircle,
   Sun, Thermometer, Baby, CalendarDays
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Employee, LeaveRequest, LeaveBalance, LeaveType } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   LEAVE_TYPE_CONFIG, LEAVE_STATUS_CONFIG,
   getRemainingLeave, getTotalRemainingLeave, getPendingLeaveRequests
 } from '../types';
-import { formatDate } from '@/utils/formatters';
+import type { Employee, LeaveRequest, LeaveBalance } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * EmployeeLeavesTab - Conges et absences
@@ -140,7 +140,7 @@ export const EmployeeLeavesTab: React.FC<TabContentProps<Employee>> = ({ data: e
 
       {/* Actions */}
       <div className="azals-std-tab-actions mt-4">
-        <Button variant="primary" leftIcon={<Calendar size={16} />}>
+        <Button variant="primary" leftIcon={<Calendar size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createLeaveRequest', employeeId: employee.id } })); }}>
           Nouvelle demande de conge
         </Button>
       </div>
@@ -239,8 +239,8 @@ const LeaveRequestItem: React.FC<LeaveRequestItemProps> = ({ request, showAction
       )}
       {showActions && request.status === 'PENDING' && (
         <div className="azals-leave-request-item__actions mt-2">
-          <Button size="sm" variant="ghost">Modifier</Button>
-          <Button size="sm" variant="danger">Annuler</Button>
+          <Button size="sm" variant="ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editLeaveRequest', requestId: request.id } })); }}>Modifier</Button>
+          <Button size="sm" variant="danger" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'cancelLeaveRequest', requestId: request.id } })); }}>Annuler</Button>
         </div>
       )}
     </div>

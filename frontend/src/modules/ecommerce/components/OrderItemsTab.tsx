@@ -6,9 +6,9 @@
 import React from 'react';
 import { Package, Percent, Calculator } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Order, OrderItem } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import type { Order, OrderItem } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderItemsTab - Articles commandes
@@ -82,19 +82,19 @@ export const OrderItemsTab: React.FC<TabContentProps<Order>> = ({ data: order })
       <Card title="Resume financier" icon={<Calculator size={18} />} className="mt-4">
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Articles</label>
+            <span className="azals-field__label">Articles</span>
             <div className="azals-field__value text-lg font-medium">
               {order.items.reduce((sum, item) => sum + item.quantity, 0)} articles
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Sous-total</label>
+            <span className="azals-field__label">Sous-total</span>
             <div className="azals-field__value text-lg font-medium">
               {formatCurrency(order.subtotal, order.currency)}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Total TTC</label>
+            <span className="azals-field__label">Total TTC</span>
             <div className="azals-field__value text-lg font-bold text-primary">
               {formatCurrency(order.total, order.currency)}
             </div>
@@ -106,30 +106,30 @@ export const OrderItemsTab: React.FC<TabContentProps<Order>> = ({ data: order })
           <Grid cols={4} gap="md">
             {order.discount > 0 && (
               <div className="azals-field">
-                <label className="azals-field__label">
+                <span className="azals-field__label">
                   <Percent size={14} className="inline mr-1" />
                   Remise
-                </label>
+                </span>
                 <div className="azals-field__value text-green-600">
                   -{formatCurrency(order.discount, order.currency)}
                 </div>
               </div>
             )}
             <div className="azals-field">
-              <label className="azals-field__label">Livraison</label>
+              <span className="azals-field__label">Livraison</span>
               <div className="azals-field__value">
                 {formatCurrency(order.shipping_cost, order.currency)}
               </div>
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">TVA</label>
+              <span className="azals-field__label">TVA</span>
               <div className="azals-field__value">
                 {formatCurrency(order.tax, order.currency)}
               </div>
             </div>
             {order.shipping_method && (
               <div className="azals-field">
-                <label className="azals-field__label">Mode livraison</label>
+                <span className="azals-field__label">Mode livraison</span>
                 <div className="azals-field__value">{order.shipping_method}</div>
               </div>
             )}

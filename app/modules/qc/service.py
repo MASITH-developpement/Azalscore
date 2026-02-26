@@ -4,12 +4,14 @@ AZALS MODULE T4 - Service Contrôle Qualité Central
 
 Service principal pour le contrôle qualité.
 """
+from __future__ import annotations
+
 
 import json
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import desc, or_
+from sqlalchemy import Integer, case, desc, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.query_optimizer import QueryOptimizer
@@ -769,75 +771,92 @@ class QCService:
         """Enregistre les métriques QC actuelles."""
         now = datetime.utcnow()
 
-        # Statistiques modules
-        modules = self.db.query(ModuleRegistry).filter(
-            ModuleRegistry.tenant_id == self.tenant_id
-        ).all()
+        # Statistiques modules via SQL (optimisé)
+        base_filter = ModuleRegistry.tenant_id == self.tenant_id
+
+        # Comptages par statut en une seule requête
+        status_counts = self.db.query(
+            ModuleRegistry.status,
+            func.count(ModuleRegistry.id)
+        ).filter(base_filter).group_by(ModuleRegistry.status).all()
+
+        counts_dict = {status: count for status, count in status_counts}
+        modules_total = sum(counts_dict.values())
 
         metric = QCMetric(
             tenant_id=self.tenant_id,
             module_id=module_id,
             metric_date=now,
-            modules_total=len(modules),
-            modules_validated=len([m for m in modules if m.status == ModuleStatus.QC_PASSED]),
-            modules_production=len([m for m in modules if m.status == ModuleStatus.PRODUCTION]),
-            modules_failed=len([m for m in modules if m.status == ModuleStatus.QC_FAILED])
+            modules_total=modules_total,
+            modules_validated=counts_dict.get(ModuleStatus.QC_PASSED, 0),
+            modules_production=counts_dict.get(ModuleStatus.PRODUCTION, 0),
+            modules_failed=counts_dict.get(ModuleStatus.QC_FAILED, 0)
         )
 
-        # Scores moyens
-        if modules:
-            scores = [m.overall_score for m in modules if m.overall_score]
-            if scores:
-                metric.avg_overall_score = sum(scores) / len(scores)
+        # Scores moyens via SQL (une seule requête)
+        if modules_total > 0:
+            avg_scores = self.db.query(
+                func.avg(ModuleRegistry.overall_score),
+                func.avg(ModuleRegistry.architecture_score),
+                func.avg(ModuleRegistry.security_score),
+                func.avg(ModuleRegistry.performance_score),
+                func.avg(ModuleRegistry.code_quality_score),
+                func.avg(ModuleRegistry.testing_score),
+                func.avg(ModuleRegistry.documentation_score)
+            ).filter(base_filter).first()
 
-            arch_scores = [m.architecture_score for m in modules if m.architecture_score]
-            if arch_scores:
-                metric.avg_architecture_score = sum(arch_scores) / len(arch_scores)
+            if avg_scores:
+                metric.avg_overall_score = float(avg_scores[0]) if avg_scores[0] else None
+                metric.avg_architecture_score = float(avg_scores[1]) if avg_scores[1] else None
+                metric.avg_security_score = float(avg_scores[2]) if avg_scores[2] else None
+                metric.avg_performance_score = float(avg_scores[3]) if avg_scores[3] else None
+                metric.avg_code_quality_score = float(avg_scores[4]) if avg_scores[4] else None
+                metric.avg_testing_score = float(avg_scores[5]) if avg_scores[5] else None
+                metric.avg_documentation_score = float(avg_scores[6]) if avg_scores[6] else None
 
-            sec_scores = [m.security_score for m in modules if m.security_score]
-            if sec_scores:
-                metric.avg_security_score = sum(sec_scores) / len(sec_scores)
-
-            perf_scores = [m.performance_score for m in modules if m.performance_score]
-            if perf_scores:
-                metric.avg_performance_score = sum(perf_scores) / len(perf_scores)
-
-            code_scores = [m.code_quality_score for m in modules if m.code_quality_score]
-            if code_scores:
-                metric.avg_code_quality_score = sum(code_scores) / len(code_scores)
-
-            test_scores = [m.testing_score for m in modules if m.testing_score]
-            if test_scores:
-                metric.avg_testing_score = sum(test_scores) / len(test_scores)
-
-            doc_scores = [m.documentation_score for m in modules if m.documentation_score]
-            if doc_scores:
-                metric.avg_documentation_score = sum(doc_scores) / len(doc_scores)
-
-        # Statistiques tests (dernières 24h)
+        # Statistiques tests (dernières 24h) via SQL
         yesterday = now - timedelta(days=1)
-        test_runs = self.db.query(TestRun).filter(
+        test_stats = self.db.query(
+            func.sum(TestRun.total_tests),
+            func.sum(TestRun.passed_tests),
+            func.avg(TestRun.coverage_percent)
+        ).filter(
             TestRun.tenant_id == self.tenant_id,
             TestRun.started_at >= yesterday
-        ).all()
+        ).first()
 
-        if test_runs:
-            metric.total_tests_run = sum(r.total_tests for r in test_runs)
-            metric.total_tests_passed = sum(r.passed_tests for r in test_runs)
-            coverages = [r.coverage_percent for r in test_runs if r.coverage_percent]
-            if coverages:
-                metric.avg_coverage = sum(coverages) / len(coverages)
+        if test_stats and test_stats[0]:
+            metric.total_tests_run = int(test_stats[0]) if test_stats[0] else 0
+            metric.total_tests_passed = int(test_stats[1]) if test_stats[1] else 0
+            metric.avg_coverage = float(test_stats[2]) if test_stats[2] else None
 
-        # Issues
-        checks = self.db.query(QCCheckResult).filter(
+        # Issues via SQL (comptage groupé)
+        check_filter = [
             QCCheckResult.tenant_id == self.tenant_id,
             QCCheckResult.executed_at >= yesterday
-        ).all()
+        ]
 
-        metric.total_checks_run = len(checks)
-        metric.total_checks_passed = len([c for c in checks if c.status == QCCheckStatus.PASSED])
-        metric.critical_issues = len([c for c in checks if c.severity == QCRuleSeverity.CRITICAL and c.status == QCCheckStatus.FAILED])
-        metric.blocker_issues = len([c for c in checks if c.severity == QCRuleSeverity.BLOCKER and c.status == QCCheckStatus.FAILED])
+        # Total checks et passed en une requête
+        check_counts = self.db.query(
+            func.count(QCCheckResult.id),
+            func.sum(case((QCCheckResult.status == QCCheckStatus.PASSED, 1), else_=0))
+        ).filter(*check_filter).first()
+
+        metric.total_checks_run = check_counts[0] if check_counts[0] else 0
+        metric.total_checks_passed = int(check_counts[1]) if check_counts[1] else 0
+
+        # Critical et blocker issues
+        issue_counts = self.db.query(
+            QCCheckResult.severity,
+            func.count(QCCheckResult.id)
+        ).filter(
+            *check_filter,
+            QCCheckResult.status == QCCheckStatus.FAILED
+        ).group_by(QCCheckResult.severity).all()
+
+        issue_dict = {sev: cnt for sev, cnt in issue_counts}
+        metric.critical_issues = issue_dict.get(QCRuleSeverity.CRITICAL, 0)
+        metric.blocker_issues = issue_dict.get(QCRuleSeverity.BLOCKER, 0)
 
         # Tendance (comparer avec métrique précédente)
         prev_metric = self.db.query(QCMetric).filter(

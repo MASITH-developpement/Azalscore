@@ -5,6 +5,8 @@ AZALS MODULE M1 - Service Commercial
 Service pour le CRM et la gestion commerciale.
 """
 
+from __future__ import annotations
+
 import csv
 import io
 import logging
@@ -643,7 +645,8 @@ class CommercialService:
         quote = self.get_document(quote_id)
         if not quote or quote.type != DocumentType.QUOTE:
             return None
-        if quote.status not in [DocumentStatus.SENT, DocumentStatus.ACCEPTED]:
+        # Accepter DRAFT, VALIDATED, SENT ou ACCEPTED pour conversion
+        if quote.status not in [DocumentStatus.DRAFT, DocumentStatus.VALIDATED, DocumentStatus.SENT, DocumentStatus.ACCEPTED]:
             return None
 
         # Marquer le devis comme accepté
@@ -795,8 +798,9 @@ class CommercialService:
         if not document or document.status != DocumentStatus.DRAFT:
             return None
 
-        # Numéro de ligne
+        # Numéro de ligne (avec isolation tenant)
         max_line = self.db.query(func.max(DocumentLine.line_number)).filter(
+            DocumentLine.tenant_id == self.tenant_id,
             DocumentLine.document_id == document_id
         ).scalar() or 0
 
@@ -1011,10 +1015,17 @@ class CommercialService:
         return product
 
     def get_product(self, product_id: UUID) -> CatalogProduct | None:
-        """Récupérer un produit."""
+        """Récupérer un produit par ID."""
         return self.db.query(CatalogProduct).filter(
             CatalogProduct.tenant_id == self.tenant_id,
             CatalogProduct.id == product_id
+        ).first()
+
+    def get_product_by_code(self, code: str) -> CatalogProduct | None:
+        """Récupérer un produit par code (isolé par tenant)."""
+        return self.db.query(CatalogProduct).filter(
+            CatalogProduct.tenant_id == self.tenant_id,
+            CatalogProduct.code == code
         ).first()
 
     def list_products(

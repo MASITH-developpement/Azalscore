@@ -3,6 +3,8 @@ AZALS - Module Marketplace - Router
 ===================================
 Endpoints API pour le site marchand.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -154,21 +156,54 @@ def provision_tenant(
 
 @router.post("/webhooks/stripe")
 async def stripe_webhook(request: Request, service = Depends(get_service)):
-    """Webhook Stripe pour les événements de paiement."""
-    payload = await request.json()
+    """
+    Webhook Stripe pour les événements de paiement.
+
+    SÉCURITÉ: Vérifie la signature Stripe AVANT tout traitement.
+    """
+    import json
+    import os
+
+    payload = await request.body()
     signature = request.headers.get("stripe-signature")
 
-    event_id = payload.get("id")
-    event_type = payload.get("type")
+    # SÉCURITÉ: Signature obligatoire
+    if not signature:
+        raise HTTPException(status_code=400, detail="Missing Stripe-Signature header")
+
+    # SÉCURITÉ: Vérifier la signature Stripe
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    if webhook_secret:
+        try:
+            import stripe
+            event = stripe.Webhook.construct_event(payload, signature, webhook_secret)
+        except stripe.error.SignatureVerificationError:
+            raise HTTPException(status_code=400, detail="Invalid signature")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Webhook verification failed")
+    else:
+        # En développement sans secret, parser mais logger un warning
+        import logging
+        logging.getLogger(__name__).warning(
+            "[WEBHOOK] STRIPE_WEBHOOK_SECRET not configured - signature not verified"
+        )
+        try:
+            event = json.loads(payload)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    event_id = event.get("id")
+    event_type = event.get("type")
 
     if not event_id or not event_type:
         raise HTTPException(status_code=400, detail="Payload invalide")
 
     try:
-        service.process_stripe_webhook(event_id, event_type, payload, signature)
+        service.process_stripe_webhook(event_id, event_type, dict(event), signature)
         return {"received": True}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        # SÉCURITÉ: Ne pas exposer les détails d'erreur
+        raise HTTPException(status_code=400, detail="Webhook processing failed")
 
 
 # ============================================================================

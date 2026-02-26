@@ -104,36 +104,48 @@ def _load_core_models() -> None:
 
 def _load_module_models() -> None:
     """
-    Charge dynamiquement TOUS les sous-modules de app.modules.
-    Utilise pkgutil.walk_packages pour decouverte recursive.
+    Charge dynamiquement les modules models.py de app.modules.
+
+    IMPORTANT: Utilise glob pour trouver les fichiers models.py
+    sans declencher l'import des packages __init__.py.
+    Cela evite les erreurs de double definition SQLAlchemy.
     """
     global _loaded_modules
+    import os
+    import sys
 
     try:
         import app.modules
-    except ImportError as e:
+        modules_path = app.modules.__path__[0]
+    except (ImportError, IndexError) as e:
         logger.error("[MODEL_LOADER] Package app.modules introuvable: %s", e)
         return
 
-    # Parcourir recursivement tous les sous-modules
-    for _importer, module_name, _is_pkg in pkgutil.walk_packages(
-        path=app.modules.__path__,
-        prefix=app.modules.__name__ + "."
-    ):
-        # Ne charger que les modules models.py pour optimisation
-        # Mais aussi charger les packages pour les FK cross-module
+    # Scanner les fichiers models.py avec os.walk (pas d'import automatique)
+    models_to_load = []
+    for root, _dirs, files in os.walk(modules_path):
+        if 'models.py' in files:
+            # Convertir le chemin en nom de module
+            rel_path = os.path.relpath(root, os.path.dirname(modules_path))
+            module_name = rel_path.replace(os.sep, '.') + '.models'
+            models_to_load.append(module_name)
+
+    # Charger chaque module models.py
+    for module_name in sorted(models_to_load):
         if module_name in _loaded_modules:
+            continue
+
+        # Verifier si deja charge via sys.modules
+        if module_name in sys.modules:
+            _loaded_modules.add(module_name)
             continue
 
         try:
             importlib.import_module(module_name)
             _loaded_modules.add(module_name)
-
-            if module_name.endswith('.models'):
-                logger.debug("[MODEL_LOADER] Modeles charges: %s", module_name)
+            logger.debug("[MODEL_LOADER] Modeles charges: %s", module_name)
 
         except ImportError as e:
-            # Log mais ne pas bloquer - certains modules peuvent avoir des deps optionnelles
             logger.warning("[MODEL_LOADER] Skip %s: %s", module_name, e)
         except Exception as e:
             logger.error("[MODEL_LOADER] Erreur %s: %s", module_name, e)

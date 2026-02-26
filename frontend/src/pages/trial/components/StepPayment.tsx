@@ -5,6 +5,13 @@
 
 import React, { useEffect, useState } from 'react';
 import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
+import { loadStripe, type Stripe } from '@stripe/stripe-js';
+import {
   ArrowLeft,
   CreditCard,
   Shield,
@@ -13,17 +20,9 @@ import {
   Loader2,
   Check,
   Clock,
-} from 'lucide-react';
-import { loadStripe, type Stripe } from '@stripe/stripe-js';
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js';
+ Gift } from 'lucide-react';
 import { usePaymentSetup, useCompleteRegistration, useApplyPromoCode } from '../api';
 import type { TrialCompleteResponse } from '../types';
-import { Gift } from 'lucide-react';
 
 // Stripe appearance customization
 const stripeAppearance = {

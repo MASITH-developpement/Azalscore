@@ -12,6 +12,8 @@ RÈGLES:
 - Déclenchée par événement uniquement
 - Arrêt obligatoire après chaque intervention
 """
+from __future__ import annotations
+
 
 import hashlib
 import traceback

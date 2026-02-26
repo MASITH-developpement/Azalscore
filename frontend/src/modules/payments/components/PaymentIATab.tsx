@@ -7,19 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, RefreshCw, Shield, RotateCcw, Clock } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Payment } from '../types';
-import { formatCurrency } from '@/utils/formatters';
-import {
-  getPaymentAgeDays,
-  isPaymentPending, isPaymentCompleted, isPaymentFailed,
-  canRefund, canRetry, hasPartialRefund, hasFullRefund,
-  getRefundTotal, getNetAmount,
-  PAYMENT_STATUS_CONFIG
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -28,6 +15,19 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  getPaymentAgeDays,
+  isPaymentPending, isPaymentCompleted, isPaymentFailed,
+  canRefund, canRetry, hasPartialRefund, hasFullRefund,
+  getRefundTotal, getNetAmount,
+  PAYMENT_STATUS_CONFIG
+} from '../types';
+import type { Payment } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * PaymentIATab - Assistant IA

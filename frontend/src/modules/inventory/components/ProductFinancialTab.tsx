@@ -5,17 +5,17 @@
 
 import React from 'react';
 import {
-  Euro, TrendingUp, TrendingDown, Package,
+  Euro, TrendingUp, Package,
   Calculator, PieChart, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product, Movement } from '../types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   formatQuantity,
   MOVEMENT_TYPE_CONFIG, getStockValue
 } from '../types';
+import type { Product } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductFinancialTab - Données financières de l'article
@@ -45,7 +45,7 @@ export const ProductFinancialTab: React.FC<TabContentProps<Product>> = ({ data: 
             <Euro size={24} />
           </div>
           <div className="azals-kpi-card__content">
-            <span className="azals-kpi-card__label">Prix d'achat</span>
+            <span className="azals-kpi-card__label">Prix d&apos;achat</span>
             <span className="azals-kpi-card__value">{formatCurrency(product.cost_price)}</span>
           </div>
         </Card>
@@ -86,21 +86,21 @@ export const ProductFinancialTab: React.FC<TabContentProps<Product>> = ({ data: 
         <Card title="Détail des prix" icon={<Calculator size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Prix d'achat HT</label>
+              <span className="azals-std-field__label">Prix d&apos;achat HT</span>
               <div className="azals-std-field__value">{formatCurrency(product.cost_price)}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Prix de vente HT</label>
+              <span className="azals-std-field__label">Prix de vente HT</span>
               <div className="azals-std-field__value">{formatCurrency(product.sale_price)}</div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Marge brute</label>
+              <span className="azals-std-field__label">Marge brute</span>
               <div className={`azals-std-field__value font-medium ${margin >= 0 ? 'text-success' : 'text-danger'}`}>
                 {formatCurrency(margin)}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Taux de marge</label>
+              <span className="azals-std-field__label">Taux de marge</span>
               <div className={`azals-std-field__value font-medium ${marginPercent >= 0 ? 'text-success' : 'text-danger'}`}>
                 {marginPercent.toFixed(2)}%
               </div>
@@ -112,23 +112,23 @@ export const ProductFinancialTab: React.FC<TabContentProps<Product>> = ({ data: 
         <Card title="Valorisation du stock" icon={<PieChart size={18} />}>
           <div className="azals-std-fields-grid">
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Quantité en stock</label>
+              <span className="azals-std-field__label">Quantité en stock</span>
               <div className="azals-std-field__value">
                 {formatQuantity(product.current_stock, product.unit)}
               </div>
             </div>
             <div className="azals-std-field">
-              <label className="azals-std-field__label">Coût unitaire moyen</label>
+              <span className="azals-std-field__label">Coût unitaire moyen</span>
               <div className="azals-std-field__value">{formatCurrency(product.cost_price)}</div>
             </div>
             <div className="azals-std-field azals-std-field--full">
-              <label className="azals-std-field__label">Valeur totale du stock</label>
+              <span className="azals-std-field__label">Valeur totale du stock</span>
               <div className="azals-std-field__value text-lg font-semibold text-primary">
                 {formatCurrency(stockValue)}
               </div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
-              <label className="azals-std-field__label">Valeur au prix de vente</label>
+              <span className="azals-std-field__label">Valeur au prix de vente</span>
               <div className="azals-std-field__value">
                 {formatCurrency(product.current_stock * product.sale_price)}
               </div>

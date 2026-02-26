@@ -9,6 +9,8 @@ Trois vues distinctes:
 - Assistante: Centraliser & organiser (documentaire)
 - Expert-comptable: Contrôler, valider, certifier (exceptions uniquement)
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

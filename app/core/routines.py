@@ -19,6 +19,8 @@ ATTENTION: Ne pas creer de boucles infinies!
 Usage:
     from app.core.routines import require_entity, TenantRepository, handle_service_errors
 """
+from __future__ import annotations
+
 
 import json
 from contextlib import contextmanager

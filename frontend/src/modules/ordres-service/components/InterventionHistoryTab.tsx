@@ -9,10 +9,9 @@ import {
   CheckCircle, Play, Calendar, Camera, X
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention, InterventionHistoryEntry } from '../types';
-import { STATUT_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { Intervention, InterventionHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionHistoryTab - Historique

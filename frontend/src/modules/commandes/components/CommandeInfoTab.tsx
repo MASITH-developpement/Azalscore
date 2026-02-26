@@ -6,13 +6,13 @@
 import React from 'react';
 import {
   Building2, MapPin, FileText, Calendar, User, Truck,
-  Package, Hash, Mail, Phone
+  Package, Hash
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Commande } from '../types';
-import { formatAddress, STATUS_CONFIG } from '../types';
 import { formatDate } from '@/utils/formatters';
+import { STATUS_CONFIG } from '../types';
+import type { Commande } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * CommandeInfoTab - Informations générales de la commande

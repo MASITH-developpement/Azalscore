@@ -7,24 +7,55 @@ import React from 'react';
 import {
   FileText, Download, ExternalLink, Receipt, Mail, Printer
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Payment } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Payment } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PaymentDocumentsTab - Documents
  */
 export const PaymentDocumentsTab: React.FC<TabContentProps<Payment>> = ({ data: payment }) => {
-  const handleDownloadReceipt = () => {
-    // TODO: Implement receipt download
-    console.log('Download receipt for payment:', payment.id);
+  const handleDownloadReceipt = async () => {
+    try {
+      const response = await fetch(`/api/payments/${payment.id}/receipt`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/pdf' }
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recu-${payment.reference}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch {
+      // Fallback: Open print dialog
+      window.print();
+    }
   };
 
-  const handleSendReceipt = () => {
-    // TODO: Implement send receipt by email
-    console.log('Send receipt for payment:', payment.id);
+  const handleSendReceipt = async () => {
+    if (!payment.customer_email) return;
+    try {
+      await fetch(`/api/payments/${payment.id}/send-receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: payment.customer_email })
+      });
+      window.dispatchEvent(new CustomEvent('azals:toast', {
+        detail: { type: 'success', message: 'Reçu envoyé par email' }
+      }));
+    } catch {
+      window.dispatchEvent(new CustomEvent('azals:toast', {
+        detail: { type: 'error', message: 'Erreur lors de l\'envoi' }
+      }));
+    }
   };
 
   const handleViewInvoice = () => {
@@ -110,6 +141,7 @@ export const PaymentDocumentsTab: React.FC<TabContentProps<Payment>> = ({ data: 
                   variant="secondary"
                   leftIcon={<Download size={16} />}
                   className="flex-1"
+                  onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadInvoicePDF', invoiceId: payment.invoice_id } })); }}
                 >
                   Telecharger PDF
                 </Button>
@@ -136,7 +168,7 @@ export const PaymentDocumentsTab: React.FC<TabContentProps<Payment>> = ({ data: 
         <div className="azals-empty azals-empty--sm">
           <FileText size={32} className="text-muted" />
           <p className="text-muted">Aucun document supplementaire</p>
-          <Button variant="ghost" size="sm" className="mt-2">
+          <Button variant="ghost" size="sm" className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addPaymentDocument', paymentId: payment.id } })); }}>
             Ajouter un document
           </Button>
         </div>

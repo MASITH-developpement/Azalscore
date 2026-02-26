@@ -5,6 +5,8 @@ THÉO — Délégateur Principal
 Le délégateur route les intentions vers les adapters appropriés.
 C'est le pont entre l'orchestrateur vocal et les modules métier.
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, List, Optional, Tuple
 import logging

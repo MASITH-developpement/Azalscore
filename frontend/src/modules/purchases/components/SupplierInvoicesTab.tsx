@@ -5,12 +5,12 @@
 
 import React from 'react';
 import { FileText, ExternalLink, AlertTriangle } from 'lucide-react';
-import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Supplier, PurchaseInvoice } from '../types';
-import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
+import { Card } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
+import type { Supplier, PurchaseInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SupplierInvoicesTab - Factures du fournisseur
@@ -37,7 +37,7 @@ export const SupplierInvoicesTab: React.FC<TabContentProps<Supplier & { invoices
         title="Factures"
         icon={<FileText size={18} />}
         actions={
-          <Button variant="secondary" size="sm" leftIcon={<FileText size={14} />}>
+          <Button variant="secondary" size="sm" leftIcon={<FileText size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createInvoice', supplierId: data.id } })); }}>
             Nouvelle facture
           </Button>
         }
@@ -88,7 +88,7 @@ export const SupplierInvoicesTab: React.FC<TabContentProps<Supplier & { invoices
                       {formatCurrency(invoice.total_ttc, invoice.currency)}
                     </td>
                     <td className="text-right">
-                      <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />}>
+                      <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'purchases', type: 'invoice', id: invoice.id } })); }}>
                         Voir
                       </Button>
                     </td>

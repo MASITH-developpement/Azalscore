@@ -9,6 +9,8 @@ AZALS MODULE EMAIL - Router API v2 (CORE SaaS)
 
 API REST pour les emails transactionnels avec file d'attente.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

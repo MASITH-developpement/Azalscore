@@ -11,6 +11,7 @@ Fonctionnalités:
 - Suivi temps et déplacements
 - Gestion des frais
 - Contrats de service
+- Optimisation des tournées (TSP/VRP) - GAP-002
 
 Intégrations AZALS:
 - M1 Commercial (clients)
@@ -23,10 +24,33 @@ Note: Les modèles SQLAlchemy doivent être importés directement depuis
 app.modules.field_service.models pour éviter les conflits de registry.
 """
 
-from .router import router
+from .router_crud import router
 from .service import FieldServiceService
+from .route_optimization import (
+    RouteOptimizationService,
+    TSPSolver,
+    VRPSolver,
+    OptimizationAlgorithm,
+    Location,
+    VehicleConstraints,
+    OptimizedRoute,
+    VRPSolution,
+    haversine_distance,
+    calculate_travel_time,
+)
 
 __all__ = [
     "FieldServiceService",
-    "router"
+    "router",
+    # Route Optimization (GAP-002)
+    "RouteOptimizationService",
+    "TSPSolver",
+    "VRPSolver",
+    "OptimizationAlgorithm",
+    "Location",
+    "VehicleConstraints",
+    "OptimizedRoute",
+    "VRPSolution",
+    "haversine_distance",
+    "calculate_travel_time",
 ]

@@ -9,26 +9,25 @@ import React, { useState } from 'react';
 import {
   TrendingUp, AlertTriangle, ChevronRight, Calendar, FileText
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
-import {
-  isLate, getDaysUntilIntervention,
-  getDurationVariance, canStart, canComplete, canPlan, canValidate, canUnblock
-} from '../types';
-import { formatDate, formatDuration } from '@/utils/formatters';
-import { useAnalyseIA } from '../api';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
   InsightList,
-  SuggestedAction,
   SuggestedActionList,
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatDate, formatDuration } from '@/utils/formatters';
+import { useAnalyseIA } from '../api';
+import {
+  isLate, getDaysUntilIntervention,
+  getDurationVariance, canStart, canComplete, canPlan, canValidate, canUnblock
+} from '../types';
+import type { Intervention } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * InterventionIATab - Assistant IA pour l'intervention

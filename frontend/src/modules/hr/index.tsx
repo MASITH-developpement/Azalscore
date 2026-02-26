@@ -5,35 +5,33 @@
 
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
-import type { TableColumn } from '@/types';
 import {
   Users, Calendar, Clock, AlertTriangle, Plus, Minus, Building, BarChart3,
-  User, FileText, Euro, History, Sparkles, ArrowLeft, Edit, Eye, Briefcase, Trash2
+  User, FileText, History, Sparkles, ArrowLeft, Edit, Eye, Briefcase, Trash2
 } from 'lucide-react';
-
-import type {
-  Department, Position, Employee, LeaveRequest, Timesheet, TimeEntry, HRDashboard
-} from './types';
-import {
-  getFullName, getSeniorityFormatted, getSeniority,
-  CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG, LEAVE_TYPE_CONFIG, LEAVE_STATUS_CONFIG,
-  TIMESHEET_STATUS_CONFIG,
-  isActive, isOnLeave, isContractExpiringSoon, isOnProbation,
-  getRemainingLeave, getTotalRemainingLeave
-} from './types';
+import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { TableColumn, ApiMutationError } from '@/types';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
   EmployeeInfoTab, EmployeeContractTab, EmployeeLeavesTab,
   EmployeeDocsTab, EmployeeHistoryTab, EmployeeIATab
 } from './components';
+import {
+  getFullName, getSeniorityFormatted,
+  CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG,
+  getRemainingLeave, getTotalRemainingLeave
+} from './types';
+import type {
+  Department, Position, Employee, LeaveRequest, TimeEntry, HRDashboard
+} from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -103,7 +101,7 @@ const LEAVE_STATUSES = [
   { value: 'CANCELLED', label: 'Annule', color: 'gray' }
 ];
 
-const TIMESHEET_STATUSES = [
+const _TIMESHEET_STATUSES = [
   { value: 'DRAFT', label: 'Brouillon', color: 'gray' },
   { value: 'SUBMITTED', label: 'Soumis', color: 'blue' },
   { value: 'APPROVED', label: 'Approuve', color: 'green' },
@@ -134,16 +132,16 @@ const useHRDashboard = () => {
   return useQuery<HRDashboard | null, Error>({
     queryKey: ['hr', 'dashboard'],
     queryFn: async (): Promise<HRDashboard | null> => {
-      const response: any = await api.get('/v2/hr/dashboard');
-      console.log('[HR] Dashboard response:', JSON.stringify(response).slice(0, 300));
+      const response = await api.get<HRDashboard | { data: HRDashboard }>('/hr/dashboard');
       // Handle both direct response and wrapped { data: {...} }
-      if (response?.pending_leave_requests !== undefined) {
-        return response as HRDashboard;
+      const res = response as HRDashboard | { data?: HRDashboard; pending_leave_requests?: number };
+      if ('pending_leave_requests' in res && res.pending_leave_requests !== undefined) {
+        return res as HRDashboard;
       }
-      if (response?.data?.pending_leave_requests !== undefined) {
-        return response.data as HRDashboard;
+      if ('data' in res && res.data?.pending_leave_requests !== undefined) {
+        return res.data as HRDashboard;
       }
-      return response || null;
+      return res as HRDashboard || null;
     }
   });
 };
@@ -152,7 +150,7 @@ const useDepartments = () => {
   return useQuery({
     queryKey: ['hr', 'departments'],
     queryFn: async () => {
-      const response = await api.get<{ data: Department[] } | Department[]>('/v2/hr/departments');
+      const response = await api.get<{ data: Department[] } | Department[]>('/hr/departments');
       // Handle both wrapped { data: [...] } and direct [...] responses
       if (Array.isArray(response)) {
         return response;
@@ -169,7 +167,7 @@ const usePositions = () => {
   return useQuery({
     queryKey: ['hr', 'positions'],
     queryFn: async () => {
-      const response = await api.get<{ data: Position[] } | Position[]>('/v2/hr/positions');
+      const response = await api.get<{ data: Position[] } | Position[]>('/hr/positions');
       // Handle both wrapped { data: [...] } and direct [...] responses
       if (Array.isArray(response)) {
         return response;
@@ -184,16 +182,17 @@ const usePositions = () => {
 
 const useEmployees = (filters?: { department_id?: string; status?: string; contract_type?: string }) => {
   return useQuery<Employee[], Error>({
-    queryKey: ['hr', 'employees', filters],
+    queryKey: ['hr', 'employees', serializeFilters(filters)],
     queryFn: async (): Promise<Employee[]> => {
-      const url = buildUrlWithParams('/v2/hr/employees', filters);
-      const response: any = await api.get(url);
+      const url = buildUrlWithParams('/hr/employees', filters);
+      const response = await api.get<{ items?: Employee[]; data?: { items?: Employee[] } }>(url);
+      const res = response as { items?: Employee[]; data?: { items?: Employee[] } };
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
-      if (response?.items) {
-        return response.items as Employee[];
+      if (res?.items) {
+        return res.items;
       }
-      if (response?.data?.items) {
-        return response.data.items as Employee[];
+      if (res?.data?.items) {
+        return res.data.items;
       }
       return [];
     }
@@ -204,12 +203,13 @@ const useEmployee = (id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ['hr', 'employee', id],
     queryFn: async (): Promise<Employee | null> => {
-      const response: any = await api.get(`/v1/hr/employees/${id}`);
-      if (response?.data) {
-        return response.data as Employee;
+      const response = await api.get<Employee | { data: Employee }>(`/hr/employees/${id}`);
+      const res = response as Employee | { data?: Employee; id?: string };
+      if ('data' in res && res.data) {
+        return res.data;
       }
-      if (response?.id) {
-        return response as Employee;
+      if ('id' in res && res.id) {
+        return res as Employee;
       }
       return null;
     },
@@ -219,21 +219,18 @@ const useEmployee = (id: string) => {
 
 const useLeaveRequests = (filters?: { status?: string; type?: string }) => {
   return useQuery<LeaveRequest[], Error>({
-    queryKey: ['hr', 'leave-requests', filters],
+    queryKey: ['hr', 'leave-requests', serializeFilters(filters)],
     queryFn: async (): Promise<LeaveRequest[]> => {
-      const url = buildUrlWithParams('/v2/hr/leave-requests', filters);
-      const response: any = await api.get(url);
-      console.log('[HR] useLeaveRequests response:', JSON.stringify(response).slice(0, 500));
+      const url = buildUrlWithParams('/hr/leave-requests', filters);
+      const response = await api.get<{ items?: LeaveRequest[]; data?: { items?: LeaveRequest[] } }>(url);
+      const res = response as { items?: LeaveRequest[]; data?: { items?: LeaveRequest[] } };
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
-      if (response?.items) {
-        console.log('[HR] Found items directly:', response.items.length);
-        return response.items as LeaveRequest[];
+      if (res?.items) {
+        return res.items;
       }
-      if (response?.data?.items) {
-        console.log('[HR] Found items in data:', response.data.items.length);
-        return response.data.items as LeaveRequest[];
+      if (res?.data?.items) {
+        return res.data.items;
       }
-      console.log('[HR] No items found, returning empty array');
       return [];
     }
   });
@@ -241,9 +238,9 @@ const useLeaveRequests = (filters?: { status?: string; type?: string }) => {
 
 const useTimeEntries = (filters?: { employee_id?: string; from_date?: string; to_date?: string }) => {
   return useQuery({
-    queryKey: ['hr', 'time-entries', filters],
+    queryKey: ['hr', 'time-entries', serializeFilters(filters)],
     queryFn: async () => {
-      const url = buildUrlWithParams('/v2/hr/time-entries', filters);
+      const url = buildUrlWithParams('/hr/time-entries', filters);
       const response = await api.get<TimeEntry[] | { items: TimeEntry[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
@@ -251,7 +248,7 @@ const useTimeEntries = (filters?: { employee_id?: string; from_date?: string; to
 };
 
 // Alias pour compatibilite
-const useTimesheets = useTimeEntries;
+const _useTimesheets = useTimeEntries;
 
 interface TimeEntryCreateData {
   date: string;
@@ -268,7 +265,7 @@ const useCreateTimeEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ employee_id, data }: { employee_id: string; data: TimeEntryCreateData }) => {
-      return api.post<TimeEntry>(`/v2/hr/employees/${employee_id}/time-entries`, data).then(r => r.data);
+      return api.post<TimeEntry>(`/hr/employees/${employee_id}/time-entries`, data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'time-entries'] })
   });
@@ -278,7 +275,7 @@ const useCreateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Employee>) => {
-      return api.post<Employee>('/v2/hr/employees', data).then(r => r.data);
+      return api.post<Employee>('/hr/employees', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -296,7 +293,7 @@ const useCreateLeaveRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: LeaveRequestCreateData) => {
-      const response = await api.post<LeaveRequest>('/v2/hr/leave-requests', data);
+      const response = await api.post<LeaveRequest>('/hr/leave-requests', data);
       // Handle both wrapped and direct response
       return (response as { data?: LeaveRequest }).data || response;
     },
@@ -308,8 +305,9 @@ const useApproveLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response: any = await api.post(`/v2/hr/leave-requests/${id}/approve`);
-      return response?.data || response;
+      const response = await api.post<LeaveRequest | { data: LeaveRequest }>(`/hr/leave-requests/${id}/approve`);
+      const res = response as LeaveRequest | { data?: LeaveRequest };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -319,8 +317,9 @@ const useRejectLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response: any = await api.post(`/v2/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
-      return response?.data || response;
+      const response = await api.post<LeaveRequest | { data: LeaveRequest }>(`/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
+      const res = response as LeaveRequest | { data?: LeaveRequest };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -340,8 +339,9 @@ const useUpdateLeaveRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: LeaveRequestUpdateData }) => {
-      const response: any = await api.put(`/v2/hr/leave-requests/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<LeaveRequest | { data: LeaveRequest }>(`/hr/leave-requests/${id}`, data);
+      const res = response as LeaveRequest | { data?: LeaveRequest };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -487,7 +487,7 @@ const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({ employeeId, onB
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
-      error={(error as any) instanceof Error ? error : error ? new Error(String(error)) : null}
+      error={error ? (error as Error) : null}
       onRetry={() => refetch()}
     />
   );
@@ -537,8 +537,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
     setDeleteError('');
     try {
       await deleteEmployee.mutateAsync(emp.id);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la suppression';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la suppression';
       setDeleteError(msg);
     }
   };
@@ -605,8 +606,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
       await updateEmployee.mutateAsync({ id: editingEmployee.id, data: dataToSubmit as Partial<Employee> });
       setShowEditModal(false);
       setEditingEmployee(null);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la modification';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la modification';
       alert(`Erreur: ${msg}`);
     }
   };
@@ -658,12 +660,13 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
         const select = formRef.current.querySelector<HTMLSelectElement>('select[name="department_id"]');
         if (select) select.value = created.id;
       }
-    } catch (err: any) {
-      const status = err?.response?.status;
+    } catch (err: unknown) {
+      const error = err as ApiMutationError & { response?: { status?: number } };
+      const status = error?.response?.status;
       if (status === 409) {
         setDeptError(`Le code "${newDeptData.code}" existe deja. Choisissez un autre code.`);
       } else {
-        const msg = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Erreur lors de la creation';
+        const msg = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Erreur lors de la creation';
         setDeptError(msg);
       }
     }
@@ -686,12 +689,13 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
         const select = formRef.current.querySelector<HTMLSelectElement>('select[name="position_id"]');
         if (select) select.value = created.id;
       }
-    } catch (err: any) {
-      const status = err?.response?.status;
+    } catch (err: unknown) {
+      const error = err as ApiMutationError & { response?: { status?: number } };
+      const status = error?.response?.status;
       if (status === 409) {
         setPosError(`Le code "${newPosData.code}" existe deja. Choisissez un autre code.`);
       } else {
-        const msg = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Erreur lors de la creation';
+        const msg = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Erreur lors de la creation';
         setPosError(msg);
       }
     }
@@ -768,7 +772,7 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
           {deleteError}
         </div>
       )}
-      <DataTable columns={columns} data={employees} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={employees} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel employe" size="lg">
         <form key={formKey} ref={formRef} onSubmit={handleSubmit}>
@@ -858,7 +862,7 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
               </select>
             </div>
             <div className="azals-field">
-              <label htmlFor="emp-hire-date">Date d'embauche *</label>
+              <label htmlFor="emp-hire-date">Date d&apos;embauche *</label>
               <input
                 id="emp-hire-date"
                 name="hire_date"
@@ -1040,7 +1044,7 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             </Grid>
             <Grid cols={2}>
               <div className="azals-field">
-                <label htmlFor="edit-emp-hire-date">Date d'embauche *</label>
+                <label htmlFor="edit-emp-hire-date">Date d&apos;embauche *</label>
                 <input id="edit-emp-hire-date" name="hire_date" type="date" className="azals-input" defaultValue={editingEmployee.hire_date} required />
               </div>
               <div className="azals-field">
@@ -1109,8 +1113,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             </div>
           )}
           <div className="azals-field">
-            <label>Code</label>
+            <label htmlFor="new-dept-code">Code</label>
             <input
+              id="new-dept-code"
               type="text"
               className="azals-input"
               value={newDeptData.code}
@@ -1119,8 +1124,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             />
           </div>
           <div className="azals-field">
-            <label>Nom</label>
+            <label htmlFor="new-dept-name">Nom</label>
             <input
+              id="new-dept-name"
               type="text"
               className="azals-input"
               value={newDeptData.name}
@@ -1144,8 +1150,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             </div>
           )}
           <div className="azals-field">
-            <label>Code</label>
+            <label htmlFor="new-pos-code">Code</label>
             <input
+              id="new-pos-code"
               type="text"
               className="azals-input"
               value={newPosData.code}
@@ -1154,8 +1161,9 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
             />
           </div>
           <div className="azals-field">
-            <label>Intitule</label>
+            <label htmlFor="new-pos-title">Intitule</label>
             <input
+              id="new-pos-title"
               type="text"
               className="azals-input"
               value={newPosData.title}
@@ -1320,7 +1328,7 @@ const LeaveRequestsView: React.FC = () => {
           <Button onClick={() => setShowModal(true)}>Nouvelle demande</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" error={leaveError instanceof Error ? leaveError : null} onRetry={() => leaveRefetch()} />
+      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" filterable error={leaveError instanceof Error ? leaveError : null} onRetry={() => leaveRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvelle demande de conge">
         <form key={leaveFormKey} ref={leaveFormRef} onSubmit={handleSubmit}>
@@ -1480,7 +1488,7 @@ const useCreateDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Department>) => {
-      return api.post<Department>('/v2/hr/departments', data).then(r => r.data);
+      return api.post<Department>('/hr/departments', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1491,7 +1499,7 @@ const useCreatePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Position>) => {
-      return api.post<Position>('/v2/hr/positions', data).then(r => r.data);
+      return api.post<Position>('/hr/positions', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1502,8 +1510,9 @@ const useUpdateDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Department> }) => {
-      const response: any = await api.put(`/v2/hr/departments/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<Department | { data: Department }>(`/hr/departments/${id}`, data);
+      const res = response as Department | { data?: Department };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1514,8 +1523,9 @@ const useUpdatePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Position> }) => {
-      const response: any = await api.put(`/v2/hr/positions/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<Position | { data: Position }>(`/hr/positions/${id}`, data);
+      const res = response as Position | { data?: Position };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1526,8 +1536,9 @@ const useUpdateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Employee> }) => {
-      const response: any = await api.put(`/v2/hr/employees/${id}`, data);
-      return response?.data || response;
+      const response = await api.put<Employee | { data: Employee }>(`/hr/employees/${id}`, data);
+      const res = response as Employee | { data?: Employee };
+      return ('data' in res && res.data) ? res.data : res;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -1538,7 +1549,7 @@ const useDeleteDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v2/hr/departments/${id}`);
+      return api.delete(`/hr/departments/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1549,7 +1560,7 @@ const useDeletePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v2/hr/positions/${id}`);
+      return api.delete(`/hr/positions/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1560,7 +1571,7 @@ const useDeleteEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v2/hr/employees/${id}`);
+      return api.delete(`/hr/employees/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -1605,8 +1616,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
     <form onSubmit={handleSubmit}>
       <Grid cols={2}>
         <div className="azals-field">
-          <label>Code *</label>
+          <label htmlFor="dept-form-code">Code *</label>
           <input
+            id="dept-form-code"
             type="text"
             className="azals-input"
             value={code}
@@ -1616,8 +1628,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
           />
         </div>
         <div className="azals-field">
-          <label>Nom *</label>
+          <label htmlFor="dept-form-name">Nom *</label>
           <input
+            id="dept-form-name"
             type="text"
             className="azals-input"
             value={name}
@@ -1628,8 +1641,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
         </div>
       </Grid>
       <div className="azals-field">
-        <label>Description</label>
+        <label htmlFor="dept-form-desc">Description</label>
         <textarea
+          id="dept-form-desc"
           className="azals-input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -1655,8 +1669,9 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({ onSubmit, onCancel, isL
           />
         </div>
         <div className="azals-field">
-          <label>Centre de cout</label>
+          <label htmlFor="dept-form-cost-center">Centre de cout</label>
           <input
+            id="dept-form-cost-center"
             type="text"
             className="azals-input"
             value={costCenter}
@@ -1719,8 +1734,9 @@ const DepartmentsView: React.FC = () => {
     setDeleteError('');
     try {
       await deleteDepartment.mutateAsync(dept.id);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la suppression';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la suppression';
       setDeleteError(msg);
     }
   };
@@ -1761,7 +1777,7 @@ const DepartmentsView: React.FC = () => {
           {deleteError}
         </div>
       )}
-      <DataTable columns={columns} data={departments} isLoading={isLoading} keyField="id" error={deptError instanceof Error ? deptError : null} onRetry={() => deptRefetch()} />
+      <DataTable columns={columns} data={departments} isLoading={isLoading} keyField="id" filterable error={deptError instanceof Error ? deptError : null} onRetry={() => deptRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau departement" size="md">
         <DepartmentForm
@@ -1840,8 +1856,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
     <form onSubmit={handleSubmit}>
       <Grid cols={2}>
         <div className="azals-field">
-          <label>Code *</label>
+          <label htmlFor="pos-form-code">Code *</label>
           <input
+            id="pos-form-code"
             type="text"
             className="azals-input"
             value={code}
@@ -1851,8 +1868,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
           />
         </div>
         <div className="azals-field">
-          <label>Intitule du poste *</label>
+          <label htmlFor="pos-form-title">Intitule du poste *</label>
           <input
+            id="pos-form-title"
             type="text"
             className="azals-input"
             value={title}
@@ -1863,8 +1881,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
         </div>
       </Grid>
       <div className="azals-field">
-        <label>Description</label>
+        <label htmlFor="pos-form-desc">Description</label>
         <textarea
+          id="pos-form-desc"
           className="azals-input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -1890,8 +1909,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
           />
         </div>
         <div className="azals-field">
-          <label>Niveau hierarchique</label>
+          <label htmlFor="pos-form-level">Niveau hierarchique</label>
           <input
+            id="pos-form-level"
             type="number"
             className="azals-input"
             value={level}
@@ -1903,8 +1923,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
       </Grid>
       <Grid cols={2}>
         <div className="azals-field">
-          <label>Salaire minimum</label>
+          <label htmlFor="pos-form-min-salary">Salaire minimum</label>
           <input
+            id="pos-form-min-salary"
             type="number"
             className="azals-input"
             value={minSalary}
@@ -1913,8 +1934,9 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
           />
         </div>
         <div className="azals-field">
-          <label>Salaire maximum</label>
+          <label htmlFor="pos-form-max-salary">Salaire maximum</label>
           <input
+            id="pos-form-max-salary"
             type="number"
             className="azals-input"
             value={maxSalary}
@@ -1924,12 +1946,13 @@ const PositionForm: React.FC<PositionFormProps> = ({ onSubmit, onCancel, isLoadi
         </div>
       </Grid>
       <div className="azals-field">
-        <label>Competences requises (une par ligne)</label>
+        <label htmlFor="pos-form-requirements">Competences requises (une par ligne)</label>
         <textarea
+          id="pos-form-requirements"
           className="azals-input"
           value={requirements}
           onChange={(e) => setRequirements(e.target.value)}
-          placeholder="Ex:&#10;Diplome Bac+5&#10;3 ans d'experience&#10;Anglais courant"
+          placeholder="Ex:&#10;Diplome Bac+5&#10;3 ans d&apos;experience&#10;Anglais courant"
           rows={3}
         />
       </div>
@@ -1987,8 +2010,9 @@ const PositionsView: React.FC = () => {
     setDeleteError('');
     try {
       await deletePosition.mutateAsync(pos.id);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Erreur lors de la suppression';
+    } catch (err: unknown) {
+      const error = err as ApiMutationError;
+      const msg = error?.response?.data?.detail || 'Erreur lors de la suppression';
       setDeleteError(msg);
     }
   };
@@ -2034,7 +2058,7 @@ const PositionsView: React.FC = () => {
           {deleteError}
         </div>
       )}
-      <DataTable columns={columns} data={positions} isLoading={isLoading} keyField="id" error={posError instanceof Error ? posError : null} onRetry={() => posRefetch()} />
+      <DataTable columns={columns} data={positions} isLoading={isLoading} keyField="id" filterable error={posError instanceof Error ? posError : null} onRetry={() => posRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau poste" size="lg">
         <PositionForm
@@ -2092,8 +2116,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSubmit, onCancel, isLoa
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Employe *</label>
-        <select name="employee_id" required className="w-full border rounded px-3 py-2">
+        <label htmlFor="time-form-employee" className="block text-sm font-medium mb-1">Employe *</label>
+        <select id="time-form-employee" name="employee_id" required className="w-full border rounded px-3 py-2">
           <option value="">Selectionnez un employe</option>
           {employees.map(emp => (
             <option key={emp.id} value={emp.id}>{getFullName(emp)}</option>
@@ -2102,27 +2126,27 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSubmit, onCancel, isLoa
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Date *</label>
-          <input type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-date" className="block text-sm font-medium mb-1">Date *</label>
+          <input id="time-form-date" type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border rounded px-3 py-2" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Heures travaillees *</label>
-          <input type="number" name="worked_hours" required step={0.5} min={0} max={24} defaultValue={8} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-worked" className="block text-sm font-medium mb-1">Heures travaillees *</label>
+          <input id="time-form-worked" type="number" name="worked_hours" required step={0.5} min={0} max={24} defaultValue={8} className="w-full border rounded px-3 py-2" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Heures supplementaires</label>
-          <input type="number" name="overtime_hours" step={0.5} min={0} max={24} defaultValue={0} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-overtime" className="block text-sm font-medium mb-1">Heures supplementaires</label>
+          <input id="time-form-overtime" type="number" name="overtime_hours" step={0.5} min={0} max={24} defaultValue={0} className="w-full border rounded px-3 py-2" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Pause (minutes)</label>
-          <input type="number" name="break_duration" min={0} max={480} defaultValue={60} className="w-full border rounded px-3 py-2" />
+          <label htmlFor="time-form-break" className="block text-sm font-medium mb-1">Pause (minutes)</label>
+          <input id="time-form-break" type="number" name="break_duration" min={0} max={480} defaultValue={60} className="w-full border rounded px-3 py-2" />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Description tache</label>
-        <textarea name="task_description" className="w-full border rounded px-3 py-2" rows={3} placeholder="Description du travail effectue..." />
+        <label htmlFor="time-form-task-desc" className="block text-sm font-medium mb-1">Description tache</label>
+        <textarea id="time-form-task-desc" name="task_description" className="w-full border rounded px-3 py-2" rows={3} placeholder="Description du travail effectue..." />
       </div>
       <div className="flex justify-end gap-2 pt-4">
         <Button variant="secondary" onClick={onCancel} disabled={isLoading}>Annuler</Button>
@@ -2175,8 +2199,9 @@ const TimesheetsView: React.FC = () => {
       </div>
       <div className="flex gap-4 mb-4">
         <div className="flex-1">
-          <label className="block text-sm font-medium mb-1">Employe</label>
+          <label htmlFor="ts-filter-employee" className="block text-sm font-medium mb-1">Employe</label>
           <select
+            id="ts-filter-employee"
             value={filterEmployee}
             onChange={(e) => setFilterEmployee(e.target.value)}
             className="w-full border rounded px-3 py-2"
@@ -2188,8 +2213,9 @@ const TimesheetsView: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Du</label>
+          <label htmlFor="ts-filter-from" className="block text-sm font-medium mb-1">Du</label>
           <input
+            id="ts-filter-from"
             type="date"
             value={filterFromDate}
             onChange={(e) => setFilterFromDate(e.target.value)}
@@ -2197,8 +2223,9 @@ const TimesheetsView: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Au</label>
+          <label htmlFor="ts-filter-to" className="block text-sm font-medium mb-1">Au</label>
           <input
+            id="ts-filter-to"
             type="date"
             value={filterToDate}
             onChange={(e) => setFilterToDate(e.target.value)}
@@ -2206,7 +2233,7 @@ const TimesheetsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" error={tsError instanceof Error ? tsError : null} onRetry={() => tsRefetch()} />
+      <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" filterable error={tsError instanceof Error ? tsError : null} onRetry={() => tsRefetch()} />
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Nouvelle saisie de temps">
         <TimeEntryForm
           onSubmit={handleCreate}

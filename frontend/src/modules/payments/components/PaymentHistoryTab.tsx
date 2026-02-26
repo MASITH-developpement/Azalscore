@@ -9,13 +9,13 @@ import {
   CheckCircle, XCircle, AlertCircle, CreditCard, RotateCcw
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Payment, PaymentHistoryEntry } from '../types';
 import { formatDateTime } from '@/utils/formatters';
 import {
   PAYMENT_STATUS_CONFIG,
   getMethodLabel
 } from '../types';
+import type { Payment, PaymentHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * PaymentHistoryTab - Historique

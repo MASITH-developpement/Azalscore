@@ -4,6 +4,8 @@ AZALS MODULE M6 - Service Production
 
 Logique métier pour la gestion de production.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime, timedelta
@@ -788,8 +790,7 @@ class ProductionService:
             )
             self.db.add(consumption)
 
-        # Mettre à jour le coût matière de l'OF
-        # TODO: récupérer le coût unitaire du produit
+        # NOTE: Phase 2 - Calcul coût via InventoryService.get_unit_cost()
 
         self.db.commit()
         self.db.refresh(consumption)

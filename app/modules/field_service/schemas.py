@@ -3,6 +3,8 @@ AZALS MODULE 17 - Field Service Schemas
 ========================================
 Schémas Pydantic pour la gestion des interventions terrain.
 """
+from __future__ import annotations
+
 
 import datetime
 from decimal import Decimal

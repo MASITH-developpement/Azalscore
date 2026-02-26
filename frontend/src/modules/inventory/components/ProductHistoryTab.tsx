@@ -9,13 +9,13 @@ import {
   FileText, ArrowUpRight, ArrowDownRight, RefreshCw
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product, ProductHistoryEntry, Movement } from '../types';
 import { formatDateTime, formatDate } from '@/utils/formatters';
 import {
   formatQuantity,
   MOVEMENT_TYPE_CONFIG, MOVEMENT_STATUS_CONFIG
 } from '../types';
+import type { Product, ProductHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductHistoryTab - Historique de l'article
@@ -250,7 +250,7 @@ function generateHistoryFromProduct(product: Product): ProductHistoryEntry[] {
   // Historique des mouvements (résumé)
   if (product.movements && product.movements.length > 0) {
     const recentMovements = product.movements.slice(0, 5);
-    recentMovements.forEach((movement, index) => {
+    recentMovements.forEach((movement, _index) => {
       const typeConfig = MOVEMENT_TYPE_CONFIG[movement.type];
       history.push({
         id: `movement-${movement.id}`,

@@ -12,13 +12,13 @@ import {
   Building2, Lock, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Info
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Partner } from '../types';
 import { CapabilityGuard } from '@core/capabilities';
-import { useRiskAnalysis, RiskDisplay, ScoreGauge } from '@/modules/enrichment';
-import type { RiskAnalysis as RiskAnalysisType, RiskLevel } from '@/modules/enrichment';
+import { Button } from '@ui/actions';
+import { Card, Grid } from '@ui/layout';
+import { useRiskAnalysis, ScoreGauge } from '@/modules/enrichment';
+import type { RiskLevel } from '@/modules/enrichment';
+import type { Partner } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * Composant d'alerte pour risque eleve
@@ -315,7 +315,7 @@ export const PartnerRiskTab: React.FC<TabContentProps<Partner>> = ({ data: partn
             </Card>
 
             {/* Note sur les donnees limitees */}
-            {(analysis as any)._limited_data && (
+            {analysis._limited_data && (
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-start gap-2 text-blue-700 text-sm">
                   <Info size={16} className="mt-0.5" />

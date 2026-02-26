@@ -7,18 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, AlertTriangle, Clock, Package, Settings, Target } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { ProductionOrder } from '../types';
-import { formatDuration, formatCurrency, formatPercent } from '@/utils/formatters';
-import {
-  ORDER_STATUS_CONFIG, ORDER_PRIORITY_CONFIG,
-  isLate, isUrgent, getCompletionRate, getScrapRate,
-  getCostVariance, getDurationVariance,
-  isDraft, isConfirmed, isInProgress, isDone
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -27,6 +15,18 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatDuration, formatCurrency, formatPercent } from '@/utils/formatters';
+import {
+  ORDER_STATUS_CONFIG, ORDER_PRIORITY_CONFIG,
+  isLate, isUrgent, getCompletionRate, getScrapRate,
+  getCostVariance, getDurationVariance,
+  isDraft, isConfirmed, isInProgress, isDone
+} from '../types';
+import type { ProductionOrder } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * OrderIATab - Assistant IA pour l'ordre de fabrication

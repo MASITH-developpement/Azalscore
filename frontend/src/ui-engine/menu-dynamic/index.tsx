@@ -5,7 +5,6 @@
  */
 
 import React, { useMemo } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard,
@@ -37,8 +36,10 @@ import {
   HeadphonesIcon,
   Contact,
   Bot,
+  Download,
   type LucideIcon,
 } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
 import type { MenuItem, MenuSection } from '@/types';
 
@@ -74,6 +75,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   subscriptions: CalendarClock,
   helpdesk: HeadphonesIcon,
   marceau: Bot,
+  download: Download,
 };
 
 // ============================================================
@@ -99,6 +101,14 @@ const MENU_SECTIONS: MenuSection[] = [
         path: '/marceau',
         capability: 'marceau.view',
       },
+    
+      {
+        id: 'ai-assistant',
+        label: 'Assistant IA',
+        icon: 'marceau',
+        path: '/ai-assistant',
+        capability: 'ai_assistant.view',
+      },
     ],
   },
   {
@@ -115,7 +125,64 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'clients', label: 'Clients', path: '/partners/clients' },
           { id: 'suppliers', label: 'Fournisseurs', path: '/partners/suppliers' },
           { id: 'contacts', label: 'Contacts', path: '/partners/contacts' },
-        ],
+        
+      {
+        id: 'affaires',
+        label: 'Affaires',
+        icon: 'projects',
+        path: '/affaires',
+        capability: 'affaires.view',
+      },
+      {
+        id: 'commandes',
+        label: 'Commandes',
+        icon: 'purchases',
+        path: '/commandes',
+        capability: 'commandes.view',
+      },
+      {
+        id: 'contracts',
+        label: 'Contrats',
+        icon: 'invoicing',
+        path: '/contracts',
+        capability: 'contracts.view',
+      },
+      {
+        id: 'devis',
+        label: 'Devis',
+        icon: 'invoicing',
+        path: '/devis',
+        capability: 'devis.view',
+      },
+      {
+        id: 'factures',
+        label: 'Factures',
+        icon: 'invoicing',
+        path: '/factures',
+        capability: 'factures.view',
+      },
+      {
+        id: 'hr-vault',
+        label: 'Coffre-fort RH',
+        icon: 'hr',
+        path: '/hr-vault',
+        capability: 'hr_vault.view',
+      },
+      {
+        id: 'ordres-service',
+        label: 'Ordres de Service',
+        icon: 'interventions',
+        path: '/ordres-service',
+        capability: 'ordres_service.view',
+      },
+      {
+        id: 'timesheet',
+        label: 'Feuilles de Temps',
+        icon: 'projects',
+        path: '/timesheet',
+        capability: 'timesheet.view',
+      },
+    ],
       },
       {
         id: 'contacts',
@@ -183,7 +250,43 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'transactions', label: 'Transactions', path: '/treasury/transactions' },
           { id: 'reconciliation', label: 'Rapprochement', path: '/treasury/reconciliation' },
           { id: 'forecast', label: 'Prévisions', path: '/treasury/forecast' },
-        ],
+        
+      {
+        id: 'automated-accounting',
+        label: 'Comptabilité Auto',
+        icon: 'accounting',
+        path: '/automated-accounting',
+        capability: 'automated_accounting.view',
+      },
+      {
+        id: 'comptabilite',
+        label: 'Comptabilité',
+        icon: 'accounting',
+        path: '/comptabilite',
+        capability: 'comptabilite.view',
+      },
+      {
+        id: 'consolidation',
+        label: 'Consolidation',
+        icon: 'accounting',
+        path: '/consolidation',
+        capability: 'consolidation.view',
+      },
+      {
+        id: 'expenses',
+        label: 'Notes de Frais',
+        icon: 'treasury',
+        path: '/expenses',
+        capability: 'expenses.view',
+      },
+      {
+        id: 'finance',
+        label: 'Finance',
+        icon: 'treasury',
+        path: '/finance',
+        capability: 'finance.view',
+      },
+    ],
       },
       {
         id: 'accounting',
@@ -214,7 +317,50 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'warehouses', label: 'Entrepôts', path: '/inventory/warehouses' },
           { id: 'products', label: 'Produits', path: '/inventory/products' },
           { id: 'movements', label: 'Mouvements', path: '/inventory/movements' },
-        ],
+        
+      {
+        id: 'assets',
+        label: 'Immobilisations',
+        icon: 'inventory',
+        path: '/assets',
+        capability: 'assets.view',
+      },
+      {
+        id: 'procurement',
+        label: 'Approvisionnement',
+        icon: 'purchases',
+        path: '/procurement',
+        capability: 'procurement.view',
+      },
+      {
+        id: 'qc',
+        label: 'Contrôle Qualité',
+        icon: 'quality',
+        path: '/qc',
+        capability: 'qc.view',
+      },
+      {
+        id: 'qualite',
+        label: 'Qualité',
+        icon: 'quality',
+        path: '/qualite',
+        capability: 'qualite.view',
+      },
+      {
+        id: 'vehicles',
+        label: 'Véhicules',
+        icon: 'maintenance',
+        path: '/vehicles',
+        capability: 'vehicles.view',
+      },
+      {
+        id: 'warranty',
+        label: 'Garanties',
+        icon: 'maintenance',
+        path: '/warranty',
+        capability: 'warranty.view',
+      },
+    ],
       },
       {
         id: 'production',
@@ -266,7 +412,36 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'project-list', label: 'Liste projets', path: '/projects/list' },
           { id: 'tasks', label: 'Tâches', path: '/projects/tasks' },
           { id: 'timesheet', label: 'Feuilles de temps', path: '/projects/timesheet' },
-        ],
+        
+      {
+        id: 'complaints',
+        label: 'Réclamations',
+        icon: 'helpdesk',
+        path: '/complaints',
+        capability: 'complaints.view',
+      },
+      {
+        id: 'field-service',
+        label: 'Service Terrain',
+        icon: 'interventions',
+        path: '/field-service',
+        capability: 'field_service.view',
+      },
+      {
+        id: 'saisie',
+        label: 'Saisie',
+        icon: 'invoicing',
+        path: '/saisie',
+        capability: 'saisie.view',
+      },
+      {
+        id: 'worksheet',
+        label: 'Fiches de Travail',
+        icon: 'projects',
+        path: '/worksheet',
+        capability: 'worksheet.view',
+      },
+    ],
       },
       {
         id: 'interventions',
@@ -306,7 +481,50 @@ const MENU_SECTIONS: MenuSection[] = [
         children: [
           { id: 'terminal', label: 'Terminal', path: '/pos/terminal' },
           { id: 'sessions', label: 'Sessions', path: '/pos/sessions' },
-        ],
+        
+      {
+        id: 'commercial',
+        label: 'Commercial',
+        icon: 'users',
+        path: '/commercial',
+        capability: 'commercial.view',
+      },
+      {
+        id: 'crm',
+        label: 'CRM',
+        icon: 'contacts',
+        path: '/crm',
+        capability: 'crm.view',
+      },
+      {
+        id: 'enrichment',
+        label: 'Enrichissement',
+        icon: 'contacts',
+        path: '/enrichment',
+        capability: 'enrichment.view',
+      },
+      {
+        id: 'rfq',
+        label: 'Appels d\'Offres',
+        icon: 'purchases',
+        path: '/rfq',
+        capability: 'rfq.view',
+      },
+      {
+        id: 'social-networks',
+        label: 'Réseaux Sociaux',
+        icon: 'mobile',
+        path: '/social-networks',
+        capability: 'social_networks.view',
+      },
+      {
+        id: 'stripe-integration',
+        label: 'Intégration Stripe',
+        icon: 'payments',
+        path: '/stripe-integration',
+        capability: 'stripe_integration.view',
+      },
+    ],
       },
       {
         id: 'ecommerce',
@@ -366,7 +584,43 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'pages', label: 'Pages', path: '/web/pages' },
           { id: 'blog', label: 'Blog', path: '/web/blog' },
           { id: 'seo', label: 'SEO', path: '/web/seo' },
-        ],
+        
+      {
+        id: 'broadcast',
+        label: 'Diffusion',
+        icon: 'mobile',
+        path: '/broadcast',
+        capability: 'broadcast.view',
+      },
+      {
+        id: 'email',
+        label: 'Email',
+        icon: 'mobile',
+        path: '/email',
+        capability: 'email.view',
+      },
+      {
+        id: 'esignature',
+        label: 'Signature Électronique',
+        icon: 'invoicing',
+        path: '/esignature',
+        capability: 'esignature.view',
+      },
+      {
+        id: 'i18n',
+        label: 'Internationalisation',
+        icon: 'settings',
+        path: '/i18n',
+        capability: 'i18n.view',
+      },
+      {
+        id: 'website',
+        label: 'Site Web Builder',
+        icon: 'web',
+        path: '/website',
+        capability: 'website.view',
+      },
+    ],
       },
       {
         id: 'mobile',
@@ -397,6 +651,83 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'audits', label: 'Audits', path: '/compliance/audits' },
           { id: 'policies', label: 'Politiques', path: '/compliance/policies' },
         ],
+      },
+    ],
+  },
+  {
+    id: 'import',
+    title: 'Import de Données',
+    items: [
+      {
+        id: 'import-odoo',
+        label: 'Import Odoo',
+        icon: 'download',
+        path: '/import/odoo',
+        capability: 'import.odoo.config',
+      },
+      {
+        id: 'import-axonaut',
+        label: 'Import Axonaut',
+        icon: 'download',
+        path: '/import/axonaut',
+        capability: 'import.axonaut.config',
+      },
+      {
+        id: 'import-pennylane',
+        label: 'Import Pennylane',
+        icon: 'download',
+        path: '/import/pennylane',
+        capability: 'import.pennylane.config',
+      },
+      {
+        id: 'import-sage',
+        label: 'Import Sage',
+        icon: 'download',
+        path: '/import/sage',
+        capability: 'import.sage.config',
+      },
+      {
+        id: 'import-chorus',
+        label: 'Import Chorus Pro',
+        icon: 'download',
+        path: '/import/chorus',
+        capability: 'import.chorus.config',
+      },
+    
+      {
+        id: 'country-packs',
+        label: 'Packs Pays',
+        icon: 'download',
+        path: '/country-packs',
+        capability: 'country_packs.view',
+      },
+      {
+        id: 'country-packs-france',
+        label: 'Pack France',
+        icon: 'download',
+        path: '/country-packs-france',
+        capability: 'country_packs_france.view',
+      },
+      {
+        id: 'import',
+        label: 'Import Données',
+        icon: 'download',
+        path: '/import',
+        capability: 'import.view',
+      },
+      {
+        id: 'import-gateways',
+        label: 'Passerelles Import',
+        icon: 'download',
+        path: '/import-gateways',
+        capability: 'import_gateways.view',
+      },
+      {
+        id: 'odoo-import',
+        label: 'Import Odoo',
+        icon: 'download',
+        path: '/odoo-import',
+        capability: 'odoo_import.view',
       },
     ],
   },
@@ -446,6 +777,84 @@ const MENU_SECTIONS: MenuSection[] = [
         icon: 'branding',
         path: '/admin/branding',
       },
+    
+      {
+        id: 'admin',
+        label: 'Admin',
+        icon: 'settings',
+        path: '/admin',
+        capability: 'admin.view',
+      },
+      {
+        id: 'audit',
+        label: 'Audit',
+        icon: 'compliance',
+        path: '/audit',
+        capability: 'audit.view',
+      },
+      {
+        id: 'autoconfig',
+        label: 'Configuration Auto',
+        icon: 'settings',
+        path: '/autoconfig',
+        capability: 'autoconfig.view',
+      },
+      {
+        id: 'backup',
+        label: 'Sauvegardes',
+        icon: 'settings',
+        path: '/backup',
+        capability: 'backup.view',
+      },
+      {
+        id: 'break-glass',
+        label: 'Accès d\'Urgence',
+        icon: 'admin',
+        path: '/break-glass',
+        capability: 'break_glass.view',
+      },
+      {
+        id: 'guardian',
+        label: 'Guardian (Sécurité)',
+        icon: 'admin',
+        path: '/guardian',
+        capability: 'guardian.view',
+      },
+      {
+        id: 'iam',
+        label: 'Gestion des Accès',
+        icon: 'admin',
+        path: '/iam',
+        capability: 'iam.view',
+      },
+      {
+        id: 'profile',
+        label: 'Profil',
+        icon: 'users',
+        path: '/profile',
+        capability: 'profile.view',
+      },
+      {
+        id: 'settings',
+        label: 'Paramètres',
+        icon: 'settings',
+        path: '/settings',
+        capability: 'settings.view',
+      },
+      {
+        id: 'tenants',
+        label: 'Multi-Tenants',
+        icon: 'settings',
+        path: '/tenants',
+        capability: 'tenants.view',
+      },
+      {
+        id: 'triggers',
+        label: 'Déclencheurs',
+        icon: 'settings',
+        path: '/triggers',
+        capability: 'triggers.view',
+      },
     ],
   },
 ];
@@ -473,7 +882,7 @@ const MenuItemComponent: React.FC<MenuItemComponentProps> = ({
   // Auto-expand si un enfant est actif
   const isChildActive = useMemo(() => {
     if (!item.children) return false;
-    return item.children.some((child) => location.pathname.startsWith(child.path || ''));
+    return item.children.some((child: MenuItem) => location.pathname.startsWith(child.path || ''));
   }, [item.children, location.pathname]);
 
   React.useEffect(() => {
@@ -512,7 +921,7 @@ const MenuItemComponent: React.FC<MenuItemComponentProps> = ({
 
         {isExpanded && (
           <div className="azals-menu-submenu">
-            {item.children?.map((child) => (
+            {item.children?.map((child: MenuItem) => (
               <CapabilityGuard key={child.id} capability={child.capability}>
                 <MenuItemComponent
                   item={child}
@@ -569,19 +978,14 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
 
   // DEBUG: Log les capabilities utilisées par le menu
   React.useEffect(() => {
-    console.log('[Menu] Section:', section.title, 'Capabilities count:', capabilities.length);
-    console.log('[Menu] accounting.view in capabilities:', capabilities.includes('accounting.view'));
   }, [capabilities, section.title]);
 
   // Filtrer les items selon les capacités
   // CRITICAL: Utiliser `capabilities` directement pour que le memo se recalcule
   const visibleItems = useMemo(() => {
-    const filtered = section.items.filter((item) => {
+    const filtered = section.items.filter((item: MenuItem) => {
       if (!item.capability) return true;
       const hasCapability = capabilities.includes(item.capability);
-      if (item.id === 'accounting') {
-        console.log('[Menu] Filtering accounting:', item.capability, '=', hasCapability);
-      }
       return hasCapability;
     });
     return filtered;
@@ -601,7 +1005,7 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
     <div className="azals-menu-section">
       <h3 className="azals-menu-section__title">{section.title}</h3>
       <ul className="azals-menu-section__list">
-        {visibleItems.map((item) => (
+        {visibleItems.map((item: MenuItem) => (
           <li key={item.id}>
             <MenuItemComponent item={item} onItemClick={onItemClick} />
           </li>
@@ -620,16 +1024,7 @@ interface DynamicMenuProps {
 }
 
 export const DynamicMenu: React.FC<DynamicMenuProps> = ({ onItemClick }) => {
-  const { capabilities, isLoading } = useCapabilities();
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log('[DynamicMenu] Capabilities state:', {
-      isLoading,
-      count: capabilities.length,
-      capabilities: capabilities.slice(0, 10),
-    });
-  }, [capabilities, isLoading]);
+  const { capabilities: _capabilities, isLoading } = useCapabilities();
 
   if (isLoading) {
     return (
@@ -637,10 +1032,6 @@ export const DynamicMenu: React.FC<DynamicMenuProps> = ({ onItemClick }) => {
         <div className="azals-menu__loading">Chargement du menu...</div>
       </nav>
     );
-  }
-
-  if (capabilities.length === 0) {
-    console.warn('[DynamicMenu] No capabilities available, menu will be empty');
   }
 
   return (

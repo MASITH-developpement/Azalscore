@@ -4,11 +4,11 @@
  */
 
 import React, { useMemo } from 'react';
-import { Euro, TrendingUp, TrendingDown, Percent, Calculator } from 'lucide-react';
+import { TrendingUp, TrendingDown, Percent, Calculator } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Devis } from '../types';
 import { formatCurrency } from '@/utils/formatters';
+import type { Devis } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * DevisFinancialTab - Récapitulatif financier du devis
@@ -116,7 +116,7 @@ export const DevisFinancialTab: React.FC<TabContentProps<Devis>> = ({ data: devi
         >
           <div className="azals-financial-summary">
             <div className="azals-financial-summary__row">
-              <span>Chiffre d'affaires HT</span>
+              <span>Chiffre d&apos;affaires HT</span>
               <span>{formatCurrency(devis.subtotal, devis.currency)}</span>
             </div>
             <div className="azals-financial-summary__row">

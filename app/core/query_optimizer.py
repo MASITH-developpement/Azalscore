@@ -4,6 +4,8 @@ AZALS - Query Optimizer ÉLITE
 Utilitaires pour optimiser les requêtes SQLAlchemy.
 Prévention des problèmes N+1 avec eager loading.
 """
+from __future__ import annotations
+
 
 from functools import wraps
 from typing import Any, TypeVar

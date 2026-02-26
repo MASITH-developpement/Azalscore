@@ -121,7 +121,6 @@ export const captureScreenshot = async (): Promise<string | null> => {
     });
     return canvas.toDataURL('image/jpeg', 0.7);
   } catch (error) {
-    console.warn('[GUARDIAN] Screenshot capture failed:', error);
     return null;
   }
 };
@@ -135,13 +134,12 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
     const tenantId = sessionStorage.getItem('azals_tenant_id');
 
     if (!accessToken || !tenantId) {
-      console.warn('[GUARDIAN] Cannot send incident - no auth');
       return false;
     }
 
     const apiUrl = import.meta.env.VITE_API_URL || '';
 
-    const response = await fetch(`${apiUrl}/v1/incidents`, {
+    const response = await fetch(`${apiUrl}/incidents`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -166,7 +164,6 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
 
     return response.ok;
   } catch (error) {
-    console.warn('[GUARDIAN] Failed to send incident to backend:', error);
     return false;
   }
 };
@@ -354,7 +351,7 @@ export const GuardianActions = {
       }
 
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiUrl}/v1/auth/refresh`, {
+      const response = await fetch(`${apiUrl}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -520,7 +517,7 @@ export const createAuthIncident = async (
     user_id: getUserId(),
     page: getPageTitle(),
     route: getRouteFromLocation(),
-    endpoint: '/v1/auth/*',
+    endpoint: '/auth/*',
     method: null,
     http_status: null,
     message: reason,
@@ -571,7 +568,6 @@ export const initGuardianErrorHandlers = (): void => {
     createJsIncident(error);
   });
 
-  console.log('[GUARDIAN] Global error handlers initialized');
 };
 
 // ============================================================

@@ -57,14 +57,24 @@ DEFAULT_TELEPHONY_CONFIG = {
 }
 
 DEFAULT_INTEGRATIONS = {
+    # LLM Providers (ordre de priorite: Ollama local > Anthropic > OpenAI)
+    "ollama_base_url": "http://localhost:11434",
+    "anthropic_api_key": None,
+    "openai_api_key": None,
+    # Cartographie
     "ors_api_key": None,
+    # Google Services
     "gmail_credentials": None,
     "google_calendar_id": None,
+    # Reseaux sociaux
     "linkedin_token": None,
     "facebook_token": None,
     "instagram_token": None,
+    # Communication
     "slack_webhook": None,
+    # CRM
     "hubspot_api_key": None,
+    # CMS
     "wordpress_url": None,
     "wordpress_token": None,
 }

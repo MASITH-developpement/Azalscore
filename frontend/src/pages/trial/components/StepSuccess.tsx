@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
   CheckCircle,
   ArrowRight,
@@ -14,6 +13,7 @@ import {
   Copy,
   ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { TrialCompleteResponse } from '../types';
 
 interface StepSuccessProps {
@@ -60,7 +60,7 @@ export const StepSuccess: React.FC<StepSuccessProps> = ({ result }) => {
               <User size={20} />
             </div>
             <div className="trial-success-credential-content">
-              <label>Email</label>
+              <span className="trial-success-label">Email</span>
               <strong>{result.admin_email}</strong>
             </div>
           </div>
@@ -70,7 +70,7 @@ export const StepSuccess: React.FC<StepSuccessProps> = ({ result }) => {
               <Lock size={20} />
             </div>
             <div className="trial-success-credential-content">
-              <label>Mot de passe temporaire</label>
+              <span className="trial-success-label">Mot de passe temporaire</span>
               <div className="trial-success-password">
                 <code>{result.temporary_password}</code>
                 <button

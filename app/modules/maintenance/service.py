@@ -4,6 +4,8 @@ AZALS MODULE M8 - Service Maintenance (GMAO)
 
 Service métier pour la gestion de la maintenance.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -61,10 +63,10 @@ from .schemas import (
 class MaintenanceService:
     """Service de gestion de la maintenance GMAO."""
 
-    def __init__(self, db: Session, tenant_id: int, user_id: int = None):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
-        self.tenant_id = tenant_id
-        self.user_id = user_id
+        self.tenant_id = str(tenant_id) if tenant_id else tenant_id
+        self.user_id = str(user_id) if user_id else user_id
         self._optimizer = QueryOptimizer(db)
 
     # ========================================================================

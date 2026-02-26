@@ -1,0 +1,122 @@
+{
+  "module_id": "azalscore.hr.performance_review",
+  "version": "1.0.0",
+  "description": "Workflow d'evaluation de performance annuelle",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "initialize_review",
+      "use": "azalscore.transformers.hr.initialize_performance_review@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "review_period": "{{context.review_period}}",
+        "review_type": "{{context.review_type}}",
+        "reviewer_id": "{{context.reviewer_id}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "get_objectives",
+      "use": "azalscore.calculations.hr.get_period_objectives@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_objective_achievement",
+      "use": "azalscore.calculations.hr.calculate_objective_scores@1.0.0",
+      "inputs": {
+        "objectives": "{{get_objectives.objectives}}",
+        "achievements": "{{context.achievements}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "get_feedback",
+      "use": "azalscore.calculations.hr.aggregate_feedback@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "review_period": "{{context.review_period}}",
+        "include_360": "{{context.include_360_feedback}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_competency_scores",
+      "use": "azalscore.calculations.hr.calculate_competency_assessment@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "competency_ratings": "{{context.competency_ratings}}",
+        "position_requirements": "{{context.position_competencies}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "calculate_overall_rating",
+      "use": "azalscore.calculations.hr.calculate_overall_performance@1.0.0",
+      "inputs": {
+        "objective_score": "{{calculate_objective_achievement.overall_score}}",
+        "competency_score": "{{calculate_competency_scores.overall_score}}",
+        "weights": "{{context.rating_weights}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "recommend_actions",
+      "use": "azalscore.calculations.hr.recommend_development_actions@1.0.0",
+      "inputs": {
+        "performance_rating": "{{calculate_overall_rating.rating}}",
+        "competency_gaps": "{{calculate_competency_scores.gaps}}",
+        "career_path": "{{context.career_path}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_review_document",
+      "use": "azalscore.generators.documents.generate_performance_review@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "review_data": {
+          "objectives": "{{calculate_objective_achievement}}",
+          "competencies": "{{calculate_competency_scores}}",
+          "feedback": "{{get_feedback}}",
+          "overall_rating": "{{calculate_overall_rating}}",
+          "recommendations": "{{recommend_actions}}"
+        }
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "notify_employee",
+      "use": "azalscore.generators.communications.notify_review_complete@1.0.0",
+      "inputs": {
+        "employee_email": "{{context.employee_email}}",
+        "review_id": "{{initialize_review.review_id}}",
+        "meeting_link": "{{context.review_meeting_link}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "review_id": "{{initialize_review.review_id}}",
+    "objective_score": "{{calculate_objective_achievement.overall_score}}",
+    "competency_score": "{{calculate_competency_scores.overall_score}}",
+    "overall_rating": "{{calculate_overall_rating.rating}}",
+    "rating_label": "{{calculate_overall_rating.label}}",
+    "development_recommendations": "{{recommend_actions.actions}}",
+    "review_document_url": "{{generate_review_document.url}}"
+  }
+}

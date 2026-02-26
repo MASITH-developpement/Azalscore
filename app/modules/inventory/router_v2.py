@@ -9,6 +9,8 @@ AZALS MODULE INVENTORY - Router API v2 (CORE SaaS)
 
 API REST pour la gestion des stocks et logistique.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from uuid import UUID
@@ -878,4 +880,4 @@ async def get_inventory_dashboard(
     - current_user → context
     """
     service = get_inventory_service(db, context.tenant_id, context.user_id)
-    return service.get_inventory_dashboard()
+    return service.get_dashboard()

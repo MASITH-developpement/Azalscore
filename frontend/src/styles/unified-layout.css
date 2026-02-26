@@ -48,7 +48,7 @@
   justify-content: space-between;
   height: var(--unified-header-height);
   padding: 0 24px;
-  background: white;
+  background: var(--azals-surface, white);
   border-bottom: 1px solid var(--azals-border, #e2e5e9);
   position: sticky;
   top: 0;
@@ -137,7 +137,7 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: white;
+  background: var(--azals-surface, white);
   border: 1px solid var(--azals-border, #e2e5e9);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -275,7 +275,7 @@
   right: 0;
   margin-top: 8px;
   min-width: 200px;
-  background: white;
+  background: var(--azals-surface, white);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--azals-border, #e2e5e9);
@@ -328,7 +328,7 @@
 
 .azals-unified-sidebar {
   width: var(--unified-sidebar-width);
-  background: white;
+  background: var(--azals-surface, white);
   border-right: 1px solid var(--azals-border, #e2e5e9);
   display: flex;
   flex-direction: column;

@@ -5,15 +5,14 @@
 
 import React from 'react';
 import {
-  Users, Clock, Calendar, CheckCircle2, AlertCircle,
-  Play, Pause, User, Timer, TrendingUp, TrendingDown
+  Users, Clock, Calendar, CheckCircle2,
+  Play, User, Timer, TrendingUp, TrendingDown
 } from 'lucide-react';
-import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Intervention, InterventionEquipeMembre } from '../types';
-import { getDurationVariance, STATUT_CONFIG } from '../types';
 import { formatDate, formatDateTime, formatDuration } from '@/utils/formatters';
+import { getDurationVariance } from '../types';
+import type { Intervention, InterventionEquipeMembre } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InterventionLinesTab - Équipe et suivi de réalisation

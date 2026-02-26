@@ -9,13 +9,13 @@ import {
   AlertTriangle, CheckCircle
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product, Lot, Serial, StockByLocation } from '../types';
 import { formatDate } from '@/utils/formatters';
 import {
   formatQuantity, isLotExpired, isLotExpiringSoon,
   getDaysUntilExpiry, LOT_STATUS_CONFIG, SERIAL_STATUS_CONFIG
 } from '../types';
+import type { Product, Lot, Serial } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductStockTab - Stock par emplacement et traçabilité

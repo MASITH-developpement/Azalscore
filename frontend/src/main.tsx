@@ -23,6 +23,38 @@ const AppComponent = React.lazy(() => import('./UnifiedApp'));
 document.title = 'AZALSCORE';
 
 // ============================================================
+// PREFERENCES INITIALIZATION
+// ============================================================
+
+// Apply stored preferences immediately to prevent flash
+(() => {
+  try {
+    const stored = localStorage.getItem('azals_preferences');
+    if (stored) {
+      const prefs = JSON.parse(stored);
+      const root = document.documentElement;
+
+      // Theme
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = prefs.theme_mode === 'DARK' || (prefs.theme_mode === 'SYSTEM' && prefersDark);
+      root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+      // UI Style
+      if (prefs.ui_style) {
+        root.setAttribute('data-ui-style', prefs.ui_style.toLowerCase());
+      }
+
+      // Compact view
+      if (prefs.toolbar_dense) {
+        root.classList.add('azals-compact');
+      }
+    }
+  } catch {
+    // Ignore errors, defaults will apply
+  }
+})();
+
+// ============================================================
 // RENDER
 // ============================================================
 
@@ -55,12 +87,10 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('SW registered:', registration.scope);
         // Check for updates every 60 seconds
         setInterval(() => registration.update(), 60 * 1000);
       })
-      .catch((error) => {
-        console.log('SW registration failed:', error);
+      .catch((_error) => {
       });
   });
 

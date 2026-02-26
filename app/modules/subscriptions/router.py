@@ -3,6 +3,8 @@ AZALS MODULE 14 - Subscriptions Router
 ========================================
 Endpoints API pour la gestion des abonnements.
 """
+from __future__ import annotations
+
 
 from datetime import date
 
@@ -490,13 +492,13 @@ def _get_cached_stats(service: SubscriptionService) -> dict:
     total_plans = plans_data[1] if plans_data else 0
     return {
         "total_plans": total_plans,
-        "active_subscriptions": dashboard.total_active,
-        "trial_subscriptions": dashboard.trialing,
-        "mrr": dashboard.mrr,
-        "arr": dashboard.arr,
-        "churn_rate": dashboard.churn_rate,
-        "new_subscribers_month": dashboard.canceled_this_month,
-        "revenue_this_month": dashboard.new_mrr + dashboard.expansion_mrr,
+        "active_subscriptions": dashboard.get("total_active", 0),
+        "trial_subscriptions": dashboard.get("trialing", 0),
+        "mrr": dashboard.get("mrr", 0),
+        "arr": dashboard.get("arr", 0),
+        "churn_rate": dashboard.get("churn_rate", 0),
+        "new_subscribers_month": dashboard.get("canceled_this_month", 0),
+        "revenue_this_month": dashboard.get("new_mrr", 0) + dashboard.get("expansion_mrr", 0),
     }
 
 

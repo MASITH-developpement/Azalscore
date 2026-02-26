@@ -6,10 +6,10 @@
  */
 
 import React, { useEffect, useCallback, useRef } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, X, Pause, Play, RefreshCw } from 'lucide-react';
-import { useTheoVoice, VoiceState, CompanionId } from '@core/theo/voice';
-import { COLORS } from '@core/design-tokens';
 import { clsx } from 'clsx';
+import { Mic, MicOff, Volume2, X, Pause, Play, RefreshCw } from 'lucide-react';
+import { COLORS } from '@core/design-tokens';
+import { useTheoVoice, VoiceState, CompanionId } from '@core/theo/voice';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import '@/styles/theo-voice-panel.css';
 

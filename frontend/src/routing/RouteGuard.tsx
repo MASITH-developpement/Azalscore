@@ -43,15 +43,14 @@ function logViolation(type: ViolationType, moduleCode: string): void {
 
   // Envoi au backend (si disponible)
   if (typeof window !== 'undefined') {
-    fetch('/api/v1/frontend-violations', {
+    fetch('/api/frontend-violations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(violation),
-    }).catch((error) => {
+    }).catch((_error) => {
       // Ne pas bloquer si l'endpoint n'existe pas encore
-      console.warn('[AZA-FE-ENF] Could not log violation to backend:', error.message);
     });
   }
 
@@ -65,7 +64,6 @@ function logViolation(type: ViolationType, moduleCode: string): void {
       JSON.stringify(violations.slice(-100))
     );
   } catch (error) {
-    console.warn('[AZA-FE-ENF] Could not store violation locally:', error);
   }
 }
 
@@ -207,7 +205,6 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({ moduleCode, children }) 
 
     // Vérification 4: Conformité AZA-FE (warning seulement)
     if (!meta.frontend.compliance) {
-      console.warn(`[AZA-FE-ENF] Module ${moduleCode} non conforme AZA-FE`);
       logViolation('NON_COMPLIANT', moduleCode);
       setShowNonCompliantWarning(true);
     }

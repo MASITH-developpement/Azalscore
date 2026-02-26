@@ -28,7 +28,7 @@ from .models import (
     SyncQueue,
     SyncStatus,
 )
-from .router import router
+from .router_crud import router
 from .schemas import (
     ActivityBatch,
     ActivityLog,

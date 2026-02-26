@@ -5,6 +5,8 @@ AZALS MODULE M11 - Service Conformité
 Service métier pour la gestion de la conformité réglementaire.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -782,6 +784,23 @@ class ComplianceService:
             ComplianceAudit.id == audit_id,
             ComplianceAudit.tenant_id == self.tenant_id
         ).first()
+
+    def get_audits(
+        self,
+        audit_type: str | None = None,
+        audit_status: AuditStatus | None = None,
+        skip: int = 0,
+        limit: int = 100
+    ) -> list[ComplianceAudit]:
+        """Lister les audits avec filtres optionnels."""
+        query = self.db.query(ComplianceAudit).filter(
+            ComplianceAudit.tenant_id == self.tenant_id
+        )
+        if audit_type:
+            query = query.filter(ComplianceAudit.audit_type == audit_type)
+        if audit_status:
+            query = query.filter(ComplianceAudit.status == audit_status)
+        return query.order_by(ComplianceAudit.created_at.desc()).offset(skip).limit(limit).all()
 
     def start_audit(self, audit_id: UUID) -> ComplianceAudit | None:
         """Démarrer un audit."""

@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Devis, DevisDocument } from '../types';
 import { formatDate } from '@/utils/formatters';
+import type { Devis, DevisDocument } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * DevisDocsTab - Gestion des documents attachés
@@ -40,14 +40,26 @@ export const DevisDocsTab: React.FC<TabContentProps<Devis>> = ({ data: devis }) 
     <div className="azals-std-tab-content">
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Download size={16} />}>
+        <Button
+          variant="secondary"
+          leftIcon={<Download size={16} />}
+          onClick={() => { if (devis.pdf_url) window.open(devis.pdf_url, '_blank'); }}
+        >
           Télécharger le PDF
         </Button>
-        <Button variant="secondary" leftIcon={<Printer size={16} />}>
+        <Button
+          variant="secondary"
+          leftIcon={<Printer size={16} />}
+          onClick={() => window.print()}
+        >
           Imprimer
         </Button>
         {canEdit && (
-          <Button variant="ghost" leftIcon={<Upload size={16} />}>
+          <Button
+            variant="ghost"
+            leftIcon={<Upload size={16} />}
+            onClick={() => { window.dispatchEvent(new CustomEvent('azals:upload', { detail: { entity: 'devis', id: devis.id } })); }}
+          >
             Ajouter un document
           </Button>
         )}
@@ -66,10 +78,10 @@ export const DevisDocsTab: React.FC<TabContentProps<Devis>> = ({ data: devis }) 
                 Généré automatiquement
               </p>
               <div className="azals-document-preview__actions mt-2">
-                <Button size="sm" leftIcon={<Eye size={14} />}>
+                <Button size="sm" leftIcon={<Eye size={14} />} onClick={() => { if (devis.pdf_url) window.open(devis.pdf_url, '_blank'); }}>
                   Aperçu
                 </Button>
-                <Button size="sm" variant="ghost" leftIcon={<Download size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Download size={14} />} onClick={() => { if (devis.pdf_url) window.open(devis.pdf_url, '_blank'); }}>
                   Télécharger
                 </Button>
               </div>
@@ -90,7 +102,7 @@ export const DevisDocsTab: React.FC<TabContentProps<Devis>> = ({ data: devis }) 
               <File size={32} className="text-muted" />
               <p className="text-muted">Aucune pièce jointe</p>
               {canEdit && (
-                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:upload', { detail: { entity: 'devis', id: devis.id } })); }}>
                   Ajouter
                 </Button>
               )}
@@ -122,7 +134,7 @@ export const DevisDocsTab: React.FC<TabContentProps<Devis>> = ({ data: devis }) 
               <td>{devis.created_by || 'Système'}</td>
               <td>Création initiale</td>
               <td>
-                <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />} onClick={() => { if (devis.pdf_url) window.open(devis.pdf_url, '_blank'); }}>
                   Voir
                 </Button>
               </td>
@@ -171,11 +183,11 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
         </span>
       </div>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Télécharger">
+        <button className="azals-btn-icon" title="Télécharger" onClick={() => { if (document.url) window.open(document.url, '_blank'); }}>
           <Download size={16} />
         </button>
         {canEdit && (
-          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'deleteDocument', documentId: document.id } })); }}>
             <Trash2 size={16} />
           </button>
         )}

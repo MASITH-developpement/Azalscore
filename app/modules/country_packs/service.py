@@ -4,6 +4,8 @@ AZALS MODULE T5 - Service Packs Pays
 
 Service principal pour la gestion des configurations pays.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from typing import Any

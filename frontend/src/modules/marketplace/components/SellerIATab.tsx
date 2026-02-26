@@ -7,18 +7,8 @@
 
 import React, { useState } from 'react';
 import {
-  TrendingUp, AlertTriangle, ThumbsUp, UserCheck, Package, Wallet
+  TrendingUp, ThumbsUp, UserCheck, Package, Wallet, AlertTriangle
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Seller } from '../types';
-import {
-  canApproveSeller, canSuspendSeller, canReactivateSeller,
-  formatRating, SELLER_STATUS_CONFIG
-} from '../types';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -27,6 +17,16 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
+import {
+  canApproveSeller, canSuspendSeller, canReactivateSeller,
+  formatRating
+} from '../types';
+import type { Seller } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * SellerIATab - Assistant IA

@@ -5,9 +5,9 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useBarcodeLookup, formatBarcode, detectBarcodeType } from '../hooks';
 import { acceptEnrichment } from '../api';
-import type { EnrichedProductFields, BarcodeLookupProps } from '../types';
+import { useBarcodeLookup, formatBarcode, detectBarcodeType } from '../hooks';
+import type { BarcodeLookupProps } from '../types';
 
 // ============================================================================
 // COMPONENT
@@ -173,37 +173,37 @@ export function BarcodeLookup({
             <div className="barcode-lookup__preview-fields">
               {fields.name && (
                 <div className="barcode-lookup__preview-field">
-                  <label>Nom</label>
+                  <span className="barcode-lookup__field-label">Nom</span>
                   <span>{fields.name}</span>
                 </div>
               )}
               {fields.brand && (
                 <div className="barcode-lookup__preview-field">
-                  <label>Marque</label>
+                  <span className="barcode-lookup__field-label">Marque</span>
                   <span>{fields.brand}</span>
                 </div>
               )}
               {fields.description && (
                 <div className="barcode-lookup__preview-field barcode-lookup__preview-field--full">
-                  <label>Description</label>
+                  <span className="barcode-lookup__field-label">Description</span>
                   <span>{fields.description}</span>
                 </div>
               )}
               {fields.categories && (
                 <div className="barcode-lookup__preview-field">
-                  <label>Categories</label>
+                  <span className="barcode-lookup__field-label">Categories</span>
                   <span>{fields.categories}</span>
                 </div>
               )}
               {fields.quantity && (
                 <div className="barcode-lookup__preview-field">
-                  <label>Quantite</label>
+                  <span className="barcode-lookup__field-label">Quantite</span>
                   <span>{fields.quantity}</span>
                 </div>
               )}
               {fields.nutriscore && (
                 <div className="barcode-lookup__preview-field">
-                  <label>Nutri-Score</label>
+                  <span className="barcode-lookup__field-label">Nutri-Score</span>
                   <span className={`barcode-lookup__nutriscore barcode-lookup__nutriscore--${fields.nutriscore.toLowerCase()}`}>
                     {fields.nutriscore.toUpperCase()}
                   </span>
@@ -355,7 +355,7 @@ export function BarcodeLookup({
           grid-column: 1 / -1;
         }
 
-        .barcode-lookup__preview-field label {
+        .barcode-lookup__field-label {
           display: block;
           color: #6b7280;
           font-size: 0.75rem;

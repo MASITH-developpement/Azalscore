@@ -8,6 +8,8 @@ MIGRATION v1 -> v2:
 - Service factory: get_pos_service(db, context.tenant_id, context.user_id)
 - Pattern unifié: context: SaaSContext = Depends(get_saas_context)
 """
+from __future__ import annotations
+
 
 from datetime import date
 

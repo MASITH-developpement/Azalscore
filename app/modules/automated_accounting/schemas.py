@@ -4,6 +4,8 @@ AZALS MODULE M2A - Schemas Comptabilité Automatisée
 
 Schemas Pydantic pour la validation et sérialisation des données.
 """
+from __future__ import annotations
+
 
 import datetime
 from decimal import Decimal

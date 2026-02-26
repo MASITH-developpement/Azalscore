@@ -7,19 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, AlertTriangle, Calendar, Wrench, Shield, Euro } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Vehicule } from '../types';
-import { formatDate, formatCurrency } from '@/utils/formatters';
-import {
-  formatKilometers,
-  calculCoutKm, getCO2Km, calculateAverageConsumption,
-  getTotalMaintenanceCost, isInspectionDueSoon, isInspectionExpired,
-  isInsuranceDueSoon, isRevisionDueSoon, getExpiringDocuments,
-  getVehicleAge, FUEL_TYPE_CONFIG
-} from '../types';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -28,6 +15,19 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatDate, formatCurrency } from '@/utils/formatters';
+import {
+  formatKilometers,
+  calculCoutKm, getCO2Km, calculateAverageConsumption,
+  getTotalMaintenanceCost, isInspectionDueSoon, isInspectionExpired,
+  isInsuranceDueSoon, isRevisionDueSoon, getExpiringDocuments,
+  getVehicleAge, FUEL_TYPE_CONFIG
+} from '../types';
+import type { Vehicule } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * VehicleIATab - Assistant IA pour le véhicule

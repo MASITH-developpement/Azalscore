@@ -6,9 +6,9 @@
 import React from 'react';
 import { Package, AlertTriangle, TrendingUp, Warehouse } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Product } from '../types';
 import { isLowStock, isOutOfStock, getAvailableStock } from '../types';
+import type { Product } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * ProductStockTab - Gestion des stocks
@@ -26,7 +26,7 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
           <AlertTriangle size={20} />
           <div>
             <strong>Rupture de stock</strong>
-            <p>Ce produit n'est plus disponible a la vente.</p>
+            <p>Ce produit n&apos;est plus disponible a la vente.</p>
           </div>
         </div>
       )}
@@ -45,7 +45,7 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
       <Card title="Niveaux de stock" icon={<Package size={18} />}>
         <Grid cols={3} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Stock actuel</label>
+            <span className="azals-field__label">Stock actuel</span>
             <div className={`azals-field__value text-2xl font-bold ${
               outOfStock ? 'text-red-600' : lowStock ? 'text-orange-600' : 'text-green-600'
             }`}>
@@ -53,13 +53,13 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Reserve</label>
+            <span className="azals-field__label">Reserve</span>
             <div className="azals-field__value text-2xl font-medium text-blue-600">
               {product.reserved_stock || 0}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Disponible</label>
+            <span className="azals-field__label">Disponible</span>
             <div className={`azals-field__value text-2xl font-bold ${
               availableStock <= 0 ? 'text-red-600' : 'text-green-600'
             }`}>
@@ -92,13 +92,13 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
       <Card title="Seuils de stock" icon={<AlertTriangle size={18} />} className="mt-4">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Stock minimum (alerte)</label>
+            <span className="azals-field__label">Stock minimum (alerte)</span>
             <div className="azals-field__value">
               {product.min_stock !== undefined ? `${product.min_stock} unites` : 'Non defini'}
             </div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Stock maximum</label>
+            <span className="azals-field__label">Stock maximum</span>
             <div className="azals-field__value">
               {product.max_stock !== undefined ? `${product.max_stock} unites` : 'Non defini'}
             </div>
@@ -111,7 +111,7 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
         <Card title="Approvisionnement" icon={<Warehouse size={18} />} className="mt-4 azals-std-field--secondary">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Fournisseur</label>
+              <span className="azals-field__label">Fournisseur</span>
               <div className="azals-field__value">{product.supplier_name}</div>
             </div>
           </Grid>
@@ -124,7 +124,7 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
           <Grid cols={3} gap="md">
             {product.total_sales !== undefined && (
               <div className="azals-field">
-                <label className="azals-field__label">Total vendu</label>
+                <span className="azals-field__label">Total vendu</span>
                 <div className="azals-field__value text-lg font-medium">
                   {product.total_sales} unites
                 </div>
@@ -132,7 +132,7 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
             )}
             {product.views_count !== undefined && (
               <div className="azals-field">
-                <label className="azals-field__label">Vues</label>
+                <span className="azals-field__label">Vues</span>
                 <div className="azals-field__value text-lg font-medium">
                   {product.views_count}
                 </div>
@@ -140,7 +140,7 @@ export const ProductStockTab: React.FC<TabContentProps<Product>> = ({ data: prod
             )}
             {product.conversion_rate !== undefined && (
               <div className="azals-field">
-                <label className="azals-field__label">Taux conversion</label>
+                <span className="azals-field__label">Taux conversion</span>
                 <div className="azals-field__value text-lg font-medium">
                   {(product.conversion_rate * 100).toFixed(1)}%
                 </div>

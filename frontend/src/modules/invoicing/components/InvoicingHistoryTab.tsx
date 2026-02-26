@@ -9,10 +9,10 @@ import {
   Send, CreditCard, XCircle, Plus
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Document, DocumentHistoryEntry } from '../types';
-import { DOCUMENT_TYPE_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { DOCUMENT_TYPE_CONFIG } from '../types';
+import type { Document, DocumentHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * InvoicingHistoryTab - Historique

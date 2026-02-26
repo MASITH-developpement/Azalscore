@@ -9,10 +9,10 @@ import {
   ArrowRight, Box, BarChart3
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { ProductionOrder, MaterialConsumption, ProductionOutput } from '../types';
-import { formatQuantity } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import { formatQuantity } from '../types';
+import type { ProductionOrder, MaterialConsumption, ProductionOutput } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * OrderMaterialsTab - Materiaux et consommations
@@ -28,7 +28,7 @@ export const OrderMaterialsTab: React.FC<TabContentProps<ProductionOrder>> = ({ 
 
   // Composants avec ecart
   const overConsumed = consumptions.filter(c => c.quantity_consumed > c.quantity_planned);
-  const underConsumed = consumptions.filter(c => c.quantity_consumed < c.quantity_planned && c.quantity_consumed > 0);
+  const _underConsumed = consumptions.filter(c => c.quantity_consumed < c.quantity_planned && c.quantity_consumed > 0);
 
   return (
     <div className="azals-std-tab-content">

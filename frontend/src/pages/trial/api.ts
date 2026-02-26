@@ -15,7 +15,7 @@ import type {
   TrialRegistrationStatus,
 } from './types';
 
-const API_BASE = '/api/v2/public/trial';
+const API_BASE = '/api/public/trial';
 
 // Helper for API calls
 async function apiCall<T>(

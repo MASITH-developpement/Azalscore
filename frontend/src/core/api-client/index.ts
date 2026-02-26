@@ -5,8 +5,8 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
-import type { ApiResponse, ApiError, ApiRequestConfig } from '@/types';
 import { createHttpIncident, createNetworkIncident, createAuthIncident } from '@/core/guardian/incident-store';
+import type { ApiResponse, ApiError, ApiRequestConfig } from '@/types';
 
 // ============================================================
 // CONFIGURATION PRODUCTION
@@ -70,7 +70,7 @@ class TokenManager {
     }
 
     this.refreshPromise = axios
-      .post(`${API_BASE_URL}/v1/auth/refresh`, { refresh_token: refresh })
+      .post(`${API_BASE_URL}/auth/refresh`, { refresh_token: refresh })
       .then((response) => {
         const { access_token, refresh_token } = response.data;
         this.setTokens(access_token, refresh_token);
@@ -103,13 +103,21 @@ const createApiClient = (): AxiosInstance => {
   // Intercepteur requêtes - Auth gate + Ajout du token
   // RÈGLE : Aucune requête métier ne part sans token valide.
   // Les endpoints /auth/* sont exemptés (login, refresh, register).
+  // Note: CSRF non nécessaire car le backend bypasse CSRF pour les requêtes Bearer token
   client.interceptors.request.use(
     (config) => {
       const token = tokenManager.getAccessToken();
 
       // Auth gate : bloquer les requêtes métier si pas de token
-      const isAuthEndpoint = config.url?.includes('/auth/') || config.url?.includes('/health');
-      if (!token && !isAuthEndpoint && !config.headers['Skip-Auth']) {
+      const isPublicAuthEndpoint = (
+        config.url?.includes('/auth/login') ||
+        config.url?.includes('/auth/register') ||
+        config.url?.includes('/auth/refresh') ||
+        config.url?.includes('/auth/forgot') ||
+        config.url?.includes('/auth/reset') ||
+        config.url?.includes('/health')
+      );
+      if (!token && !isPublicAuthEndpoint && !config.headers['Skip-Auth']) {
         return Promise.reject(new Error('AUTH_NOT_READY: No token available. Business requests blocked until authenticated.'));
       }
 
@@ -269,6 +277,7 @@ export const api = {
       () => apiClient.get<ApiResponse<T>>(url, {
         timeout: config?.timeout,
         headers: buildHeaders(config),
+        responseType: config?.responseType,
       }),
       config
     );

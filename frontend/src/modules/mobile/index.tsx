@@ -5,20 +5,19 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Routes, Route } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { useUIStore } from '@ui/states';
 import {
-  Smartphone, Bell, Wifi, Settings, Download, QrCode, RefreshCw,
-  Trash2, Eye, Monitor, Tablet, Watch, Power, Activity, Clock,
-  CheckCircle, XCircle, AlertTriangle, Send
+  Smartphone, Bell, Settings, RefreshCw,
+  Trash2, Eye, Monitor, Tablet, Watch, Power, Activity,
+  CheckCircle
 } from 'lucide-react';
+import { Routes, Route } from 'react-router-dom';
+import { api } from '@core/api-client';
+import { Button } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { useUIStore } from '@ui/states';
+import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
 
 // ============================================================================
@@ -82,33 +81,33 @@ interface Preferences {
 
 const useMobileStats = () => useQuery({
   queryKey: ['mobile', 'stats'],
-  queryFn: () => api.get<MobileStats>('/v1/mobile/stats').then(r => r.data)
+  queryFn: () => api.get<MobileStats>('/mobile/stats').then(r => r.data)
 });
 
 const useDevices = () => useQuery({
   queryKey: ['mobile', 'devices'],
-  queryFn: () => api.get<Device[]>('/v1/mobile/devices').then(r => r.data || [])
+  queryFn: () => api.get<Device[]>('/mobile/devices').then(r => r.data || [])
 });
 
 const useSessions = () => useQuery({
   queryKey: ['mobile', 'sessions'],
-  queryFn: () => api.get<MobileSession[]>('/v1/mobile/sessions').then(r => r.data || [])
+  queryFn: () => api.get<MobileSession[]>('/mobile/sessions').then(r => r.data || [])
 });
 
 const useNotifications = () => useQuery({
   queryKey: ['mobile', 'notifications'],
-  queryFn: () => api.get<Notification[]>('/v1/mobile/notifications').then(r => r.data || [])
+  queryFn: () => api.get<Notification[]>('/mobile/notifications').then(r => r.data || [])
 });
 
 const usePreferences = () => useQuery({
   queryKey: ['mobile', 'preferences'],
-  queryFn: () => api.get<Preferences>('/v1/mobile/preferences').then(r => r.data)
+  queryFn: () => api.get<Preferences>('/mobile/preferences').then(r => r.data)
 });
 
 const useDeleteDevice = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/v1/mobile/devices/${id}`),
+    mutationFn: (id: string) => api.delete(`/mobile/devices/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'devices'] })
   });
 };
@@ -116,7 +115,7 @@ const useDeleteDevice = () => {
 const useDeleteSession = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/v1/mobile/sessions/${id}`),
+    mutationFn: (id: string) => api.delete(`/mobile/sessions/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'sessions'] })
   });
 };
@@ -124,7 +123,7 @@ const useDeleteSession = () => {
 const useMarkNotificationRead = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.put(`/v1/mobile/notifications/${id}/read`),
+    mutationFn: (id: string) => api.put(`/mobile/notifications/${id}/read`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'notifications'] })
   });
 };
@@ -132,7 +131,7 @@ const useMarkNotificationRead = () => {
 const useMarkAllNotificationsRead = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.put('/v1/mobile/notifications/read-all'),
+    mutationFn: () => api.put('/mobile/notifications/read-all'),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'notifications'] })
   });
 };
@@ -140,7 +139,7 @@ const useMarkAllNotificationsRead = () => {
 const useUpdatePreferences = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Preferences>) => api.put('/v1/mobile/preferences', data).then(r => r.data),
+    mutationFn: (data: Partial<Preferences>) => api.put('/mobile/preferences', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'preferences'] })
   });
 };
@@ -223,7 +222,7 @@ const DevicesView: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold flex items-center gap-2"><Smartphone size={20} /> Appareils enregistrés</h3>
       </div>
-      <DataTable columns={columns} data={devices} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={devices} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -260,7 +259,7 @@ const SessionsView: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold flex items-center gap-2"><Activity size={20} /> Sessions actives</h3>
       </div>
-      <DataTable columns={columns} data={sessions} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={sessions} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -310,7 +309,7 @@ const NotificationsView: React.FC = () => {
           </Button>
         )}
       </div>
-      <DataTable columns={columns} data={notifications} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={notifications} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };

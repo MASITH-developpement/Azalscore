@@ -8,16 +8,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  FileText, Plus, Edit, Trash2, Search, Send, Check, X,
+  FileText, Plus, Edit, Trash2, Search, Send, Check,
   Euro, Calendar, Clock, AlertTriangle, CheckCircle2,
   ChevronRight, Download, Printer, Package, History,
   FileArchive, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup } from '@ui/actions';
+import { serializeFilters } from '@core/query-keys';
+import { Button } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -27,11 +27,11 @@ import {
   type StatusDefinition,
   type SemanticColor,
 } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import { SmartSelector } from '@/components/SmartSelector';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Import types et composants tabs
-import type { Devis, DevisFormData, Customer, DocumentStatus, DocumentLine } from './types';
-import { STATUS_CONFIG } from './types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   DevisInfoTab,
@@ -41,6 +41,8 @@ import {
   DevisHistoryTab,
   DevisIATab,
 } from './components';
+import { STATUS_CONFIG } from './types';
+import type { Devis, DevisFormData, Customer, DocumentStatus, DocumentLine } from './types';
 
 // ============================================================
 // API HOOKS
@@ -48,7 +50,7 @@ import {
 
 const useDevisList = (page = 1, pageSize = 25, filters?: { status?: string; customer_id?: string; search?: string }) => {
   return useQuery({
-    queryKey: ['commercial', 'documents', 'QUOTE', page, pageSize, filters],
+    queryKey: ['commercial', 'documents', 'QUOTE', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
@@ -57,7 +59,7 @@ const useDevisList = (page = 1, pageSize = 25, filters?: { status?: string; cust
       });
       if (filters?.status) params.append('status', filters.status);
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
-      const response = await api.get<PaginatedResponse<Devis>>(`/v1/commercial/documents?${params}`);
+      const response = await api.get<PaginatedResponse<Devis>>(`/commercial/documents?${params}`);
       return response.data;
     },
   });
@@ -67,7 +69,7 @@ const useDevis = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', id],
     queryFn: async () => {
-      const response = await api.get<Devis>(`/v1/commercial/documents/${id}`);
+      const response = await api.get<Devis>(`/commercial/documents/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -80,7 +82,7 @@ const useCustomers = (search?: string) => {
     queryFn: async () => {
       const params = new URLSearchParams({ page: '1', page_size: '50' });
       if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/v1/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
       return response.data.items;
     },
   });
@@ -90,7 +92,7 @@ const useCreateDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: DevisFormData) => {
-      const response = await api.post<Devis>('/v1/commercial/documents', { ...data, type: 'QUOTE' });
+      const response = await api.post<Devis>('/commercial/documents', { ...data, type: 'QUOTE' });
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -101,7 +103,7 @@ const useUpdateDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<DevisFormData> }) => {
-      const response = await api.put<Devis>(`/v1/commercial/documents/${id}`, data);
+      const response = await api.put<Devis>(`/commercial/documents/${id}`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -112,7 +114,7 @@ const useValidateDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Devis>(`/v1/commercial/documents/${id}/validate`);
+      const response = await api.post<Devis>(`/commercial/documents/${id}/validate`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -123,7 +125,7 @@ const useSendDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Devis>(`/v1/commercial/documents/${id}/send`);
+      const response = await api.post<Devis>(`/commercial/documents/${id}/send`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -134,7 +136,7 @@ const useConvertToOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (quoteId: string) => {
-      const response = await api.post<Devis>(`/v1/commercial/quotes/${quoteId}/convert`);
+      const response = await api.post<Devis>(`/commercial/quotes/${quoteId}/convert`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -145,7 +147,7 @@ const useAddLine = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ documentId, data }: { documentId: string; data: Partial<DocumentLine> }) => {
-      const response = await api.post<DocumentLine>(`/v1/commercial/documents/${documentId}/lines`, data);
+      const response = await api.post<DocumentLine>(`/commercial/documents/${documentId}/lines`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -157,7 +159,7 @@ const useAddLine = () => {
 // ============================================================
 
 const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
-  const config = STATUS_CONFIG[status];
+  const config = STATUS_CONFIG[status] || { label: status, color: 'gray' };
   return (
     <span className={`azals-badge azals-badge--${config.color}`}>
       {config.icon}
@@ -323,6 +325,7 @@ const DevisListView: React.FC<{
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -398,9 +401,10 @@ const DevisDetailView: React.FC<{
   ], [devis?.lines?.length]);
 
   // Status mapping
-  const statusDef: StatusDefinition | undefined = devis ? {
-    label: STATUS_CONFIG[devis.status].label,
-    color: STATUS_CONFIG[devis.status].color as SemanticColor,
+  const statusConfig = devis ? (STATUS_CONFIG[devis.status] || { label: devis.status, color: 'gray' }) : null;
+  const statusDef: StatusDefinition | undefined = statusConfig ? {
+    label: statusConfig.label,
+    color: statusConfig.color as SemanticColor,
   } : undefined;
 
   // Info bar items (KPIs)
@@ -707,20 +711,22 @@ const DevisFormView: React.FC<{
       <form onSubmit={handleSubmit}>
         <Grid cols={2} gap="lg">
           <Card title="Client">
-            <div className="azals-form-field">
-              <label>Client *</label>
-              <select
-                className="azals-select"
-                value={form.customer_id}
-                onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
-                required
-              >
-                <option value="">-- Sélectionner un client --</option>
-                {customers?.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
-                ))}
-              </select>
-            </div>
+            <SmartSelector
+              items={customers || []}
+              value={form.customer_id}
+              onChange={(id, _item) => setForm({ ...form, customer_id: id })}
+              label="Client"
+              placeholder="Rechercher un client..."
+              entityName="client"
+              createEndpoint="/commercial/customers"
+              createFields={[
+                { key: 'name', label: 'Nom', required: true },
+                { key: 'email', label: 'Email', type: 'email' },
+                { key: 'phone', label: 'Téléphone', type: 'tel' },
+              ]}
+              queryKeys={['customers']}
+              allowCreate={true}
+            />
             <div className="azals-form-field">
               <label>Référence client</label>
               <input

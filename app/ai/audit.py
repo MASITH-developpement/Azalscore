@@ -6,6 +6,8 @@ Objectif: Auditabilité juridique totale.
 
 Conformité: AZA-NF-009, AZA-AUDIT-LEGAL
 """
+from __future__ import annotations
+
 
 import json
 import uuid
@@ -127,7 +129,11 @@ class AIAuditLogger:
     - Permettre l'export pour audit
     """
 
-    def __init__(self, log_dir: str = "/app/logs/ai_audit"):
+    def __init__(self, log_dir: str = None):
+        import os
+        if log_dir is None:
+            # Use environment variable or fallback to local directory
+            log_dir = os.getenv("AI_AUDIT_LOG_DIR", "./logs/ai_audit")
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self._events: List[AuditEvent] = []

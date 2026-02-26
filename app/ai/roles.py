@@ -6,6 +6,8 @@ Aucune IA ne peut agir en dehors de son rôle.
 
 Conformité: AZA-IA-001, AZA-NF-003
 """
+from __future__ import annotations
+
 
 from enum import Enum
 from dataclasses import dataclass

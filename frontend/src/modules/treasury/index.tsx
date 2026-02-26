@@ -5,7 +5,6 @@
  */
 
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -13,7 +12,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   RefreshCw,
-  TrendingUp,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -24,26 +22,18 @@ import {
   Edit,
   Link2
 } from 'lucide-react';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
+import { Button, ButtonGroup } from '@ui/actions';
+import { KPICard, MetricComparison } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { DynamicForm } from '@ui/forms';
-import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
-import { KPICard, MetricComparison, ProgressBar } from '@ui/dashboards';
 import { BaseViewStandard } from '@ui/standards';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
+import { DataTable } from '@ui/tables';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-import type { BankAccount as BankAccountType, Transaction as TransactionType, TreasurySummary, ForecastData } from './types';
-import {
-  ACCOUNT_TYPE_CONFIG,
-  ACCOUNT_STATUS_CONFIG
-} from './types';
 import {
   formatCurrency as formatCurrencyHelper,
   formatDate as formatDateHelper,
-  formatDateTime,
-  formatIBAN,
   maskIBAN
 } from '@/utils/formatters';
 import {
@@ -53,6 +43,8 @@ import {
   AccountHistoryTab,
   AccountIATab
 } from './components';
+import type { BankAccount as BankAccountType, Transaction as TransactionType, TreasurySummary, ForecastData } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 
 // ============================================================
 // TYPES (imported from ./types, aliased for local use)
@@ -69,7 +61,7 @@ const useTreasurySummary = () => {
   return useQuery({
     queryKey: ['treasury', 'summary'],
     queryFn: async () => {
-      const response = await api.get<TreasurySummary>('/v1/treasury/summary');
+      const response = await api.get<TreasurySummary>('/treasury/summary');
       return response.data;
     },
   });
@@ -79,7 +71,7 @@ const useBankAccounts = () => {
   return useQuery({
     queryKey: ['treasury', 'accounts'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<BankAccount>>('/v1/treasury/accounts');
+      const response = await api.get<PaginatedResponse<BankAccount>>('/treasury/accounts');
       return response.data;
     },
   });
@@ -90,8 +82,8 @@ const useTransactions = (accountId?: string, page = 1, pageSize = 25) => {
     queryKey: ['treasury', 'transactions', accountId, page, pageSize],
     queryFn: async () => {
       const url = accountId
-        ? `/v1/treasury/accounts/${accountId}/transactions?page=${page}&page_size=${pageSize}`
-        : `/v1/treasury/transactions?page=${page}&page_size=${pageSize}`;
+        ? `/treasury/accounts/${accountId}/transactions?page=${page}&page_size=${pageSize}`
+        : `/treasury/transactions?page=${page}&page_size=${pageSize}`;
       const response = await api.get<PaginatedResponse<Transaction>>(url);
       return response.data;
     },
@@ -102,13 +94,13 @@ const useForecast = (days = 30) => {
   return useQuery({
     queryKey: ['treasury', 'forecast', days],
     queryFn: async () => {
-      const response = await api.get<ForecastData[]>(`/v1/treasury/forecast?days=${days}`);
+      const response = await api.get<ForecastData[]>(`/treasury/forecast?days=${days}`);
       return response.data;
     },
   });
 };
 
-const useReconcileTransaction = () => {
+const _useReconcileTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -117,7 +109,7 @@ const useReconcileTransaction = () => {
       documentType: string;
       documentId: string;
     }) => {
-      await api.post(`/v1/treasury/transactions/${transactionId}/reconcile`, {
+      await api.post(`/treasury/transactions/${transactionId}/reconcile`, {
         document_type: documentType,
         document_id: documentId,
       });
@@ -132,7 +124,7 @@ const useBankAccount = (id: string) => {
   return useQuery({
     queryKey: ['treasury', 'account', id],
     queryFn: async () => {
-      const response = await api.get<BankAccount>(`/v1/treasury/accounts/${id}`);
+      const response = await api.get<BankAccount>(`/treasury/accounts/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -277,7 +269,7 @@ const BankAccountDetailView: React.FC = () => {
       label: 'Synchroniser',
       icon: <RefreshCw size={16} />,
       variant: 'secondary',
-      onClick: () => console.log('Sync account', account.id)
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'syncBankAccount', accountId: account.id } })); },
     },
     {
       id: 'edit',
@@ -520,6 +512,7 @@ export const BankAccountsPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
           onRetry={() => refetch()}
@@ -593,7 +586,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({ accountId, maxItems
       id: 'reconciled',
       header: 'Rapproché',
       accessor: 'reconciled',
-      render: (value, row) =>
+      render: (value, _row) =>
         value ? (
           <CheckCircle className="azals-text--success" size={16} />
         ) : (
@@ -616,7 +609,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({ accountId, maxItems
         columns={columns}
         data={data?.items.slice(0, maxItems) || []}
         keyField="id"
-        isLoading={isLoading}
+          filterable
+          isLoading={isLoading}
         pagination={
           !maxItems
             ? {

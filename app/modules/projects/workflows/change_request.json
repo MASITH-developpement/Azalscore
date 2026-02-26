@@ -1,0 +1,108 @@
+{
+  "module_id": "azalscore.projects.change_request",
+  "version": "1.0.0",
+  "description": "Workflow de demande de changement projet",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_change_request",
+      "use": "azalscore.validators.projects.validate_change_request@1.0.0",
+      "inputs": {
+        "change_request": "{{context.change_request}}",
+        "project_id": "{{context.project_id}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "assess_impact",
+      "use": "azalscore.calculations.projects.assess_change_impact@1.0.0",
+      "inputs": {
+        "change_request": "{{context.change_request}}",
+        "current_schedule": "{{context.current_schedule}}",
+        "current_budget": "{{context.current_budget}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "estimate_effort",
+      "use": "azalscore.calculations.projects.estimate_change_effort@1.0.0",
+      "inputs": {
+        "change_description": "{{context.change_request.description}}",
+        "affected_components": "{{assess_impact.affected_components}}",
+        "complexity": "{{context.change_request.complexity}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_cost",
+      "use": "azalscore.calculations.projects.calculate_change_cost@1.0.0",
+      "inputs": {
+        "effort_hours": "{{estimate_effort.total_hours}}",
+        "resource_rates": "{{context.resource_rates}}",
+        "additional_costs": "{{context.change_request.additional_costs}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "determine_approval_level",
+      "use": "azalscore.validators.projects.determine_change_approval@1.0.0",
+      "inputs": {
+        "cost_impact": "{{calculate_cost.total}}",
+        "schedule_impact_days": "{{assess_impact.schedule_delay_days}}",
+        "scope_impact": "{{assess_impact.scope_change_level}}",
+        "approval_matrix": "{{context.approval_matrix}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "create_change_record",
+      "use": "azalscore.transformers.projects.create_change_request@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "change_data": "{{context.change_request}}",
+        "impact_assessment": "{{assess_impact}}",
+        "cost_estimate": "{{calculate_cost}}",
+        "approval_level": "{{determine_approval_level.level}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "route_for_approval",
+      "use": "azalscore.transformers.workflow.route_change_approval@1.0.0",
+      "inputs": {
+        "change_request_id": "{{create_change_record.change_id}}",
+        "approval_level": "{{determine_approval_level.level}}",
+        "approvers": "{{determine_approval_level.approvers}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "notify_stakeholders",
+      "use": "azalscore.generators.communications.notify_change_request@1.0.0",
+      "inputs": {
+        "change_request": "{{create_change_record}}",
+        "impact": "{{assess_impact}}",
+        "stakeholder_emails": "{{context.stakeholder_emails}}",
+        "approval_required_from": "{{determine_approval_level.approvers}}"
+      },
+      "retry": 3,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "change_request_id": "{{create_change_record.change_id}}",
+    "estimated_cost": "{{calculate_cost.total}}",
+    "estimated_hours": "{{estimate_effort.total_hours}}",
+    "schedule_impact_days": "{{assess_impact.schedule_delay_days}}",
+    "approval_level": "{{determine_approval_level.level}}",
+    "status": "{{route_for_approval.status}}"
+  }
+}

@@ -7,15 +7,15 @@ import React from 'react';
 import {
   Receipt, CreditCard, Download, CheckCircle, Clock, XCircle, AlertCircle
 } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Subscription, SubscriptionInvoice } from '../types';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   getTotalPaid, getPaidInvoicesCount,
   INVOICE_STATUS_CONFIG
 } from '../types';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import type { Subscription, SubscriptionInvoice } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * SubscriptionBillingTab - Facturation
@@ -55,13 +55,13 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
             {subscription.payment_method_last_four ? (
               <>
                 <div className="azals-std-field">
-                  <label>Carte enregistree</label>
+                  <span>Carte enregistree</span>
                   <div className="flex items-center gap-2">
                     <CreditCard size={16} className="text-muted" />
                     <span className="font-mono">**** **** **** {subscription.payment_method_last_four}</span>
                   </div>
                 </div>
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:edit', { detail: { module: 'subscriptions', type: 'payment-method', subscriptionId: subscription.id } })); }}>
                   Modifier le moyen de paiement
                 </Button>
               </>
@@ -69,7 +69,7 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
               <div className="text-center py-4">
                 <CreditCard size={32} className="text-muted mx-auto mb-2" />
                 <p className="text-muted">Aucun moyen de paiement enregistre</p>
-                <Button variant="secondary" size="sm" className="mt-2">
+                <Button variant="secondary" size="sm" className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'subscriptions', type: 'payment-method', subscriptionId: subscription.id } })); }}>
                   Ajouter une carte
                 </Button>
               </div>
@@ -81,11 +81,11 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
         <Card title="Prochaine facture" icon={<Receipt size={18} />}>
           <div className="space-y-3">
             <div className="azals-std-field">
-              <label>Date d'emission</label>
+              <span>Date d'emission</span>
               <div>{formatDate(subscription.current_period_end)}</div>
             </div>
             <div className="azals-std-field">
-              <label>Montant prevu</label>
+              <span>Montant prevu</span>
               <div className="text-lg font-bold">
                 {formatCurrency(subscription.amount, subscription.currency)}
               </div>
@@ -177,7 +177,7 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, currency }) => {
         {invoice.paid_at ? formatDate(invoice.paid_at) : '-'}
       </td>
       <td>
-        <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+        <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:download', { detail: { module: 'subscriptions', type: 'invoice-pdf', invoiceId: invoice.id } })); }}>
           PDF
         </Button>
       </td>

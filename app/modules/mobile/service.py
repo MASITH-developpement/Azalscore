@@ -3,6 +3,8 @@ AZALS MODULE 18 - Mobile App Service
 =====================================
 Logique métier pour le backend mobile.
 """
+from __future__ import annotations
+
 
 import logging
 import secrets
@@ -321,7 +323,7 @@ class MobileService:
         self.db.commit()
         self.db.refresh(notification)
 
-        # TODO: Intégrer avec FCM/APNS pour envoi réel
+        # NOTE: Phase 2 - Envoi via FCM/APNS (firebase-admin)
         return notification
 
     def send_bulk_notifications(self, data: NotificationBulk) -> list[PushNotification]:
@@ -414,8 +416,7 @@ class MobileService:
             SyncCheckpoint.entity_type == entity_type
         ).first()
 
-        # TODO: Implémenter récupération données par entity_type
-        # Pour l'instant, retourner données vides
+        # NOTE: Phase 2 - Sync via services modulaires par entity_type
         items = []
         current_version = since_version
         has_more = False

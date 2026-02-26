@@ -4,6 +4,8 @@ AZALS MODULE T3 - Router Audit & Benchmark
 
 Endpoints API pour l'audit et les benchmarks.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

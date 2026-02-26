@@ -10,7 +10,6 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
@@ -21,24 +20,19 @@ import {
   AlertTriangle,
   Clock,
   CreditCard,
-  Wallet,
-  TrendingUp,
-  TrendingDown,
   Calendar,
-  Link2,
   Unlink,
   Eye,
-  Settings,
-  ChevronRight,
   Shield,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@core/api-client';
-import { PageWrapper, Card, Grid } from '@ui/layout';
+import { useAuth } from '@core/auth';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
-import { Modal, Select, Input } from '@ui/forms';
+import { Modal, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
 import { ErrorState } from '../../../ui-engine/components/StateViews';
-import { useAuth } from '@core/auth';
 
 // ============================================================
 // TYPES
@@ -562,8 +556,9 @@ const AddConnectionModal: React.FC<{
         </div>
 
         <div className="azals-form-group">
-          <label className="azals-form-label">Rechercher une banque</label>
+          <label htmlFor="bank-search" className="azals-form-label">Rechercher une banque</label>
           <Input
+            id="bank-search"
             value={searchTerm}
             onChange={(value) => setSearchTerm(value)}
             placeholder="Nom de la banque ou pays..."
@@ -693,7 +688,7 @@ export const BankConnections: React.FC = () => {
         <Card>
           <div className="azals-empty-state">
             <XCircle size={48} className="azals-text--danger" />
-            <p>Vous n'avez pas accès à cette section.</p>
+            <p>Vous n&apos;avez pas accès à cette section.</p>
             <Button onClick={() => navigate('/auto-accounting')}>Retour</Button>
           </div>
         </Card>

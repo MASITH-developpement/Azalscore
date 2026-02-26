@@ -6,6 +6,8 @@ Seul Theo est exposé à l'interface graphique.
 
 Conformité: AZA-API, AZA-FE-003
 """
+from __future__ import annotations
+
 
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Header

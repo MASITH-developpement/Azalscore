@@ -10,9 +10,9 @@ import { X, Save, Calculator, Package } from 'lucide-react';
 import { Button } from '@ui/actions';
 import { ProductAutocomplete } from '@/modules/inventory/components';
 import type { EnrichedDocumentLineFields } from '@/modules/inventory/types';
+import { formatCurrency } from '@/utils/formatters';
 import { calculateLineTotal, TVA_RATES } from '../types';
 import type { LineFormData } from '../types';
-import { formatCurrency } from '@/utils/formatters';
 
 // ============================================================================
 // TYPES
@@ -128,10 +128,10 @@ export function LineEditor({
     <div className="line-editor__form">
       {/* Recherche produit */}
       <div className="line-editor__section">
-        <label className="line-editor__label">
+        <span className="line-editor__label" aria-label="Recherche produit">
           <Package size={14} className="mr-1" />
           Produit (optionnel)
-        </label>
+        </span>
         <ProductAutocomplete
           value={searchValue}
           onChange={setSearchValue}

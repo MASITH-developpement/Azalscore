@@ -1,0 +1,79 @@
+{
+  "module_id": "azalscore.purchases.process_supplier_invoice",
+  "version": "1.0.0",
+  "description": "Workflow de traitement de facture fournisseur",
+  "steps": [
+    {
+      "id": "validate_invoice",
+      "use": "azalscore.validators.finance.validate_invoice_data@1.0.0",
+      "inputs": {
+        "invoice_data": "{{context.invoice_data}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "match_order",
+      "use": "azalscore.purchases.match_invoice_to_order@1.0.0",
+      "inputs": {
+        "invoice_data": "{{context.invoice_data}}",
+        "order_id": "{{context.order_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_invoice_number",
+      "use": "azalscore.generators.sequences.generate_document_number@1.0.0",
+      "inputs": {
+        "prefix": "{{context.invoice_prefix}}",
+        "year": "{{context.fiscal_year}}",
+        "sequence_type": "supplier_invoice"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "create_invoice",
+      "use": "azalscore.purchases.create_supplier_invoice@1.0.0",
+      "inputs": {
+        "invoice_number": "{{generate_invoice_number.number}}",
+        "supplier_id": "{{context.supplier_id}}",
+        "order_id": "{{context.order_id}}",
+        "lines": "{{context.invoice_lines}}",
+        "due_date": "{{context.due_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_accounting_entry",
+      "use": "azalscore.accounting.create_journal_entry@1.0.0",
+      "inputs": {
+        "journal_code": "ACH",
+        "date": "{{context.invoice_date}}",
+        "reference": "{{generate_invoice_number.number}}",
+        "lines": "{{context.accounting_lines}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "schedule_payment",
+      "use": "azalscore.treasury.schedule_payment@1.0.0",
+      "inputs": {
+        "invoice_id": "{{create_invoice.id}}",
+        "amount": "{{create_invoice.total}}",
+        "due_date": "{{context.due_date}}"
+      },
+      "condition": "{{context.auto_schedule_payment}} == true",
+      "retry": 2,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "invoice_id": "{{create_invoice.id}}",
+    "invoice_number": "{{generate_invoice_number.number}}",
+    "entry_id": "{{create_accounting_entry.id}}"
+  }
+}

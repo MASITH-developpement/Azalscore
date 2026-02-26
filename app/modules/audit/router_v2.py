@@ -10,8 +10,11 @@ AZALS MODULE AUDIT - Router API v2 (CORE SaaS)
 
 Endpoints API pour l'audit et les benchmarks.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
+from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -75,7 +78,7 @@ async def search_audit_logs(
     module: str | None = Query(None),
     entity_type: str | None = Query(None),
     entity_id: str | None = Query(None),
-    user_id: int | None = Query(None),
+    user_id: UUID | str | None = Query(None),
     session_id: str | None = Query(None),
     success: bool | None = Query(None),
     from_date: datetime | None = Query(None),
@@ -125,7 +128,7 @@ async def search_audit_logs(
 
 @router.get("/logs/{log_id}", response_model=AuditLogResponseSchema)
 async def get_audit_log(
-    log_id: int,
+    log_id: UUID,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):
@@ -160,10 +163,9 @@ async def get_entity_logs(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    logs = service.get_entity_logs(
+    logs = service.get_entity_history(
         entity_type=entity_type,
         entity_id=entity_id,
-        action=action,
         limit=limit
     )
     return logs
@@ -171,7 +173,7 @@ async def get_entity_logs(
 
 @router.get("/logs/user/{user_id}", response_model=list[AuditLogResponseSchema])
 async def get_user_logs(
-    user_id: int,
+    user_id: UUID | str,
     action: AuditAction | None = None,
     from_date: datetime | None = None,
     to_date: datetime | None = None,
@@ -186,9 +188,8 @@ async def get_user_logs(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    logs = service.get_user_logs(
+    logs = service.get_user_activity(
         user_id=user_id,
-        action=action,
         from_date=from_date,
         to_date=to_date,
         limit=limit
@@ -202,7 +203,7 @@ async def get_user_logs(
 
 @router.get("/sessions", response_model=list[AuditSessionResponseSchema])
 async def list_active_sessions(
-    user_id: int | None = None,
+    user_id: UUID | str | None = None,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):
@@ -232,9 +233,8 @@ async def terminate_session(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    service.terminate_session(
+    service.end_session(
         session_id=session_id,
-        terminated_by=context.user_id,
         reason=reason
     )
     return {"status": "terminated", "session_id": session_id}
@@ -258,14 +258,23 @@ async def create_metric(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    metric = service.create_metric(data, created_by=context.user_id)
+    metric = service.create_metric(
+        code=data.code,
+        name=data.name,
+        metric_type=data.metric_type,
+        unit=data.unit,
+        module=data.module,
+        aggregation_period=data.aggregation_period,
+        retention_days=data.retention_days,
+        warning_threshold=data.warning_threshold,
+        critical_threshold=data.critical_threshold
+    )
     return metric
 
 
 @router.get("/metrics", response_model=list[MetricResponseSchema])
 async def list_metrics(
-    category: str | None = None,
-    is_active: bool = True,
+    module: str | None = None,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):
@@ -276,7 +285,7 @@ async def list_metrics(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    metrics = service.list_metrics(category=category, is_active=is_active)
+    metrics = service.list_metrics(module=module)
     return metrics
 
 
@@ -293,12 +302,14 @@ async def record_metric_value(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    value = service.record_metric_value(
+    value = service.record_metric(
         metric_code=data.metric_code,
         value=data.value,
         dimensions=data.dimensions,
         timestamp=data.timestamp
     )
+    if not value:
+        raise HTTPException(status_code=404, detail=f"Métrique {data.metric_code} non trouvée")
     return value
 
 
@@ -345,14 +356,22 @@ async def create_benchmark(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    benchmark = service.create_benchmark(data, created_by=context.user_id)
+    benchmark = service.create_benchmark(
+        code=data.code,
+        name=data.name,
+        benchmark_type=data.benchmark_type,
+        description=data.description,
+        module=data.module,
+        config=data.config,
+        baseline=data.baseline,
+        created_by=context.user_id
+    )
     return benchmark
 
 
 @router.get("/benchmarks", response_model=list[BenchmarkResponseSchema])
 async def list_benchmarks(
-    category: str | None = None,
-    is_active: bool = True,
+    benchmark_type: str | None = None,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):
@@ -363,13 +382,13 @@ async def list_benchmarks(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    benchmarks = service.list_benchmarks(category=category, is_active=is_active)
+    benchmarks = service.list_benchmarks(benchmark_type=benchmark_type)
     return benchmarks
 
 
 @router.post("/benchmarks/{benchmark_id}/run", response_model=BenchmarkResultResponseSchema)
 async def run_benchmark(
-    benchmark_id: int,
+    benchmark_id: UUID,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
@@ -392,7 +411,7 @@ async def run_benchmark(
 
 @router.get("/benchmarks/{benchmark_id}/results", response_model=list[BenchmarkResultResponseSchema])
 async def get_benchmark_results(
-    benchmark_id: int,
+    benchmark_id: UUID,
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
@@ -426,7 +445,16 @@ async def create_compliance_check(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    check = service.create_compliance_check(data, created_by=context.user_id)
+    check = service.create_compliance_check(
+        framework=data.framework,
+        control_id=data.control_id,
+        control_name=data.control_name,
+        check_type=data.check_type,
+        control_description=data.control_description,
+        category=data.category,
+        subcategory=data.subcategory,
+        severity=data.severity
+    )
     return check
 
 
@@ -450,7 +478,7 @@ async def list_compliance_checks(
 
 @router.put("/compliance/checks/{check_id}", response_model=ComplianceCheckResponseSchema)
 async def update_compliance_check(
-    check_id: int,
+    check_id: UUID,
     data: ComplianceUpdateSchema,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
@@ -463,7 +491,13 @@ async def update_compliance_check(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    check = service.update_compliance_check(check_id, data, updated_by=context.user_id)
+    check = service.update_compliance_status(
+        check_id=check_id,
+        status=data.status,
+        actual_result=data.actual_result,
+        evidence=data.evidence,
+        checked_by=context.user_id
+    )
     return check
 
 
@@ -502,13 +536,22 @@ async def create_retention_rule(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    rule = service.create_retention_rule(data, created_by=context.user_id)
+    rule = service.create_retention_rule(
+        name=data.name,
+        target_table=data.target_table,
+        policy=data.policy,
+        retention_days=data.retention_days,
+        target_module=data.target_module,
+        condition=data.condition,
+        action=data.action,
+        schedule_cron=data.schedule_cron
+    )
     return rule
 
 
 @router.get("/retention/rules", response_model=list[RetentionRuleResponseSchema])
 async def list_retention_rules(
-    category: AuditCategory | None = None,
+    target_module: str | None = None,
     is_active: bool = True,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
@@ -520,7 +563,7 @@ async def list_retention_rules(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    rules = service.list_retention_rules(category=category, is_active=is_active)
+    rules = service.list_retention_rules(target_module=target_module, is_active=is_active)
     return rules
 
 
@@ -541,14 +584,12 @@ async def apply_retention_rules(
     service = get_audit_service(db, context.tenant_id)
 
     if dry_run:
-        result = service.preview_retention_application()
-        return {"status": "preview", "records_to_delete": result}
+        # Preview: juste retourner le nombre de règles actives
+        rules = service.list_retention_rules(is_active=True)
+        return {"status": "preview", "rules_count": len(rules)}
 
     # Exécution asynchrone
-    background_tasks.add_task(
-        service.apply_retention_rules,
-        executed_by=context.user_id
-    )
+    background_tasks.add_task(service.apply_retention_rules)
 
     return {"status": "started", "message": "Règles de rétention en cours d'application"}
 
@@ -572,10 +613,17 @@ async def create_export(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    export = service.create_export(data, created_by=context.user_id)
+    export = service.create_export(
+        export_type=data.export_type,
+        format=data.format,
+        requested_by=context.user_id,
+        date_from=data.date_from,
+        date_to=data.date_to,
+        filters=data.filters
+    )
 
     # Génération asynchrone
-    background_tasks.add_task(service.generate_export, export.id)
+    background_tasks.add_task(service.process_export, export.id)
 
     return export
 
@@ -599,7 +647,7 @@ async def list_exports(
 
 @router.get("/exports/{export_id}", response_model=ExportResponseSchema)
 async def get_export(
-    export_id: int,
+    export_id: UUID,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):
@@ -620,7 +668,7 @@ async def get_export(
 
 @router.post("/exports/{export_id}/process", response_model=ExportResponseSchema)
 async def process_export(
-    export_id: int,
+    export_id: UUID,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
@@ -639,7 +687,7 @@ async def process_export(
         raise HTTPException(status_code=404, detail=f"Export {export_id} non trouvé")
 
     # Traitement asynchrone
-    background_tasks.add_task(service.generate_export, export_id)
+    background_tasks.add_task(service.process_export, export_id)
 
     return export
 
@@ -662,7 +710,17 @@ async def create_dashboard(
     - current_user.id → context.user_id
     """
     service = get_audit_service(db, context.tenant_id)
-    dashboard = service.create_dashboard(data, created_by=context.user_id)
+    # Convertir les widgets en dictionnaires
+    widgets_data = [w.model_dump() for w in data.widgets]
+    dashboard = service.create_dashboard(
+        code=data.code,
+        name=data.name,
+        widgets=widgets_data,
+        owner_id=context.user_id,
+        description=data.description,
+        layout=data.layout,
+        refresh_interval=data.refresh_interval
+    )
     return dashboard
 
 
@@ -684,7 +742,7 @@ async def list_dashboards(
 
 @router.get("/dashboards/{dashboard_id}/data", response_model=DashboardDataResponseSchema)
 async def get_dashboard_data(
-    dashboard_id: int,
+    dashboard_id: UUID,
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     db: Session = Depends(get_db),
@@ -697,11 +755,9 @@ async def get_dashboard_data(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    data = service.get_dashboard_data(
-        dashboard_id=dashboard_id,
-        from_date=from_date,
-        to_date=to_date
-    )
+    data = service.get_dashboard_data(dashboard_id=dashboard_id)
+    if not data:
+        raise HTTPException(status_code=404, detail=f"Dashboard {dashboard_id} non trouvé")
     return data
 
 
@@ -729,7 +785,7 @@ async def get_audit_stats(
 
 @router.get("/dashboard", response_model=AuditDashboardResponseSchema)
 async def get_audit_dashboard(
-    period: str = Query("7d", regex="^(24h|7d|30d|90d|365d)$"),
+    period: str = Query("7d", pattern="^(24h|7d|30d|90d|365d)$"),
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):

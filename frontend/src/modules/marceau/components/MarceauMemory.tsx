@@ -5,8 +5,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Brain, Upload, Search, Trash2, FileText, AlertCircle, Tag, Star } from 'lucide-react';
 import { api } from '@core/api-client';
-import { Brain, Upload, Search, Trash2, Plus, FileText, AlertCircle, Tag, Star } from 'lucide-react';
+import type { ApiMutationError } from '@/types';
 
 interface MarceauMemory {
   id: string;
@@ -67,14 +68,14 @@ export function MarceauMemory() {
     setLoading(true);
     try {
       const [statsRes, docsRes] = await Promise.all([
-        api.get<MemoryStats>('/v1/marceau/memory/stats'),
-        api.get<KnowledgeDocument[]>('/v1/marceau/knowledge'),
+        api.get<MemoryStats>('/marceau/memory/stats'),
+        api.get<KnowledgeDocument[]>('/marceau/knowledge'),
       ]);
-      setStats(statsRes.data);
-      setDocuments(docsRes.data);
+      setStats(statsRes.data || null);
+      setDocuments(docsRes.data || []);
       setError(null);
-    } catch (e: any) {
-      setError(e.message || 'Erreur chargement');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur chargement');
     } finally {
       setLoading(false);
     }
@@ -87,13 +88,13 @@ export function MarceauMemory() {
     }
 
     try {
-      const response = await api.post<{ memories: MarceauMemory[] }>('/v1/marceau/memory/search', {
+      const response = await api.post<{ memories: MarceauMemory[] }>('/marceau/memory/search', {
         query: searchQuery,
         limit: 20,
       });
       setMemories(response.data.memories || []);
-    } catch (e: any) {
-      setError(e.message || 'Erreur recherche');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur recherche');
     }
   };
 
@@ -103,10 +104,10 @@ export function MarceauMemory() {
     formData.append('file', file);
 
     try {
-      await api.post('/v1/marceau/knowledge/upload', formData);
+      await api.post('/marceau/knowledge/upload', formData);
       loadData();
-    } catch (e: any) {
-      setError(e.message || 'Erreur upload');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur upload');
     } finally {
       setUploading(false);
     }
@@ -116,10 +117,10 @@ export function MarceauMemory() {
     if (!confirm('Supprimer ce document ?')) return;
 
     try {
-      await api.delete(`/v1/marceau/knowledge/${id}`);
+      await api.delete(`/marceau/knowledge/${id}`);
       loadData();
-    } catch (e: any) {
-      setError(e.message || 'Erreur suppression');
+    } catch (e: unknown) {
+      setError((e as ApiMutationError).message || 'Erreur suppression');
     }
   };
 
@@ -241,7 +242,7 @@ export function MarceauMemory() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-700">{memory.content}</p>
-                      {memory.tags.length > 0 && (
+                      {memory.tags?.length > 0 && (
                         <div className="flex gap-1 mt-2">
                           {memory.tags.map((tag, i) => (
                             <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
@@ -262,7 +263,7 @@ export function MarceauMemory() {
 
           {searchQuery && memories.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              Aucun resultat pour "{searchQuery}"
+              Aucun resultat pour &quot;{searchQuery}&quot;
             </div>
           )}
         </div>

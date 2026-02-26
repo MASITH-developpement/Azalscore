@@ -11,6 +11,8 @@ Ces données alimentent le module BI pour:
 - Tracking adoption modules
 - Audit trail complet
 """
+from __future__ import annotations
+
 
 import json
 import logging

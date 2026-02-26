@@ -7,12 +7,6 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, Zap, ChevronRight, Mail, FileText, Tag } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Devis } from '../types';
-import { formatCurrency } from '@/utils/formatters';
-
-// Composants partagés IA (AZA-NF-REUSE)
 import {
   IAPanelHeader,
   IAScoreCircle,
@@ -21,6 +15,12 @@ import {
   type Insight as SharedInsight,
   type SuggestedActionData,
 } from '@ui/components/shared-ia';
+import { Card, Grid } from '@ui/layout';
+import { formatCurrency } from '@/utils/formatters';
+import type { Devis } from '../types';
+import type { TabContentProps } from '@ui/standards';
+
+// Composants partagés IA (AZA-NF-REUSE)
 
 /**
  * DevisIATab - Assistant IA pour le devis
@@ -103,7 +103,7 @@ export const DevisIATab: React.FC<TabContentProps<Devis>> = ({ data: devis }) =>
           <div className="azals-analysis-item">
             <h4>Probabilité de conversion</h4>
             <p className="text-lg font-medium">78%</p>
-            <p className="text-sm text-muted">Basé sur l'historique client</p>
+            <p className="text-sm text-muted">Basé sur l&apos;historique client</p>
           </div>
           <div className="azals-analysis-item">
             <h4>Temps moyen de décision</h4>

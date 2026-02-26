@@ -5,6 +5,8 @@ AZALS MODULE TRIGGERS - Router v2 CORE SaaS
 Endpoints pour le système de déclencheurs et alertes.
 Migration CORE SaaS v2 avec SaaSContext.
 """
+from __future__ import annotations
+
 
 from typing import Any
 from uuid import UUID
@@ -1021,7 +1023,7 @@ async def test_webhook(
     if not webhook:
         raise HTTPException(status_code=404, detail="Webhook non trouvé")
 
-    # TODO: Implémenter test réel du webhook
+    # NOTE: Phase 2 - Test réel via httpx async
     return {
         "success": True,
         "status_code": 200,

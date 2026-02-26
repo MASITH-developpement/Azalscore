@@ -1,10 +1,9 @@
 /**
  * AZALSCORE - Landing Page Publique
- * Page d'accueil accessible sans authentification
+ * Page d'accueil optimisee pour la conversion et le SEO
  */
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Check,
@@ -18,8 +17,16 @@ import {
   Globe,
   Clock,
   HeadphonesIcon,
+  ChevronDown,
+  Star,
+  Lock,
+  Server,
+  CheckCircle,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { COLORS } from '@core/design-tokens';
+import DemoVideo from '../components/DemoVideo';
+import { StructuredData } from '../components/StructuredData';
 import '../styles/landing.css';
 
 // Logo AZALSCORE
@@ -72,16 +79,148 @@ const ModuleCard: React.FC<{
   </div>
 );
 
+// Composant FAQ Item
+const FAQItem: React.FC<{
+  question: string;
+  answer: string;
+  isOpen: boolean;
+  onClick: () => void;
+}> = ({ question, answer, isOpen, onClick }) => (
+  <div className={`landing-faq-item ${isOpen ? 'open' : ''}`}>
+    <div className="landing-faq-question" onClick={onClick}>
+      <span>{question}</span>
+      <ChevronDown size={20} />
+    </div>
+    <div className="landing-faq-answer">
+      <p>{answer}</p>
+    </div>
+  </div>
+);
+
+// Composant Testimonial Card
+const TestimonialCard: React.FC<{
+  text: string;
+  name: string;
+  role: string;
+  company: string;
+  rating: number;
+}> = ({ text, name, role, company, rating }) => (
+  <div className="landing-testimonial-card">
+    <span className="landing-testimonial-quote">"</span>
+    <div className="landing-testimonial-rating">
+      {[...Array(5)].map((_, i) => (
+        <Star key={i} size={16} fill={i < rating ? '#fbbf24' : 'none'} />
+      ))}
+    </div>
+    <p className="landing-testimonial-text">{text}</p>
+    <div className="landing-testimonial-author">
+      <div className="landing-testimonial-avatar">
+        {name.split(' ').map(n => n[0]).join('')}
+      </div>
+      <div className="landing-testimonial-info">
+        <span className="landing-testimonial-name">{name}</span>
+        <span className="landing-testimonial-role">{role}, {company}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// Données FAQ
+const faqData = [
+  {
+    question: "Qu'est-ce qu'Azalscore ERP ?",
+    answer: "Azalscore est un ERP SaaS français complet pour les PME. Il intègre la gestion commerciale (CRM, devis, factures), la comptabilité, la gestion de stock, les ressources humaines, la trésorerie et bien plus. Solution 100% française, hébergée en France et conforme RGPD."
+  },
+  {
+    question: "Azalscore est-il conforme à la facturation électronique 2026 ?",
+    answer: "Oui, Azalscore est entièrement conforme aux exigences de la facturation électronique 2026 en France. Le logiciel supporte les formats Factur-X, l'envoi via PDP (Plateforme de Dématérialisation Partenaire) et l'archivage légal des factures."
+  },
+  {
+    question: "Combien coûte Azalscore ?",
+    answer: "Azalscore propose 3 formules : Starter à 29 euros/mois HT pour les TPE (1-3 utilisateurs), Business à 79 euros/mois HT pour les PME en croissance (5-15 utilisateurs), et Enterprise sur devis pour les grandes structures. Un essai gratuit de 30 jours est disponible."
+  },
+  {
+    question: "Mes données sont-elles sécurisées ?",
+    answer: "Absolument. Vos données sont hébergées exclusivement en France, chiffrées avec AES-256, et l'accès est protégé par authentification 2FA. Nous sommes conformes RGPD et nos systèmes sont audités régulièrement. Chaque client bénéficie d'une isolation complète de ses données."
+  },
+  {
+    question: "Puis-je importer mes données existantes ?",
+    answer: "Oui, Azalscore permet l'import de données depuis Excel, CSV et d'autres ERP. Notre équipe peut vous accompagner dans la migration de vos données clients, produits, factures et historiques."
+  },
+  {
+    question: "Y a-t-il une API pour intégrer Azalscore ?",
+    answer: "Oui, Azalscore dispose d'une API REST complète et documentée (OpenAPI/Swagger). Vous pouvez intégrer l'ERP avec vos outils existants, votre site e-commerce, ou développer des automatisations personnalisées."
+  },
+  {
+    question: "Le support est-il inclus ?",
+    answer: "Oui, tous les plans incluent un support par email. Les plans Business et Enterprise bénéficient d'un support prioritaire avec des temps de réponse garantis. Le plan Enterprise inclut un support 24/7 dédié."
+  },
+  {
+    question: "Puis-je annuler mon abonnement à tout moment ?",
+    answer: "Oui, Azalscore fonctionne sans engagement. Vous pouvez annuler votre abonnement à tout moment depuis votre espace client. Vos données restent accessibles pendant 30 jours après l'annulation pour vous permettre de les exporter."
+  }
+];
+
+// Données Témoignages
+const testimonialData = [
+  {
+    text: "Depuis que nous utilisons Azalscore, notre gestion administrative a été divisée par deux. L'interface est intuitive et le support est très réactif. Je recommande vivement.",
+    name: "Marie Dupont",
+    role: "Dirigeante",
+    company: "Dupont Services",
+    rating: 5
+  },
+  {
+    text: "La conformité à la facturation électronique 2026 était notre priorité. Azalscore nous a permis d'être prêts bien avant l'échéance. Le module comptabilité est très complet.",
+    name: "Pierre Martin",
+    role: "Expert-Comptable",
+    company: "Cabinet Martin & Associés",
+    rating: 5
+  },
+  {
+    text: "Nous avons migré depuis un ERP complexe et coûteux. Azalscore offre les mêmes fonctionnalités à une fraction du prix. L'équipe nous a accompagnés tout au long de la migration.",
+    name: "Sophie Bernard",
+    role: "DAF",
+    company: "TechPro Industries",
+    rating: 5
+  }
+];
+
 export const LandingPage: React.FC = () => {
   const [demoEmail, setDemoEmail] = useState('');
   const [demoSent, setDemoSent] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Fermer le menu mobile lors du scroll ou redimensionnement
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Bloquer le scroll quand le menu mobile est ouvert
+  React.useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   const handleDemoRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!demoEmail) return;
 
     try {
-      await fetch('/api/v2/website/leads', {
+      await fetch('/api/website/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,17 +238,24 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="landing-page">
+      {/* Structured Data for SEO */}
+      <StructuredData />
+
       {/* Header */}
-      <header className="landing-header">
+      <header className="landing-header" role="banner">
         <div className="landing-header-content">
-          <Link to="/" className="landing-logo">
+          <Link to="/" className="landing-logo" aria-label="Azalscore - Accueil">
             <AzalscoreLogo size={36} />
             <span className="landing-logo-text">AZALSCORE</span>
           </Link>
-          <nav className="landing-nav">
+
+          {/* Navigation Desktop */}
+          <nav className="landing-nav" aria-label="Navigation principale">
             <a href="#modules">Modules</a>
-            <a href="#features">Fonctionnalites</a>
+            <a href="#features">Fonctionnalités</a>
             <a href="#pricing">Tarifs</a>
+            <a href="#faq">FAQ</a>
+            <Link to="/blog">Blog</Link>
             <Link to="/login" className="landing-btn landing-btn-outline">
               Connexion
             </Link>
@@ -118,89 +264,180 @@ export const LandingPage: React.FC = () => {
               <ArrowRight size={16} />
             </Link>
           </nav>
+
+          {/* Bouton Menu Mobile */}
+          <button
+            className={`landing-menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
         </div>
+
+        {/* Navigation Mobile */}
+        <nav
+          id="mobile-nav"
+          className={`landing-mobile-nav ${mobileMenuOpen ? 'active' : ''}`}
+          aria-label="Navigation mobile"
+        >
+          <a href="#modules" onClick={() => setMobileMenuOpen(false)}>Modules</a>
+          <a href="#features" onClick={() => setMobileMenuOpen(false)}>Fonctionnalités</a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Tarifs</a>
+          <a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
+          <Link to="/blog" onClick={() => setMobileMenuOpen(false)}>Blog</Link>
+          <Link
+            to="/login"
+            className="landing-btn landing-btn-outline"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Connexion
+          </Link>
+          <Link
+            to="/essai-gratuit"
+            className="landing-btn landing-btn-primary"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Essai gratuit 30 jours
+            <ArrowRight size={16} />
+          </Link>
+        </nav>
       </header>
 
       {/* Hero Section */}
-      <section className="landing-hero">
-        <div className="landing-hero-content">
-          <h1 className="landing-hero-title">
-            L'ERP complet pour les PME modernes
-          </h1>
-          <p className="landing-hero-subtitle">
-            Gerez votre entreprise de A a Z : CRM, Facturation, Comptabilite,
-            Stock, RH, Tresorerie. Une solution SaaS francaise, simple et
-            puissante.
-          </p>
-          <div className="landing-hero-actions">
-            <Link to="/essai-gratuit" className="landing-btn landing-btn-primary landing-btn-lg">
-              Commencer gratuitement
-              <ArrowRight size={20} />
-            </Link>
-            <a href="#demo" className="landing-btn landing-btn-outline landing-btn-lg">
-              Demander une demo
-            </a>
+      <section className="landing-hero" aria-labelledby="hero-title">
+        <div className="landing-hero-grid">
+          <div className="landing-hero-content">
+            <h1 id="hero-title" className="landing-hero-title">
+              L'ERP complet pour les PME modernes
+            </h1>
+            <p className="landing-hero-subtitle">
+              Gérez votre entreprise de A à Z : CRM, Facturation, Comptabilité,
+              Stock, RH, Trésorerie. Une solution SaaS française, simple et
+              puissante.
+            </p>
+            <div className="landing-hero-actions">
+              <Link to="/essai-gratuit" className="landing-btn landing-btn-primary landing-btn-lg">
+                Essai gratuit 30 jours
+                <ArrowRight size={20} />
+              </Link>
+              <a href="#demo" className="landing-btn landing-btn-outline landing-btn-lg">
+                Demander une demo
+              </a>
+            </div>
+            <div className="landing-hero-stats" role="list" aria-label="Chiffres clés Azalscore">
+              <div className="landing-stat" role="listitem">
+                <span className="landing-stat-value">100%</span>
+                <span className="landing-stat-label">Français</span>
+              </div>
+              <div className="landing-stat" role="listitem">
+                <span className="landing-stat-value">20+</span>
+                <span className="landing-stat-label">Modules</span>
+              </div>
+              <div className="landing-stat" role="listitem">
+                <span className="landing-stat-value">RGPD</span>
+                <span className="landing-stat-label">Conforme</span>
+              </div>
+              <div className="landing-stat" role="listitem">
+                <span className="landing-stat-value">2026</span>
+                <span className="landing-stat-label">E-Facture</span>
+              </div>
+            </div>
           </div>
-          <div className="landing-hero-stats">
-            <div className="landing-stat">
-              <span className="landing-stat-value">100%</span>
-              <span className="landing-stat-label">Francais</span>
+          <div className="landing-hero-image">
+            <picture>
+              <source srcSet="/screenshots/mockup-dashboard.webp" type="image/webp" />
+              <img
+                src="/screenshots/mockup-dashboard.png"
+                alt="Interface AZALSCORE - Tableau de bord ERP avec CRM, Facturation et Gestion"
+                loading="eager"
+                width="800"
+                height="500"
+              />
+            </picture>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Badges */}
+      <section className="landing-trust-section">
+        <div className="landing-container">
+          <div className="landing-trust-badges">
+            <div className="landing-trust-badge">
+              <Shield size={20} />
+              <span>Heberge en France</span>
             </div>
-            <div className="landing-stat">
-              <span className="landing-stat-value">20+</span>
-              <span className="landing-stat-label">Modules</span>
+            <div className="landing-trust-badge">
+              <Lock size={20} />
+              <span>Chiffrement AES-256</span>
             </div>
-            <div className="landing-stat">
-              <span className="landing-stat-value">RGPD</span>
-              <span className="landing-stat-label">Conforme</span>
+            <div className="landing-trust-badge">
+              <CheckCircle size={20} />
+              <span>Conforme RGPD</span>
+            </div>
+            <div className="landing-trust-badge">
+              <Server size={20} />
+              <span>SLA 99.9%</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="landing-section landing-features">
+      {/* Demo Video Section */}
+      <section id="demo" className="landing-demo-section">
         <div className="landing-container">
-          <h2 className="landing-section-title">Pourquoi choisir AZALSCORE ?</h2>
+          <h2 className="landing-section-title">Découvrez AZALSCORE en action</h2>
+          <DemoVideo />
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="landing-section landing-features" aria-labelledby="features-title">
+        <div className="landing-container">
+          <h2 id="features-title" className="landing-section-title">Pourquoi choisir AZALSCORE ?</h2>
           <div className="landing-features-grid">
             <FeatureCard
               icon={<Zap size={28} />}
               title="Simple et rapide"
-              description="Interface intuitive, prise en main immediate. Pas de formation necessaire."
+              description="Interface intuitive, prise en main immédiate. Pas de formation nécessaire."
             />
             <FeatureCard
               icon={<Shield size={28} />}
-              title="Securise"
-              description="Donnees hebergees en France, chiffrement AES-256, authentification 2FA."
+              title="Sécurisé"
+              description="Données hébergées en France, chiffrement AES-256, authentification 2FA."
             />
             <FeatureCard
               icon={<Globe size={28} />}
               title="Multi-tenant"
-              description="Isolation complete des donnees par entreprise. Conformite RGPD."
+              description="Isolation complète des données par entreprise. Conformité RGPD."
             />
             <FeatureCard
               icon={<Clock size={28} />}
-              title="Temps reel"
-              description="Tableaux de bord actualises en temps reel. Decisions eclairees."
+              title="Temps réel"
+              description="Tableaux de bord actualisés en temps réel. Décisions éclairées."
             />
             <FeatureCard
               icon={<HeadphonesIcon size={28} />}
-              title="Support reactif"
-              description="Equipe francaise disponible par chat, email et telephone."
+              title="Support réactif"
+              description="Équipe française disponible par chat, email et téléphone."
             />
             <FeatureCard
               icon={<CreditCard size={28} />}
               title="Sans engagement"
-              description="Abonnement mensuel flexible. Annulez a tout moment."
+              description="Abonnement mensuel flexible. Annulez à tout moment."
             />
           </div>
         </div>
       </section>
 
       {/* Modules Section */}
-      <section id="modules" className="landing-section landing-modules">
+      <section id="modules" className="landing-section landing-modules" aria-labelledby="modules-title">
         <div className="landing-container">
-          <h2 className="landing-section-title">Tous les modules dont vous avez besoin</h2>
+          <h2 id="modules-title" className="landing-section-title">Tous les modules dont vous avez besoin</h2>
           <div className="landing-modules-grid">
             <ModuleCard
               icon={<Users size={24} />}
@@ -208,7 +445,7 @@ export const LandingPage: React.FC = () => {
               features={[
                 'Gestion des clients et prospects',
                 'Pipeline commercial',
-                'Historique des echanges',
+                'Historique des échanges',
               ]}
             />
             <ModuleCard
@@ -216,7 +453,7 @@ export const LandingPage: React.FC = () => {
               title="Facturation"
               features={[
                 'Devis et factures',
-                'Factures electroniques',
+                'Factures électroniques 2026',
                 'Relances automatiques',
               ]}
             />
@@ -225,25 +462,25 @@ export const LandingPage: React.FC = () => {
               title="Stock"
               features={[
                 'Gestion des articles',
-                'Inventaire en temps reel',
-                'Alertes de reapprovisionnement',
+                'Inventaire en temps réel',
+                'Alertes de réapprovisionnement',
               ]}
             />
             <ModuleCard
               icon={<BarChart3 size={24} />}
-              title="Comptabilite"
+              title="Comptabilité"
               features={[
-                'Plan comptable francais',
-                'FEC export',
+                'Plan comptable français',
+                'Export FEC',
                 'Rapprochement bancaire',
               ]}
             />
             <ModuleCard
               icon={<CreditCard size={24} />}
-              title="Tresorerie"
+              title="Trésorerie"
               features={[
                 'Suivi des encaissements',
-                'Previsions de tresorerie',
+                'Prévisions de trésorerie',
                 'Multi-devises',
               ]}
             />
@@ -251,8 +488,8 @@ export const LandingPage: React.FC = () => {
               icon={<Users size={24} />}
               title="RH"
               features={[
-                'Gestion des employes',
-                'Conges et absences',
+                'Gestion des employés',
+                'Congés et absences',
                 'Bulletins de paie',
               ]}
             />
@@ -260,12 +497,24 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="landing-section landing-pricing">
+      {/* Testimonials Section */}
+      <section id="testimonials" className="landing-section landing-testimonials">
         <div className="landing-container">
-          <h2 className="landing-section-title">Tarifs simples et transparents</h2>
+          <h2 className="landing-section-title">Ce que nos clients disent</h2>
+          <div className="landing-testimonials-grid">
+            {testimonialData.map((testimonial, idx) => (
+              <TestimonialCard key={idx} {...testimonial} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="landing-section landing-pricing" aria-labelledby="pricing-title">
+        <div className="landing-container">
+          <h2 id="pricing-title" className="landing-section-title">Tarifs simples et transparents</h2>
           <p className="landing-section-subtitle">
-            Sans engagement. Annulez a tout moment.
+            Sans engagement. Annulez à tout moment. Essai gratuit 30 jours.
           </p>
           <div className="landing-pricing-grid">
             {/* Starter */}
@@ -282,13 +531,13 @@ export const LandingPage: React.FC = () => {
               <ul className="landing-pricing-features">
                 <li><Check size={16} /> 1-3 utilisateurs</li>
                 <li><Check size={16} /> Modules essentiels</li>
-                <li><Check size={16} /> Facturation electronique</li>
+                <li><Check size={16} /> Facturation électronique</li>
                 <li><Check size={16} /> Support email</li>
-                <li><Check size={16} /> Mises a jour incluses</li>
+                <li><Check size={16} /> Mises à jour incluses</li>
               </ul>
-              <a href="#demo" className="landing-btn landing-btn-outline landing-btn-block">
+              <Link to="/essai-gratuit" className="landing-btn landing-btn-outline landing-btn-block">
                 Essayer gratuitement
-              </a>
+              </Link>
             </div>
 
             {/* Business - Recommended */}
@@ -306,14 +555,14 @@ export const LandingPage: React.FC = () => {
               <ul className="landing-pricing-features">
                 <li><Check size={16} /> 5-15 utilisateurs</li>
                 <li><Check size={16} /> Tous les modules</li>
-                <li><Check size={16} /> Facturation electronique</li>
+                <li><Check size={16} /> Facturation électronique</li>
                 <li><Check size={16} /> Support prioritaire</li>
-                <li><Check size={16} /> API & integrations</li>
-                <li><Check size={16} /> Rapports avances</li>
+                <li><Check size={16} /> API v3 & intégrations</li>
+                <li><Check size={16} /> Rapports avancés</li>
               </ul>
-              <a href="#demo" className="landing-btn landing-btn-primary landing-btn-block">
+              <Link to="/essai-gratuit" className="landing-btn landing-btn-primary landing-btn-block">
                 Essayer gratuitement
-              </a>
+              </Link>
             </div>
 
             {/* Enterprise */}
@@ -326,10 +575,10 @@ export const LandingPage: React.FC = () => {
                 <span className="landing-pricing-amount">Sur devis</span>
               </div>
               <ul className="landing-pricing-features">
-                <li><Check size={16} /> Utilisateurs illimites</li>
+                <li><Check size={16} /> Utilisateurs illimités</li>
                 <li><Check size={16} /> Tous les modules</li>
-                <li><Check size={16} /> Facturation electronique</li>
-                <li><Check size={16} /> Support 24/7 dedie</li>
+                <li><Check size={16} /> Facturation électronique</li>
+                <li><Check size={16} /> Support 24/7 dédié</li>
                 <li><Check size={16} /> SLA garanti 99.9%</li>
                 <li><Check size={16} /> Formation sur site</li>
                 <li><Check size={16} /> Personnalisations</li>
@@ -340,17 +589,35 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
           <p className="landing-pricing-note">
-            Tous les plans incluent : hebergement securise en France, conformite RGPD,
+            Tous les plans incluent : hébergement sécurisé en France, conformité RGPD,
             sauvegardes automatiques, chiffrement AES-256.
           </p>
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section id="faq" className="landing-section landing-faq" aria-labelledby="faq-title">
+        <div className="landing-container">
+          <h2 id="faq-title" className="landing-section-title">Questions fréquentes</h2>
+          <div className="landing-faq-grid">
+            {faqData.map((faq, idx) => (
+              <FAQItem
+                key={idx}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFaq === idx}
+                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Demo Request Section */}
-      <section id="demo" className="landing-section landing-demo">
+      <section id="demo-request" className="landing-section landing-demo" aria-labelledby="demo-request-title">
         <div className="landing-container">
           <div className="landing-demo-card">
-            <h2>Demandez une demonstration personnalisee</h2>
+            <h2 id="demo-request-title">Demandez une démonstration personnalisée</h2>
             <p>
               Un expert vous montrera comment AZALSCORE peut transformer votre
               gestion d'entreprise.
@@ -380,33 +647,35 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="landing-section landing-cta">
+      <section className="landing-section landing-cta" aria-labelledby="cta-title">
         <div className="landing-container">
-          <h2>Pret a simplifier votre gestion ?</h2>
-          <p>Rejoignez les entreprises qui font confiance a AZALSCORE.</p>
+          <h2 id="cta-title">Prêt à simplifier votre gestion ?</h2>
+          <p>Rejoignez les entreprises qui font confiance à AZALSCORE.</p>
           <Link to="/essai-gratuit" className="landing-btn landing-btn-primary landing-btn-lg">
-            Commencer maintenant
+            Commencer maintenant - Essai gratuit
             <ArrowRight size={20} />
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="landing-footer">
+      <footer className="landing-footer" role="contentinfo">
         <div className="landing-container">
           <div className="landing-footer-content">
             <div className="landing-footer-brand">
               <AzalscoreLogo size={32} />
               <span>AZALSCORE</span>
             </div>
-            <div className="landing-footer-links">
-              <Link to="/mentions-legales">Mentions legales</Link>
-              <Link to="/confidentialite">Confidentialite</Link>
+            <nav className="landing-footer-links" aria-label="Liens légaux">
+              <Link to="/mentions-legales">Mentions légales</Link>
+              <Link to="/confidentialite">Confidentialité</Link>
               <Link to="/cgv">CGV</Link>
               <Link to="/contact">Contact</Link>
-            </div>
+            </nav>
             <p className="landing-footer-copy">
-              &copy; 2026 AZALSCORE - MASITH Developpement. Tous droits reserves.
+              &copy; 2026 AZALSCORE - MASITH Développement. Tous droits réservés.
+              <br />
+              ERP SaaS français - Hébergé en France - Conforme RGPD
             </p>
           </div>
         </div>

@@ -86,7 +86,18 @@ async def classify_decision(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # SÉCURITÉ: Ne pas exposer les détails d'erreur internes
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(
+            "[DECISION] Erreur création décision",
+            extra={"error": str(e)[:200], "entity_type": request.entity_type},
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur interne lors de la création de la décision"
+        )
 
 
 @router.get("/status/{entity_type}/{entity_id}")

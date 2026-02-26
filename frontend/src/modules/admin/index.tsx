@@ -1,34 +1,84 @@
 import React, { useState } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@core/api-client';
-import { useCapabilitiesStore } from '@core/capabilities';
-import { useAuth } from '@core/auth';
-import { PageWrapper, Card, Grid } from '@ui/layout';
-import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
-import { Select, Input } from '@ui/forms';
-import { StatCard } from '@ui/dashboards';
-import { BaseViewStandard } from '@ui/standards';
-import { PermissionsManager } from '@ui/simple';
-import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 import {
   Users, Building, Shield, Database, Activity, AlertTriangle,
   User, Key, Clock, Sparkles, ArrowLeft, Edit3, Lock, Unlock, Trash2,
-  Settings, Package
+  Package
 } from 'lucide-react';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { api } from '@core/api-client';
+import { useAuth } from '@core/auth';
+import { useCapabilitiesStore } from '@core/capabilities';
+import { serializeFilters } from '@core/query-keys';
+import SocialNetworksModule from '@modules/social-networks';
+import { Button, Modal } from '@ui/actions';
+import { StatCard } from '@ui/dashboards';
+import { Select, Input } from '@ui/forms';
+import { PageWrapper, Card, Grid } from '@ui/layout';
+import { BaseViewStandard } from '@ui/standards';
+import { DataTable } from '@ui/tables';
+import type { AvailableModule } from '@/constants/modules';
 import type { TableColumn } from '@/types';
 import { unwrapApiResponse } from '@/types';
-import type { AdminUser, Role } from './types';
-import {
-  USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
-  hasTwoFactorEnabled, mustChangePassword
-} from './types';
 import { formatDateTime } from '@/utils/formatters';
 import {
   UserInfoTab, UserPermissionsTab, UserActivityTab,
   UserHistoryTab, UserIATab, SequencesView, EnrichmentProvidersView
 } from './components';
+import {
+  USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
+  hasTwoFactorEnabled, mustChangePassword
+} from './types';
+import type { AdminUser, Role } from './types';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
+
+// Type for Pydantic validation error
+interface ValidationErrorDetail {
+  loc: string[];
+  msg: string;
+  type?: string;
+}
+
+interface ValidationError {
+  message?: string;
+  response?: {
+    data?: {
+      detail?: string | ValidationErrorDetail[];
+    };
+  };
+  detail?: ValidationErrorDetail[];
+}
+
+// ============================================================================
+// HOOK: Charger les modules depuis l'API (source unique de verite)
+// ============================================================================
+
+interface ModulesResponse {
+  categories: string[];
+  modules: AvailableModule[];
+  modules_by_category: Record<string, AvailableModule[]>;
+}
+
+const useAvailableModules = () => {
+  return useQuery({
+    queryKey: ['admin', 'modules', 'available'],
+    queryFn: async (): Promise<ModulesResponse> => {
+      try {
+        console.log('[Admin] Fetching available modules...');
+        const response = await api.get<ModulesResponse>('/admin/modules/available');
+        const data = response?.data || response;
+        console.log('[Admin] Modules loaded:', data?.modules?.length || 0);
+        return data as ModulesResponse;
+      } catch (err) {
+        console.error('[Admin] Error loading modules:', err);
+        // Fallback vide si API non disponible
+        return { categories: [], modules: [], modules_by_category: {} };
+      }
+    },
+    staleTime: 30 * 1000, // Cache 30 secondes (réduit pour debug)
+    retry: 2,
+  });
+};
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -73,22 +123,21 @@ interface User {
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
   last_login?: string;
   created_at: string;
+  default_view?: string;
 }
 
 interface Tenant {
   id: string;
-  code: string;
+  tenant_id: string;
   name: string;
-  domain?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'SUSPENDED';
-  plan: 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+  email: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'SUSPENDED' | 'PENDING';
+  plan: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE' | 'CUSTOM';
   modules_enabled: string[];
-  user_count: number;
-  storage_used: number;
   max_users: number;
-  max_storage: number;
+  max_storage_gb: number;
+  storage_used_gb: number;
   created_at: string;
-  expires_at?: string;
 }
 
 interface AuditLog {
@@ -99,7 +148,7 @@ interface AuditLog {
   action: string;
   resource_type: string;
   resource_id?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
 }
@@ -152,26 +201,7 @@ const TENANT_PLANS = [
   { value: 'ENTERPRISE', label: 'Enterprise' }
 ];
 
-const AVAILABLE_MODULES = [
-  { code: 'invoicing', label: 'Facturation', description: 'Devis, commandes, factures' },
-  { code: 'payments', label: 'Paiements', description: 'Gestion des paiements' },
-  { code: 'projects', label: 'Projets/Affaires', description: 'Suivi des projets et affaires' },
-  { code: 'partners', label: 'CRM/Clients', description: 'Gestion relation client' },
-  { code: 'inventory', label: 'Stock', description: 'Gestion des stocks' },
-  { code: 'purchases', label: 'Achats', description: 'Commandes fournisseurs' },
-  { code: 'hr', label: 'RH', description: 'Ressources humaines' },
-  { code: 'production', label: 'Production', description: 'Gestion de production' },
-  { code: 'maintenance', label: 'Maintenance', description: 'GMAO' },
-  { code: 'quality', label: 'Qualite', description: 'Controle qualite' },
-  { code: 'pos', label: 'Point de Vente', description: 'Caisse et POS' },
-  { code: 'ecommerce', label: 'E-commerce', description: 'Boutique en ligne' },
-  { code: 'helpdesk', label: 'Support', description: 'Tickets support client' },
-  { code: 'accounting', label: 'Comptabilite', description: 'Comptabilite generale' },
-  { code: 'treasury', label: 'Tresorerie', description: 'Gestion de tresorerie' },
-  { code: 'bi', label: 'BI/Reporting', description: 'Tableaux de bord et analyses' },
-  { code: 'compliance', label: 'Conformite', description: 'Conformite reglementaire' },
-  { code: 'interventions', label: 'Interventions', description: 'Gestion des interventions' },
-];
+// Modules charges dynamiquement depuis l'API via useAvailableModules()
 
 const BACKUP_TYPES = [
   { value: 'FULL', label: 'Complete' },
@@ -190,7 +220,7 @@ const BACKUP_DESTINATIONS = [
 // HELPERS
 // ============================================================================
 
-const formatDate = (date: string): string => {
+const _formatDate = (date: string): string => {
   return new Date(date).toLocaleDateString('fr-FR');
 };
 
@@ -208,7 +238,7 @@ const getStatusInfo = (statuses: StatusInfo[], status: string): StatusInfo => {
   return statuses.find(s => s.value === status) || { value: status, label: status, color: 'gray' };
 };
 
-const formatBytes = (bytes: number): string => {
+const _formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -234,7 +264,7 @@ const useAdminDashboard = () => {
         errors_today: 0
       };
       try {
-        const response = await api.get<AdminDashboard>('/v1/admin/dashboard', {
+        const response = await api.get<AdminDashboard>('/admin/dashboard', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles
@@ -252,14 +282,14 @@ const useAdminDashboard = () => {
 
 const useUsers = (filters?: { status?: string; role_id?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'users', filters],
+    queryKey: ['admin', 'users', serializeFilters(filters)],
     queryFn: async (): Promise<User[]> => {
       try {
         const params = new URLSearchParams();
         if (filters?.status) params.append('is_active', filters.status === 'active' ? 'true' : 'false');
         if (filters?.role_id) params.append('role_code', filters.role_id);
         const queryString = params.toString();
-        const res = await api.get<{ items: User[]; total: number }>(`/v1/iam/users${queryString ? `?${queryString}` : ''}`, {
+        const res = await api.get<{ items: User[]; total: number }>(`/iam/users${queryString ? `?${queryString}` : ''}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
@@ -278,7 +308,7 @@ const useUser = (id: string | undefined) => {
     queryKey: ['admin', 'user', id],
     queryFn: async (): Promise<AdminUser | null> => {
       try {
-        const response = await api.get<AdminUser>(`/v1/iam/users/${id}`, {
+        const response = await api.get<AdminUser>(`/iam/users/${id}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (objet direct ou enveloppé)
@@ -317,7 +347,7 @@ const useRoles = () => {
     queryKey: ['admin', 'roles'],
     queryFn: async (): Promise<Role[]> => {
       try {
-        const response = await api.get<Role[]>('/v1/iam/roles', {
+        const response = await api.get<Role[]>('/iam/roles', {
           headers: { 'X-Silent-Error': 'true' }
         });
         return extractArrayFromResponse<Role>(response);
@@ -343,7 +373,7 @@ const useCreateRole = () => {
       requires_approval?: boolean;
       max_users?: number;
     }) => {
-      const res = await api.post('/v1/iam/roles', data);
+      const res = await api.post('/iam/roles', data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
@@ -364,7 +394,7 @@ const useUpdateRole = () => {
         is_active?: boolean;
       }
     }) => {
-      const res = await api.patch(`/v1/iam/roles/${id}`, data);
+      const res = await api.patch(`/iam/roles/${id}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
@@ -375,7 +405,7 @@ const useDeleteRole = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/iam/roles/${id}`);
+      await api.delete(`/iam/roles/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
   });
@@ -394,7 +424,7 @@ const usePermissions = () => {
     queryKey: ['admin', 'permissions'],
     queryFn: async (): Promise<Permission[]> => {
       try {
-        const response = await api.get<{ items: Permission[] }>('/v1/iam/permissions', {
+        const response = await api.get<{ items: Permission[] }>('/iam/permissions', {
           headers: { 'X-Silent-Error': 'true' }
         });
         return extractArrayFromResponse<Permission>(response);
@@ -426,17 +456,18 @@ const useCapabilitiesByModule = () => {
   return useQuery({
     queryKey: ['admin', 'capabilities-modules'],
     queryFn: async (): Promise<CapabilitiesByModule> => {
-      const response = await api.get('/v1/iam/capabilities/modules');
+      const response = await api.get('/iam/capabilities/modules');
 
       // La réponse est directement l'objet CAPABILITIES_BY_MODULE
       const data = response as unknown;
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        const obj = data as Record<string, any>;
+        const obj = data as Record<string, unknown>;
         const keys = Object.keys(obj);
 
         // Vérifier que c'est bien le format attendu (au moins un module avec capabilities)
         const firstKey = keys[0];
-        if (firstKey && obj[firstKey]?.capabilities) {
+        const firstModule = obj[firstKey] as { capabilities?: unknown[] } | undefined;
+        if (firstKey && firstModule?.capabilities) {
           return obj as CapabilitiesByModule;
         }
       }
@@ -455,7 +486,7 @@ const useUserPermissions = (userId: string | undefined) => {
     queryFn: async (): Promise<string[]> => {
       if (!userId) return [];
       try {
-        const response = await api.get<string[]>(`/v1/iam/users/${userId}/permissions`, {
+        const response = await api.get<string[]>(`/iam/users/${userId}/permissions`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) return response;
@@ -474,7 +505,7 @@ const useUpdateUserPermissions = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, capabilities }: { userId: string; capabilities: string[] }) => {
-      const res = await api.put(`/v1/iam/users/${userId}/permissions`, { capabilities });
+      const res = await api.put(`/iam/users/${userId}/permissions`, { capabilities });
       return res;
     },
     onSuccess: (_, variables) => {
@@ -486,10 +517,10 @@ const useUpdateUserPermissions = () => {
 
 const useTenants = (filters?: { status?: string; plan?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'tenants', filters],
+    queryKey: ['admin', 'tenants', serializeFilters(filters)],
     queryFn: async (): Promise<Tenant[]> => {
       try {
-        const response = await api.get<Tenant[]>('/v1/tenants', {
+        const response = await api.get<Tenant[]>('/tenants', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (tableau direct ou enveloppé)
@@ -510,13 +541,13 @@ const useTenants = (filters?: { status?: string; plan?: string }) => {
 
 const useAuditLogs = (filters?: { resource_type?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'audit-logs', filters],
+    queryKey: ['admin', 'audit-logs', serializeFilters(filters)],
     queryFn: async (): Promise<AuditLog[]> => {
       try {
         const params = new URLSearchParams();
         if (filters?.resource_type) params.append('resource_type', filters.resource_type);
         const queryString = params.toString();
-        const response = await api.get<AuditLog[]>(`/v1/audit/logs${queryString ? `?${queryString}` : ''}`, {
+        const response = await api.get<AuditLog[]>(`/audit/logs${queryString ? `?${queryString}` : ''}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) {
@@ -539,7 +570,7 @@ const useBackupConfigs = () => {
     queryKey: ['admin', 'backups'],
     queryFn: async (): Promise<BackupConfig[]> => {
       try {
-        const response = await api.get<BackupConfig[]>('/v1/backup/config', {
+        const response = await api.get<BackupConfig[]>('/backup/config', {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) {
@@ -561,7 +592,7 @@ const useCreateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<User> & { password: string }) => {
-      const res = await api.post('/v1/iam/users', data);
+      const res = await api.post('/iam/users', data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -572,7 +603,7 @@ const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await api.patch(`/v1/iam/users/${id}`, { status });
+      const res = await api.patch(`/iam/users/${id}`, { status });
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -586,7 +617,7 @@ const useUpdateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
-      const res = await api.patch(`/v1/iam/users/${id}`, data);
+      const res = await api.patch(`/iam/users/${id}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -600,7 +631,7 @@ const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.delete(`/v1/iam/users/${id}`);
+      const res = await api.delete(`/iam/users/${id}`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -613,7 +644,7 @@ const useRunBackup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.post(`/v1/backup/${id}/run`);
+      const res = await api.post(`/backup/${id}/run`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'backups'] })
@@ -642,7 +673,7 @@ const UserDetailView: React.FC = () => {
     return (
       <PageWrapper title="Erreur" subtitle="Utilisateur non trouve">
         <Card>
-          <p className="text-red-600">Impossible de charger l'utilisateur</p>
+          <p className="text-red-600">Impossible de charger l&apos;utilisateur</p>
           <Button onClick={() => navigate('/admin')} className="mt-4">Retour</Button>
         </Card>
       </PageWrapper>
@@ -799,13 +830,13 @@ const UsersView: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Parser les erreurs de validation Pydantic
-  const parseValidationErrors = (error: any): Record<string, string> => {
+  const parseValidationErrors = (error: ValidationError): Record<string, string> => {
     const errors: Record<string, string> = {};
     try {
       // Format: { detail: [{ loc: ['body', 'field'], msg: 'message' }] }
       const details = error?.response?.data?.detail || error?.detail || [];
       if (Array.isArray(details)) {
-        details.forEach((err: any) => {
+        details.forEach((err: ValidationErrorDetail) => {
           const field = err.loc?.[err.loc.length - 1] || 'general';
           errors[field] = err.msg;
         });
@@ -823,8 +854,8 @@ const UsersView: React.FC = () => {
       await createUser.mutateAsync(formData);
       setShowModal(false);
       setFormData({ password: '' });
-    } catch (error: any) {
-      const errors = parseValidationErrors(error);
+    } catch (error: unknown) {
+      const errors = parseValidationErrors(error as ValidationError);
       setFieldErrors(errors);
     }
   };
@@ -846,7 +877,8 @@ const UsersView: React.FC = () => {
       last_name: user.last_name || '',
       username: user.username,
       email: user.email,
-      role_id: user.role_id || ''
+      role_id: user.role_id || '',
+      default_view: user.default_view || ''
     });
     setFieldErrors({});
     setShowEditModal(true);
@@ -858,12 +890,12 @@ const UsersView: React.FC = () => {
     setFieldErrors({});
     try {
       // N'envoyer que les champs supportés par l'API
-      const { role_id, ...updateData } = editFormData;
+      const { role_id: _role_id, ...updateData } = editFormData;
       await updateUser.mutateAsync({ id: editingUser.id, data: updateData });
       setShowEditModal(false);
       setEditingUser(null);
-    } catch (error: any) {
-      const errors = parseValidationErrors(error);
+    } catch (error: unknown) {
+      const errors = parseValidationErrors(error as ValidationError);
       setFieldErrors(errors);
     }
   };
@@ -894,7 +926,7 @@ const UsersView: React.FC = () => {
     { id: 'role_name', header: 'Role', accessor: 'role_name', render: (v) => (v as string) || '-' },
     { id: 'last_login', header: 'Derniere connexion', accessor: 'last_login', render: (v) => (v as string) ? formatDateTimeFn(v as string) : 'Jamais' },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v, row) => (
-      <div onClick={(e) => e.stopPropagation()}>
+      <div onClick={(e) => e.stopPropagation()} role="presentation">
         <Select
           value={v as string}
           onChange={(val) => {
@@ -908,7 +940,7 @@ const UsersView: React.FC = () => {
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => {
       const u = row as User;
       return (
-        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-1" onClick={(e) => e.stopPropagation()} role="presentation">
           <Button size="sm" variant="secondary" onClick={() => handleEdit(u)}>
             <Edit3 size={14} />
           </Button>
@@ -945,7 +977,7 @@ const UsersView: React.FC = () => {
         data={users}
         isLoading={isLoading}
         keyField="id"
-        onRowClick={handleRowClick}
+          onRowClick={handleRowClick}
       />
 
       <Modal isOpen={showModal} onClose={handleCloseModal} title="Nouvel utilisateur">
@@ -957,8 +989,9 @@ const UsersView: React.FC = () => {
           )}
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Prenom</label>
+              <label htmlFor="admin-first-name">Prenom</label>
               <Input
+                id="admin-first-name"
                 value={formData.first_name || ''}
                 onChange={(v) => setFormData({ ...formData, first_name: v })}
                 error={!!fieldErrors.first_name}
@@ -966,8 +999,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.first_name && <span className="azals-field__error">{fieldErrors.first_name}</span>}
             </div>
             <div className="azals-field">
-              <label>Nom</label>
+              <label htmlFor="admin-last-name">Nom</label>
               <Input
+                id="admin-last-name"
                 value={formData.last_name || ''}
                 onChange={(v) => setFormData({ ...formData, last_name: v })}
                 error={!!fieldErrors.last_name}
@@ -977,8 +1011,9 @@ const UsersView: React.FC = () => {
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Nom d'utilisateur *</label>
+              <label htmlFor="admin-username">Nom d&apos;utilisateur *</label>
               <Input
+                id="admin-username"
                 value={formData.username || ''}
                 onChange={(v) => setFormData({ ...formData, username: v })}
                 error={!!fieldErrors.username}
@@ -986,8 +1021,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.username && <span className="azals-field__error">{fieldErrors.username}</span>}
             </div>
             <div className="azals-field">
-              <label>Email *</label>
+              <label htmlFor="admin-email">Email *</label>
               <Input
+                id="admin-email"
                 type="email"
                 value={formData.email || ''}
                 onChange={(v) => setFormData({ ...formData, email: v })}
@@ -998,8 +1034,9 @@ const UsersView: React.FC = () => {
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Mot de passe * <span className="text-muted text-xs">(min. 12 caracteres)</span></label>
+              <label htmlFor="admin-password">Mot de passe * <span className="text-muted text-xs">(min. 12 caracteres)</span></label>
               <Input
+                id="admin-password"
                 type="password"
                 value={formData.password}
                 onChange={(v) => setFormData({ ...formData, password: v })}
@@ -1008,8 +1045,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.password && <span className="azals-field__error">{fieldErrors.password}</span>}
             </div>
             <div className="azals-field">
-              <label>Role ({roles.length} disponibles)</label>
+              <label htmlFor="admin-role">Role ({roles.length} disponibles)</label>
               <Select
+                id="admin-role"
                 value={formData.role_id || ''}
                 onChange={(val) => setFormData({ ...formData, role_id: val })}
                 options={[{ value: '', label: 'Selectionner...' }, ...roles.map(r => ({ value: r.id, label: r.name }))]}
@@ -1034,8 +1072,9 @@ const UsersView: React.FC = () => {
           )}
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Prenom</label>
+              <label htmlFor="edit-first-name">Prenom</label>
               <Input
+                id="edit-first-name"
                 value={editFormData.first_name || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, first_name: v })}
                 error={!!fieldErrors.first_name}
@@ -1043,8 +1082,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.first_name && <span className="azals-field__error">{fieldErrors.first_name}</span>}
             </div>
             <div className="azals-field">
-              <label>Nom</label>
+              <label htmlFor="edit-last-name">Nom</label>
               <Input
+                id="edit-last-name"
                 value={editFormData.last_name || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, last_name: v })}
                 error={!!fieldErrors.last_name}
@@ -1054,8 +1094,9 @@ const UsersView: React.FC = () => {
           </Grid>
           <Grid cols={2}>
             <div className="azals-field">
-              <label>Nom d'utilisateur *</label>
+              <label htmlFor="edit-username">Nom d&apos;utilisateur *</label>
               <Input
+                id="edit-username"
                 value={editFormData.username || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, username: v })}
                 error={!!fieldErrors.username}
@@ -1063,8 +1104,9 @@ const UsersView: React.FC = () => {
               {fieldErrors.username && <span className="azals-field__error">{fieldErrors.username}</span>}
             </div>
             <div className="azals-field">
-              <label>Email *</label>
+              <label htmlFor="edit-email">Email *</label>
               <Input
+                id="edit-email"
                 type="email"
                 value={editFormData.email || ''}
                 onChange={(v) => setEditFormData({ ...editFormData, email: v })}
@@ -1073,6 +1115,37 @@ const UsersView: React.FC = () => {
               {fieldErrors.email && <span className="azals-field__error">{fieldErrors.email}</span>}
             </div>
           </Grid>
+          <div className="azals-field mt-4">
+            <label htmlFor="edit-default-view">Vue par defaut apres connexion</label>
+            <Select
+              id="edit-default-view"
+              value={editFormData.default_view || ''}
+              onChange={(v) => setEditFormData({ ...editFormData, default_view: v || undefined })}
+              options={[
+                { value: '', label: 'Automatique (selon le rôle)' },
+                { value: 'cockpit', label: 'Cockpit (Tableau de bord)' },
+                { value: 'admin', label: 'Administration' },
+                { value: 'saisie', label: 'Nouvelle saisie' },
+                { value: 'gestion-devis', label: 'Gestion - Devis' },
+                { value: 'gestion-commandes', label: 'Gestion - Commandes' },
+                { value: 'gestion-interventions', label: 'Gestion - Interventions' },
+                { value: 'gestion-factures', label: 'Gestion - Factures' },
+                { value: 'gestion-paiements', label: 'Gestion - Paiements' },
+                { value: 'affaires', label: 'Affaires' },
+                { value: 'crm', label: 'CRM' },
+                { value: 'stock', label: 'Stock' },
+                { value: 'achats', label: 'Achats' },
+                { value: 'projets', label: 'Projets' },
+                { value: 'rh', label: 'Ressources Humaines' },
+                { value: 'vehicules', label: 'Véhicules' },
+                { value: 'compta', label: 'Comptabilité' },
+                { value: 'tresorerie', label: 'Trésorerie' },
+              ]}
+            />
+            <span className="text-xs text-gray-500 mt-1 block">
+              Definit la premiere page affichee lors de la connexion de l&apos;utilisateur
+            </span>
+          </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="secondary" onClick={handleCloseEditModal}>Annuler</Button>
             <Button type="submit" isLoading={updateUser.isPending}>Enregistrer</Button>
@@ -1098,7 +1171,7 @@ const UserPermissionsModal: React.FC<{
 
   // Pour rafraîchir les capabilities si l'utilisateur modifié est l'utilisateur connecté
   const refreshCapabilities = useCapabilitiesStore((state) => state.refreshCapabilities);
-  const { user: currentUser } = useAuth();
+  const { user: _currentUser } = useAuth();
 
   const [selectedCaps, setSelectedCaps] = useState<Set<string>>(new Set());
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
@@ -1355,6 +1428,7 @@ const UserPermissionsModal: React.FC<{
                         .map(cap => (
                           <label
                             key={cap.code}
+                            aria-label={cap.name}
                             style={{
                               display: 'flex',
                               alignItems: 'flex-start',
@@ -1385,7 +1459,7 @@ const UserPermissionsModal: React.FC<{
 
             {filteredModules.length === 0 && hasModules && (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--azals-text-muted)' }}>
-                Aucun module trouve pour "{searchTerm}"
+                Aucun module trouve pour &quot;{searchTerm}&quot;
               </div>
             )}
           </div>
@@ -1462,7 +1536,8 @@ const UsersPermissionsView: React.FC = () => {
           Configurez les acces specifiques a chaque module et fonctionnalite pour chaque utilisateur.
         </p>
       </div>
-      <DataTable columns={columns} data={users} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={users} isLoading={isLoading} keyField="id"
+          filterable />
 
       <UserPermissionsModal
         isOpen={showPermissionsModal}
@@ -1588,8 +1663,9 @@ const RoleFormModal: React.FC<{
         <div className="space-y-4">
           {/* Code */}
           <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Code *</label>
+            <label htmlFor="role-form-code" className="block text-sm font-medium mb-1">Code *</label>
             <input
+              id="role-form-code"
               type="text"
               className="azals-input w-full px-3 py-2 border rounded-md uppercase"
               value={code}
@@ -1608,8 +1684,9 @@ const RoleFormModal: React.FC<{
 
           {/* Nom */}
           <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Nom *</label>
+            <label htmlFor="role-form-name" className="block text-sm font-medium mb-1">Nom *</label>
             <input
+              id="role-form-name"
               type="text"
               className="azals-input w-full px-3 py-2 border rounded-md"
               value={name}
@@ -1622,8 +1699,9 @@ const RoleFormModal: React.FC<{
 
           {/* Description */}
           <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label htmlFor="role-form-desc" className="block text-sm font-medium mb-1">Description</label>
             <textarea
+              id="role-form-desc"
               className="azals-input w-full px-3 py-2 border rounded-md"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -1636,8 +1714,9 @@ const RoleFormModal: React.FC<{
           <div className="grid grid-cols-2 gap-4">
             {/* Niveau */}
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Niveau (0-10)</label>
+              <label htmlFor="role-form-level" className="block text-sm font-medium mb-1">Niveau (0-10)</label>
               <input
+                id="role-form-level"
                 type="number"
                 className="azals-input w-full px-3 py-2 border rounded-md"
                 value={level}
@@ -1651,8 +1730,9 @@ const RoleFormModal: React.FC<{
             {/* Role parent (creation uniquement) */}
             {!editingRole && (
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Role parent</label>
+                <label htmlFor="role-form-parent" className="block text-sm font-medium mb-1">Role parent</label>
                 <select
+                  id="role-form-parent"
                   className="azals-input w-full px-3 py-2 border rounded-md"
                   value={parentCode}
                   onChange={(e) => setParentCode(e.target.value)}
@@ -1668,8 +1748,9 @@ const RoleFormModal: React.FC<{
             {/* Actif (modification uniquement) */}
             {editingRole && (
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Statut</label>
+                <label htmlFor="role-form-status" className="block text-sm font-medium mb-1">Statut</label>
                 <select
+                  id="role-form-status"
                   className="azals-input w-full px-3 py-2 border rounded-md"
                   value={isActive ? 'true' : 'false'}
                   onChange={(e) => setIsActive(e.target.value === 'true')}
@@ -1685,8 +1766,9 @@ const RoleFormModal: React.FC<{
           <div className="grid grid-cols-2 gap-4">
             {/* Max utilisateurs */}
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Max utilisateurs</label>
+              <label htmlFor="role-form-max-users" className="block text-sm font-medium mb-1">Max utilisateurs</label>
               <input
+                id="role-form-max-users"
                 type="number"
                 className="azals-input w-full px-3 py-2 border rounded-md"
                 value={maxUsers}
@@ -1887,7 +1969,8 @@ const RolesView: React.FC = () => {
         <h3 className="text-lg font-semibold">Roles</h3>
         <Button onClick={handleOpenCreate}>Nouveau role</Button>
       </div>
-      <DataTable columns={columns} data={roles} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={roles} isLoading={isLoading} keyField="id"
+          filterable />
 
       <RoleFormModal
         isOpen={showModal}
@@ -1906,7 +1989,7 @@ const useSuspendTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v1/tenants/${tenantId}/suspend`);
+      const res = await api.post(`/tenants/${tenantId}/suspend`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1917,7 +2000,7 @@ const useActivateTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v1/tenants/${tenantId}/activate`);
+      const res = await api.post(`/tenants/${tenantId}/activate`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1928,7 +2011,7 @@ const useCancelTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v1/tenants/${tenantId}/cancel`);
+      const res = await api.post(`/tenants/${tenantId}/cancel`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1939,10 +2022,12 @@ const useUpdateTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ tenantId, data }: { tenantId: string; data: Partial<Tenant> }) => {
-      const res = await api.put(`/v1/tenants/${tenantId}`, data);
+      const res = await api.put(`/tenants/${tenantId}`, data);
       return unwrapApiResponse(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] });
+    }
   });
 };
 
@@ -1952,6 +2037,11 @@ const TenantsView: React.FC = () => {
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState<Partial<Tenant>>({});
+
+  // Charger les modules depuis l'API (source unique)
+  const { data: modulesData } = useAvailableModules();
+  const availableModules = modulesData?.modules || [];
+  const modulesByCategory = modulesData?.modules_by_category || {};
 
   const { data: tenants = [], isLoading } = useTenants({
     status: filterStatus || undefined,
@@ -1967,13 +2057,9 @@ const TenantsView: React.FC = () => {
     setSelectedTenant(tenant);
     setEditData({
       name: tenant.name,
-      domain: tenant.domain || '',
-      plan: tenant.plan,
-      status: tenant.status,
       max_users: tenant.max_users || 0,
-      max_storage: tenant.max_storage || 0,
+      max_storage_gb: tenant.max_storage_gb || 0,
       modules_enabled: tenant.modules_enabled || [],
-      expires_at: tenant.expires_at || ''
     });
     setShowEditModal(true);
   };
@@ -1989,56 +2075,55 @@ const TenantsView: React.FC = () => {
 
   const handleSaveEdit = async () => {
     if (selectedTenant) {
-      await updateTenant.mutateAsync({ tenantId: selectedTenant.code, data: editData });
-      setShowEditModal(false);
-      setSelectedTenant(null);
+      try {
+        // Envoi direct - memes noms de champs que le backend
+        await updateTenant.mutateAsync({
+          tenantId: selectedTenant.tenant_id,
+          data: editData
+        });
+        setShowEditModal(false);
+        setSelectedTenant(null);
+      } catch (err: unknown) {
+        alert('Erreur: ' + (err instanceof Error ? err.message : String(err)));
+      }
     }
   };
 
   const handleSuspend = async (tenant: Tenant) => {
     if (confirm(`Suspendre le tenant "${tenant.name}" ?`)) {
-      await suspendTenant.mutateAsync(tenant.code);
+      await suspendTenant.mutateAsync(tenant.tenant_id);
     }
   };
 
   const handleActivate = async (tenant: Tenant) => {
-    await activateTenant.mutateAsync(tenant.code);
+    await activateTenant.mutateAsync(tenant.tenant_id);
   };
 
   const handleCancel = async (tenant: Tenant) => {
     if (confirm(`ATTENTION: Annuler definitivement le tenant "${tenant.name}" ? Cette action est irreversible.`)) {
-      await cancelTenant.mutateAsync(tenant.code);
+      await cancelTenant.mutateAsync(tenant.tenant_id);
     }
   };
 
   const columns: TableColumn<Tenant>[] = [
-    { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono text-xs">{v as string}</code> },
+    { id: 'tenant_id', header: 'Code', accessor: 'tenant_id', render: (v) => <code className="font-mono text-xs">{v as string}</code> },
     { id: 'name', header: 'Nom', accessor: 'name' },
     { id: 'plan', header: 'Plan', accessor: 'plan', render: (v) => {
       const info = TENANT_PLANS.find(p => p.value === (v as string));
       return <Badge color="blue">{info?.label || (v as string)}</Badge>;
     }},
-    { id: 'user_count', header: 'Utilisateurs', accessor: 'user_count', render: (v, row) => {
+    { id: 'max_users', header: 'Utilisateurs max', accessor: 'max_users', render: (v) => (
+      <span className="text-sm">{v as number}</span>
+    )},
+    { id: 'storage_used_gb', header: 'Stockage', accessor: 'storage_used_gb', render: (v, row) => {
       const tenant = row as Tenant;
-      const count = v as number;
-      const max = tenant.max_users || 0;
-      const percent = max > 0 ? Math.round((count / max) * 100) : 0;
-      return (
-        <div className="text-sm">
-          <span className={percent > 90 ? 'text-red-600 font-semibold' : ''}>{count}</span>
-          {max > 0 && <span className="text-gray-400">/{max}</span>}
-        </div>
-      );
-    }},
-    { id: 'storage_used', header: 'Stockage', accessor: 'storage_used', render: (v, row) => {
-      const tenant = row as Tenant;
-      const used = v as number;
-      const max = tenant.max_storage || 0;
+      const used = (v as number) || 0;
+      const max = tenant.max_storage_gb || 0;
       const percent = max > 0 ? Math.round((used / max) * 100) : 0;
       return (
         <div className="text-sm">
-          <span className={percent > 90 ? 'text-red-600 font-semibold' : ''}>{formatBytes(used)}</span>
-          {max > 0 && <span className="text-gray-400">/{formatBytes(max)}</span>}
+          <span className={percent > 90 ? 'text-red-600 font-semibold' : ''}>{used} Go</span>
+          {max > 0 && <span className="text-gray-400">/{max} Go</span>}
         </div>
       );
     }},
@@ -2090,7 +2175,8 @@ const TenantsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={tenants} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={tenants} isLoading={isLoading} keyField="id"
+          filterable />
 
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`Modifier: ${selectedTenant?.name}`} size="lg">
         <div className="space-y-6">
@@ -2102,111 +2188,79 @@ const TenantsView: React.FC = () => {
             </h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="azals-field">
-                <label>Nom</label>
+                <label htmlFor="tenant-edit-name">Nom</label>
                 <Input
+                  id="tenant-edit-name"
                   value={editData.name || ''}
                   onChange={(v) => setEditData({ ...editData, name: v })}
                 />
               </div>
               <div className="azals-field">
-                <label>Domaine personnalise</label>
+                <label htmlFor="tenant-edit-max-users">Utilisateurs max</label>
                 <Input
-                  value={(editData.domain as string) || ''}
-                  onChange={(v) => setEditData({ ...editData, domain: v })}
-                  placeholder="exemple.azalscore.com"
-                />
-              </div>
-              <div className="azals-field">
-                <label>Plan</label>
-                <Select
-                  value={editData.plan || ''}
-                  onChange={(val) => setEditData({ ...editData, plan: val as Tenant['plan'] })}
-                  options={TENANT_PLANS}
-                />
-              </div>
-              <div className="azals-field">
-                <label>Statut</label>
-                <Select
-                  value={editData.status || ''}
-                  onChange={(val) => setEditData({ ...editData, status: val as Tenant['status'] })}
-                  options={TENANT_STATUSES}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Limites */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <Settings size={16} />
-              Limites et quotas
-            </h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="azals-field">
-                <label>Utilisateurs max</label>
-                <Input
+                  id="tenant-edit-max-users"
                   type="number"
                   value={String(editData.max_users || 0)}
                   onChange={(v) => setEditData({ ...editData, max_users: parseInt(v) || 0 })}
                 />
-                <span className="text-xs text-gray-500">Actuel: {selectedTenant?.user_count || 0}</span>
               </div>
               <div className="azals-field">
-                <label>Stockage max (Go)</label>
+                <label htmlFor="tenant-edit-storage">Stockage max (Go)</label>
                 <Input
+                  id="tenant-edit-storage"
                   type="number"
-                  value={String(Math.round((editData.max_storage || 0) / (1024 * 1024 * 1024)))}
-                  onChange={(v) => setEditData({ ...editData, max_storage: (parseInt(v) || 0) * 1024 * 1024 * 1024 })}
+                  value={String(editData.max_storage_gb || 0)}
+                  onChange={(v) => setEditData({ ...editData, max_storage_gb: parseInt(v) || 0 })}
                 />
-                <span className="text-xs text-gray-500">Utilise: {formatBytes(selectedTenant?.storage_used || 0)}</span>
-              </div>
-              <div className="azals-field">
-                <label>Date d'expiration</label>
-                <input
-                  type="date"
-                  className="azals-input w-full"
-                  value={(editData.expires_at as string)?.split('T')[0] || ''}
-                  onChange={(e) => setEditData({ ...editData, expires_at: e.target.value ? `${e.target.value}T23:59:59Z` : undefined })}
-                />
-                <span className="text-xs text-gray-500">Vide = illimite</span>
+                <span className="text-xs text-gray-500">Utilise: {selectedTenant?.storage_used_gb || 0} Go</span>
               </div>
             </div>
           </div>
 
-          {/* Modules */}
+          {/* Modules - groupes par categorie */}
           <div>
             <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <Package size={16} />
-              Modules actives ({(editData.modules_enabled || []).length}/{AVAILABLE_MODULES.length})
+              Modules actives ({(editData.modules_enabled || []).length}/{availableModules.length})
             </h4>
-            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border rounded bg-gray-50">
-              {AVAILABLE_MODULES.map((mod) => {
-                const isEnabled = (editData.modules_enabled || []).includes(mod.code);
-                return (
-                  <label
-                    key={mod.code}
-                    className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
-                      isEnabled ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isEnabled}
-                      onChange={() => toggleModule(mod.code)}
-                      className="rounded text-blue-600"
-                    />
-                    <div>
-                      <div className="text-sm font-medium">{mod.label}</div>
-                      <div className="text-xs text-gray-500">{mod.description}</div>
-                    </div>
-                  </label>
-                );
-              })}
+            <div className="max-h-64 overflow-y-auto border rounded bg-gray-50 p-2 space-y-4">
+              {Object.entries(modulesByCategory).map(([category, mods]) => (
+                <div key={category}>
+                  <h5 className="text-xs font-bold text-gray-600 uppercase mb-2 sticky top-0 bg-gray-50 py-1">
+                    {category}
+                  </h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    {mods.map((mod) => {
+                      const isEnabled = (editData.modules_enabled || []).includes(mod.code);
+                      return (
+                        <label
+                          key={mod.code}
+                          aria-label={mod.name}
+                          className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
+                            isEnabled ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={() => toggleModule(mod.code)}
+                            className="rounded text-blue-600"
+                          />
+                          <div>
+                            <div className="text-sm font-medium">{mod.name}</div>
+                            <div className="text-xs text-gray-500">{mod.description}</div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="flex gap-2 mt-2">
               <button
                 type="button"
-                onClick={() => setEditData({ ...editData, modules_enabled: AVAILABLE_MODULES.map(m => m.code) })}
+                onClick={() => setEditData({ ...editData, modules_enabled: availableModules.map(m => m.code) })}
                 className="text-xs text-blue-600 hover:underline"
               >
                 Tout selectionner
@@ -2272,7 +2326,7 @@ const AuditView: React.FC = () => {
   return (
     <Card>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Journal d'audit</h3>
+        <h3 className="text-lg font-semibold">Journal d&apos;audit</h3>
         <Select
           value={filterType}
           onChange={(val) => setFilterType(val)}
@@ -2280,7 +2334,8 @@ const AuditView: React.FC = () => {
           className="w-48"
         />
       </div>
-      <DataTable columns={columns} data={logs} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={logs} isLoading={isLoading} keyField="id"
+          filterable />
     </Card>
   );
 };
@@ -2320,7 +2375,8 @@ const BackupsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Sauvegardes</h3>
         <Button>Nouvelle config</Button>
       </div>
-      <DataTable columns={columns} data={backups} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={backups} isLoading={isLoading} keyField="id"
+          filterable />
     </Card>
   );
 };
@@ -2329,7 +2385,7 @@ const BackupsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'sequences' | 'enrichment' | 'audit' | 'backups';
+type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'sequences' | 'enrichment' | 'social-networks' | 'audit' | 'backups';
 
 const AdminDashboardView: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -2343,6 +2399,7 @@ const AdminDashboardView: React.FC = () => {
     { id: 'tenants', label: 'Tenants' },
     { id: 'sequences', label: 'Numerotation' },
     { id: 'enrichment', label: 'Enrichissement' },
+    { id: 'social-networks', label: 'Reseaux Sociaux' },
     { id: 'audit', label: 'Audit' },
     { id: 'backups', label: 'Sauvegardes' }
   ];
@@ -2361,6 +2418,8 @@ const AdminDashboardView: React.FC = () => {
         return <SequencesView />;
       case 'enrichment':
         return <EnrichmentProvidersView />;
+      case 'social-networks':
+        return <SocialNetworksModule />;
       case 'audit':
         return <AuditView />;
       case 'backups':

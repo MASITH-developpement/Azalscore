@@ -4,7 +4,6 @@
  */
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Send,
@@ -17,6 +16,8 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import '../styles/legal.css';
 
 interface ContactForm {
@@ -53,7 +54,7 @@ const Contact: React.FC = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('/api/v2/website/contact', {
+      const response = await fetch('/api/website/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,6 +92,52 @@ const Contact: React.FC = () => {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Contactez Azalscore | Support et Informations ERP</title>
+        <meta name="description" content="Contactez l'équipe Azalscore pour vos questions sur notre ERP. Demande de démo, support technique, informations tarifaires. Réponse sous 24h." />
+        <meta name="keywords" content="contact azalscore, support erp, démonstration erp, devis erp pme" />
+        <link rel="canonical" href="https://azalscore.com/contact" />
+        <meta property="og:title" content="Contactez Azalscore | Support ERP" />
+        <meta property="og:description" content="Contactez notre équipe pour toute question sur Azalscore ERP. Réponse garantie sous 24h." />
+        <meta property="og:url" content="https://azalscore.com/contact" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            "name": "Contact Azalscore",
+            "description": "Page de contact Azalscore ERP",
+            "url": "https://azalscore.com/contact",
+            "mainEntity": {
+              "@type": "Organization",
+              "name": "Azalscore",
+              "url": "https://azalscore.com",
+              "logo": "https://azalscore.com/pwa-512x512.png",
+              "email": "contact@azalscore.com",
+              "telephone": "+33123456789",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Paris",
+                "addressCountry": "FR"
+              },
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "customer service",
+                "email": "contact@azalscore.com",
+                "telephone": "+33123456789",
+                "availableLanguage": ["French", "English"],
+                "hoursAvailable": {
+                  "@type": "OpeningHoursSpecification",
+                  "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                  "opens": "09:00",
+                  "closes": "18:00"
+                }
+              }
+            }
+          })}
+        </script>
+      </Helmet>
     <div className="legal-page contact-page">
       <header className="legal-header">
         <div className="legal-header-content">
@@ -351,6 +398,7 @@ const Contact: React.FC = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 

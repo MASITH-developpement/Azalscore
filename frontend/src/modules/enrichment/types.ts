@@ -57,6 +57,7 @@ export interface RiskAnalysis {
   alerts: string[];
   recommendation: string;
   cotation_bdf?: string;   // Cotation Banque de France
+  _limited_data?: boolean; // Indique analyse simplifiee (sans API Pappers)
 }
 
 export interface EnrichedRiskFields {
@@ -180,6 +181,13 @@ export interface EnrichmentStats {
 // CONTACT ENRICHMENT FIELDS
 // ============================================================================
 
+export interface BodaccAlert {
+  type: string;
+  date: string;
+  details?: string;
+  severity: 'critical' | 'warning';
+}
+
 export interface EnrichedContactFields {
   name?: string;
   company_name?: string;
@@ -199,6 +207,25 @@ export interface EnrichedContactFields {
   country_code?: string;
   latitude?: number;
   longitude?: number;
+
+  // Champs de risque global
+  _risk_score?: number;
+  _risk_level?: 'none' | 'low' | 'medium' | 'elevated' | 'high' | 'critical';
+  _risk_label?: string;
+  _risk_reason?: string;
+
+  // Champs BODACC (annonces legales)
+  _bodacc_risk_score?: number;
+  _bodacc_risk_level?: 'none' | 'low' | 'medium' | 'elevated' | 'high' | 'critical';
+  _bodacc_risk_label?: string;
+  _bodacc_risk_reason?: string;
+  _bodacc_has_critical?: boolean;
+  _bodacc_has_warning?: boolean;
+  _bodacc_critical_alerts?: BodaccAlert[];
+  _bodacc_warning_alerts?: BodaccAlert[];
+
+  // Sources utilisées pour l'enrichissement
+  _sources?: string[];
 }
 
 /**
@@ -264,10 +291,21 @@ export interface UseAddressAutocompleteResult {
 // COMPONENT PROPS
 // ============================================================================
 
+export interface RiskData {
+  level?: 'none' | 'low' | 'medium' | 'elevated' | 'high' | 'critical';
+  label?: string;
+  reason?: string;
+  score?: number;
+  alerts?: BodaccAlert[];
+  sources?: string[];
+}
+
 export interface SiretLookupProps {
   value?: string;
   onEnrich?: (fields: EnrichedContactFields) => void;
   onHistoryId?: (id: string) => void;
+  /** Callback appelé automatiquement dès que les données de risque BODACC arrivent */
+  onRiskData?: (riskData: RiskData | null) => void;
   disabled?: boolean;
   className?: string;
 }

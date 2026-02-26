@@ -43,6 +43,8 @@ USAGE INTERNE (depuis main.py):
 USAGE EXTERNE (script standalone):
     python scripts/reset_database_uuid.py
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

@@ -5,6 +5,8 @@ THÉO — Service STT (Speech-to-Text)
 Abstraction pour la transcription vocale.
 Providers interchangeables: Whisper, Google, Azure, etc.
 """
+from __future__ import annotations
+
 
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List, BinaryIO

@@ -1,0 +1,89 @@
+{
+  "module_id": "azalscore.inventory.stock_reservation",
+  "version": "1.0.0",
+  "description": "Workflow de reservation de stock pour commandes clients",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_reservation_request",
+      "use": "azalscore.validators.inventory.validate_reservation_request@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "items": "{{context.items}}",
+        "warehouse_id": "{{context.warehouse_id}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "check_availability",
+      "use": "azalscore.calculations.inventory.check_available_to_promise@1.0.0",
+      "inputs": {
+        "items": "{{context.items}}",
+        "warehouse_id": "{{context.warehouse_id}}",
+        "required_date": "{{context.required_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "allocate_stock",
+      "condition": "{{check_availability.all_available}} == true",
+      "use": "azalscore.transformers.inventory.allocate_stock@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "items": "{{context.items}}",
+        "warehouse_id": "{{context.warehouse_id}}",
+        "allocation_strategy": "{{context.allocation_strategy}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "create_backorder",
+      "condition": "{{check_availability.partial_available}} == true",
+      "use": "azalscore.generators.inventory.create_backorder@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "unavailable_items": "{{check_availability.unavailable_items}}",
+        "expected_date": "{{check_availability.expected_availability}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "update_order_status",
+      "use": "azalscore.transformers.status.update_order_allocation_status@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "allocation_status": "{{allocate_stock.status || 'partial'}}",
+        "allocated_items": "{{allocate_stock.allocated_items}}",
+        "backorder_id": "{{create_backorder.backorder_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "notify_partial_allocation",
+      "condition": "{{check_availability.partial_available}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "partial_allocation",
+        "severity": "info",
+        "title": "Allocation partielle",
+        "message": "La commande {{context.order_id}} n'a pu etre allouee que partiellement",
+        "data": "{{check_availability.unavailable_items}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    }
+  ],
+  "outputs": {
+    "reservation_id": "{{allocate_stock.reservation_id}}",
+    "fully_allocated": "{{check_availability.all_available}}",
+    "allocated_items": "{{allocate_stock.allocated_items}}",
+    "backorder_id": "{{create_backorder.backorder_id}}",
+    "expected_availability": "{{check_availability.expected_availability}}"
+  }
+}

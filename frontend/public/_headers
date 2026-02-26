@@ -1,0 +1,97 @@
+# =============================================================================
+# AZALSCORE - HTTP Headers Configuration
+# Compatible: Netlify, Cloudflare Pages, Render
+# =============================================================================
+
+# Global headers for all pages
+/*
+  # Security headers
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+  # CORS for AI bots and crawlers
+  Access-Control-Allow-Origin: *
+
+  # Cache control
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+  # SEO headers
+  X-Robots-Tag: index, follow, max-image-preview:large
+
+# Static assets - long cache
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/javascript; charset=utf-8
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: text/css; charset=utf-8
+
+# Images
+/*.png
+  Cache-Control: public, max-age=604800
+
+/*.jpg
+  Cache-Control: public, max-age=604800
+
+/*.webp
+  Cache-Control: public, max-age=604800
+
+/*.svg
+  Cache-Control: public, max-age=604800
+  Content-Type: image/svg+xml
+
+# Fonts
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
+# SEO files - no cache
+/robots.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+  X-Robots-Tag: noindex
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+  Content-Type: application/xml; charset=utf-8
+  X-Robots-Tag: noindex
+
+# AI-specific files
+/ai.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+  Access-Control-Allow-Origin: *
+
+/llms.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+  Access-Control-Allow-Origin: *
+
+/.well-known/*
+  Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
+
+/.well-known/ai-plugin.json
+  Content-Type: application/json; charset=utf-8
+  Access-Control-Allow-Origin: *
+
+# Manifest and PWA
+/manifest.webmanifest
+  Cache-Control: public, max-age=3600
+  Content-Type: application/manifest+json; charset=utf-8
+
+# HTML pages - short cache for freshness
+/*.html
+  Cache-Control: public, max-age=300, s-maxage=3600
+  Content-Type: text/html; charset=utf-8
+
+/
+  Cache-Control: public, max-age=300, s-maxage=3600
+  Content-Type: text/html; charset=utf-8

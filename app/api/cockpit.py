@@ -4,6 +4,8 @@ AZALS - Cockpit Dirigeant API
 API pour le tableau de bord exécutif.
 Données agrégées de tous les modules.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime, timedelta
@@ -21,7 +23,7 @@ from app.core.models import User
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/v1/cockpit", tags=["Cockpit Dirigeant"])
+router = APIRouter(prefix="/cockpit", tags=["Cockpit Dirigeant"])
 
 
 # ============================================================================
@@ -368,11 +370,29 @@ def get_activity_summary(db: Session, tenant_id: str) -> ActivitySummary:
 
 @router.get("/dashboard", response_model=CockpitDashboard)
 def get_dashboard(
+    refresh: bool = Query(False, description="Forcer le rafraîchissement du cache"),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
 ):
     """Dashboard complet du cockpit dirigeant."""
+    # Si refresh=true, invalider le cache
+    if refresh:
+        from app.core.cache import get_cache
+        cache = get_cache()
+        cache_keys = [
+            f"cockpit:kpis:{tenant_id}",
+            f"cockpit:alerts:{tenant_id}",
+            f"cockpit:treasury:{tenant_id}",
+            f"cockpit:sales:{tenant_id}",
+            f"cockpit:activity:{tenant_id}",
+        ]
+        for key in cache_keys:
+            try:
+                cache.delete(key)
+            except Exception:
+                pass  # Ignore cache deletion errors
+
     return CockpitDashboard(
         kpis=get_kpis(db, tenant_id),
         alerts=get_alerts(db, tenant_id),

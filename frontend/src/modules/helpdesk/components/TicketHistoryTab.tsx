@@ -9,10 +9,9 @@ import {
   CheckCircle, AlertTriangle, MessageSquare, UserPlus, Tag
 } from 'lucide-react';
 import { Card } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Ticket, TicketHistoryEntry } from '../types';
-import { STATUS_CONFIG, PRIORITY_CONFIG } from '../types';
 import { formatDateTime } from '@/utils/formatters';
+import type { Ticket, TicketHistoryEntry } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * TicketHistoryTab - Historique du ticket

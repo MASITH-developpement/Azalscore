@@ -5,16 +5,16 @@
 
 import React from 'react';
 import {
-  FileText, Package, User, Calendar, Tag, AlertTriangle
+  FileText, Package, Calendar, Tag, AlertTriangle
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { NonConformance } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
   getNCAge,
   NC_TYPE_CONFIG, NC_ORIGIN_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG
 } from '../types';
-import { formatDate } from '@/utils/formatters';
+import type { NonConformance } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * NCInfoTab - Informations generales
@@ -23,7 +23,7 @@ export const NCInfoTab: React.FC<TabContentProps<NonConformance>> = ({ data: nc 
   const typeConfig = NC_TYPE_CONFIG[nc.type];
   const originConfig = NC_ORIGIN_CONFIG[nc.origin];
   const severityConfig = SEVERITY_CONFIG[nc.severity];
-  const statusConfig = NC_STATUS_CONFIG[nc.status];
+  const _statusConfig = NC_STATUS_CONFIG[nc.status];
 
   return (
     <div className="azals-std-tab-content">

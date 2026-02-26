@@ -4,7 +4,7 @@
  * Données fournies par API - AUCUNE logique métier
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   ChevronUp,
@@ -17,10 +17,24 @@ import {
   Filter,
   Download,
   RefreshCw,
+  X,
+  Check,
 } from 'lucide-react';
 import { CapabilityGuard } from '@core/capabilities';
+import type { TableColumn, TableAction } from '@/types';
 import { ErrorState, LoadingState } from '../components/StateViews';
-import type { TableColumn, TableAction, TableState, PaginatedResponse } from '@/types';
+
+// ============================================================
+// COLUMN FILTER TYPES
+// ============================================================
+
+export interface ColumnFilterConfig {
+  type: 'text' | 'select' | 'date' | 'number';
+  options?: Array<{ value: string; label: string }>;
+  placeholder?: string;
+}
+
+export type ColumnFilters = Record<string, string | string[]>;
 
 // ============================================================
 // TYPES
@@ -48,6 +62,17 @@ interface DataTableProps<T> {
     onChange: (value: string) => void;
     placeholder?: string;
   };
+  // Column filters (manual configuration)
+  columnFilters?: {
+    filters: ColumnFilters;
+    configs: Record<string, ColumnFilterConfig>;
+    onFilterChange: (columnId: string, value: string | string[] | null) => void;
+    onClearAllFilters?: () => void;
+  };
+  // Simple filterable mode - auto-enables text filtering on all columns
+  filterable?: boolean;
+  // Optional: specify which columns should have select filters with options
+  filterOptions?: Record<string, Array<{ value: string; label: string }>>;
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
@@ -62,6 +87,124 @@ interface DataTableProps<T> {
 }
 
 // ============================================================
+// COLUMN FILTER POPOVER
+// ============================================================
+
+interface ColumnFilterPopoverProps {
+  columnId: string;
+  config: ColumnFilterConfig;
+  value: string | string[] | undefined;
+  onApply: (value: string | string[] | null) => void;
+  onClose: () => void;
+}
+
+const ColumnFilterPopover: React.FC<ColumnFilterPopoverProps> = ({
+  columnId: _columnId,
+  config,
+  value,
+  onApply,
+  onClose,
+}) => {
+  const [localValue, setLocalValue] = useState<string | string[]>(
+    value || (config.type === 'select' && config.options ? '' : '')
+  );
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Focus input on open
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+
+    // Close on click outside
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+
+    // Close on Escape
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  const handleApply = () => {
+    const trimmedValue = typeof localValue === 'string' ? localValue.trim() : localValue;
+    onApply(trimmedValue || null);
+    onClose();
+  };
+
+  const handleClear = () => {
+    onApply(null);
+    onClose();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleApply();
+    }
+  };
+
+  return (
+    <div ref={popoverRef} className="azals-column-filter-popover">
+      <div className="azals-column-filter-popover__content">
+        {config.type === 'select' && config.options ? (
+          <select
+            className="azals-select azals-select--sm"
+            value={localValue as string}
+            onChange={(e) => setLocalValue(e.target.value)}
+          >
+            <option value="">Tous</option>
+            {config.options.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            ref={inputRef}
+            type={config.type === 'number' ? 'number' : config.type === 'date' ? 'date' : 'text'}
+            className="azals-input azals-input--sm"
+            placeholder={config.placeholder || 'Filtrer...'}
+            value={localValue as string}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+        )}
+      </div>
+      <div className="azals-column-filter-popover__actions">
+        <button
+          className="azals-btn azals-btn--sm azals-btn--ghost"
+          onClick={handleClear}
+          title="Effacer"
+        >
+          <X size={14} />
+        </button>
+        <button
+          className="azals-btn azals-btn--sm azals-btn--primary"
+          onClick={handleApply}
+          title="Appliquer"
+        >
+          <Check size={14} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
 // TABLE HEADER
 // ============================================================
 
@@ -69,6 +212,7 @@ interface TableHeaderProps<T> {
   columns: TableColumn<T>[];
   hasActions: boolean;
   sorting?: DataTableProps<T>['sorting'];
+  columnFilters?: DataTableProps<T>['columnFilters'];
   selectable?: boolean;
   allSelected: boolean;
   onSelectAll: () => void;
@@ -78,10 +222,13 @@ function TableHeader<T>({
   columns,
   hasActions,
   sorting,
+  columnFilters,
   selectable,
   allSelected,
   onSelectAll,
 }: TableHeaderProps<T>) {
+  const [openFilterId, setOpenFilterId] = useState<string | null>(null);
+
   const handleSort = (column: TableColumn<T>) => {
     if (!column.sortable || !sorting) return;
 
@@ -89,6 +236,17 @@ function TableHeader<T>({
     const newOrder =
       sorting.sortBy === columnId && sorting.sortOrder === 'asc' ? 'desc' : 'asc';
     sorting.onSort(columnId, newOrder);
+  };
+
+  const handleFilterClick = (e: React.MouseEvent | React.KeyboardEvent, columnId: string) => {
+    e.stopPropagation();
+    setOpenFilterId(openFilterId === columnId ? null : columnId);
+  };
+
+  const hasFilter = (columnId: string): boolean => {
+    if (!columnFilters) return false;
+    const value = columnFilters.filters[columnId];
+    return value !== undefined && value !== null && value !== '';
   };
 
   return (
@@ -104,34 +262,76 @@ function TableHeader<T>({
             />
           </th>
         )}
-        {columns.map((column) => (
-          <th
-            key={String(column.id)}
-            className={clsx('azals-table__th', {
-              'azals-table__th--sortable': column.sortable,
-              [`azals-table__th--align-${column.align}`]: column.align,
-            })}
-            style={{ width: column.width }}
-            onClick={() => column.sortable && handleSort(column)}
-          >
-            <div className="azals-table__th-content">
-              <span>{column.header}</span>
-              {column.sortable && sorting && (
-                <span className="azals-table__sort-icon">
-                  {sorting.sortBy === String(column.id) ? (
-                    sorting.sortOrder === 'asc' ? (
-                      <ChevronUp size={14} />
-                    ) : (
-                      <ChevronDown size={14} />
-                    )
-                  ) : (
-                    <ChevronsUpDown size={14} />
+        {columns.map((column) => {
+          const columnId = String(column.id);
+          const filterConfig = columnFilters?.configs[columnId];
+          const isFilterable = !!filterConfig;
+          const isFiltered = hasFilter(columnId);
+
+          return (
+            <th
+              key={columnId}
+              className={clsx('azals-table__th', {
+                'azals-table__th--sortable': column.sortable,
+                'azals-table__th--filterable': isFilterable,
+                'azals-table__th--filtered': isFiltered,
+                [`azals-table__th--align-${column.align}`]: column.align,
+              })}
+              style={{ width: column.width }}
+            >
+              <div
+                className="azals-table__th-content"
+                onClick={() => column.sortable && handleSort(column)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && column.sortable) handleSort(column); }}
+                role={column.sortable ? 'button' : undefined}
+                tabIndex={column.sortable ? 0 : undefined}
+              >
+                <span
+                  className={clsx('azals-table__th-label', {
+                    'azals-table__th-label--clickable': isFilterable,
+                  })}
+                  onClick={isFilterable ? (e) => handleFilterClick(e, columnId) : undefined}
+                  onKeyDown={isFilterable ? (e) => { if (e.key === 'Enter') handleFilterClick(e, columnId); } : undefined}
+                  role={isFilterable ? 'button' : undefined}
+                  tabIndex={isFilterable ? 0 : undefined}
+                >
+                  {column.header}
+                  {isFilterable && (
+                    <Filter
+                      size={12}
+                      className={clsx('azals-table__filter-icon', {
+                        'azals-table__filter-icon--active': isFiltered,
+                      })}
+                    />
                   )}
                 </span>
+                {column.sortable && sorting && (
+                  <span className="azals-table__sort-icon">
+                    {sorting.sortBy === columnId ? (
+                      sorting.sortOrder === 'asc' ? (
+                        <ChevronUp size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      )
+                    ) : (
+                      <ChevronsUpDown size={14} />
+                    )}
+                  </span>
+                )}
+              </div>
+              {/* Filter popover */}
+              {isFilterable && openFilterId === columnId && (
+                <ColumnFilterPopover
+                  columnId={columnId}
+                  config={filterConfig}
+                  value={columnFilters?.filters[columnId]}
+                  onApply={(value) => columnFilters?.onFilterChange(columnId, value)}
+                  onClose={() => setOpenFilterId(null)}
+                />
               )}
-            </div>
-          </th>
-        ))}
+            </th>
+          );
+        })}
         {hasActions && <th className="azals-table__th azals-table__th--actions">Actions</th>}
       </tr>
     </thead>
@@ -168,7 +368,7 @@ function TableRow<T>({
     if (typeof column.accessor === 'function') {
       return column.accessor(row);
     }
-    return row[column.accessor];
+    return row[column.accessor as keyof T];
   };
 
   const visibleActions = actions?.filter((action) => {
@@ -225,6 +425,8 @@ function TableRow<T>({
                 <div
                   className="azals-table__actions-overlay"
                   onClick={() => setActionsOpen(false)}
+                  onKeyDown={(e) => { if (e.key === 'Escape') setActionsOpen(false); }}
+                  role="presentation"
                 />
                 <div className="azals-table__actions-menu">
                   {visibleActions.map((action) => (
@@ -332,6 +534,9 @@ export function DataTable<T>({
   pagination,
   sorting,
   search,
+  columnFilters: externalColumnFilters,
+  filterable = false,
+  filterOptions = {},
   isLoading,
   error,
   onRetry,
@@ -345,6 +550,98 @@ export function DataTable<T>({
   className,
 }: DataTableProps<T>) {
   const hasActions = actions && actions.length > 0;
+
+  // Internal filter state for filterable mode
+  const [internalFilters, setInternalFilters] = useState<ColumnFilters>({});
+
+  // Build filter configs for filterable mode
+  const autoFilterConfigs = useMemo(() => {
+    if (!filterable) return {};
+    const configs: Record<string, ColumnFilterConfig> = {};
+    columns.forEach((col) => {
+      const colId = String(col.id);
+      // Skip actions column
+      if (colId === 'actions') return;
+      // Use provided options if available
+      if (filterOptions[colId]) {
+        configs[colId] = {
+          type: 'select',
+          options: filterOptions[colId],
+        };
+      } else {
+        configs[colId] = {
+          type: 'text',
+          placeholder: `Filtrer...`,
+        };
+      }
+    });
+    return configs;
+  }, [columns, filterable, filterOptions]);
+
+  // Handle internal filter change
+  const handleInternalFilterChange = useCallback((columnId: string, value: string | string[] | null) => {
+    setInternalFilters(prev => {
+      if (value === null || value === '') {
+        const { [columnId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [columnId]: value };
+    });
+  }, []);
+
+  // Clear all internal filters
+  const handleClearAllInternalFilters = useCallback(() => {
+    setInternalFilters({});
+  }, []);
+
+  // Use external filters if provided, otherwise use internal filters
+  const columnFilters = externalColumnFilters || (filterable ? {
+    filters: internalFilters,
+    configs: autoFilterConfigs,
+    onFilterChange: handleInternalFilterChange,
+    onClearAllFilters: handleClearAllInternalFilters,
+  } : undefined);
+
+  // Filter data when using internal filters
+  const filteredData = useMemo(() => {
+    if (!filterable || Object.keys(internalFilters).length === 0) {
+      return data;
+    }
+    return data.filter((row) => {
+      return Object.entries(internalFilters).every(([columnId, filterValue]) => {
+        if (!filterValue) return true;
+        const col = columns.find((c) => String(c.id) === columnId);
+        if (!col || !col.accessor) return true;
+
+        const cellValue = typeof col.accessor === 'function'
+          ? col.accessor(row)
+          : row[col.accessor as keyof T];
+
+        if (cellValue === null || cellValue === undefined) {
+          return filterValue === '';
+        }
+
+        const config = autoFilterConfigs[columnId];
+        if (config?.type === 'select') {
+          return String(cellValue) === filterValue;
+        }
+
+        // Text filter - case insensitive contains
+        return String(cellValue).toLowerCase().includes(String(filterValue).toLowerCase());
+      });
+    });
+  }, [data, internalFilters, filterable, columns, autoFilterConfigs]);
+
+  // Use filtered data when filterable
+  const displayData = filterable && !externalColumnFilters ? filteredData : data;
+
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    if (!columnFilters) return 0;
+    return Object.values(columnFilters.filters).filter(
+      (v) => v !== undefined && v !== null && v !== ''
+    ).length;
+  }, [columnFilters]);
 
   const isRowSelected = useCallback(
     (row: T) => {
@@ -374,14 +671,14 @@ export function DataTable<T>({
   const handleSelectAll = useCallback(() => {
     if (!onSelectionChange) return;
 
-    if (selectedRows.length === data.length) {
+    if (selectedRows.length === displayData.length) {
       onSelectionChange([]);
     } else {
-      onSelectionChange([...data]);
+      onSelectionChange([...displayData]);
     }
-  }, [data, selectedRows, onSelectionChange]);
+  }, [displayData, selectedRows, onSelectionChange]);
 
-  const allSelected = data.length > 0 && selectedRows.length === data.length;
+  const allSelected = displayData.length > 0 && selectedRows.length === displayData.length;
 
   return (
     <div className={clsx('azals-table-container', className)}>
@@ -423,6 +720,49 @@ export function DataTable<T>({
         </div>
       </div>
 
+      {/* Active filters bar */}
+      {columnFilters && activeFilterCount > 0 && (
+        <div className="azals-table__active-filters">
+          <span className="azals-table__active-filters-label">
+            <Filter size={14} />
+            {activeFilterCount} filtre{activeFilterCount > 1 ? 's' : ''} actif{activeFilterCount > 1 ? 's' : ''}
+          </span>
+          <div className="azals-table__active-filters-list">
+            {Object.entries(columnFilters.filters).map(([key, value]) => {
+              if (!value) return null;
+              const col = columns.find((c) => String(c.id) === key);
+              const config = columnFilters.configs[key];
+              let displayValue = String(value);
+              if (config?.type === 'select' && config.options) {
+                const opt = config.options.find((o) => o.value === value);
+                displayValue = opt?.label || displayValue;
+              }
+              return (
+                <span key={key} className="azals-table__active-filter-tag">
+                  <span className="azals-table__active-filter-tag-label">{col?.header}:</span>
+                  <span className="azals-table__active-filter-tag-value">{displayValue}</span>
+                  <button
+                    className="azals-table__active-filter-tag-remove"
+                    onClick={() => columnFilters.onFilterChange(key, null)}
+                    title="Supprimer ce filtre"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+          {columnFilters.onClearAllFilters && (
+            <button
+              className="azals-btn azals-btn--ghost azals-btn--sm"
+              onClick={columnFilters.onClearAllFilters}
+            >
+              Effacer tout
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Table */}
       <div className="azals-table__wrapper">
         <table className="azals-table">
@@ -430,6 +770,7 @@ export function DataTable<T>({
             columns={columns}
             hasActions={!!hasActions}
             sorting={sorting}
+            columnFilters={columnFilters}
             selectable={selectable}
             allSelected={allSelected}
             onSelectAll={handleSelectAll}
@@ -456,7 +797,7 @@ export function DataTable<T>({
                   <LoadingState onRetry={onRetry} />
                 </td>
               </tr>
-            ) : data.length === 0 ? (
+            ) : displayData.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)}
@@ -466,7 +807,7 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              data.map((row) => (
+              displayData.map((row) => (
                 <TableRow
                   key={String(row[keyField])}
                   row={row}

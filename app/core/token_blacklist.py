@@ -9,6 +9,8 @@ SÉCURITÉ:
 - TTL automatique basé sur l'expiration du token
 - Thread-safe pour environnements multi-workers
 """
+from __future__ import annotations
+
 
 import os
 import threading

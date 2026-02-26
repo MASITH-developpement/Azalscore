@@ -5,11 +5,11 @@
 
 import React from 'react';
 import { Paperclip, Upload, File, FileText, Image } from 'lucide-react';
-import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
-import type { TabContentProps } from '@ui/standards';
-import type { Supplier } from '../types';
+import { Card, Grid } from '@ui/layout';
 import { formatDate } from '@/utils/formatters';
+import type { Supplier } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 interface Document {
   id: string;
@@ -27,7 +27,7 @@ export const SupplierDocumentsTab: React.FC<TabContentProps<Supplier & { documen
   const documents = data.documents || [];
 
   const handleUpload = () => {
-    console.log('Upload document for supplier:', data.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadDocument', supplierId: data.id } }));
   };
 
   const getFileIcon = (type: string) => {
@@ -69,7 +69,7 @@ export const SupplierDocumentsTab: React.FC<TabContentProps<Supplier & { documen
                     {doc.uploaded_by && ` par ${doc.uploaded_by}`}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadDocument', documentId: doc.id } })); }}>
                   Telecharger
                 </Button>
               </div>
@@ -105,15 +105,15 @@ export const SupplierDocumentsTab: React.FC<TabContentProps<Supplier & { documen
       <Card title="Tracabilite" icon={<FileText size={18} />} className="mt-4 azals-std-field--secondary">
         <Grid cols={2} gap="md">
           <div className="azals-field">
-            <label className="azals-field__label">Cree par</label>
+            <span className="azals-field__label">Cree par</span>
             <div className="azals-field__value">{data.created_by_name || '-'}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Cree le</label>
+            <span className="azals-field__label">Cree le</span>
             <div className="azals-field__value">{formatDate(data.created_at)}</div>
           </div>
           <div className="azals-field">
-            <label className="azals-field__label">Modifie le</label>
+            <span className="azals-field__label">Modifie le</span>
             <div className="azals-field__value">{formatDate(data.updated_at)}</div>
           </div>
         </Grid>

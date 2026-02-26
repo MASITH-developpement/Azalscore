@@ -9,6 +9,8 @@ Analyse la transcription vocale pour extraire:
 - Le niveau de confiance
 - Les champs manquants pour clarification
 """
+from __future__ import annotations
+
 
 from enum import Enum
 from typing import Dict, List, Optional, Any, Tuple

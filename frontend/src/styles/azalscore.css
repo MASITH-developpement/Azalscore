@@ -343,7 +343,7 @@ body {
   right: 0;
   margin-top: 8px;
   min-width: 180px;
-  background: white;
+  background: var(--azals-surface, white);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   border: 1px solid var(--azals-border);
@@ -2024,54 +2024,6 @@ body {
   flex-shrink: 0;
 }
 
-/* Document workflow progress bar */
-.azals-document-workflow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 12px;
-  background: var(--azals-bg);
-  border-radius: 8px;
-}
-
-.azals-document-workflow__step {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--azals-surface);
-  color: var(--azals-text-muted);
-  opacity: 0.6;
-}
-
-.azals-document-workflow__step--done {
-  background: var(--azals-success-light);
-  color: var(--azals-success);
-  opacity: 1;
-}
-
-.azals-document-workflow__step--current {
-  background: var(--azals-primary-light);
-  color: var(--azals-primary);
-  opacity: 1;
-  font-weight: 600;
-}
-
-.azals-document-workflow__connector {
-  width: 24px;
-  height: 2px;
-  background: var(--azals-border);
-  flex-shrink: 0;
-}
-
-.azals-document-workflow__connector--done {
-  background: var(--azals-success);
-}
-
 /* ============================================================
    MODULE VÉHICULES - Coût kilométrique
    ============================================================ */
@@ -2183,165 +2135,6 @@ body {
   top: calc(var(--azals-header-height) + 16px);
 }
 
-/* ============================================================
-   MODULE AFFAIRES - Bilan financier
-   ============================================================ */
-
-.azals-bilan-financier {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.azals-bilan-section {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--azals-border-light);
-}
-
-.azals-bilan-section:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.azals-bilan-section__title {
-  margin: 0 0 12px 0;
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--azals-text-muted);
-  letter-spacing: 0.5px;
-}
-
-.azals-bilan-dl {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px 16px;
-  margin: 0;
-  font-size: 14px;
-}
-
-.azals-bilan-dl dt {
-  color: var(--azals-text-muted);
-}
-
-.azals-bilan-dl dd {
-  margin: 0;
-  text-align: right;
-  font-weight: 500;
-}
-
-.azals-bilan-dl dd.positive {
-  color: var(--azals-success);
-}
-
-.azals-bilan-dl dd.negative {
-  color: var(--azals-danger);
-}
-
-.azals-bilan-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--azals-border);
-  font-weight: 600;
-}
-
-.azals-bilan-total.negative strong {
-  color: var(--azals-danger);
-}
-
-.azals-bilan-marge {
-  padding: 20px;
-  border-radius: 8px;
-  background: var(--azals-bg);
-  position: relative;
-}
-
-.azals-bilan-marge.positive {
-  background: var(--azals-success-light);
-}
-
-.azals-bilan-marge.negative {
-  background: var(--azals-danger-light);
-}
-
-.azals-bilan-marge__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.azals-bilan-marge__row:last-of-type {
-  margin-bottom: 0;
-}
-
-.azals-bilan-marge.positive strong {
-  color: var(--azals-success);
-  font-size: 20px;
-}
-
-.azals-bilan-marge.negative strong {
-  color: var(--azals-danger);
-  font-size: 20px;
-}
-
-.azals-bilan-marge__icon {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.3;
-}
-
-.azals-bilan-marge.positive .azals-bilan-marge__icon {
-  color: var(--azals-success);
-}
-
-.azals-bilan-marge.negative .azals-bilan-marge__icon {
-  color: var(--azals-danger);
-}
-
-/* Bilan Carbone */
-.azals-bilan-carbone {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.azals-bilan-carbone__total {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: linear-gradient(135deg, var(--azals-success-light, #ecfdf5) 0%, var(--azals-green-100) 100%);
-  border-radius: 8px;
-  color: var(--azals-success);
-}
-
-.azals-bilan-carbone__value {
-  display: block;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.azals-bilan-carbone__label {
-  display: block;
-  font-size: 13px;
-  opacity: 0.8;
-}
-
-.azals-bilan-carbone__equiv {
-  padding: 12px;
-  background: var(--azals-bg);
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--azals-text-muted);
-  text-align: center;
-}
-
 /* Progress bar */
 .azals-progress {
   position: relative;
@@ -2370,144 +2163,6 @@ body {
   font-size: 12px;
   font-weight: 600;
   color: var(--azals-text);
-}
-
-/* Documents liés */
-.azals-documents-lies {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.azals-documents-lies__group {
-  border: 1px solid var(--azals-border-light);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.azals-documents-lies__title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 12px 16px;
-  background: var(--azals-bg);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.azals-documents-lies__title--blue { color: var(--azals-primary); }
-.azals-documents-lies__title--green { color: var(--azals-success); }
-.azals-documents-lies__title--orange { color: var(--azals-warning); }
-.azals-documents-lies__title--red { color: var(--azals-danger); }
-.azals-documents-lies__title--purple { color: var(--azals-violet-500); }
-.azals-documents-lies__title--gray { color: var(--azals-text-muted); }
-
-.azals-documents-lies__count {
-  margin-left: auto;
-  padding: 2px 8px;
-  background: var(--azals-surface);
-  border-radius: 10px;
-  font-size: 12px;
-}
-
-.azals-documents-lies__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.azals-documents-lies__item {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 16px;
-  border-top: 1px solid var(--azals-border-light);
-  font-size: 14px;
-}
-
-.azals-documents-lies__item:hover {
-  background: var(--azals-bg);
-}
-
-.azals-documents-lies__numero {
-  font-weight: 500;
-  color: var(--azals-primary);
-}
-
-.azals-documents-lies__libelle {
-  color: var(--azals-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.azals-documents-lies__date {
-  color: var(--azals-text-light);
-  font-size: 13px;
-}
-
-.azals-documents-lies__montant {
-  font-weight: 600;
-  min-width: 100px;
-  text-align: right;
-}
-
-.azals-documents-lies__montant.positive {
-  color: var(--azals-success);
-}
-
-.azals-documents-lies__montant.negative {
-  color: var(--azals-danger);
-}
-
-.azals-documents-lies__empty {
-  padding: 32px;
-  text-align: center;
-  color: var(--azals-text-muted);
-}
-
-/* Financial KPI */
-.azals-financial-kpi {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 8px;
-  background: var(--azals-bg);
-}
-
-.azals-financial-kpi--green { background: var(--azals-success-light); }
-.azals-financial-kpi--red { background: var(--azals-danger-light); }
-
-.azals-financial-kpi__icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: var(--azals-surface);
-}
-
-.azals-financial-kpi--green .azals-financial-kpi__icon { color: var(--azals-success); }
-.azals-financial-kpi--red .azals-financial-kpi__icon { color: var(--azals-danger); }
-
-.azals-financial-kpi__content {
-  flex: 1;
-}
-
-.azals-financial-kpi__label {
-  display: block;
-  font-size: 12px;
-  color: var(--azals-text-muted);
-}
-
-.azals-financial-kpi__value {
-  display: block;
-  font-size: 18px;
-  font-weight: 600;
 }
 
 /* Alert list */
@@ -2583,101 +2238,6 @@ body {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
-}
-
-/* ============================================================
-   MODULES LIES DROPDOWN
-   ============================================================ */
-
-.azals-modules-dropdown {
-  position: relative;
-}
-
-.azals-modules-dropdown__trigger {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--azals-surface);
-  border: 1px solid var(--azals-border);
-  border-radius: var(--azals-radius);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all var(--azals-transition-fast);
-}
-
-.azals-modules-dropdown__trigger:hover {
-  border-color: var(--azals-primary);
-  color: var(--azals-primary);
-}
-
-.azals-modules-dropdown__trigger svg.rotate {
-  transform: rotate(180deg);
-}
-
-.azals-modules-dropdown__overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--azals-z-banner);
-}
-
-.azals-modules-dropdown__menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: 280px;
-  background: var(--azals-surface);
-  border: 1px solid var(--azals-border);
-  border-radius: var(--azals-radius);
-  box-shadow: var(--azals-shadow-lg);
-  z-index: var(--azals-z-header);
-  overflow: hidden;
-}
-
-.azals-modules-dropdown__item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  transition: background var(--azals-transition-fast);
-}
-
-.azals-modules-dropdown__item:hover {
-  background: var(--azals-bg);
-}
-
-.azals-modules-dropdown__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--azals-primary-light);
-  color: var(--azals-primary);
-  border-radius: var(--azals-radius);
-}
-
-.azals-modules-dropdown__content {
-  flex: 1;
-  min-width: 0;
-}
-
-.azals-modules-dropdown__label {
-  display: block;
-  font-weight: 500;
-  font-size: 14px;
-  color: var(--azals-text);
-}
-
-.azals-modules-dropdown__desc {
-  display: block;
-  font-size: 12px;
-  color: var(--azals-text-muted);
 }
 
 /* Demo mode active state */
@@ -2906,7 +2466,7 @@ body {
 }
 
 .azals-ws-table__amount {
-  font-family: 'SF Mono', monospace;
+  font-family: var(--azals-font-mono);
   text-align: right;
 }
 
@@ -3856,4 +3416,41 @@ body {
   line-height: 1.6;
   margin: 0;
   max-width: 420px;
+}
+
+/* =============================================================
+   PLACEHOLDER MODULE (modules en cours de développement)
+   ============================================================= */
+
+.azals-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.azals-placeholder__content {
+  max-width: 480px;
+  padding: 32px;
+  border-radius: 12px;
+  background: var(--azals-surface);
+  border: 1px dashed var(--azals-border);
+}
+
+.azals-placeholder__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--azals-text);
+  margin: 0 0 12px 0;
+  text-transform: capitalize;
+}
+
+.azals-placeholder__message {
+  font-size: 14px;
+  color: var(--azals-text-muted);
+  line-height: 1.6;
+  margin: 0;
 }

@@ -9,19 +9,24 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
+from app.core.models import User
 
 router = APIRouter(prefix="/hr", tags=["hr"])
 
 
 @router.get("/status")
 async def get_hr_status(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id)
 ):
     """
     Retourne le statut RH global (anonymisé)
+
+    SÉCURITÉ: Authentification requise.
 
     États:
     - 🟢 : Situation sociale normale (paie à jour, pas d'alerte)

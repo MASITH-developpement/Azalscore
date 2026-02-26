@@ -4,6 +4,8 @@ AZALS MODULE - Contacts Unifiés - Schémas
 
 Schémas Pydantic pour la validation et la sérialisation.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

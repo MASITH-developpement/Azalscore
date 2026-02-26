@@ -41,7 +41,7 @@ from .models import (
     UsageRecord,
     UsageType,
 )
-from .router import router
+from .router_crud import router
 from .service import SubscriptionService
 
 __all__ = [

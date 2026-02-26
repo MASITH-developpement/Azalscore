@@ -8,11 +8,11 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, Text
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
+from app.core.types import JSON, UniversalUUID
 
 
 class PlanType(str, Enum):
@@ -52,7 +52,7 @@ class CommercialPlan(Base):
     """Plan commercial (Essentiel/Pro/Entreprise)."""
     __tablename__ = "commercial_plans"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     code = Column(String(50), nullable=False, unique=True)
     name = Column(String(100), nullable=False)
     plan_type = Column(SQLEnum(PlanType), nullable=False)
@@ -99,12 +99,12 @@ class Order(Base):
     """Commande client (site marchand)."""
     __tablename__ = "marketplace_orders"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     order_number = Column(String(50), nullable=False, unique=True)
     status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING)
 
     # Plan commandé
-    plan_id = Column(UUID(as_uuid=True), nullable=False)
+    plan_id = Column(UniversalUUID(), nullable=False)
     plan_code = Column(String(50), nullable=False)
     billing_cycle = Column(SQLEnum(BillingCycle), nullable=False)
 
@@ -161,7 +161,7 @@ class DiscountCode(Base):
     """Code promo / réduction."""
     __tablename__ = "discount_codes"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     code = Column(String(50), nullable=False, unique=True)
     description = Column(String(255))
 
@@ -193,7 +193,7 @@ class WebhookEvent(Base):
     """Événements webhook Stripe."""
     __tablename__ = "webhook_events"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     provider = Column(String(50), default="stripe")
     event_id = Column(String(100), nullable=False, unique=True)
     event_type = Column(String(100), nullable=False, index=True)
@@ -209,7 +209,7 @@ class WebhookEvent(Base):
     retry_count = Column(Integer, default=0)
 
     # Liens
-    order_id = Column(UUID(as_uuid=True))
+    order_id = Column(UniversalUUID())
     tenant_id = Column(String(50))
 
     created_at = Column(DateTime, default=datetime.utcnow, index=True)

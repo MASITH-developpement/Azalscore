@@ -5,17 +5,17 @@
 
 import React from 'react';
 import {
-  Building2, User, Calendar, Clock, MapPin, FileText,
+  Building2, User, Calendar, Clock, FileText,
   Package, Wrench, AlertTriangle, Target
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
-import type { TabContentProps } from '@ui/standards';
-import type { Affaire } from '../types';
+import { formatDate, formatPercent } from '@/utils/formatters';
 import {
   PRIORITY_CONFIG, STATUS_CONFIG,
   isLate, getDaysRemaining
 } from '../types';
-import { formatDate, formatPercent } from '@/utils/formatters';
+import type { Affaire } from '../types';
+import type { TabContentProps } from '@ui/standards';
 
 /**
  * AffaireInfoTab - Informations générales de l'affaire

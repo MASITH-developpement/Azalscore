@@ -4,6 +4,8 @@ AZALS MODULE T6 - Router API Diffusion Périodique v2 (CORE SaaS)
 
 Points d'entrée REST pour la gestion des diffusions automatiques avec SaaSContext.
 """
+from __future__ import annotations
+
 
 import logging
 

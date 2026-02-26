@@ -4,6 +4,8 @@ AZALS MODULE - Auto-Enrichment - Service
 
 Service principal d'orchestration des enrichissements.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime
@@ -39,6 +41,7 @@ from .providers import (
     OpenCorporatesProvider,
 )
 from .providers.base import EnrichmentResult
+from .providers.bodacc import get_bodacc_provider, BODACCProvider
 
 logger = logging.getLogger(__name__)
 
@@ -262,14 +265,68 @@ class EnrichmentService:
                 # Mapper les champs pour l'entite
                 enriched_fields = provider.map_to_entity(entity_type.value, result.data)
 
+                # Initialiser la liste des sources utilisées
+                sources_used = [provider_enum.value.upper()]
+
                 # Recuperer les suggestions pour address et name
                 suggestions = []
                 if lookup_type in (LookupType.ADDRESS, LookupType.NAME) and hasattr(provider, 'get_suggestions'):
                     suggestions = provider.get_suggestions(result.data)
 
+                # === VERIFICATION BODACC AUTOMATIQUE ===
+                # Pour les recherches SIRET/SIREN/NAME, vérifier les annonces légales
+                # Extraire le SIRET depuis les résultats si disponible
+                siret_for_bodacc = None
+                if lookup_type in (LookupType.SIRET, LookupType.SIREN):
+                    siret_for_bodacc = lookup_value
+                elif lookup_type == LookupType.NAME:
+                    # Extraire le SIRET depuis les champs enrichis
+                    siret_for_bodacc = enriched_fields.get("siret") or enriched_fields.get("siren")
+
+                if siret_for_bodacc:
+                    try:
+                        bodacc_result = await self.check_bodacc(siret_for_bodacc)
+                        if bodacc_result.get("success"):
+                            # Ajouter BODACC à la liste des sources
+                            sources_used.append("BODACC")
+
+                            # Ajouter les données BODACC aux champs enrichis
+                            enriched_fields["_bodacc_risk_score"] = bodacc_result.get("risk_score", 100)
+                            enriched_fields["_bodacc_risk_level"] = bodacc_result.get("risk_level", "none")
+                            enriched_fields["_bodacc_risk_label"] = bodacc_result.get("risk_label", "")
+                            enriched_fields["_bodacc_risk_reason"] = bodacc_result.get("risk_reason")
+                            enriched_fields["_bodacc_has_critical"] = bodacc_result.get("has_critical", False)
+                            enriched_fields["_bodacc_has_warning"] = bodacc_result.get("has_warning", False)
+                            enriched_fields["_bodacc_critical_alerts"] = bodacc_result.get("critical_alerts", [])
+                            enriched_fields["_bodacc_warning_alerts"] = bodacc_result.get("warning_alerts", [])
+
+                            # Si risque critique BODACC, surcharger le score de risque global
+                            if bodacc_result.get("has_critical"):
+                                enriched_fields["_risk_score"] = 0
+                                enriched_fields["_risk_level"] = "critical"
+                                enriched_fields["_risk_label"] = bodacc_result.get("risk_label")
+                                enriched_fields["_risk_reason"] = bodacc_result.get("risk_reason")
+                            elif bodacc_result.get("has_warning"):
+                                # Ne pas écraser si déjà critique
+                                if enriched_fields.get("_risk_score", 100) > 30:
+                                    enriched_fields["_risk_score"] = 30
+                                    enriched_fields["_risk_level"] = "high"
+                                    enriched_fields["_risk_label"] = bodacc_result.get("risk_label")
+                                    enriched_fields["_risk_reason"] = bodacc_result.get("risk_reason")
+
+                            logger.info(
+                                f"[BODACC] Vérification OK pour {siret_for_bodacc}: "
+                                f"niveau={bodacc_result.get('risk_level')}"
+                            )
+                    except Exception as e:
+                        logger.warning(f"[BODACC] Erreur vérification pour {siret_for_bodacc}: {e}")
+
+                # Ajouter la liste des sources utilisées aux champs enrichis
+                enriched_fields["_sources"] = sources_used
+
                 logger.info(
                     f"[ENRICHMENT] Succes: {lookup_type.value}='{lookup_value[:20]}...' "
-                    f"via {provider_enum.value} ({result.response_time_ms}ms)"
+                    f"via {provider_enum.value} ({result.response_time_ms}ms) - Sources: {', '.join(sources_used)}"
                 )
 
                 return {
@@ -617,6 +674,145 @@ class EnrichmentService:
             "by_provider": by_provider,
             "by_lookup_type": by_lookup_type,
         }
+
+    async def check_bodacc(self, siren_or_siret: str) -> dict[str, Any]:
+        """
+        Vérifie les annonces BODACC pour un SIREN/SIRET.
+
+        Détecte les événements critiques:
+        - Dissolution
+        - Liquidation judiciaire
+        - Redressement judiciaire
+        - Radiation
+
+        Args:
+            siren_or_siret: Numéro SIREN (9 chiffres) ou SIRET (14 chiffres)
+
+        Returns:
+            Dict avec analyse de risque BODACC
+        """
+        # Utiliser le cache si disponible
+        cache = get_cache()
+        cache_key = f"bodacc:{siren_or_siret}"
+
+        if cache:
+            cached = cache.get(cache_key)
+            if cached:
+                logger.info(f"[BODACC] Cache hit pour {siren_or_siret}")
+                cached["cached"] = True
+                return cached
+
+        # Appeler le provider BODACC
+        bodacc = get_bodacc_provider()
+        result = await bodacc.lookup("siren", siren_or_siret)
+
+        if result.success:
+            data = result.data
+            risk = data.get("risk_analysis", {})
+
+            response = {
+                "success": True,
+                "siren": data.get("siren"),
+                "announcements_count": data.get("announcements_count", 0),
+                "risk_score": risk.get("score", 100),
+                "risk_level": risk.get("risk_level", "none"),
+                "risk_label": risk.get("risk_label", ""),
+                "risk_reason": risk.get("risk_reason"),
+                "critical_alerts": risk.get("critical_alerts", []),
+                "warning_alerts": risk.get("warning_alerts", []),
+                "has_critical": risk.get("has_critical", False),
+                "has_warning": risk.get("has_warning", False),
+                "announcements": risk.get("announcements", []),
+                "source": "bodacc",
+                "cached": False,
+            }
+
+            # Mettre en cache (30 minutes)
+            if cache:
+                cache.set(cache_key, response, ttl=CacheTTL.MEDIUM)
+
+            return response
+        else:
+            return {
+                "success": False,
+                "error": result.error,
+                "source": "bodacc",
+                "cached": False,
+            }
+
+    async def get_combined_risk_score(self, siren_or_siret: str) -> dict[str, Any]:
+        """
+        Calcule un score de risque combiné (INSEE + BODACC + Pappers si dispo).
+
+        Combine les données de plusieurs sources pour une analyse complète.
+
+        Args:
+            siren_or_siret: Numéro SIREN ou SIRET
+
+        Returns:
+            Dict avec score combiné et détails par source
+        """
+        results = {
+            "siren": siren_or_siret[:9] if len(siren_or_siret) >= 9 else siren_or_siret,
+            "sources": {},
+            "combined_score": 100,
+            "combined_level": "low",
+            "combined_label": "Risque faible",
+            "alerts": [],
+            "factors": [],
+        }
+
+        # 1. Vérifier BODACC (annonces légales)
+        bodacc_result = await self.check_bodacc(siren_or_siret)
+        if bodacc_result.get("success"):
+            results["sources"]["bodacc"] = {
+                "score": bodacc_result.get("risk_score", 100),
+                "level": bodacc_result.get("risk_level"),
+                "reason": bodacc_result.get("risk_reason"),
+                "alerts": bodacc_result.get("critical_alerts", []) + bodacc_result.get("warning_alerts", []),
+            }
+
+            # BODACC critique = score minimum
+            if bodacc_result.get("has_critical"):
+                results["combined_score"] = 0
+                results["alerts"].extend(bodacc_result.get("critical_alerts", []))
+                results["factors"].append({
+                    "source": "BODACC",
+                    "factor": bodacc_result.get("risk_reason", "Alerte critique BODACC"),
+                    "impact": -100,
+                    "severity": "critical"
+                })
+            elif bodacc_result.get("has_warning"):
+                results["combined_score"] = min(results["combined_score"], 30)
+                results["alerts"].extend(bodacc_result.get("warning_alerts", []))
+                results["factors"].append({
+                    "source": "BODACC",
+                    "factor": bodacc_result.get("risk_reason", "Procédure en cours"),
+                    "impact": -70,
+                    "severity": "high"
+                })
+
+        # Déterminer le niveau final
+        score = results["combined_score"]
+        has_critical_bodacc = results.get("sources", {}).get("bodacc", {}).get("level") == "critical"
+
+        if score == 0 or has_critical_bodacc:
+            results["combined_level"] = "critical"
+            results["combined_label"] = "Risque critique - Ne pas travailler avec cette entreprise"
+        elif score >= 80:
+            results["combined_level"] = "low"
+            results["combined_label"] = "Risque faible"
+        elif score >= 60:
+            results["combined_level"] = "medium"
+            results["combined_label"] = "Risque modéré"
+        elif score >= 40:
+            results["combined_level"] = "elevated"
+            results["combined_label"] = "Risque élevé"
+        else:
+            results["combined_level"] = "high"
+            results["combined_label"] = "Risque très élevé"
+
+        return results
 
     async def close(self):
         """Ferme tous les clients HTTP des providers."""

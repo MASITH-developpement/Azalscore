@@ -17,19 +17,19 @@ export const moduleMeta = {
   // ÉTAT
   // ============================================================
 
-  status: 'inactive' as 'active' | 'degraded' | 'inactive',
+  status: 'active' as 'active' | 'degraded' | 'inactive',
 
   // ============================================================
   // FRONTEND
   // ============================================================
 
   frontend: {
-    hasUI: false,
+    hasUI: true,
     pagesCount: 1,
     routesCount: 1,
     errorsCount: 0,
-    lastAudit: '2026-01-23',
-    compliance: false,
+    lastAudit: '2026-02-20',
+    compliance: true,
   },
 
   // ============================================================
@@ -38,7 +38,7 @@ export const moduleMeta = {
 
   backend: {
     apiAvailable: false, // À vérifier manuellement
-    lastCheck: '2026-01-23',
+    lastCheck: '2026-02-20',
     endpoints: [],
   },
 
@@ -53,8 +53,8 @@ export const moduleMeta = {
   // AUDIT
   // ============================================================
 
-  createdAt: '2026-01-23',
-  updatedAt: '2026-01-23',
+  createdAt: '2026-02-20',
+  updatedAt: '2026-02-20',
 } as const;
 
 export type ModuleMeta = typeof moduleMeta;

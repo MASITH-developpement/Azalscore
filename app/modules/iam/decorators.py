@@ -4,6 +4,8 @@ AZALS MODULE T0 - Décorateurs IAM
 
 Décorateurs pour la vérification des permissions et rôles.
 """
+from __future__ import annotations
+
 
 from functools import wraps
 

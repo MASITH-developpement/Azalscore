@@ -121,7 +121,7 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
       const response = await api.post<{
         session_id: string;
         message: string;
-      }>('/v1/ai/theo/start', {}) as unknown as {
+      }>('/ai/theo/start', {}) as unknown as {
         session_id: string;
         message: string;
       };
@@ -174,7 +174,7 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
 
     if (session) {
       try {
-        await api.post(`/v1/ai/theo/end/${session.session_id}`, {});
+        await api.post(`/ai/theo/end/${session.session_id}`, {});
       } catch {
         // Ignore errors on session end
       }
@@ -226,7 +226,7 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
         requires_confirmation?: boolean;
         clarification_options?: string[];
         action_result?: unknown;
-      }>('/v1/ai/theo/chat', {
+      }>('/ai/theo/chat', {
         session_id: currentSession.session_id,
         message: content,
         context: {
@@ -297,7 +297,7 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
       const response = await api.post<{
         message: string;
         action_result?: unknown;
-      }>('/v1/ai/theo/confirm', {
+      }>('/ai/theo/confirm', {
         session_id: session.session_id,
         confirmed,
         intent: pendingConfirmation.metadata?.intent,

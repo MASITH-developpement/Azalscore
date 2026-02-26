@@ -22,6 +22,7 @@ export interface AdminUser {
   role_name?: string;
   role?: Role;
   status: UserStatus;
+  default_view?: string;  // Vue par défaut après connexion
   last_login?: string;
   last_ip?: string;
   login_count: number;
@@ -51,6 +52,10 @@ export interface Role {
   user_count: number;
   created_at: string;
   created_by_name?: string | null;
+  level?: number;
+  requires_approval?: boolean;
+  max_users?: number;
+  is_active?: boolean;
 }
 
 /**
