@@ -143,7 +143,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   max-height: 400px;
   overflow-y: auto;
-  z-index: var(--azals-z-popover);
+  z-index: var(--azals-z-dropdown);
 }
 
 .azals-unified-header__group {

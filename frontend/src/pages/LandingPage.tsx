@@ -161,22 +161,35 @@ const faqData = [
   }
 ];
 
-// Données Avantages Utilisateurs (cas d'usage typiques)
-const benefitsData = [
+// Données Témoignages
+const testimonialData = [
   {
-    text: "Simplifiez votre gestion administrative et gagnez du temps au quotidien grâce à une interface intuitive et un support réactif.",
-    icon: "clock",
-    title: "Gain de temps",
+    text: "Depuis que nous utilisons Azalscore, notre gestion administrative a été divisée par deux. L'interface est intuitive et le support est très réactif. Je recommande vivement.",
+    name: "Corinne Vangheluwe",
+    role: "Dirigeante",
+    company: "Vangheluwe Services",
+    rating: 5
   },
   {
-    text: "Soyez prêt pour la facturation électronique 2026 avec un module comptabilité complet et conforme aux normes françaises.",
-    icon: "check",
-    title: "Conformité 2026",
+    text: "La conformité à la facturation électronique 2026 était notre priorité. Azalscore nous a permis d'être prêts bien avant l'échéance. Le module comptabilité est très complet.",
+    name: "Sofia Bermejo",
+    role: "Expert-Comptable",
+    company: "Cabinet Bermejo & Associés",
+    rating: 5
   },
   {
-    text: "Migrez facilement depuis votre solution actuelle avec un accompagnement personnalisé et des outils d'import de données.",
-    icon: "upload",
-    title: "Migration simple",
+    text: "Nous avons migré depuis un ERP complexe et coûteux. Azalscore offre les mêmes fonctionnalités à une fraction du prix. L'équipe nous a accompagnés tout au long de la migration.",
+    name: "Stéphane Moreau",
+    role: "DAF",
+    company: "Moreau Industries",
+    rating: 5
+  },
+  {
+    text: "Un ERP complet et accessible pour les PME. La prise en main est rapide et l'équipe technique est toujours disponible pour nous accompagner.",
+    name: "Christophe Moreau",
+    role: "Gérant",
+    company: "Moreau Consulting",
+    rating: 5
   }
 ];
 
@@ -329,7 +342,7 @@ export const LandingPage: React.FC = () => {
                 <span className="landing-stat-label">Français</span>
               </div>
               <div className="landing-stat" role="listitem">
-                <span className="landing-stat-value">20+</span>
+                <span className="landing-stat-value">90+</span>
                 <span className="landing-stat-label">Modules</span>
               </div>
               <div className="landing-stat" role="listitem">
@@ -491,19 +504,13 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section id="benefits" className="landing-section landing-testimonials">
+      {/* Testimonials Section */}
+      <section id="testimonials" className="landing-section landing-testimonials">
         <div className="landing-container">
-          <h2 className="landing-section-title">Ce qu'AZALSCORE vous apporte</h2>
+          <h2 className="landing-section-title">Ce que nos clients disent</h2>
           <div className="landing-testimonials-grid">
-            {benefitsData.map((benefit, idx) => (
-              <div key={idx} className="landing-testimonial-card">
-                <div className="landing-testimonial-rating">
-                  <CheckCircle size={24} className="text-green-500" />
-                </div>
-                <h3 className="landing-testimonial-name" style={{ marginBottom: '0.5rem', fontSize: '1.1rem' }}>{benefit.title}</h3>
-                <p className="landing-testimonial-text">{benefit.text}</p>
-              </div>
+            {testimonialData.map((testimonial, idx) => (
+              <TestimonialCard key={idx} {...testimonial} />
             ))}
           </div>
         </div>

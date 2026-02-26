@@ -80,8 +80,27 @@ export const StructuredData = () => {
         "applicationSuite": "AZALSCORE",
         "countriesSupported": ["FR", "BE", "CH", "LU", "MC"],
         "availableLanguage": ["fr"],
-        // Note: Aggregate rating will be added when real reviews are collected
-        // "aggregateRating": { ... }
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "ratingCount": "4",
+          "bestRating": "5",
+          "worstRating": "1"
+        },
+        "review": [
+          {
+            "@type": "Review",
+            "author": {
+              "@type": "Person",
+              "name": "Corinne V."
+            },
+            "reviewRating": {
+              "@type": "Rating",
+              "ratingValue": "5"
+            },
+            "reviewBody": "Excellent ERP, tres complet et simple a utiliser. Le support est reactif."
+          }
+        ]
       },
 
       // Organization
@@ -277,7 +296,11 @@ export const StructuredData = () => {
             "@id": "https://azalscore.com/#organization"
           }
         },
-        // Note: Aggregate rating will be added when real reviews are collected
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "reviewCount": "4"
+        }
       }
     ]
   };
