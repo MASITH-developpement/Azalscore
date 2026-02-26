@@ -483,14 +483,25 @@ class TestServiceTenantSettings:
 
     def test_get_tenant_countries(self, service, mock_db):
         """Test récupération pays du tenant."""
-        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = []
+        # Configurer mock pour chaînes de filtres
+        mock_query = MagicMock()
+        mock_query.filter.return_value = mock_query
+        mock_query.order_by.return_value.all.return_value = []
+        mock_db.query.return_value = mock_query
 
         countries = service.get_tenant_countries()
         assert isinstance(countries, list)
 
     def test_get_primary_country(self, service, mock_db, sample_pack):
         """Test récupération pays principal."""
-        mock_db.query.return_value.filter.return_value.first.return_value = sample_pack
+        # Mock des settings avec country_pack_id
+        mock_settings = MagicMock()
+        mock_settings.country_pack_id = sample_pack.id
+
+        # Premier appel retourne settings, deuxième retourne le pack
+        mock_query = MagicMock()
+        mock_query.filter.return_value.first.side_effect = [mock_settings, sample_pack]
+        mock_db.query.return_value = mock_query
 
         pack = service.get_primary_country()
         # Vérifie que la méthode retourne un résultat
