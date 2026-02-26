@@ -81,7 +81,7 @@ class FinanceService:
             code=data.code,
             name=data.name,
             description=data.description,
-            type=data.type,
+            type=data.account_type,  # Champ réel, pas alias
             parent_id=data.parent_id,
             is_auxiliary=data.is_auxiliary,
             auxiliary_type=data.auxiliary_type,
@@ -193,7 +193,7 @@ class FinanceService:
             tenant_id=self.tenant_id,
             code=data.code,
             name=data.name,
-            type=data.type,
+            type=data.journal_type,  # Champ réel, pas alias
             default_debit_account_id=data.default_debit_account_id,
             default_credit_account_id=data.default_credit_account_id,
             sequence_prefix=data.sequence_prefix or data.code
@@ -445,7 +445,7 @@ class FinanceService:
         if not fiscal_year:
             raise ValueError("No open fiscal year found")
 
-        if data.date < fiscal_year.start_date or data.date > fiscal_year.end_date:
+        if data.entry_date < fiscal_year.start_date or data.entry_date > fiscal_year.end_date:
             raise ValueError("Date outside current fiscal year")
 
         # Générer le numéro
@@ -457,7 +457,7 @@ class FinanceService:
             journal_id=data.journal_id,
             fiscal_year_id=fiscal_year.id,
             number=entry_number,
-            date=data.date,
+            date=data.entry_date,  # Champ réel, pas alias
             reference=data.reference,
             description=data.description,
             created_by=user_id
@@ -679,7 +679,7 @@ class FinanceService:
             bank_account_id=data.bank_account_id,
             name=data.name,
             reference=data.reference,
-            date=data.date,
+            date=data.statement_date,  # Champ réel, pas alias
             start_date=data.start_date,
             end_date=data.end_date,
             opening_balance=data.opening_balance,
@@ -697,7 +697,7 @@ class FinanceService:
             line = BankStatementLine(
                 tenant_id=self.tenant_id,
                 statement_id=statement.id,
-                date=line_data.date,
+                date=line_data.line_date,  # Champ réel, pas alias
                 value_date=line_data.value_date,
                 label=line_data.label,
                 reference=line_data.reference,
@@ -784,8 +784,8 @@ class FinanceService:
         transaction = BankTransaction(
             tenant_id=self.tenant_id,
             bank_account_id=data.bank_account_id,
-            type=data.type,
-            date=data.date,
+            type=data.transaction_type,  # Champ réel, pas alias
+            date=data.transaction_date,  # Champ réel, pas alias
             value_date=data.value_date,
             amount=data.amount,
             label=data.label,
@@ -799,7 +799,7 @@ class FinanceService:
         # Mettre à jour le solde du compte
         bank_account = self.get_bank_account(data.bank_account_id)
         if bank_account:
-            if data.type in [BankTransactionType.CREDIT, BankTransactionType.INTEREST]:
+            if data.transaction_type in [BankTransactionType.CREDIT, BankTransactionType.INTEREST]:
                 bank_account.current_balance += data.amount
             else:
                 bank_account.current_balance -= data.amount
@@ -843,7 +843,7 @@ class FinanceService:
         """Créer une prévision de trésorerie."""
         logger.info(
             "Creating cash forecast | tenant=%s user=%s period=%s date=%s opening_balance=%s",
-            self.tenant_id, user_id, data.period, data.date, data.opening_balance
+            self.tenant_id, user_id, data.period, data.forecast_date, data.opening_balance
         )
         # Calculer le solde de clôture prévu
         expected_closing = data.opening_balance + data.expected_receipts - data.expected_payments
@@ -851,7 +851,7 @@ class FinanceService:
         forecast = CashForecast(
             tenant_id=self.tenant_id,
             period=data.period,
-            date=data.date,
+            date=data.forecast_date,  # Champ réel, pas alias
             opening_balance=data.opening_balance,
             expected_receipts=data.expected_receipts,
             expected_payments=data.expected_payments,
