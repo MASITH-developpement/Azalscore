@@ -58,8 +58,8 @@ defusedxml>=0.7.1
 # HTTP CLIENT - Versions minimales sécurisées
 # ============================================================================
 # CVE-2024-35195 (requests), CVE-2024-37891 (urllib3)
-requests>=2.32.0
-urllib3>=2.2.0
+requests>=2.32.4
+urllib3>=2.6.3
 
 # ============================================================================
 # DÉPENDANCES EXPLICITES (évite les versions transitives vulnérables)
