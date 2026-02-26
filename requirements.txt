@@ -123,5 +123,7 @@ anthropic>=0.18.0
 # PDF GENERATION (Factur-X compliance)
 # ============================================================================
 reportlab>=4.0.0
-pypdf>=3.17.0
+pypdf>=6.7.2
 factur-x>=3.0
+pillow>=10.3.0 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
