@@ -1123,7 +1123,7 @@ class MFAService:
         # Storage
         self._user_mfa_configs: dict[str, dict] = {}  # user_id -> config
         self._backup_codes: dict[str, list[str]] = {}  # user_id -> codes
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()  # RLock pour appels imbriqués
 
     def setup_totp(
         self,

@@ -161,13 +161,13 @@ class TestSecurityAPIEndpoints:
         )
 
         assert "secret" in setup_data
-        assert "qr_code" in setup_data
-        assert "backup_codes" in setup_data
+        assert "uri" in setup_data  # QR code URI
+        assert "method" in setup_data
 
         response = {
-            "method": "totp",
-            "qr_code": setup_data["qr_code"],
-            "backup_codes": setup_data["backup_codes"]
+            "method": setup_data["method"],
+            "uri": setup_data["uri"],
+            "secret": setup_data["secret"]
         }
 
         assert response["method"] == "totp"
@@ -185,41 +185,55 @@ class TestSecurityAPIEndpoints:
             email="test@example.com"
         )
 
-        code = mfa_service._totp_service.generate_code(setup["secret"])
+        # Generate code using the TOTP service
+        code = mfa_service.totp.generate_code(setup["secret"])
 
+        # First verify the TOTP setup (required before verify_code works)
+        setup_verified = mfa_service.verify_totp_setup(
+            user_id=test_user_id,
+            tenant_id=test_tenant_id,
+            code=code
+        )
+        assert setup_verified is True
+
+        # Now generate a new code for regular verification
+        code2 = mfa_service.totp.generate_code(setup["secret"])
+
+        from app.core.mfa_advanced import VerificationResult, MFAMethod
         result = mfa_service.verify_code(
             user_id=test_user_id,
             tenant_id=test_tenant_id,
-            code=code,
-            method="totp"
+            code=code2,
+            method=MFAMethod.TOTP
         )
 
-        assert result.success is True
+        # verify_code returns VerificationResult enum
+        assert result == VerificationResult.SUCCESS
 
     @pytest.mark.asyncio
     async def test_api_key_create_endpoint(self, test_tenant_id, test_user_id):
         """Test endpoint de création de clé API"""
         from app.core.session_management import APIKeyService
 
-        api_key_service = APIKeyService()
+        api_key_service = APIKeyService(secret_key=b"test-secret-key-for-testing")
 
         key_value, api_key = api_key_service.create_api_key(
             name="Integration Test Key",
             tenant_id=test_tenant_id,
-            user_id=test_user_id,
+            created_by=test_user_id,
             scopes=["read:all", "write:invoices"],
-            expires_in_days=90
+            expires_days=90
         )
 
         response = {
-            "key_id": api_key.id,
+            "key_id": api_key.key_id,
             "key_value": key_value,
             "name": api_key.name,
             "scopes": api_key.scopes,
             "expires_at": api_key.expires_at.isoformat() if api_key.expires_at else None
         }
 
-        assert response["key_value"].startswith("azs_")
+        assert response["key_value"].startswith("azls_")
         assert "read:all" in response["scopes"]
 
 
@@ -321,8 +335,8 @@ class TestComplianceAPIEndpoints:
         """Test génération de rapport de conformité audit"""
         from app.core.audit_trail import get_audit_service
         from app.services.reporting_engine import (
-            get_reporting_engine, ReportTemplate, ReportField,
-            ReportParameters, ReportFormat
+            get_reporting_engine, ReportTemplate, ReportColumn,
+            ReportParameters, OutputFormat
         )
 
         audit_service = get_audit_service()
