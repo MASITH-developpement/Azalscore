@@ -532,12 +532,14 @@ class DatadogExporter(SIEMExporter):
         try:
             session = await self._get_session()
 
+            cat_val = event.category.value if hasattr(event.category, 'value') else str(event.category)
+            sev_val = event.severity.value if hasattr(event.severity, 'value') else str(event.severity)
             log_entry = {
                 "ddsource": "azalscore",
-                "ddtags": f"env:{self.env},service:{self.service},category:{event.category.value}",
+                "ddtags": f"env:{self.env},service:{self.service},category:{cat_val}",
                 "hostname": os.environ.get("HOSTNAME", "azalscore"),
                 "service": self.service,
-                "status": event.severity.value,
+                "status": sev_val,
                 "message": event.description,
                 **event.to_dict()
             }
@@ -657,8 +659,10 @@ class SyslogExporter(SIEMExporter):
         hostname = os.environ.get("HOSTNAME", "-")
 
         # Structured data (SD-ID)
+        cat_val = event.category.value if hasattr(event.category, 'value') else str(event.category)
+        out_val = event.outcome.value if hasattr(event.outcome, 'value') else str(event.outcome)
         sd = f'[azalscore@49152 tenant="{event.tenant_id}" action="{event.action}" ' \
-             f'category="{event.category.value}" outcome="{event.outcome.value}"]'
+             f'category="{cat_val}" outcome="{out_val}"]'
 
         msg = f"<{priority}>1 {timestamp} {hostname} {self.app_name} " \
               f"{os.getpid()} {event.event_id} {sd} {event.description}"
@@ -1185,6 +1189,42 @@ class AuditTrailService:
         event_id = str(uuid.uuid4())
         timestamp = datetime.utcnow()
 
+        # Convert dict inputs to dataclass instances if needed
+        if isinstance(actor, dict):
+            actor = AuditActor(
+                actor_type=actor.get("actor_type", "user"),
+                actor_id=actor.get("actor_id") or actor.get("user_id", "unknown"),
+                actor_name=actor.get("actor_name") or actor.get("username"),
+                ip_address=actor.get("ip_address"),
+                user_agent=actor.get("user_agent"),
+                session_id=actor.get("session_id"),
+                auth_method=actor.get("auth_method"),
+                roles=actor.get("roles", []),
+                tenant_id=actor.get("tenant_id"),
+            )
+        if isinstance(target, dict):
+            target = AuditTarget(
+                target_type=target.get("target_type") or target.get("entity_type", "resource"),
+                target_id=target.get("target_id") or target.get("entity_id"),
+                target_name=target.get("target_name") or target.get("entity_name"),
+                target_path=target.get("target_path"),
+                before_state=target.get("before_state") or target.get("previous_state"),
+                after_state=target.get("after_state") or target.get("new_state"),
+            )
+        if isinstance(context, dict):
+            context = AuditContext(
+                request_id=context.get("request_id"),
+                trace_id=context.get("trace_id"),
+                correlation_id=context.get("correlation_id"),
+                http_method=context.get("http_method"),
+                http_path=context.get("http_path"),
+                http_status=context.get("http_status"),
+                duration_ms=context.get("duration_ms"),
+                geo_location=context.get("geo_location"),
+                device_info=context.get("device_info"),
+                custom_data=context.get("custom_data") or context.get("metadata", {}),
+            )
+
         # Valeurs par défaut
         if actor is None:
             actor = AuditActor(actor_type="system", actor_id="system")
@@ -1230,15 +1270,17 @@ class AuditTrailService:
             self._last_hashes[chain_key] = event.event_hash
 
         # Logger localement
+        sev_val = severity.value if hasattr(severity, 'value') else str(severity)
+        out_val = outcome.value if hasattr(outcome, 'value') else str(outcome)
         logger.info(
-            f"Audit: [{category.value}] {action}",
+            f"Audit: [{category_value}] {action}",
             extra={
                 "event_id": event_id,
                 "tenant_id": tenant_id,
-                "category": category.value,
+                "category": category_value,
                 "action": action,
-                "severity": severity.value,
-                "outcome": outcome.value,
+                "severity": sev_val,
+                "outcome": out_val,
                 "actor_id": actor.actor_id,
             }
         )
