@@ -18,6 +18,8 @@ Usage:
     # Lister les providers disponibles
     available = await registry.list_available_providers()
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional

@@ -37,7 +37,7 @@ class TestVehicleService:
 
     def test_create_vehicle_generates_code(self, fleet_service, sample_vehicle_data):
         """Test generation automatique du code."""
-        del sample_vehicle_data["code"] if "code" in sample_vehicle_data else None
+        sample_vehicle_data.pop("code", None)
         vehicle = fleet_service.create_vehicle(sample_vehicle_data)
 
         assert vehicle.code is not None

@@ -3,6 +3,8 @@ Repository Requisition / Demandes d'achat
 =========================================
 Pattern Repository avec tenant isolation obligatoire.
 """
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Tuple

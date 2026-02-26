@@ -14,6 +14,8 @@ Endpoints:
 - GET  /v3/finance/auto-categorization/stats - Statistiques
 - GET  /v3/finance/auto-categorization/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

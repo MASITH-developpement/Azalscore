@@ -10,6 +10,8 @@ Principes fondamentaux:
 - Apprentissage transversal anonymisé
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import uuid

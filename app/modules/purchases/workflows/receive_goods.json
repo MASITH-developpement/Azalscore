@@ -1,0 +1,64 @@
+{
+  "module_id": "azalscore.purchases.receive_goods",
+  "version": "1.0.0",
+  "description": "Workflow de reception de marchandises",
+  "steps": [
+    {
+      "id": "validate_order",
+      "use": "azalscore.validators.purchases.validate_order_status@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "expected_status": "sent"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_quantities",
+      "use": "azalscore.validators.inventory.validate_received_quantities@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "received_items": "{{context.received_items}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_receipt",
+      "use": "azalscore.purchases.create_goods_receipt@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "received_items": "{{context.received_items}}",
+        "receipt_date": "{{context.receipt_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "update_stock",
+      "use": "azalscore.inventory.create_stock_movement@1.0.0",
+      "inputs": {
+        "movement_type": "receipt",
+        "items": "{{context.received_items}}",
+        "warehouse_id": "{{context.warehouse_id}}",
+        "reference": "{{create_receipt.receipt_number}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "update_order_status",
+      "use": "azalscore.purchases.update_order_status@1.0.0",
+      "inputs": {
+        "order_id": "{{context.order_id}}",
+        "status": "received"
+      },
+      "retry": 2,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "receipt_id": "{{create_receipt.id}}",
+    "receipt_number": "{{create_receipt.receipt_number}}"
+  }
+}

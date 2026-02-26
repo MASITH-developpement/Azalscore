@@ -5,6 +5,8 @@ AZALS MODULE HR_VAULT - Service
 Service metier pour le coffre-fort RH.
 Gere le chiffrement, les acces, la conformite RGPD et les signatures.
 """
+from __future__ import annotations
+
 
 import hashlib
 import io

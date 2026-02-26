@@ -3,6 +3,8 @@ Router API - Module Commissions (GAP-041)
 
 Endpoints REST pour la gestion des commissions commerciales.
 """
+from __future__ import annotations
+
 import math
 from datetime import date
 from decimal import Decimal

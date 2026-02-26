@@ -4,6 +4,8 @@ AZALS MODULE AUDIT - Router Unifié
 Router unifié compatible v1/v2 via double enregistrement.
 Utilise get_context() de app.core.compat pour l'isolation tenant.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

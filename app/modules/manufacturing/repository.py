@@ -3,6 +3,8 @@ Repository Manufacturing / Fabrication
 =======================================
 CRITIQUE: Toutes les requêtes filtrées par tenant_id via _base_query()
 """
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar

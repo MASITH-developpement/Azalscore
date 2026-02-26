@@ -18,6 +18,8 @@ Utilisation:
 - Backend: from app.core.modules_registry import MODULES, get_module
 - Frontend: GET /api/v1/admin/modules/available
 """
+from __future__ import annotations
+
 
 import os
 import importlib

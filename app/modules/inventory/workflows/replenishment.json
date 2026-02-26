@@ -1,0 +1,79 @@
+{
+  "module_id": "azalscore.inventory.replenishment",
+  "version": "1.0.0",
+  "description": "Workflow de reapprovisionnement automatique base sur les seuils",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_stock_levels",
+      "use": "azalscore.calculations.inventory.get_current_stock_levels@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "product_categories": "{{context.product_categories}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "check_reorder_points",
+      "use": "azalscore.calculations.inventory.check_reorder_points@1.0.0",
+      "inputs": {
+        "stock_levels": "{{get_stock_levels.levels}}",
+        "include_pending_orders": true
+      },
+      "retry": 1,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_order_quantities",
+      "use": "azalscore.calculations.inventory.calculate_eoq@1.0.0",
+      "inputs": {
+        "products_to_reorder": "{{check_reorder_points.below_threshold}}",
+        "method": "{{context.calculation_method}}",
+        "lead_time_days": "{{context.default_lead_time}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "select_suppliers",
+      "use": "azalscore.calculations.inventory.select_best_suppliers@1.0.0",
+      "inputs": {
+        "products": "{{calculate_order_quantities.products}}",
+        "criteria": ["price", "lead_time", "reliability"]
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "create_purchase_orders",
+      "condition": "{{context.auto_create_po}} == true",
+      "use": "azalscore.generators.inventory.create_replenishment_orders@1.0.0",
+      "inputs": {
+        "products": "{{calculate_order_quantities.products}}",
+        "suppliers": "{{select_suppliers.supplier_assignments}}",
+        "requested_date": "{{context.requested_date}}"
+      },
+      "retry": 2,
+      "timeout": 20000
+    },
+    {
+      "id": "notify_procurement",
+      "use": "azalscore.generators.communications.notify_replenishment_needed@1.0.0",
+      "inputs": {
+        "products": "{{check_reorder_points.below_threshold}}",
+        "purchase_orders": "{{create_purchase_orders.orders}}",
+        "urgency_level": "{{check_reorder_points.urgency}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "products_below_threshold": "{{check_reorder_points.count}}",
+    "suggested_orders": "{{calculate_order_quantities.products}}",
+    "purchase_orders_created": "{{create_purchase_orders.order_ids}}",
+    "total_order_value": "{{create_purchase_orders.total_value}}"
+  }
+}

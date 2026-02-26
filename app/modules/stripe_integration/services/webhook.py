@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe Webhook Service
 
 Traitement des webhooks Stripe.
 """
+from __future__ import annotations
+
 
 import logging
 from decimal import Decimal

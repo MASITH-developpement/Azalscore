@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Google Ads Client
 ==================================================
 Client API pour Google Ads
 """
+from __future__ import annotations
+
 
 import logging
 import os

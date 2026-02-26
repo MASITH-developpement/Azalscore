@@ -3,6 +3,8 @@ Router API - Module Approval Workflow (GAP-083)
 
 Endpoints REST pour la gestion des workflows d'approbation.
 """
+from __future__ import annotations
+
 import math
 from datetime import date, datetime
 from typing import Optional, List

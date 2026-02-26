@@ -9,6 +9,8 @@ Gestion des signatures électroniques:
 - Audit trail complet
 - Validation des signatures
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

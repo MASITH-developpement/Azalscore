@@ -88,6 +88,19 @@
     <!-- IndexNow pour indexation instantanee -->
     <meta name="indexnow-key" content="azalscore-indexnow-2026-key" />
 
+    <!-- Google Tag Manager - Remplacez GTM-XXXXXXX par votre ID -->
+    <!--
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-XXXXXXX');</script>
+    -->
+
+    <!-- Performance: Preconnect to critical domains -->
+    <link rel="preconnect" href="https://api.azalscore.com" />
+    <link rel="dns-prefetch" href="https://api.azalscore.com" />
+
     <!-- Google Fonts - Inter (Charte AZALSCORE) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -133,14 +146,6 @@
         "availability": "https://schema.org/InStock",
         "url": "https://azalscore.com/essai-gratuit"
       },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "bestRating": "5",
-        "worstRating": "1",
-        "ratingCount": "156",
-        "reviewCount": "89"
-      },
       "featureList": [
         "Facturation electronique Factur-X",
         "Comptabilite FEC",
@@ -154,7 +159,7 @@
         "API REST complete"
       ],
       "screenshot": "https://azalscore.com/og-image.png",
-      "softwareVersion": "2.0",
+      "softwareVersion": "0.5.0",
       "releaseNotes": "https://azalscore.com/docs/changelog",
       "softwareHelp": {
         "@type": "CreativeWork",
@@ -278,6 +283,12 @@
     </script>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) - Remplacez GTM-XXXXXXX par votre ID -->
+    <!--
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    -->
+
     <!-- Skip to main content for accessibility -->
     <a href="#main-content" class="skip-link" style="position: absolute; top: -40px; left: 0; background: #1E6EFF; color: white; padding: 8px; z-index: 9999; transition: top 0.3s;">
       Aller au contenu principal

@@ -4,6 +4,8 @@ AZALS MODULE ESIGNATURE - Router API
 
 Endpoints REST pour la signature electronique.
 """
+from __future__ import annotations
+
 
 import math
 from datetime import date

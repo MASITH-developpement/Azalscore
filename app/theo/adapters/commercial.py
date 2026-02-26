@@ -8,6 +8,8 @@ Adapter pour les opérations commerciales:
 - Avoirs
 - Clients
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, List, Optional
 from decimal import Decimal

@@ -4,6 +4,8 @@ AZALS MODULE - Dunning (Relances Impayés): Schemas
 
 Schémas Pydantic pour la gestion des relances impayés.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from decimal import Decimal

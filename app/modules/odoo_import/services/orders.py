@@ -5,6 +5,8 @@ AZALS MODULE - Odoo Import Orders Service
 Service d'import des commandes depuis Odoo.
 Gère les commandes d'achat, de vente et les devis.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

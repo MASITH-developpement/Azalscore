@@ -12,6 +12,8 @@ SÉCURITÉ:
 - Anti-patterns: détection des mots de passe faibles courants
 - Anti-DoS: limite maximale pour éviter les attaques bcrypt
 """
+from __future__ import annotations
+
 
 import re
 from dataclasses import dataclass

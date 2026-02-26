@@ -4,6 +4,8 @@ AZALS MODULE T5 - Router API Packs Pays
 
 Endpoints REST pour le module Packs Pays.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from typing import Optional

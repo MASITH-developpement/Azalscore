@@ -4,6 +4,8 @@ AZALS MODULE T6 - Router API Diffusion Périodique
 
 Points d'entrée REST pour la gestion des diffusions automatiques.
 """
+from __future__ import annotations
+
 
 import logging
 

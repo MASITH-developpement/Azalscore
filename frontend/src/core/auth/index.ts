@@ -308,7 +308,9 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
 
     try {
       const response = await api.post<LoginResponse>('/auth/verify-2fa', { totp_code: code });
-      const { user, tokens, tenant_id } = response.data;
+      const data = response.data;
+      if (!data) throw new Error('No response data');
+      const { user, tokens, tenant_id } = data;
 
       tokenManager.setTokens(tokens.access_token, tokens.refresh_token);
       setTenantId(tenant_id);

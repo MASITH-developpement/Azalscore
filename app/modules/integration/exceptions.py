@@ -4,6 +4,8 @@ AZALS MODULE GAP-086 - Exceptions Integration
 
 Exceptions metier specifiques au module Integration.
 """
+from __future__ import annotations
+
 
 
 class IntegrationError(Exception):

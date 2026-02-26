@@ -13,6 +13,8 @@ GAIN: -73% de code!
 NOTE: Cet exemple nécessite que ContactsService hérite de BaseService
 et accepte SaaSContext au lieu de tenant_id.
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 from uuid import UUID

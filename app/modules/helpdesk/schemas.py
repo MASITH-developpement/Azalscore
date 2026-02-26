@@ -3,6 +3,8 @@ AZALS MODULE 16 - Helpdesk Schemas
 ===================================
 Schémas Pydantic pour le système de support client.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

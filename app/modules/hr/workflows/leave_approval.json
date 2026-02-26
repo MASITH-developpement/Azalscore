@@ -1,0 +1,102 @@
+{
+  "module_id": "azalscore.hr.leave_approval",
+  "version": "1.0.0",
+  "description": "Workflow d'approbation des demandes de conges",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_leave_request",
+      "use": "azalscore.validators.hr.validate_leave_request@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "leave_type": "{{context.leave_type}}",
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "calculate_leave_days",
+      "use": "azalscore.calculations.hr.calculate_leave_days@1.0.0",
+      "inputs": {
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}",
+        "half_day_start": "{{context.half_day_start}}",
+        "half_day_end": "{{context.half_day_end}}",
+        "country": "FR"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "check_leave_balance",
+      "use": "azalscore.calculations.hr.calculate_leave_balance@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "leave_type": "{{context.leave_type}}",
+        "as_of_date": "{{context.start_date}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "validate_balance",
+      "use": "azalscore.validators.hr.validate_sufficient_balance@1.0.0",
+      "inputs": {
+        "requested_days": "{{calculate_leave_days.days}}",
+        "available_balance": "{{check_leave_balance.available}}",
+        "allow_negative": "{{context.allow_negative_balance}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "check_team_coverage",
+      "use": "azalscore.calculations.hr.check_team_coverage@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}",
+        "minimum_coverage": "{{context.minimum_coverage}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "route_for_approval",
+      "use": "azalscore.transformers.workflow.route_leave_approval@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "leave_type": "{{context.leave_type}}",
+        "days_requested": "{{calculate_leave_days.days}}",
+        "manager_id": "{{context.manager_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "notify_manager",
+      "use": "azalscore.generators.communications.notify_leave_request@1.0.0",
+      "inputs": {
+        "manager_email": "{{context.manager_email}}",
+        "employee_name": "{{context.employee_name}}",
+        "leave_type": "{{context.leave_type}}",
+        "dates": "{{context.start_date}} - {{context.end_date}}",
+        "days": "{{calculate_leave_days.days}}",
+        "approval_link": "{{route_for_approval.approval_url}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "leave_request_id": "{{route_for_approval.request_id}}",
+    "days_requested": "{{calculate_leave_days.days}}",
+    "balance_before": "{{check_leave_balance.available}}",
+    "balance_after": "{{check_leave_balance.available - calculate_leave_days.days}}",
+    "team_coverage_ok": "{{check_team_coverage.sufficient}}",
+    "approval_status": "{{route_for_approval.status}}"
+  }
+}

@@ -21,6 +21,8 @@ Structures principales:
 - S40: Cotisations
 - S60: Paiement
 """
+from __future__ import annotations
+
 
 import hashlib
 import logging

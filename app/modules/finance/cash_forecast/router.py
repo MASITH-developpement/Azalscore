@@ -12,6 +12,8 @@ Endpoints:
 - GET  /v3/finance/cash-forecast/scenarios - Liste des scénarios
 - GET  /v3/finance/cash-forecast/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

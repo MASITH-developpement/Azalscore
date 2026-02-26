@@ -4,6 +4,8 @@ AZALS MODULE 16 - Helpdesk Router v2
 API endpoints pour le système de support client - CORE SaaS v2.
 Migration complète avec SaaSContext.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query

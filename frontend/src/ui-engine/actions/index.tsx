@@ -169,14 +169,14 @@ export const CapabilityAction: React.FC<CapabilityActionProps> = ({
       setShowConfirm(true);
     } else {
       trackAction('action_button', action.id);
-      await action.onClick();
+      await action.onClick?.();
     }
   };
 
   const handleConfirm = async () => {
     setShowConfirm(false);
     trackAction('action_button', action.id, { confirmed: true });
-    await action.onClick();
+    await action.onClick?.();
   };
 
   return (

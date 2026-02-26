@@ -4,6 +4,8 @@ AZALS MODULE - Auto-Enrichment - Router
 
 Endpoints API pour l'enrichissement automatique.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional

@@ -4,6 +4,8 @@ WMS Router - API REST V3
 
 Endpoints pour la gestion d'entrepôt.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Any, Optional

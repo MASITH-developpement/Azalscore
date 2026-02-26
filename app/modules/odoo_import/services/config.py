@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import Config Service
 
 Service de gestion des configurations de connexion Odoo.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

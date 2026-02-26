@@ -10,6 +10,8 @@ Gestion des visiteurs:
 - Rapports de visite
 - Intégration contrôle d'accès
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date, time, timedelta

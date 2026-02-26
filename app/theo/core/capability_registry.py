@@ -9,6 +9,8 @@ Principe anti-obsolescence:
 
 Aucune IA n'est figée. Toute dépendance est remplaçable.
 """
+from __future__ import annotations
+
 
 from enum import Enum
 from typing import Dict, List, Optional, Any, Callable, Protocol, runtime_checkable

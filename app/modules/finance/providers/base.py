@@ -12,6 +12,8 @@ Architecture:
     ├── DefactoProvider (Affacturage)
     └── SolarisProvider (Crédit)
 """
+from __future__ import annotations
+
 
 import hashlib
 import json

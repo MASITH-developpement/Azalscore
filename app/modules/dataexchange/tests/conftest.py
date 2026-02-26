@@ -3,6 +3,8 @@ AZALS - Module DataExchange - Test Configuration
 =================================================
 Fixtures et configuration communes pour les tests du module DataExchange.
 """
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, Any, List

@@ -4,6 +4,8 @@ AZALS - Service Stripe Production
 Intégration complète Stripe avec webhooks.
 pip install stripe
 """
+from __future__ import annotations
+
 
 import os
 import re

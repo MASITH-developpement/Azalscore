@@ -9,6 +9,8 @@ Gestion des enquêtes et retours:
 - Score NPS et satisfaction
 - Rapports et tendances
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date

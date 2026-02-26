@@ -4,6 +4,8 @@ AZALS MODULE - Documents (GED) - Schemas
 
 Schemas Pydantic pour la validation et la serialisation.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

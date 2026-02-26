@@ -4,6 +4,8 @@ AZALS MODULE - Documents (GED) - Router
 
 API REST pour la Gestion Electronique de Documents.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional
@@ -24,7 +26,17 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.core.models import User
+from app.core.models import User, UserRole
+
+
+def require_admin_role(current_user: User) -> None:
+    """Vérifie que l'utilisateur a un rôle admin (DIRIGEANT ou ADMIN)."""
+    role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    if role_value not in ["DIRIGEANT", "ADMIN"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Accès refusé. Rôle ADMIN ou DIRIGEANT requis."
+        )
 
 from .exceptions import (
     DocumentException,
@@ -821,7 +833,7 @@ async def purge_deleted_documents(
     current_user: User = Depends(get_current_user)
 ):
     """Purger les documents supprimes depuis plus de X jours."""
-    # TODO: Verifier que l'utilisateur est admin
+    require_admin_role(current_user)
     service = get_service(db, current_user)
     count = service.purge_deleted_documents(older_than_days)
     return {"purged_count": count}
@@ -833,7 +845,7 @@ async def apply_retention_policy(
     current_user: User = Depends(get_current_user)
 ):
     """Appliquer les politiques de retention."""
-    # TODO: Verifier que l'utilisateur est admin
+    require_admin_role(current_user)
     service = get_service(db, current_user)
     count = service.apply_retention_policy()
     return {"archived_count": count}

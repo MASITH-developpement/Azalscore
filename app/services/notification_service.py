@@ -16,6 +16,8 @@ Features:
 - Retry automatique
 - Historique et analytics
 """
+from __future__ import annotations
+
 
 import asyncio
 import hashlib

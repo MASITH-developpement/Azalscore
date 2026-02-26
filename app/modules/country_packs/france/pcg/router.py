@@ -4,6 +4,8 @@ AZALS MODULE - PCG 2025: Router API
 
 Endpoints REST pour la gestion du Plan Comptable Général 2025.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional

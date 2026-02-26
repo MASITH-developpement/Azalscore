@@ -5,6 +5,8 @@ AZALS MODULE M2A - Service Classification IA
 Service d'intelligence artificielle pour la classification automatique
 des documents comptables et la suggestion de comptes.
 """
+from __future__ import annotations
+
 
 import logging
 import re

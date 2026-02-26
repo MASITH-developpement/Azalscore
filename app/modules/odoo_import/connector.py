@@ -8,6 +8,8 @@ Gere l'authentification, les requetes et les erreurs.
 SÉCURITÉ: defusedxml monkey-patch appliqué pour protéger
 contre les attaques XML (XXE, billion laughs, etc.)
 """
+from __future__ import annotations
+
 
 import logging
 import ssl

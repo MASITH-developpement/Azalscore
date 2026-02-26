@@ -14,6 +14,8 @@ Actions:
     - assess_risk: Evaluation des risques juridiques
     - generate_clause: Generation de clauses types
 """
+from __future__ import annotations
+
 
 import json
 import logging

@@ -5,6 +5,8 @@ AZALS MODULE T0 - Permissions Prédéfinies
 Définitions des permissions standard AZALS.
 Format: module.resource.action
 """
+from __future__ import annotations
+
 
 
 # ============================================================================

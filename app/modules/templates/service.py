@@ -9,6 +9,8 @@ Gestion des modèles de documents:
 - Multi-formats (PDF, DOCX, HTML)
 - Versioning des templates
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime

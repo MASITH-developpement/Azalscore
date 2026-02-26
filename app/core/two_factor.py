@@ -4,6 +4,8 @@ AZALS - Two-Factor Authentication (2FA) ÉLITE
 Authentification à deux facteurs avec TOTP.
 Compatible Google Authenticator, Authy, etc.
 """
+from __future__ import annotations
+
 
 import hashlib
 import json

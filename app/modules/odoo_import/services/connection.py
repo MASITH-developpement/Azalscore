@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import Connection Service
 
 Service de test de connexion Odoo.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

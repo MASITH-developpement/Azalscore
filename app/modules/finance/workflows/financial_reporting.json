@@ -1,0 +1,118 @@
+{
+  "module_id": "azalscore.finance.financial_reporting",
+  "version": "1.0.0",
+  "description": "Workflow de generation des etats financiers (bilan, compte de resultat)",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_period",
+      "use": "azalscore.validators.finance.validate_reporting_period@1.0.0",
+      "inputs": {
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}",
+        "report_type": "{{context.report_type}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "calculate_trial_balance",
+      "use": "azalscore.calculations.finance.calculate_trial_balance@1.0.0",
+      "inputs": {
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}",
+        "include_opening": true
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "calculate_income_statement",
+      "use": "azalscore.calculations.finance.calculate_income_statement@1.0.0",
+      "inputs": {
+        "trial_balance": "{{calculate_trial_balance}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_balance_sheet",
+      "use": "azalscore.calculations.finance.calculate_balance_sheet@1.0.0",
+      "inputs": {
+        "trial_balance": "{{calculate_trial_balance}}",
+        "net_income": "{{calculate_income_statement.net_income}}",
+        "as_of_date": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_cash_flow",
+      "condition": "{{context.include_cash_flow}} == true",
+      "use": "azalscore.calculations.finance.calculate_cash_flow_statement@1.0.0",
+      "inputs": {
+        "income_statement": "{{calculate_income_statement}}",
+        "balance_sheet": "{{calculate_balance_sheet}}",
+        "prior_balance_sheet": "{{context.prior_balance_sheet}}"
+      },
+      "retry": 2,
+      "timeout": 20000
+    },
+    {
+      "id": "calculate_ratios",
+      "use": "azalscore.calculations.financial.calculate_financial_ratios@1.0.0",
+      "inputs": {
+        "balance_sheet": "{{calculate_balance_sheet}}",
+        "income_statement": "{{calculate_income_statement}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_financial_report",
+      "use": "azalscore.generators.documents.generate_financial_statements@1.0.0",
+      "inputs": {
+        "company_name": "{{context.company_name}}",
+        "period": "{{context.period_start}} - {{context.period_end}}",
+        "trial_balance": "{{calculate_trial_balance}}",
+        "income_statement": "{{calculate_income_statement}}",
+        "balance_sheet": "{{calculate_balance_sheet}}",
+        "cash_flow": "{{calculate_cash_flow}}",
+        "ratios": "{{calculate_ratios}}",
+        "format": "{{context.output_format}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "send_to_stakeholders",
+      "condition": "{{context.distribute}} == true",
+      "use": "azalscore.generators.communications.distribute_financial_report@1.0.0",
+      "inputs": {
+        "recipients": "{{context.stakeholder_emails}}",
+        "report_url": "{{generate_financial_report.url}}",
+        "period": "{{context.period_start}} - {{context.period_end}}"
+      },
+      "retry": 3,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "trial_balance": "{{calculate_trial_balance}}",
+    "income_statement": {
+      "revenue": "{{calculate_income_statement.total_revenue}}",
+      "expenses": "{{calculate_income_statement.total_expenses}}",
+      "net_income": "{{calculate_income_statement.net_income}}"
+    },
+    "balance_sheet": {
+      "total_assets": "{{calculate_balance_sheet.total_assets}}",
+      "total_liabilities": "{{calculate_balance_sheet.total_liabilities}}",
+      "total_equity": "{{calculate_balance_sheet.total_equity}}"
+    },
+    "ratios": "{{calculate_ratios}}",
+    "report_url": "{{generate_financial_report.url}}"
+  }
+}

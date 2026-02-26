@@ -10,6 +10,8 @@ Conformite AZALSCORE:
 - Soft delete transparent
 - Optimistic locking avec version
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime, date, time, timedelta

@@ -5,6 +5,8 @@ AZALSCORE Module I18N - Routes API
 API REST complete pour l'internationalisation.
 CRUD, Autocomplete, Permissions verifiees.
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 from uuid import UUID

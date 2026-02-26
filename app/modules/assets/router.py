@@ -4,6 +4,8 @@ AZALS MODULE ASSETS - Router API
 
 API REST pour la gestion des immobilisations.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

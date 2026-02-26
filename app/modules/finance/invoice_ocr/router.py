@@ -10,6 +10,8 @@ Endpoints:
 - GET  /v3/finance/invoice-ocr/status/{job_id} - Statut d'un job
 - GET  /v3/finance/invoice-ocr/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 import os

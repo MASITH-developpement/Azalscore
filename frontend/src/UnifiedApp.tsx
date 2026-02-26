@@ -78,6 +78,19 @@ const BlogTresorerie = lazy(() => import('./pages/blog/GestionTresoreriePme'));
 const BlogCrm = lazy(() => import('./pages/blog/CrmRelationClient'));
 const BlogStock = lazy(() => import('./pages/blog/GestionStockOptimisation'));
 
+// Comparatif pages (SEO)
+const VsOdoo = lazy(() => import('./pages/comparatif/VsOdoo'));
+const VsSage = lazy(() => import('./pages/comparatif/VsSage'));
+const VsEbp = lazy(() => import('./pages/comparatif/VsEbp'));
+
+// Secteurs pages (SEO)
+const SecteurCommerce = lazy(() => import('./pages/secteurs/Commerce'));
+const SecteurServices = lazy(() => import('./pages/secteurs/Services'));
+const SecteurIndustrie = lazy(() => import('./pages/secteurs/Industrie'));
+
+// Feature detail pages (SEO)
+const FeatureDetail = lazy(() => import('./pages/features/FeatureDetail'));
+
 // ============================================================
 // VIEW KEY → CAPABILITY MAPPING
 // Maps each ViewKey to the capability required to access it.
@@ -804,6 +817,20 @@ const UnifiedApp: React.FC = () => {
             <Route path="/blog/gestion-tresorerie-pme" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogTresorerie /></Suspense>} />
             <Route path="/blog/crm-relation-client" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogCrm /></Suspense>} />
             <Route path="/blog/gestion-stock-optimisation" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogStock /></Suspense>} />
+
+            {/* Comparatif pages */}
+            <Route path="/comparatif/azalscore-vs-odoo" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsOdoo /></Suspense>} />
+            <Route path="/comparatif/azalscore-vs-sage" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsSage /></Suspense>} />
+            <Route path="/comparatif/azalscore-vs-ebp" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsEbp /></Suspense>} />
+
+            {/* Secteurs pages */}
+            <Route path="/secteurs/commerce" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><SecteurCommerce /></Suspense>} />
+            <Route path="/secteurs/services" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><SecteurServices /></Suspense>} />
+            <Route path="/secteurs/industrie" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><SecteurIndustrie /></Suspense>} />
+
+            {/* Feature detail pages */}
+            <Route path="/features/:feature" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><FeatureDetail /></Suspense>} />
+
             <Route path="*" element={<LandingPage />} />
             </Routes>
           </BrowserRouter>

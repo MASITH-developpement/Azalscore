@@ -11,6 +11,8 @@ Actions:
     - schedule_interview: Planification entretien
     - send_offer: Envoi proposition d'embauche
 """
+from __future__ import annotations
+
 
 import json
 import logging

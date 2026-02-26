@@ -2,6 +2,8 @@
 AZALS - Module M10: BI & Reporting
 Router FastAPI pour Business Intelligence
 """
+from __future__ import annotations
+
 
 from datetime import date
 

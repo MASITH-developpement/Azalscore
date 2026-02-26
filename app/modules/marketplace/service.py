@@ -3,6 +3,8 @@ AZALS - Module Marketplace - Service
 ====================================
 Service pour le site marchand avec provisioning automatique.
 """
+from __future__ import annotations
+
 
 import logging
 import secrets

@@ -19,6 +19,8 @@ Fonctionnalités:
 - Contraintes de capacité véhicule
 - Équilibrage de charge entre techniciens
 """
+from __future__ import annotations
+
 
 import math
 import random

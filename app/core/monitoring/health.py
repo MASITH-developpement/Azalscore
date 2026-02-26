@@ -3,6 +3,8 @@ AZALS - Health Checks Avancés
 =============================
 Endpoints de santé pour orchestration et monitoring.
 """
+from __future__ import annotations
+
 
 import logging
 import time

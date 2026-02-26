@@ -12,6 +12,8 @@ Facteurs de scoring:
 - Incidents de paiement (factures en retard)
 - Taux de paiement à temps
 """
+from __future__ import annotations
+
 
 import logging
 import time

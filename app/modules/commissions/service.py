@@ -21,6 +21,8 @@ Inspire de:
 - Odoo: Commission multi-niveaux
 - Microsoft Dynamics 365: Sales performance management
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal, ROUND_HALF_UP

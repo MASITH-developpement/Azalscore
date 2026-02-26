@@ -4,6 +4,8 @@ MES Service - Manufacturing Execution System
 
 Suivi de production en temps réel avec postes de travail et opérations.
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

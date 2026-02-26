@@ -12,6 +12,8 @@ Service complet pour la gestion du cache applicatif.
 - Cache par entite
 - Alertes seuils
 """
+from __future__ import annotations
+
 
 import gzip
 import hashlib

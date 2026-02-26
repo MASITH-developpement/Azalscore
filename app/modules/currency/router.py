@@ -4,6 +4,8 @@ AZALS MODULE - CURRENCY: Router API
 
 Endpoints REST pour la gestion multi-devises.
 """
+from __future__ import annotations
+
 
 import math
 from datetime import date, datetime

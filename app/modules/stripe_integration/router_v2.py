@@ -3,6 +3,8 @@ AZALS - Module Stripe Integration - Router v2 - CORE SaaS
 ==========================================================
 API pour l'intégration Stripe (paiements, abonnements, webhooks).
 """
+from __future__ import annotations
+
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session

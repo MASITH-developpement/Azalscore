@@ -19,6 +19,8 @@ Endpoints:
 - GET  /v3/finance/virtual-cards/alerts - Alertes
 - GET  /v3/finance/virtual-cards/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

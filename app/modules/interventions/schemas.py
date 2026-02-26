@@ -4,6 +4,8 @@ AZALS MODULE INTERVENTIONS - Schemas
 
 Schémas Pydantic pour les validations et les API.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

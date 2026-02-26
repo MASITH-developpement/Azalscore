@@ -6,6 +6,8 @@ Service Referral / Parrainage
 - Validation des règles
 - Détection de fraude
 """
+from __future__ import annotations
+
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 import hashlib

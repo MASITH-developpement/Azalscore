@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe Product & Price Service
 
 Gestion des produits et prix Stripe.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional

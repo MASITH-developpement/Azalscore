@@ -6,6 +6,8 @@ Utilise get_context() de app.core.compat pour l'isolation tenant.
 
 Endpoints pour le site web officiel AZALSCORE.
 """
+from __future__ import annotations
+
 
 from typing import List
 from uuid import UUID

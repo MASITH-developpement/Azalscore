@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { setTenantId } from '@core/api-client';
 import { trackAuthEvent } from '@core/audit-ui';
@@ -72,6 +73,11 @@ const LoginPage: React.FC = () => {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Connexion | Azalscore ERP</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
     <div className="azals-login">
       <h1 className="azals-login__title">Connexion</h1>
 
@@ -153,6 +159,7 @@ const LoginPage: React.FC = () => {
         </Button>
       </form>
     </div>
+    </>
   );
 };
 

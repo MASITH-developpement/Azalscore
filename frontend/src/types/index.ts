@@ -34,9 +34,10 @@ export interface PaginatedResponse<T> {
 
 /**
  * Réponse API standard
+ * Note: data est requis car l'API retourne toujours des données ou throw une erreur
  */
 export interface ApiResponse<T> {
-  data?: T;
+  data: T;
   items?: T[];
   total?: number;
   message?: string;
@@ -126,6 +127,8 @@ export interface User extends TenantEntity {
   capabilities?: string[];
   default_view?: string;
   preferences?: Record<string, unknown>;
+  last_login?: string;
+  avatar_url?: string;
 }
 
 /**
@@ -150,11 +153,14 @@ export interface AuthState {
 }
 
 /**
- * État d'authentification typé avec status
+ * État d'authentification typé (discriminated union)
  */
-export interface TypedAuthState extends AuthState {
-  status: 'idle' | 'loading' | 'ready' | 'error';
-}
+export type TypedAuthState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; error: string }
+  | { status: 'authenticated'; user: User; tenantId: string }
+  | { status: 'unauthenticated' };
 
 // ============================================================================
 // TYPES CAPACITÉS (RBAC)
@@ -240,6 +246,13 @@ export interface ApiMutationError {
   code?: string;
   field?: string;
   details?: Record<string, unknown>;
+  response?: {
+    status?: number;
+    data?: {
+      detail?: string;
+      message?: string;
+    };
+  };
 }
 
 /**
@@ -257,10 +270,9 @@ export type Result<T, E = { code: string; message: string }> =
  * Événement d'audit UI
  */
 export interface UIAuditEvent {
-  type?: string;
-  event_type?: string;
-  action?: string;
-  component?: string;
+  event_type: string;
+  component: string;
+  action: string;
   target?: string;
   metadata?: Record<string, unknown>;
   timestamp?: string;
@@ -313,7 +325,7 @@ export type Currency = 'EUR' | 'USD' | 'GBP' | 'CHF';
  */
 export interface TableColumn<T> {
   id: string;
-  header: string;
+  header: string | ReactNode;
   accessor: keyof T | string | ((row: T) => unknown);
   sortable?: boolean;
   align?: 'left' | 'center' | 'right';
@@ -393,6 +405,22 @@ export interface ModuleInfo {
   capabilities?: string[];
 }
 
+/**
+ * Intervenant (technicien, employé assigné)
+ */
+export interface Intervenant {
+  id: string;
+  name?: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  skills?: string[];
+  is_available?: boolean;
+  color?: string;
+}
+
 // ============================================================================
 // TYPES DASHBOARD
 // ============================================================================
@@ -416,6 +444,7 @@ export interface DashboardKPI {
   severity?: AlertSeverity;
   link?: string;
   icon?: ReactNode;
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
 }
 
 /**
@@ -467,6 +496,11 @@ export interface ActionButton {
   };
   disabled?: boolean;
   loading?: boolean;
+  // Aliases for compatibility
+  isDisabled?: boolean;
+  isLoading?: boolean;
+  requiresConfirmation?: boolean;
+  confirmationMessage?: string;
 }
 
 // ============================================================================

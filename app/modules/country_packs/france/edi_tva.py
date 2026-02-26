@@ -18,6 +18,8 @@ Normes:
 - Format EDIFICAS / EDIFACT
 - Cahier des charges EDI-TVA DGFiP
 """
+from __future__ import annotations
+
 
 import hashlib
 import uuid

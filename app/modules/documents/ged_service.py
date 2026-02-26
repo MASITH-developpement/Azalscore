@@ -7,6 +7,8 @@ Fonctionnalites completes: upload, versioning, partage, recherche, archivage.
 
 Inspire de: Sage, Axonaut, Pennylane, Odoo, Microsoft Dynamics 365, SharePoint
 """
+from __future__ import annotations
+
 
 import hashlib
 import io

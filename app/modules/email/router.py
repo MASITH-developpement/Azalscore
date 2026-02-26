@@ -3,6 +3,8 @@ AZALS - Module Email - Router
 =============================
 Endpoints API pour les emails transactionnels.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

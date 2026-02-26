@@ -10,6 +10,8 @@ PRINCIPE FONDAMENTAL: Deny by default
 - Chaque accès est vérifié contre la matrice RBAC
 - Les refus critiques sont logués
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any

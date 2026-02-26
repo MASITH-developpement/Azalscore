@@ -3,6 +3,8 @@ AZALS MODULE 18 - Mobile App Service
 =====================================
 Logique métier pour le backend mobile.
 """
+from __future__ import annotations
+
 
 import logging
 import secrets

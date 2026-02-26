@@ -146,3 +146,46 @@ class JSONB(TypeDecorator):
         if isinstance(value, str):
             return json_lib.loads(value)
         return value
+
+
+class ARRAY(TypeDecorator):
+    """
+    Type ARRAY universel compatible PostgreSQL et SQLite.
+
+    - PostgreSQL: Utilise le type ARRAY natif
+    - SQLite: Stocke comme Text avec sérialisation JSON
+
+    Usage:
+        tags = Column(ARRAY(String), default=list)
+        ids = Column(ARRAY(Integer), default=list)
+    """
+
+    impl = Text
+    cache_ok = True
+
+    def __init__(self, item_type=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.item_type = item_type
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
+            return dialect.type_descriptor(PG_ARRAY(self.item_type or String))
+        else:
+            return dialect.type_descriptor(Text())
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        if dialect.name == 'postgresql':
+            return value
+        return json_lib.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        if dialect.name == 'postgresql':
+            return value
+        if isinstance(value, str):
+            return json_lib.loads(value)
+        return value

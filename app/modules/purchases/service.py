@@ -4,6 +4,8 @@ AZALS MODULE M4 - Service Purchases
 
 Service pour la gestion des achats.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

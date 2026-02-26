@@ -1,0 +1,88 @@
+{
+  "module_id": "azalscore.inventory.batch_expiry",
+  "version": "1.0.0",
+  "description": "Workflow de gestion des lots et dates de peremption",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "scan_expiring_lots",
+      "use": "azalscore.calculations.inventory.find_expiring_lots@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "days_ahead": "{{context.days_ahead}}",
+        "product_categories": "{{context.product_categories}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "classify_by_urgency",
+      "use": "azalscore.calculations.inventory.classify_expiry_urgency@1.0.0",
+      "inputs": {
+        "expiring_lots": "{{scan_expiring_lots.lots}}",
+        "critical_threshold_days": 7,
+        "warning_threshold_days": 30
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "calculate_write_off_value",
+      "use": "azalscore.calculations.inventory.calculate_lot_values@1.0.0",
+      "inputs": {
+        "lots": "{{scan_expiring_lots.lots}}",
+        "valuation_method": "{{context.valuation_method}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "send_critical_alerts",
+      "condition": "{{classify_by_urgency.critical_count}} > 0",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "expiry_critical",
+        "severity": "critical",
+        "title": "ALERTE - Lots expirant sous 7 jours",
+        "message": "{{classify_by_urgency.critical_count}} lots expirent dans moins de 7 jours",
+        "data": "{{classify_by_urgency.critical_lots}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    },
+    {
+      "id": "send_warning_alerts",
+      "condition": "{{classify_by_urgency.warning_count}} > 0",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "expiry_warning",
+        "severity": "warning",
+        "title": "Lots expirant sous 30 jours",
+        "message": "{{classify_by_urgency.warning_count}} lots expirent dans moins de 30 jours",
+        "data": "{{classify_by_urgency.warning_lots}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_expiry_report",
+      "use": "azalscore.generators.documents.generate_expiry_report@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "expiring_lots": "{{scan_expiring_lots.lots}}",
+        "classification": "{{classify_by_urgency}}",
+        "write_off_value": "{{calculate_write_off_value.total}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "total_expiring_lots": "{{scan_expiring_lots.count}}",
+    "critical_count": "{{classify_by_urgency.critical_count}}",
+    "warning_count": "{{classify_by_urgency.warning_count}}",
+    "potential_write_off_value": "{{calculate_write_off_value.total}}",
+    "report_url": "{{generate_expiry_report.url}}"
+  }
+}

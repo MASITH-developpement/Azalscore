@@ -4,6 +4,8 @@ AZALS MODULE M8 - Service Maintenance (GMAO)
 
 Service métier pour la gestion de la maintenance.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal

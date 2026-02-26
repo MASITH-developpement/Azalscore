@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe PaymentIntent Service
 
 Gestion des PaymentIntents Stripe.
 """
+from __future__ import annotations
+
 
 import logging
 from decimal import Decimal

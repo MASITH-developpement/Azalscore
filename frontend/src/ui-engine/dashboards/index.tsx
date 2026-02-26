@@ -150,7 +150,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({
         </div>
         <p className="azals-alert-card__message">{alert.message}</p>
         <span className="azals-alert-card__time">
-          {new Date(alert.created_at).toLocaleString('fr-FR')}
+          {alert.created_at ? new Date(alert.created_at).toLocaleString('fr-FR') : '-'}
         </span>
       </div>
 

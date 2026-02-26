@@ -4,6 +4,8 @@ AZALS MODULE M6 - Service Production
 
 Logique métier pour la gestion de production.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime, timedelta

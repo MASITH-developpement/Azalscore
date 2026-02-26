@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import Products Service
 
 Service d'import des produits depuis Odoo.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

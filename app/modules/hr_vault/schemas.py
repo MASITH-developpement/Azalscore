@@ -4,6 +4,8 @@ AZALS MODULE HR_VAULT - Schemas Pydantic
 
 Schemas pour la validation des donnees du coffre-fort RH.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from decimal import Decimal

@@ -3,6 +3,8 @@ AZALS - Module Mobile - Router v2 - CORE SaaS
 ==============================================
 API backend pour applications mobiles iOS/Android.
 """
+from __future__ import annotations
+
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

@@ -3,6 +3,8 @@ AZALSCORE ERP - Module DASHBOARDS
 ==================================
 Schemas Pydantic pour validation et serialisation.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date
 from decimal import Decimal
@@ -1102,3 +1104,20 @@ class DashboardOverview(BaseModel):
 
     stats: dict[str, Any]
     # {views_today, views_week, exports_today, most_viewed}
+
+
+# =============================================================================
+# ALIASES POUR COMPATIBILITÉ
+# =============================================================================
+
+# Share aliases
+ShareCreate = DashboardShareCreate
+ShareUpdate = DashboardShareUpdate
+ShareResponse = DashboardShareResponse
+
+# Favorite aliases
+FavoriteCreate = DashboardFavoriteCreate
+FavoriteResponse = DashboardFavoriteResponse
+
+# UserPreference alias
+UserPreferenceCreate = UserPreferenceUpdate

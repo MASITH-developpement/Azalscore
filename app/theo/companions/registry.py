@@ -5,6 +5,8 @@ THÉO — Registre des Compagnons
 Gère les compagnons (masques vocaux/visuels) disponibles.
 Chaque compagnon a une identité mais aucune logique propre.
 """
+from __future__ import annotations
+
 
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field

@@ -3,6 +3,8 @@ AZALS - Module M10: BI & Reporting
 Service métier pour Business Intelligence
 """
 
+from __future__ import annotations
+
 from datetime import date, datetime, timedelta
 from typing import Any
 

@@ -8,6 +8,8 @@ Lookup entreprises francaises par SIRET/SIREN.
 API Documentation: https://recherche-entreprises.api.gouv.fr/docs/
 Note: Ancienne API api.insee.fr deprecee en 2025, migre vers recherche-entreprises.api.gouv.fr
 """
+from __future__ import annotations
+
 
 import logging
 import re

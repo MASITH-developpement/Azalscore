@@ -5,6 +5,8 @@ AZALS MODULE - Complaints Schemas
 Schemas Pydantic pour le systeme de gestion des reclamations clients.
 Validation des entrees/sorties API conforme OpenAPI 3.0.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

@@ -4,6 +4,8 @@ Schémas Pydantic Referral / Parrainage
 - Validation stricte
 - Types correspondant exactement au frontend
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum

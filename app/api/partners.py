@@ -8,6 +8,8 @@ Ces routes sont des alias vers le module commercial M1.
 Frontend: /v1/partners/*
 Backend: Module Commercial (M1)
 """
+from __future__ import annotations
+
 
 from uuid import UUID
 

@@ -4,6 +4,8 @@ AZALS MODULE M7 - Service Qualité
 
 Logique métier pour le module de gestion de la qualité.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime, timedelta

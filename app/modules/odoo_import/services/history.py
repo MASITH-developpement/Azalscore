@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import History Service
 
 Service de gestion de l'historique et des statistiques d'import.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any, Dict, List, Optional

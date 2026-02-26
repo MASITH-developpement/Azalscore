@@ -5,6 +5,8 @@ AZALS MODULE ASSETS - Repository
 Acces aux donnees pour le module de gestion des immobilisations.
 CRITIQUE: Toutes les requetes sont filtrees par tenant_id.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal

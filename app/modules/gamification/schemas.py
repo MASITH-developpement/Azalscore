@@ -4,6 +4,8 @@ AZALS MODULE GAMIFICATION - Schemas Pydantic
 
 Schemas de validation pour le module de gamification.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from decimal import Decimal

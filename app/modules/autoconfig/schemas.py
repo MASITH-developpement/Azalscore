@@ -4,6 +4,8 @@ AZALS MODULE T1 - Schémas Pydantic Configuration Automatique
 
 Schémas de validation pour les endpoints de configuration automatique.
 """
+from __future__ import annotations
+
 
 
 from datetime import datetime

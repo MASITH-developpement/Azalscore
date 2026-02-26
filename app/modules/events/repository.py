@@ -5,6 +5,8 @@ AZALS MODULE EVENTS - Repository
 Couche d'acces aux donnees avec isolation tenant automatique.
 Utilise le pattern Repository pour encapsuler les requetes.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime, date

@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Google Search Console Client
 =============================================================
 Client API pour Google Search Console
 """
+from __future__ import annotations
+
 
 import logging
 import os

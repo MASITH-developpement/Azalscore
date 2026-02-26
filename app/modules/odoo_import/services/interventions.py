@@ -5,6 +5,8 @@ AZALS MODULE - Odoo Import Interventions Service
 Service d'import des interventions depuis Odoo.
 Supporte intervention.intervention, project.task et helpdesk.ticket.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid as uuid_module

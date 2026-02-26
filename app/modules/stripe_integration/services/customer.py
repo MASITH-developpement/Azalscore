@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe Customer Service
 
 Gestion des clients Stripe.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional, Tuple

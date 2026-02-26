@@ -110,7 +110,9 @@ const useSaveAffaire = () => {
       const res = id
         ? await api.put<Affaire>(`/projects/${id}`, payload)
         : await api.post<Affaire>('/projects', payload);
-      return unwrapApiResponse<Affaire>(res);
+      const result = unwrapApiResponse<Affaire>(res);
+      if (!result) throw new Error('No data returned from API');
+      return result;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['affaires'] });

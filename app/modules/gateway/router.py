@@ -5,6 +5,8 @@ AZALS MODULE GATEWAY - Router API
 Endpoints REST pour le module Gateway.
 Documentation OpenAPI auto-generee.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional

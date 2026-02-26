@@ -3,6 +3,8 @@ AZALS MODULE T1 - Router v2 Configuration Automatique - CORE SaaS
 ==================================================================
 API pour la configuration automatique par fonction avec SaaSContext.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query

@@ -5,6 +5,8 @@ AZALSCORE Module I18N - Repository
 Repository avec isolation tenant obligatoire.
 _base_query() filtre TOUJOURS par tenant_id.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

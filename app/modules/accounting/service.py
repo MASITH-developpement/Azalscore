@@ -4,6 +4,8 @@ AZALS MODULE - ACCOUNTING: Service
 
 Logique métier pour la gestion comptable.
 """
+from __future__ import annotations
+
 
 import datetime
 import logging

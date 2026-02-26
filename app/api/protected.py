@@ -2,6 +2,8 @@
 AZALS - Endpoint exemple protégé par JWT + Tenant
 Démonstration de l'utilisation de get_current_user
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends

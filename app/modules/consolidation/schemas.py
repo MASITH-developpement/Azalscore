@@ -8,6 +8,8 @@ de consolidation comptable multi-entites.
 Auteur: AZALSCORE Team
 Version: 1.0.0
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from decimal import Decimal

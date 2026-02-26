@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import Preview Service
 
 Service de prévisualisation des données Odoo avant import.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any, Dict, List

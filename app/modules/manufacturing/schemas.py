@@ -5,6 +5,8 @@ Schémas Pydantic Manufacturing / Fabrication
 - Types correspondant exactement au frontend
 - Schémas de création, mise à jour et réponse
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum

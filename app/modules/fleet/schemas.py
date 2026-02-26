@@ -3,6 +3,8 @@ Schemas Pydantic - Module Fleet Management (GAP-062)
 
 Validation et serialisation des donnees.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum

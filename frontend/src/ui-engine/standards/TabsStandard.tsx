@@ -154,12 +154,16 @@ export function TabsStandard<T>({
           })}
           hidden={activeTab !== tab.id}
         >
-          {activeTab === tab.id && tab.component && (
-            <tab.component
-              data={data}
-              isActive={true}
-              onDataChange={onDataChange}
-            />
+          {activeTab === tab.id && (
+            tab.component ? (
+              <tab.component
+                data={data}
+                isActive={true}
+                onDataChange={onDataChange}
+              />
+            ) : tab.content ? (
+              tab.content
+            ) : null
           )}
         </div>
       ))}

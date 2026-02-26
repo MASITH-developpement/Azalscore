@@ -9,6 +9,8 @@ Gestion des accords de niveau de service:
 - Rapports de conformité
 - Pénalités et bonus
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date, time, timedelta

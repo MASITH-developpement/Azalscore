@@ -11,6 +11,8 @@ Gestion des enquêtes et sondages:
 - NPS et satisfaction
 - Anonymat configurable
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date

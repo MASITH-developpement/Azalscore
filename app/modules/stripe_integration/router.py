@@ -3,6 +3,8 @@ AZALS MODULE 15 - Stripe Integration Router
 =============================================
 Endpoints API pour l'intégration Stripe.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request

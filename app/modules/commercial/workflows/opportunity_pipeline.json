@@ -1,0 +1,97 @@
+{
+  "module_id": "azalscore.commercial.opportunity_pipeline",
+  "version": "1.0.0",
+  "description": "Workflow de gestion du pipeline commercial avec scoring et previsions",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_pipeline_data",
+      "use": "azalscore.calculations.commercial.get_pipeline_opportunities@1.0.0",
+      "inputs": {
+        "sales_rep_id": "{{context.sales_rep_id}}",
+        "date_range": "{{context.date_range}}",
+        "stages": "{{context.stages}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_weighted_pipeline",
+      "use": "azalscore.calculations.commercial.calculate_weighted_opportunity@1.0.0",
+      "inputs": {
+        "opportunities": "{{get_pipeline_data.opportunities}}",
+        "stage_probabilities": "{{context.stage_probabilities}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "identify_stale_opportunities",
+      "use": "azalscore.calculations.commercial.identify_stale_opportunities@1.0.0",
+      "inputs": {
+        "opportunities": "{{get_pipeline_data.opportunities}}",
+        "stale_threshold_days": 30
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "calculate_win_rate",
+      "use": "azalscore.calculations.commercial.calculate_win_rate@1.0.0",
+      "inputs": {
+        "sales_rep_id": "{{context.sales_rep_id}}",
+        "period_months": 12
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "forecast_revenue",
+      "use": "azalscore.calculations.commercial.forecast_revenue@1.0.0",
+      "inputs": {
+        "weighted_pipeline": "{{calculate_weighted_pipeline}}",
+        "win_rate": "{{calculate_win_rate.rate}}",
+        "average_deal_size": "{{calculate_win_rate.avg_deal_size}}",
+        "forecast_months": 3
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "alert_stale_opportunities",
+      "condition": "{{identify_stale_opportunities.count}} > 0",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "stale_opportunities",
+        "severity": "info",
+        "title": "Opportunites en attente",
+        "message": "{{identify_stale_opportunities.count}} opportunites sans activite depuis 30 jours",
+        "data": "{{identify_stale_opportunities.opportunities}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "generate_pipeline_report",
+      "use": "azalscore.generators.documents.generate_pipeline_report@1.0.0",
+      "inputs": {
+        "pipeline_data": "{{get_pipeline_data}}",
+        "weighted_values": "{{calculate_weighted_pipeline}}",
+        "forecast": "{{forecast_revenue}}",
+        "win_rate": "{{calculate_win_rate}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "total_pipeline_value": "{{get_pipeline_data.total_value}}",
+    "weighted_pipeline_value": "{{calculate_weighted_pipeline.total}}",
+    "opportunities_count": "{{get_pipeline_data.count}}",
+    "stale_count": "{{identify_stale_opportunities.count}}",
+    "win_rate": "{{calculate_win_rate.rate}}",
+    "forecast_q1": "{{forecast_revenue.quarter_forecast}}",
+    "report_url": "{{generate_pipeline_report.url}}"
+  }
+}

@@ -17,6 +17,8 @@ Conformité:
 - PCI-DSS v4.0 (Requirement 8: Identify Users and Authenticate Access)
 - ANSSI (Recommandations authentification multifacteur)
 """
+from __future__ import annotations
+
 
 import base64
 import hashlib

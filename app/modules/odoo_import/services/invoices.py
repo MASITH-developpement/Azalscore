@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import Invoices Service
 
 Service d'import des factures depuis Odoo.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

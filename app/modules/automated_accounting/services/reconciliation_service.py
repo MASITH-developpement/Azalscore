@@ -8,6 +8,8 @@ Service de rapprochement automatique IA entre:
 - Notes de frais
 - Écritures comptables
 """
+from __future__ import annotations
+
 
 import logging
 import re

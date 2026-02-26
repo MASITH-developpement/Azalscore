@@ -368,7 +368,7 @@ function TableRow<T>({
     if (typeof column.accessor === 'function') {
       return column.accessor(row);
     }
-    return row[column.accessor];
+    return row[column.accessor as keyof T];
   };
 
   const visibleActions = actions?.filter((action) => {

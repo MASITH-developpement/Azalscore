@@ -4,6 +4,8 @@ Repository - Module Fleet Management (GAP-062)
 CRITIQUE: Toutes les requetes filtrees par tenant_id via _base_query().
 Soft delete, pagination, filtres avances.
 """
+from __future__ import annotations
+
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Dict, Any, List, Optional, Tuple

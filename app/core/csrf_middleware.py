@@ -15,6 +15,8 @@ Usage:
     def get_csrf_token(request: Request):
         return {"csrf_token": generate_csrf_token(request)}
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac

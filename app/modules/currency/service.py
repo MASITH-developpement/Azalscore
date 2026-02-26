@@ -20,6 +20,8 @@ INSPIRATIONS CONCURRENTIELLES:
 - Pennylane: Conversion temps reel
 - Axonaut: Simplicite d'usage
 """
+from __future__ import annotations
+
 
 import asyncio
 import logging

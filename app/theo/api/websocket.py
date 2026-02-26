@@ -5,6 +5,8 @@ THÉO — WebSocket API
 WebSocket endpoint pour la communication temps réel avec Théo.
 Gère le flux audio bidirectionnel et les messages de contrôle.
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query

@@ -18,6 +18,8 @@ Fonctionnalites:
 
 Inspire de: Salesforce Trailhead, Microsoft Dynamics 365 Gamification, SAP SuccessFactors
 """
+from __future__ import annotations
+
 
 import random
 import string

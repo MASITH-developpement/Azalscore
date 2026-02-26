@@ -4,6 +4,8 @@ MES Router - API REST V3
 
 Endpoints pour le Manufacturing Execution System.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Optional

@@ -29,6 +29,8 @@ ENDPOINTS (46):
 - Reports (4): trial balance + income statement + create + list
 - Dashboard (1): get dashboard
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

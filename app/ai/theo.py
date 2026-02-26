@@ -6,6 +6,8 @@ Theo est la SEULE interface exposée aux utilisateurs.
 
 Conformité: AZA-NF-006, AZA-IA
 """
+from __future__ import annotations
+
 
 import uuid
 import logging

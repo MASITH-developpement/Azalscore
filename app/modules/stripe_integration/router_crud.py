@@ -29,6 +29,8 @@ ENDPOINTS (29 total):
 - Webhooks (1): handle webhook (PUBLIC)
 - Dashboard (1): stats
 """
+from __future__ import annotations
+
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session

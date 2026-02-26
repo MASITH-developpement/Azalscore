@@ -6,6 +6,8 @@ Service metier pour la gestion des reclamations clients.
 Orchestre les repositories et implemente la logique metier.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 from datetime import datetime, timedelta

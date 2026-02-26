@@ -4,6 +4,8 @@ AZALS MODULE T9 - Router Tenants
 
 API REST pour la gestion des tenants.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, timedelta
 

@@ -27,6 +27,8 @@ ENDPOINTS (42 total):
 - Templates (4): create + list + get + apply
 - Stats (2): global + modules
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Optional

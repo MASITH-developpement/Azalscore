@@ -16,6 +16,8 @@ Références:
 - CGI articles 38-54, 209-223
 - BOI-IS-DECLA et BOI-BIC-DECLA
 """
+from __future__ import annotations
+
 
 import logging
 from dataclasses import dataclass, field

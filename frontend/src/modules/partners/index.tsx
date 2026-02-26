@@ -833,7 +833,7 @@ export const ClientFormPage: React.FC = () => {
     try {
       if (isNew) {
         const result = await createMutation.mutateAsync(form);
-        navigate(`/partners/clients/${result.id}`);
+        if (result?.id) navigate(`/partners/clients/${result.id}`);
       } else {
         await updateMutation.mutateAsync({ id: id!, data: form });
         navigate(`/partners/clients/${id}`);

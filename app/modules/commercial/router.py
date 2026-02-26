@@ -4,6 +4,8 @@ AZALS MODULE M1 - Router Commercial
 
 API REST pour le CRM et la gestion commerciale.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

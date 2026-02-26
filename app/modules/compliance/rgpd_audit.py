@@ -17,6 +17,8 @@ Checklist RGPD complète:
 - Article 35-36: Analyse d'impact (DPIA)
 - Article 37-39: DPO
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta

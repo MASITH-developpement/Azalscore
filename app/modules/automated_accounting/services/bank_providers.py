@@ -15,6 +15,8 @@ Références:
 - DSP2 (PSD2) - Directive Services de Paiement
 - Open Banking API Standards
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac

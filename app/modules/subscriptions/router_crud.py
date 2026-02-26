@@ -29,6 +29,8 @@ ENDPOINTS (44 total):
 - Stats (1): cached stats
 - Dashboard (1): cached dashboard
 """
+from __future__ import annotations
+
 
 from datetime import date
 

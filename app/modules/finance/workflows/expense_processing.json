@@ -1,0 +1,96 @@
+{
+  "module_id": "azalscore.finance.expense_processing",
+  "version": "1.0.0",
+  "description": "Workflow de traitement des notes de frais avec validation et remboursement",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_expense_report",
+      "use": "azalscore.validators.finance.validate_expense_report@1.0.0",
+      "inputs": {
+        "expense_report_id": "{{context.expense_report_id}}",
+        "employee_id": "{{context.employee_id}}",
+        "expenses": "{{context.expenses}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "verify_receipts",
+      "use": "azalscore.validators.finance.verify_expense_receipts@1.0.0",
+      "inputs": {
+        "expenses": "{{context.expenses}}",
+        "require_receipt_above": 25.00
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "check_policy_compliance",
+      "use": "azalscore.validators.finance.check_expense_policy@1.0.0",
+      "inputs": {
+        "expenses": "{{context.expenses}}",
+        "employee_id": "{{context.employee_id}}",
+        "policy_id": "{{context.expense_policy_id}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "calculate_totals",
+      "use": "azalscore.calculations.finance.calculate_expense_totals@1.0.0",
+      "inputs": {
+        "expenses": "{{context.expenses}}",
+        "currency": "{{context.currency}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "create_expense_entries",
+      "use": "azalscore.generators.accounting.create_expense_entries@1.0.0",
+      "inputs": {
+        "expenses": "{{context.expenses}}",
+        "employee_account": "421000",
+        "journal_code": "OD",
+        "date": "{{context.processing_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "schedule_reimbursement",
+      "condition": "{{context.auto_reimburse}} == true",
+      "use": "azalscore.generators.payments.schedule_employee_payment@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "amount": "{{calculate_totals.total_reimbursable}}",
+        "payment_date": "{{context.payment_date}}",
+        "reference": "NDF-{{context.expense_report_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "notify_employee",
+      "use": "azalscore.generators.communications.send_expense_notification@1.0.0",
+      "inputs": {
+        "employee_email": "{{context.employee_email}}",
+        "expense_report_id": "{{context.expense_report_id}}",
+        "status": "approved",
+        "reimbursement_amount": "{{calculate_totals.total_reimbursable}}",
+        "payment_date": "{{context.payment_date}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "total_expenses": "{{calculate_totals.total}}",
+    "total_reimbursable": "{{calculate_totals.total_reimbursable}}",
+    "accounting_entry_id": "{{create_expense_entries.entry_id}}",
+    "payment_scheduled": "{{schedule_reimbursement.payment_id}}",
+    "policy_violations": "{{check_policy_compliance.violations}}"
+  }
+}

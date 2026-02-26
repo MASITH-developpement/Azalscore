@@ -7,6 +7,8 @@ Plan Comptable Général 2025 - Comptes standards conformes à l'ANC
 
 Référence: Règlement ANC n°2014-03 modifié (dernière mise à jour 2025)
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass
 from typing import Literal

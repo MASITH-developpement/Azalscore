@@ -28,6 +28,8 @@ Usage:
         requested_limit_cents=5000000,
     )
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac

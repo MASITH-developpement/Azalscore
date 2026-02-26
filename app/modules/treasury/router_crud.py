@@ -21,6 +21,8 @@ ENDPOINTS (14 total):
 - Bank Accounts (5): CRUD + soft delete
 - Transactions (7): CRUD + reconcile/unreconcile + list by account
 """
+from __future__ import annotations
+
 
 from typing import Optional
 from uuid import UUID

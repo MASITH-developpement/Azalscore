@@ -4,6 +4,8 @@ AZALS MODULE M7 - Certification Service
 
 Gestion des certifications qualité.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

@@ -4,6 +4,8 @@ AZALS MODULE T0 - Invitation Service
 
 Gestion des invitations utilisateurs.
 """
+from __future__ import annotations
+
 
 import secrets
 import logging

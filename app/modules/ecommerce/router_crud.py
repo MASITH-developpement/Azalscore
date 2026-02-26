@@ -6,6 +6,8 @@ Utilise get_context() de app.core.compat pour l'isolation tenant.
 
 Endpoints API REST pour la plateforme e-commerce.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

@@ -9,6 +9,8 @@ Chaque entreprise cliente = 1 Tenant isolé
 - Trial de 14 jours
 - Modules de base activés selon le plan
 """
+from __future__ import annotations
+
 
 import re
 import secrets

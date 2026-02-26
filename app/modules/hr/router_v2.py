@@ -9,6 +9,8 @@ AZALS MODULE HR - Router API v2 (CORE SaaS)
 
 Endpoints API pour la gestion des ressources humaines.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

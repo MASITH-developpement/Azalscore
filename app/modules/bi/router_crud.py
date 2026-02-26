@@ -6,6 +6,8 @@ Utilise get_context() de app.core.compat pour l'isolation tenant.
 
 Business Intelligence & Reporting.
 """
+from __future__ import annotations
+
 
 from datetime import date
 

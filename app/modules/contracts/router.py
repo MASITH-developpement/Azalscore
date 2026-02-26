@@ -4,6 +4,8 @@ AZALS MODULE CONTRACTS - Router
 
 Endpoints API REST pour la gestion des contrats (CLM).
 """
+from __future__ import annotations
+
 
 from datetime import date
 from typing import List, Optional

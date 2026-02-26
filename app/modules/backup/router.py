@@ -3,6 +3,8 @@ AZALS - Module Backup - Router
 ==============================
 Endpoints API pour les sauvegardes chiffrées.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query

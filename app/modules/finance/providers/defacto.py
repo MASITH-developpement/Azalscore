@@ -33,6 +33,8 @@ Usage:
         invoices=["inv_001", "inv_002"],
     )
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac

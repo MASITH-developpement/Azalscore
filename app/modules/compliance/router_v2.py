@@ -9,6 +9,8 @@ AZALS MODULE M11 - Router Conformité v2 (CORE SaaS)
 
 Routes API pour la gestion de la conformité réglementaire.
 """
+from __future__ import annotations
+
 
 from decimal import Decimal
 from uuid import UUID

@@ -4,6 +4,8 @@ AZALS MODULE T4 - Schémas Pydantic Contrôle Qualité
 
 Schémas de validation pour les API du module QC.
 """
+from __future__ import annotations
+
 
 
 import json

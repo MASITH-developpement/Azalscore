@@ -4,6 +4,8 @@ AZALS MODULE T8 - Router Site Web
 
 API REST pour le site web officiel.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

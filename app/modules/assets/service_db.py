@@ -15,6 +15,8 @@ Fonctionnalites:
 - Valorisation et reporting
 - Integration comptable
 """
+from __future__ import annotations
+
 
 import calendar
 import uuid

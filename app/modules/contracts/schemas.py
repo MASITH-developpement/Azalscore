@@ -4,6 +4,8 @@ AZALS MODULE CONTRACTS - Schemas Pydantic
 
 Schemas de validation pour le module de gestion des contrats.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date
 from decimal import Decimal

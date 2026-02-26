@@ -17,6 +17,8 @@ Usage:
     # Enregistrer un échec (compteur séparé)
     rate_limiter.record_failure("login", email)
 """
+from __future__ import annotations
+
 
 import logging
 import time

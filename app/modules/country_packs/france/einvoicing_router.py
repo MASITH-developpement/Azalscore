@@ -5,6 +5,8 @@ AZALS - Router E-Invoicing France 2026
 Endpoints REST pour la facturation électronique.
 Multi-tenant avec authentification.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime

@@ -13,6 +13,8 @@ SÉCURITÉ P1:
 - Validation cryptographique (SHA256) des fichiers impl.py
 - Protection contre path traversal
 """
+from __future__ import annotations
+
 
 import json
 import importlib.util

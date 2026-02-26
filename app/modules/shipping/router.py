@@ -4,6 +4,8 @@ Router Shipping / Expédition - GAP-078
 
 Endpoints API pour la gestion des expéditions.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from decimal import Decimal

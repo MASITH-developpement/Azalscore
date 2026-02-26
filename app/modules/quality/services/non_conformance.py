@@ -4,6 +4,8 @@ AZALS MODULE M7 - Non-Conformance Service
 
 Gestion des non-conformités.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

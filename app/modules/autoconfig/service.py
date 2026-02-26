@@ -5,6 +5,8 @@ AZALS MODULE T1 - Service Configuration Automatique
 Logique métier pour la configuration automatique par fonction.
 """
 
+from __future__ import annotations
+
 import json
 from datetime import datetime
 from typing import Any

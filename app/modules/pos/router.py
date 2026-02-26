@@ -3,6 +3,8 @@ AZALS MODULE 13 - POS Router
 =============================
 Endpoints API pour le Point de Vente.
 """
+from __future__ import annotations
+
 
 from datetime import date
 
@@ -627,3 +629,178 @@ def sync_offline_transactions(
     """Synchroniser transactions offline."""
     synced = service.sync_offline_transactions(terminal_id)
     return {"synced_count": synced}
+
+
+# ============================================================================
+# NF525 - CONFORMITÉ LOGICIEL DE CAISSE (Article 286 CGI)
+# ============================================================================
+
+from datetime import datetime
+from .nf525_compliance import NF525ComplianceService, NF525EventType
+
+
+def get_nf525_service(
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
+) -> NF525ComplianceService:
+    """Service NF525 avec authentification obligatoire."""
+    return NF525ComplianceService(db, tenant_id)
+
+
+@router.post("/nf525/initialize", status_code=201)
+def initialize_nf525_certificate(
+    certificate_number: str | None = None,
+    certifying_body: str = Query("LNE", description="Organisme certificateur"),
+    nf525: NF525ComplianceService = Depends(get_nf525_service)
+):
+    """
+    Initialiser le certificat NF525 pour le tenant.
+    À exécuter une seule fois lors de la mise en service du logiciel de caisse.
+    """
+    cert = nf525.initialize_certificate(
+        certificate_number=certificate_number,
+        certificate_date=datetime.utcnow() if certificate_number else None,
+        certifying_body=certifying_body
+    )
+    return {
+        "certificate_id": str(cert.id),
+        "genesis_hash": cert.genesis_hash,
+        "message": "Certificat NF525 initialisé"
+    }
+
+
+@router.get("/nf525/certificate")
+def get_nf525_certificate(
+    nf525: NF525ComplianceService = Depends(get_nf525_service)
+):
+    """Récupérer le certificat NF525 actif."""
+    cert = nf525.get_certificate()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Aucun certificat NF525")
+    return {
+        "id": str(cert.id),
+        "software_name": cert.software_name,
+        "software_version": cert.software_version,
+        "software_editor": cert.software_editor,
+        "certificate_number": cert.certificate_number,
+        "certificate_date": cert.certificate_date,
+        "certificate_expiry": cert.certificate_expiry,
+        "certifying_body": cert.certifying_body,
+        "genesis_hash": cert.genesis_hash,
+        "is_active": cert.is_active
+    }
+
+
+@router.get("/nf525/compliance")
+def check_nf525_compliance(
+    nf525: NF525ComplianceService = Depends(get_nf525_service)
+):
+    """
+    Vérifier la conformité globale NF525.
+    Retourne un statut détaillé avec score de conformité.
+    """
+    status = nf525.check_compliance()
+    return {
+        "is_compliant": status.is_compliant,
+        "score": status.score,
+        "certificate_valid": status.certificate_valid,
+        "chain_integrity": status.chain_integrity,
+        "archiving_current": status.archiving_current,
+        "last_verification": status.last_verification,
+        "issues": status.issues,
+        "warnings": status.warnings
+    }
+
+
+@router.post("/nf525/verify-integrity")
+def verify_nf525_chain_integrity(
+    from_sequence: int | None = Query(None, description="Séquence de départ"),
+    to_sequence: int | None = Query(None, description="Séquence de fin"),
+    nf525: NF525ComplianceService = Depends(get_nf525_service)
+):
+    """
+    Vérifier l'intégrité de la chaîne de hachage NF525.
+    Détecte toute altération des données.
+    """
+    result = nf525.verify_chain_integrity(
+        from_sequence=from_sequence,
+        to_sequence=to_sequence
+    )
+    return {
+        "is_valid": result.is_valid,
+        "checked_from": result.checked_from,
+        "checked_to": result.checked_to,
+        "total_checked": result.total_checked,
+        "broken_at": result.broken_at,
+        "error_message": result.error_message,
+        "execution_time_ms": result.execution_time_ms
+    }
+
+
+@router.get("/nf525/attestation")
+def get_nf525_attestation(
+    nf525: NF525ComplianceService = Depends(get_nf525_service)
+):
+    """
+    Générer l'attestation de conformité NF525.
+    Document requis par l'administration fiscale (Article 286 CGI).
+    """
+    return nf525.generate_attestation()
+
+
+@router.post("/nf525/archives", status_code=201)
+def create_nf525_archive(
+    period_start: datetime = Query(..., description="Début période"),
+    period_end: datetime = Query(..., description="Fin période"),
+    archive_type: str = Query("daily", description="Type: daily, monthly, annual"),
+    nf525: NF525ComplianceService = Depends(get_nf525_service),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Créer une archive sécurisée NF525 pour une période.
+    Conservation obligatoire 6 ans minimum.
+    """
+    result = nf525.create_archive(
+        period_start=period_start,
+        period_end=period_end,
+        archive_type=archive_type,
+        created_by=str(current_user.id)
+    )
+    if not result.success:
+        raise HTTPException(status_code=400, detail=result.error_message)
+    return {
+        "archive_id": result.archive_id,
+        "event_count": result.event_count,
+        "archive_hash": result.archive_hash,
+        "file_path": result.file_path
+    }
+
+
+@router.get("/nf525/archives/{archive_id}/verify")
+def verify_nf525_archive(
+    archive_id: int,
+    nf525: NF525ComplianceService = Depends(get_nf525_service)
+):
+    """Vérifier l'intégrité d'une archive NF525."""
+    result = nf525.verify_archive(archive_id)
+    return {
+        "is_valid": result.is_valid,
+        "checked_from": result.checked_from,
+        "checked_to": result.checked_to,
+        "total_checked": result.total_checked,
+        "error_message": result.error_message
+    }
+
+
+@router.get("/nf525/export")
+def export_nf525_fiscal_data(
+    period_start: datetime = Query(..., description="Début période"),
+    period_end: datetime = Query(..., description="Fin période"),
+    nf525: NF525ComplianceService = Depends(get_nf525_service)
+):
+    """
+    Exporter les données fiscales NF525 pour contrôle.
+    Format conforme aux exigences de l'administration fiscale.
+    """
+    return nf525.export_fiscal_data(period_start, period_end)

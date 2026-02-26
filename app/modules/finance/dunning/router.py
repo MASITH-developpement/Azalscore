@@ -4,6 +4,8 @@ AZALS MODULE - Dunning (Relances Impayés): Router
 
 Endpoints REST pour la gestion des relances impayés.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

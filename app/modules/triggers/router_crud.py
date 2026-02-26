@@ -6,6 +6,8 @@ Utilise get_context() de app.core.compat pour l'isolation tenant.
 
 Système de déclencheurs, alertes et notifications.
 """
+from __future__ import annotations
+
 
 from typing import Any
 from uuid import UUID

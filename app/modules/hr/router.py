@@ -4,6 +4,8 @@ AZALS MODULE M3 - Router RH
 
 Endpoints API pour la gestion des ressources humaines.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

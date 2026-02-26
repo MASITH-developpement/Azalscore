@@ -24,6 +24,8 @@ OWASP Top 10 2021 Coverage:
 - A09: Security Logging
 - A10: SSRF
 """
+from __future__ import annotations
+
 
 import hashlib
 import ipaddress

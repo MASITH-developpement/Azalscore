@@ -7,6 +7,8 @@ Endpoints API pour le système de déclencheurs.
 REFACTORISATION: Utilise require_entity et update_model
 de app.core.routines pour eliminer la duplication.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

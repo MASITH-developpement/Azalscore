@@ -11,6 +11,8 @@ Fonctionnalités:
 - Cartes à usage unique
 - Historique et statistiques des transactions
 """
+from __future__ import annotations
+
 
 import logging
 import secrets

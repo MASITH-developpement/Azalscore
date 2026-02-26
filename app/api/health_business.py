@@ -7,6 +7,8 @@ SECURITE: Ces endpoints exposent des informations systeme et requierent
 une authentification. Les probes Kubernetes (/health, /health/live,
 /health/ready) restent publiques.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from pathlib import Path

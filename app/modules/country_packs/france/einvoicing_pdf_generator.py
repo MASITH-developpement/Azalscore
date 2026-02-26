@@ -15,6 +15,8 @@ Fonctionnalités:
 - Métadonnées XMP conformes Factur-X
 - Support multi-profils (Minimum, Basic, EN16931, Extended)
 """
+from __future__ import annotations
+
 
 import base64
 import io

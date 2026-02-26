@@ -11,6 +11,8 @@ Fonctionnalités:
 - Escalade automatique
 - Historique complet des actions
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

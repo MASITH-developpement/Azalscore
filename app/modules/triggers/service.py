@@ -4,6 +4,8 @@ AZALS MODULE T2 - Service Déclencheurs & Diffusion
 
 Logique métier pour le système de déclencheurs.
 """
+from __future__ import annotations
+
 
 import json
 import logging

@@ -1,0 +1,101 @@
+{
+  "module_id": "azalscore.inventory.picking_packing",
+  "version": "1.0.0",
+  "description": "Workflow de preparation de commande (picking) et emballage (packing)",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_orders_to_pick",
+      "use": "azalscore.calculations.inventory.get_orders_ready_for_picking@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "priority": "{{context.priority}}",
+        "batch_size": "{{context.batch_size}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "optimize_pick_route",
+      "use": "azalscore.calculations.inventory.optimize_picking_route@1.0.0",
+      "inputs": {
+        "orders": "{{get_orders_to_pick.orders}}",
+        "warehouse_layout": "{{context.warehouse_layout}}",
+        "picker_id": "{{context.picker_id}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_pick_list",
+      "use": "azalscore.generators.documents.generate_pick_list@1.0.0",
+      "inputs": {
+        "orders": "{{get_orders_to_pick.orders}}",
+        "route": "{{optimize_pick_route.route}}",
+        "format": "{{context.pick_list_format}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "process_picks",
+      "use": "azalscore.transformers.inventory.process_pick_confirmations@1.0.0",
+      "inputs": {
+        "pick_list_id": "{{generate_pick_list.pick_list_id}}",
+        "picks": "{{context.confirmed_picks}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "validate_picks",
+      "use": "azalscore.validators.inventory.validate_pick_accuracy@1.0.0",
+      "inputs": {
+        "expected": "{{get_orders_to_pick.items}}",
+        "picked": "{{process_picks.items}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "create_packing_task",
+      "use": "azalscore.generators.inventory.create_packing_task@1.0.0",
+      "inputs": {
+        "orders": "{{process_picks.orders}}",
+        "packing_station": "{{context.packing_station}}",
+        "packaging_rules": "{{context.packaging_rules}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_shipping_labels",
+      "use": "azalscore.generators.documents.generate_shipping_labels@1.0.0",
+      "inputs": {
+        "orders": "{{process_picks.orders}}",
+        "carrier": "{{context.carrier}}",
+        "label_format": "{{context.label_format}}"
+      },
+      "retry": 2,
+      "timeout": 20000
+    },
+    {
+      "id": "update_order_status",
+      "use": "azalscore.transformers.status.update_orders_to_shipped@1.0.0",
+      "inputs": {
+        "order_ids": "{{process_picks.order_ids}}",
+        "tracking_numbers": "{{generate_shipping_labels.tracking_numbers}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "orders_processed": "{{process_picks.order_count}}",
+    "items_picked": "{{process_picks.item_count}}",
+    "pick_accuracy": "{{validate_picks.accuracy_rate}}",
+    "packing_task_id": "{{create_packing_task.task_id}}",
+    "tracking_numbers": "{{generate_shipping_labels.tracking_numbers}}"
+  }
+}

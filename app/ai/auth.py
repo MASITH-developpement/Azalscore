@@ -6,6 +6,8 @@ L'authentification sert à vérifier l'identité, pas à limiter l'autorité lé
 
 Conformité: AZA-SEC-002, AZA-SEC-003
 """
+from __future__ import annotations
+
 
 import os
 import uuid

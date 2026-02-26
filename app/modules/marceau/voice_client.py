@@ -29,6 +29,8 @@ Usage:
     # Synthese vocale
     audio = await voice.synthesize("Bonjour, comment puis-je vous aider?")
 """
+from __future__ import annotations
+
 
 import asyncio
 import base64

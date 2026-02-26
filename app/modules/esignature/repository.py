@@ -5,6 +5,8 @@ AZALS MODULE ESIGNATURE - Repository
 Repositories pour l'acces aux donnees avec isolation tenant.
 Pattern _base_query() filtre obligatoire par tenant_id.
 """
+from __future__ import annotations
+
 
 import hashlib
 import secrets

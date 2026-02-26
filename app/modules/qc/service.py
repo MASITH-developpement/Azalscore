@@ -4,6 +4,8 @@ AZALS MODULE T4 - Service Contrôle Qualité Central
 
 Service principal pour le contrôle qualité.
 """
+from __future__ import annotations
+
 
 import json
 from datetime import datetime, timedelta

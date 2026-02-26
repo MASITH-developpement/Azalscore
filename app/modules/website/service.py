@@ -4,6 +4,8 @@ AZALS MODULE T8 - Service Site Web
 
 Logique métier pour le site web officiel.
 """
+from __future__ import annotations
+
 
 import uuid
 from datetime import datetime, timedelta

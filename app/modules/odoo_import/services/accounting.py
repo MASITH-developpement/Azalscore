@@ -5,6 +5,8 @@ AZALS MODULE - Odoo Import Accounting Service
 Service d'import des données comptables depuis Odoo.
 Gère le plan comptable, les journaux et les écritures.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

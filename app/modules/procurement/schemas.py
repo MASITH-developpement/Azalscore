@@ -4,6 +4,8 @@ AZALS MODULE M4 - Schémas Achats
 
 Schémas Pydantic pour la gestion des achats.
 """
+from __future__ import annotations
+
 
 
 import json

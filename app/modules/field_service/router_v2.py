@@ -9,6 +9,8 @@ AZALS MODULE 17 - Field Service Router v2 (CORE SaaS)
 
 API endpoints pour la gestion des interventions terrain.
 """
+from __future__ import annotations
+
 
 from datetime import date
 

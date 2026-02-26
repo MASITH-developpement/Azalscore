@@ -12,6 +12,8 @@ Endpoints:
 - PUT  /settings/modules/{code}             - Mise à jour des paramètres
 - POST /settings/modules/{code}/reset       - Réinitialiser aux valeurs par défaut
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any

@@ -7,6 +7,8 @@ Schemas Pydantic pour la gestion budgetaire.
 Auteur: AZALSCORE Team
 Version: 2.0.0
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from decimal import Decimal

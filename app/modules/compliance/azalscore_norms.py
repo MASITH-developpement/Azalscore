@@ -12,6 +12,8 @@ Standards vérifiés:
 - Logging et audit
 - Tests et documentation
 """
+from __future__ import annotations
+
 
 import ast
 import logging

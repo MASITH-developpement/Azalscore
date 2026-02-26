@@ -3,6 +3,8 @@ AZALS - Module Marketplace - Schémas
 ====================================
 Schémas Pydantic pour le site marchand.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

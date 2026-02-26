@@ -15,6 +15,8 @@ Conforme aux exigences:
 - Exports comptables (FEC)
 - Tableaux de bord décisionnels
 """
+from __future__ import annotations
+
 
 import asyncio
 import base64

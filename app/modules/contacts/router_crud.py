@@ -4,6 +4,8 @@ AZALS - Contacts Router (CRUDRouter v3)
 
 Router pour la gestion unifiée des contacts (Clients et Fournisseurs).
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 from uuid import UUID

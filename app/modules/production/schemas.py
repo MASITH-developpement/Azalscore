@@ -4,6 +4,8 @@ AZALS MODULE M6 - Schémas Production
 
 Schémas Pydantic pour la gestion de production.
 """
+from __future__ import annotations
+
 
 
 import json

@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe Refund Service
 
 Gestion des remboursements Stripe.
 """
+from __future__ import annotations
+
 
 import logging
 from decimal import Decimal

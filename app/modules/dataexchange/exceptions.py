@@ -3,6 +3,8 @@ AZALS - Module DataExchange - Exceptions
 ========================================
 Exceptions specifiques au module d'import/export de donnees.
 """
+from __future__ import annotations
+
 from typing import Optional, Dict, Any, List
 
 

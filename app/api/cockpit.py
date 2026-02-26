@@ -4,6 +4,8 @@ AZALS - Cockpit Dirigeant API
 API pour le tableau de bord exécutif.
 Données agrégées de tous les modules.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime, timedelta

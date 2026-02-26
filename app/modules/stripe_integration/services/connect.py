@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe Connect Service
 
 Gestion des comptes Stripe Connect.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import timedelta

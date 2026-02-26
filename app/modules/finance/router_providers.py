@@ -30,6 +30,8 @@ Endpoints:
 
 - GET  /v3/finance/providers/health - Health check providers
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

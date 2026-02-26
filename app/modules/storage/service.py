@@ -11,6 +11,8 @@ Gestion avancée des fichiers et stockage:
 - Scan antivirus (interface)
 - CDN et URLs signées
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

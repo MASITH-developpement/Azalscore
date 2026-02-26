@@ -8,6 +8,8 @@ Routes API Manufacturing / Fabrication
 - Statistiques de production
 - Permissions vérifiées sur chaque endpoint
 """
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional

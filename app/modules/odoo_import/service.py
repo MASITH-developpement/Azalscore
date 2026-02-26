@@ -20,6 +20,8 @@ Architecture:
 
 Migration depuis service.py (2465 lignes) → ~350 lignes
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any, Dict, List, Optional

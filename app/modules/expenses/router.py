@@ -3,6 +3,8 @@ Router API - Module Expenses (GAP-084)
 
 Endpoints REST pour la gestion des notes de frais.
 """
+from __future__ import annotations
+
 import math
 from datetime import date
 from decimal import Decimal

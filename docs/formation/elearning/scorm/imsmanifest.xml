@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="AZALSCORE_TRAINING_V2" version="1.0"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd
+                      http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+
+  <organizations default="AZALSCORE_ORG">
+    <organization identifier="AZALSCORE_ORG">
+      <title>Formation AZALSCORE - ERP Decisionnel</title>
+
+      <!-- Module 1: Decouverte -->
+      <item identifier="MODULE_1" identifierref="RES_MODULE_1">
+        <title>Module 1: Decouverte d'AZALSCORE</title>
+        <item identifier="M1_L1" identifierref="RES_M1_L1">
+          <title>1.1 Bienvenue sur AZALSCORE</title>
+          <adlcp:prerequisites>none</adlcp:prerequisites>
+        </item>
+        <item identifier="M1_L2" identifierref="RES_M1_L2">
+          <title>1.2 Premiere connexion</title>
+          <adlcp:prerequisites>M1_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M1_L3" identifierref="RES_M1_L3">
+          <title>1.3 Navigation dans l'interface</title>
+          <adlcp:prerequisites>M1_L2</adlcp:prerequisites>
+        </item>
+        <item identifier="M1_L4" identifierref="RES_M1_L4">
+          <title>1.4 L'assistant Theo</title>
+          <adlcp:prerequisites>M1_L3</adlcp:prerequisites>
+        </item>
+        <item identifier="M1_QUIZ" identifierref="RES_M1_QUIZ">
+          <title>Quiz Module 1</title>
+          <adlcp:prerequisites>M1_L4</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Module 2: Gestion des Clients -->
+      <item identifier="MODULE_2" identifierref="RES_MODULE_2">
+        <title>Module 2: Gestion des Clients</title>
+        <adlcp:prerequisites>M1_QUIZ</adlcp:prerequisites>
+        <item identifier="M2_L1" identifierref="RES_M2_L1">
+          <title>2.1 Le CRM AZALSCORE</title>
+        </item>
+        <item identifier="M2_L2" identifierref="RES_M2_L2">
+          <title>2.2 Creer un client</title>
+          <adlcp:prerequisites>M2_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M2_L3" identifierref="RES_M2_L3">
+          <title>2.3 Modifier et rechercher</title>
+          <adlcp:prerequisites>M2_L2</adlcp:prerequisites>
+        </item>
+        <item identifier="M2_QUIZ" identifierref="RES_M2_QUIZ">
+          <title>Quiz Module 2</title>
+          <adlcp:prerequisites>M2_L3</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Module 3: Devis et Facturation -->
+      <item identifier="MODULE_3" identifierref="RES_MODULE_3">
+        <title>Module 3: Devis et Facturation</title>
+        <adlcp:prerequisites>M2_QUIZ</adlcp:prerequisites>
+        <item identifier="M3_L1" identifierref="RES_M3_L1">
+          <title>3.1 Creer un devis</title>
+        </item>
+        <item identifier="M3_L2" identifierref="RES_M3_L2">
+          <title>3.2 Envoyer un devis</title>
+          <adlcp:prerequisites>M3_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M3_L3" identifierref="RES_M3_L3">
+          <title>3.3 Du devis a la facture</title>
+          <adlcp:prerequisites>M3_L2</adlcp:prerequisites>
+        </item>
+        <item identifier="M3_QUIZ" identifierref="RES_M3_QUIZ">
+          <title>Quiz Module 3</title>
+          <adlcp:prerequisites>M3_L3</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Module 4: Parcours Commercial -->
+      <item identifier="MODULE_4" identifierref="RES_MODULE_4">
+        <title>Module 4: Parcours Commercial</title>
+        <adlcp:prerequisites>M3_QUIZ</adlcp:prerequisites>
+        <item identifier="M4_L1" identifierref="RES_M4_L1">
+          <title>4.1 Tableau de bord commercial</title>
+        </item>
+        <item identifier="M4_L2" identifierref="RES_M4_L2">
+          <title>4.2 Suivi des opportunites</title>
+          <adlcp:prerequisites>M4_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M4_QUIZ" identifierref="RES_M4_QUIZ">
+          <title>Quiz Module 4</title>
+          <adlcp:prerequisites>M4_L2</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Module 5: Comptabilite -->
+      <item identifier="MODULE_5" identifierref="RES_MODULE_5">
+        <title>Module 5: Comptabilite</title>
+        <adlcp:prerequisites>M3_QUIZ</adlcp:prerequisites>
+        <item identifier="M5_L1" identifierref="RES_M5_L1">
+          <title>5.1 Introduction a la comptabilite</title>
+        </item>
+        <item identifier="M5_L2" identifierref="RES_M5_L2">
+          <title>5.2 Saisie d'ecritures</title>
+          <adlcp:prerequisites>M5_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M5_L3" identifierref="RES_M5_L3">
+          <title>5.3 Rapprochement bancaire</title>
+          <adlcp:prerequisites>M5_L2</adlcp:prerequisites>
+        </item>
+        <item identifier="M5_L4" identifierref="RES_M5_L4">
+          <title>5.4 Etats financiers</title>
+          <adlcp:prerequisites>M5_L3</adlcp:prerequisites>
+        </item>
+        <item identifier="M5_QUIZ" identifierref="RES_M5_QUIZ">
+          <title>Quiz Module 5</title>
+          <adlcp:prerequisites>M5_L4</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Module 6: Logistique -->
+      <item identifier="MODULE_6" identifierref="RES_MODULE_6">
+        <title>Module 6: Logistique</title>
+        <adlcp:prerequisites>M3_QUIZ</adlcp:prerequisites>
+        <item identifier="M6_L1" identifierref="RES_M6_L1">
+          <title>6.1 Gestion des stocks</title>
+        </item>
+        <item identifier="M6_L2" identifierref="RES_M6_L2">
+          <title>6.2 Mouvements de stock</title>
+          <adlcp:prerequisites>M6_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M6_L3" identifierref="RES_M6_L3">
+          <title>6.3 Inventaire</title>
+          <adlcp:prerequisites>M6_L2</adlcp:prerequisites>
+        </item>
+        <item identifier="M6_QUIZ" identifierref="RES_M6_QUIZ">
+          <title>Quiz Module 6</title>
+          <adlcp:prerequisites>M6_L3</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Module 7: RH -->
+      <item identifier="MODULE_7" identifierref="RES_MODULE_7">
+        <title>Module 7: Ressources Humaines</title>
+        <adlcp:prerequisites>M3_QUIZ</adlcp:prerequisites>
+        <item identifier="M7_L1" identifierref="RES_M7_L1">
+          <title>7.1 Gestion des employes</title>
+        </item>
+        <item identifier="M7_L2" identifierref="RES_M7_L2">
+          <title>7.2 Conges et absences</title>
+          <adlcp:prerequisites>M7_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M7_L3" identifierref="RES_M7_L3">
+          <title>7.3 Feuilles de temps</title>
+          <adlcp:prerequisites>M7_L2</adlcp:prerequisites>
+        </item>
+        <item identifier="M7_QUIZ" identifierref="RES_M7_QUIZ">
+          <title>Quiz Module 7</title>
+          <adlcp:prerequisites>M7_L3</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Module 8: Administration -->
+      <item identifier="MODULE_8" identifierref="RES_MODULE_8">
+        <title>Module 8: Administration</title>
+        <adlcp:prerequisites>M1_QUIZ</adlcp:prerequisites>
+        <item identifier="M8_L1" identifierref="RES_M8_L1">
+          <title>8.1 Gestion des utilisateurs</title>
+        </item>
+        <item identifier="M8_L2" identifierref="RES_M8_L2">
+          <title>8.2 Roles et permissions</title>
+          <adlcp:prerequisites>M8_L1</adlcp:prerequisites>
+        </item>
+        <item identifier="M8_L3" identifierref="RES_M8_L3">
+          <title>8.3 Securite</title>
+          <adlcp:prerequisites>M8_L2</adlcp:prerequisites>
+        </item>
+        <item identifier="M8_L4" identifierref="RES_M8_L4">
+          <title>8.4 Sauvegardes</title>
+          <adlcp:prerequisites>M8_L3</adlcp:prerequisites>
+        </item>
+        <item identifier="M8_QUIZ" identifierref="RES_M8_QUIZ">
+          <title>Quiz Module 8</title>
+          <adlcp:prerequisites>M8_L4</adlcp:prerequisites>
+          <adlcp:masteryscore>70</adlcp:masteryscore>
+        </item>
+      </item>
+
+      <!-- Evaluation Finale -->
+      <item identifier="FINAL_EVAL" identifierref="RES_FINAL_EVAL">
+        <title>Evaluation Finale</title>
+        <adlcp:prerequisites>M1_QUIZ&amp;M2_QUIZ&amp;M3_QUIZ</adlcp:prerequisites>
+        <adlcp:masteryscore>75</adlcp:masteryscore>
+      </item>
+
+    </organization>
+  </organizations>
+
+  <resources>
+    <!-- Module 1 Resources -->
+    <resource identifier="RES_MODULE_1" type="webcontent" adlcp:scormtype="sco" href="modules/m1/index.html">
+      <file href="modules/m1/index.html"/>
+      <file href="modules/m1/style.css"/>
+      <file href="modules/m1/script.js"/>
+    </resource>
+    <resource identifier="RES_M1_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m1/lesson1.html">
+      <file href="modules/m1/lesson1.html"/>
+      <file href="modules/m1/videos/welcome.mp4"/>
+    </resource>
+    <resource identifier="RES_M1_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m1/lesson2.html">
+      <file href="modules/m1/lesson2.html"/>
+      <file href="modules/m1/videos/login.mp4"/>
+    </resource>
+    <resource identifier="RES_M1_L3" type="webcontent" adlcp:scormtype="sco" href="modules/m1/lesson3.html">
+      <file href="modules/m1/lesson3.html"/>
+      <file href="modules/m1/videos/navigation.mp4"/>
+    </resource>
+    <resource identifier="RES_M1_L4" type="webcontent" adlcp:scormtype="sco" href="modules/m1/lesson4.html">
+      <file href="modules/m1/lesson4.html"/>
+      <file href="modules/m1/videos/theo.mp4"/>
+    </resource>
+    <resource identifier="RES_M1_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m1/quiz.html">
+      <file href="modules/m1/quiz.html"/>
+      <file href="shared/quiz.js"/>
+    </resource>
+
+    <!-- Module 2 Resources -->
+    <resource identifier="RES_MODULE_2" type="webcontent" adlcp:scormtype="sco" href="modules/m2/index.html">
+      <file href="modules/m2/index.html"/>
+    </resource>
+    <resource identifier="RES_M2_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m2/lesson1.html"/>
+    <resource identifier="RES_M2_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m2/lesson2.html"/>
+    <resource identifier="RES_M2_L3" type="webcontent" adlcp:scormtype="sco" href="modules/m2/lesson3.html"/>
+    <resource identifier="RES_M2_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m2/quiz.html"/>
+
+    <!-- Module 3 Resources -->
+    <resource identifier="RES_MODULE_3" type="webcontent" adlcp:scormtype="sco" href="modules/m3/index.html"/>
+    <resource identifier="RES_M3_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m3/lesson1.html"/>
+    <resource identifier="RES_M3_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m3/lesson2.html"/>
+    <resource identifier="RES_M3_L3" type="webcontent" adlcp:scormtype="sco" href="modules/m3/lesson3.html"/>
+    <resource identifier="RES_M3_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m3/quiz.html"/>
+
+    <!-- Module 4-8 Resources (similar structure) -->
+    <resource identifier="RES_MODULE_4" type="webcontent" adlcp:scormtype="sco" href="modules/m4/index.html"/>
+    <resource identifier="RES_M4_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m4/lesson1.html"/>
+    <resource identifier="RES_M4_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m4/lesson2.html"/>
+    <resource identifier="RES_M4_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m4/quiz.html"/>
+
+    <resource identifier="RES_MODULE_5" type="webcontent" adlcp:scormtype="sco" href="modules/m5/index.html"/>
+    <resource identifier="RES_M5_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m5/lesson1.html"/>
+    <resource identifier="RES_M5_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m5/lesson2.html"/>
+    <resource identifier="RES_M5_L3" type="webcontent" adlcp:scormtype="sco" href="modules/m5/lesson3.html"/>
+    <resource identifier="RES_M5_L4" type="webcontent" adlcp:scormtype="sco" href="modules/m5/lesson4.html"/>
+    <resource identifier="RES_M5_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m5/quiz.html"/>
+
+    <resource identifier="RES_MODULE_6" type="webcontent" adlcp:scormtype="sco" href="modules/m6/index.html"/>
+    <resource identifier="RES_M6_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m6/lesson1.html"/>
+    <resource identifier="RES_M6_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m6/lesson2.html"/>
+    <resource identifier="RES_M6_L3" type="webcontent" adlcp:scormtype="sco" href="modules/m6/lesson3.html"/>
+    <resource identifier="RES_M6_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m6/quiz.html"/>
+
+    <resource identifier="RES_MODULE_7" type="webcontent" adlcp:scormtype="sco" href="modules/m7/index.html"/>
+    <resource identifier="RES_M7_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m7/lesson1.html"/>
+    <resource identifier="RES_M7_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m7/lesson2.html"/>
+    <resource identifier="RES_M7_L3" type="webcontent" adlcp:scormtype="sco" href="modules/m7/lesson3.html"/>
+    <resource identifier="RES_M7_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m7/quiz.html"/>
+
+    <resource identifier="RES_MODULE_8" type="webcontent" adlcp:scormtype="sco" href="modules/m8/index.html"/>
+    <resource identifier="RES_M8_L1" type="webcontent" adlcp:scormtype="sco" href="modules/m8/lesson1.html"/>
+    <resource identifier="RES_M8_L2" type="webcontent" adlcp:scormtype="sco" href="modules/m8/lesson2.html"/>
+    <resource identifier="RES_M8_L3" type="webcontent" adlcp:scormtype="sco" href="modules/m8/lesson3.html"/>
+    <resource identifier="RES_M8_L4" type="webcontent" adlcp:scormtype="sco" href="modules/m8/lesson4.html"/>
+    <resource identifier="RES_M8_QUIZ" type="webcontent" adlcp:scormtype="sco" href="modules/m8/quiz.html"/>
+
+    <!-- Final Evaluation -->
+    <resource identifier="RES_FINAL_EVAL" type="webcontent" adlcp:scormtype="sco" href="evaluation/final.html">
+      <file href="evaluation/final.html"/>
+      <file href="shared/quiz.js"/>
+    </resource>
+
+    <!-- Shared Resources -->
+    <resource identifier="RES_SHARED" type="webcontent" href="shared/scorm_api.js">
+      <file href="shared/scorm_api.js"/>
+      <file href="shared/quiz.js"/>
+      <file href="shared/style.css"/>
+      <file href="shared/logo.png"/>
+    </resource>
+
+  </resources>
+
+</manifest>

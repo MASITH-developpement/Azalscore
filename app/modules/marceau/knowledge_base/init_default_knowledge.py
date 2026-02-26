@@ -4,6 +4,8 @@ AZALS MODULE - Marceau Default Knowledge Initialization
 
 Pre-charge la base de connaissances par defaut pour un nouveau tenant.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

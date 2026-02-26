@@ -10,6 +10,8 @@ Fonctionnalités:
 - Alertes automatiques de seuil
 - Intégration factures clients/fournisseurs
 """
+from __future__ import annotations
+
 
 import logging
 from dataclasses import dataclass, field

@@ -6,6 +6,8 @@ Utilise get_context() de app.core.compat pour l'isolation tenant.
 
 Endpoints API pour le Point de Vente.
 """
+from __future__ import annotations
+
 
 from datetime import date
 

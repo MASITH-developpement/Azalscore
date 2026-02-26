@@ -4,6 +4,8 @@ AZALS MODULE - Documents (GED) - Exceptions
 
 Exceptions personnalisees pour le module documents.
 """
+from __future__ import annotations
+
 
 from typing import Any, Dict, Optional
 

@@ -12,6 +12,8 @@ ARCHITECTURE:
 - Validation des requêtes entrantes
 - Blocklist IP avec auto-block
 """
+from __future__ import annotations
+
 
 import logging
 import time

@@ -1,0 +1,99 @@
+{
+  "module_id": "azalscore.projects.time_tracking_approval",
+  "version": "1.0.0",
+  "description": "Workflow de validation des temps saisis sur projets",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_timesheet",
+      "use": "azalscore.calculations.projects.get_timesheet_entries@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "validate_entries",
+      "use": "azalscore.validators.projects.validate_time_entries@1.0.0",
+      "inputs": {
+        "entries": "{{get_timesheet.entries}}",
+        "max_daily_hours": 12,
+        "require_description": true
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "check_project_budgets",
+      "use": "azalscore.validators.projects.check_time_against_budget@1.0.0",
+      "inputs": {
+        "entries": "{{get_timesheet.entries}}",
+        "warn_at_percent": 80
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_billable_hours",
+      "use": "azalscore.calculations.projects.calculate_billable_amount@1.0.0",
+      "inputs": {
+        "entries": "{{get_timesheet.entries}}",
+        "billing_rates": "{{context.billing_rates}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "route_for_approval",
+      "use": "azalscore.transformers.workflow.route_timesheet_approval@1.0.0",
+      "inputs": {
+        "employee_id": "{{context.employee_id}}",
+        "timesheet_id": "{{get_timesheet.timesheet_id}}",
+        "manager_id": "{{context.manager_id}}",
+        "total_hours": "{{get_timesheet.total_hours}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "alert_budget_overrun",
+      "condition": "{{check_project_budgets.has_overrun}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "project_budget_warning",
+        "severity": "warning",
+        "title": "Alerte budget projet",
+        "message": "Depassement de budget detecte sur certains projets",
+        "data": "{{check_project_budgets.overrun_details}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "notify_manager",
+      "use": "azalscore.generators.communications.notify_timesheet_submission@1.0.0",
+      "inputs": {
+        "manager_email": "{{context.manager_email}}",
+        "employee_name": "{{context.employee_name}}",
+        "period": "{{context.period_start}} - {{context.period_end}}",
+        "total_hours": "{{get_timesheet.total_hours}}",
+        "billable_hours": "{{calculate_billable_hours.total_hours}}",
+        "approval_link": "{{route_for_approval.approval_url}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "timesheet_id": "{{get_timesheet.timesheet_id}}",
+    "total_hours": "{{get_timesheet.total_hours}}",
+    "billable_hours": "{{calculate_billable_hours.total_hours}}",
+    "billable_amount": "{{calculate_billable_hours.total_amount}}",
+    "validation_passed": "{{validate_entries.all_valid}}",
+    "approval_status": "{{route_for_approval.status}}"
+  }
+}

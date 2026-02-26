@@ -10,6 +10,8 @@ Suivi du temps:
 - Overtime et congés
 - Rapports et analytics
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date, time, timedelta

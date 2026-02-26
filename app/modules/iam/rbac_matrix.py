@@ -18,6 +18,8 @@ RÈGLES FONDAMENTALES:
 - super_admin seul peut modifier les rôles et paramètres de sécurité
 - admin ne peut jamais modifier ses propres droits
 """
+from __future__ import annotations
+
 
 import functools
 from collections.abc import Callable

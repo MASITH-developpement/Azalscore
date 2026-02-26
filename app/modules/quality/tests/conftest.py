@@ -6,6 +6,8 @@ Ce module fournit les fixtures pytest pour tester le module Quality.
 Les fixtures utilisent le pattern dependency_overrides de FastAPI pour
 injecter les mocks correctement et un TestClient avec headers d'auth.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from decimal import Decimal

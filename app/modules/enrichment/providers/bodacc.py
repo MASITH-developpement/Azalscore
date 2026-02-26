@@ -14,6 +14,8 @@ Documentation: https://bodacc-datadila.opendatasoft.com/explore/dataset/bodacc-a
 
 Gratuit et sans authentification.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

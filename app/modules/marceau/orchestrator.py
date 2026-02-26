@@ -5,6 +5,8 @@ AZALS MODULE - Marceau Orchestrator
 Orchestrateur central de l'agent Marceau.
 Gere le routage des requetes, la detection d'intention et la coordination des modules.
 """
+from __future__ import annotations
+
 
 import json
 import logging

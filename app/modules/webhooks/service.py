@@ -9,6 +9,8 @@ Gestion des webhooks sortants:
 - Monitoring santé endpoints
 - Rotation des secrets
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

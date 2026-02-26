@@ -4,6 +4,8 @@ AZALS MODULE M7 - Base Quality Service
 
 Classe de base pour tous les sous-services qualité.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import TypeVar, Generic, Type, Optional, Tuple, List, Any

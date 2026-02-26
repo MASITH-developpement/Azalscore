@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Category Service
 
 Gestion des catégories de produits.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional

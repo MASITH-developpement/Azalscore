@@ -10,6 +10,8 @@ Gestion des intégrations:
 - Gestion des erreurs
 - Files d'attente
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date, timedelta
@@ -1272,3 +1274,233 @@ class IntegrationService:
 def create_integration_service(tenant_id: str) -> IntegrationService:
     """Factory function pour créer le service integration"""
     return IntegrationService(tenant_id)
+
+
+# ============================================================================
+# CONNECTOR DEFINITIONS - Configuration statique des connecteurs
+# ============================================================================
+
+# Import des types du models pour eviter duplication
+from .models import (
+    ConnectorType as ModelConnectorType,
+    EntityType,
+    SyncDirection as ModelSyncDirection,
+    AuthType as ModelAuthType,
+)
+
+
+@dataclass
+class ConnectorDefinition:
+    """Definition statique d'un type de connecteur."""
+    connector_type: ModelConnectorType
+    name: str
+    display_name: str
+    description: str
+    category: str
+    icon_url: str = ""
+    logo_url: str = ""
+    color: str = "#000000"
+    auth_type: str = "oauth2"
+    base_url: str = ""
+    api_version: str = ""
+    oauth_authorize_url: str = ""
+    oauth_token_url: str = ""
+    oauth_scopes: List[str] = field(default_factory=list)
+    oauth_pkce_required: bool = False
+    required_fields: List[str] = field(default_factory=list)
+    optional_fields: List[str] = field(default_factory=list)
+    supported_entities: List[EntityType] = field(default_factory=list)
+    supported_directions: List[ModelSyncDirection] = field(default_factory=list)
+    rate_limit_requests: int = 100
+    rate_limit_daily: int = 10000
+    supports_webhooks: bool = False
+    webhook_events: List[str] = field(default_factory=list)
+    documentation_url: str = ""
+    setup_guide_url: str = ""
+    is_beta: bool = False
+    is_premium: bool = False
+
+
+# Definitions des connecteurs preconfigures
+CONNECTOR_DEFINITIONS: Dict[ModelConnectorType, ConnectorDefinition] = {
+    # Google
+    ModelConnectorType.GOOGLE_DRIVE: ConnectorDefinition(
+        connector_type=ModelConnectorType.GOOGLE_DRIVE,
+        name="google_drive",
+        display_name="Google Drive",
+        description="Stockage et partage de fichiers Google",
+        category="storage",
+        color="#4285F4",
+        auth_type="oauth2",
+        base_url="https://www.googleapis.com/drive/v3",
+        oauth_authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
+        oauth_token_url="https://oauth2.googleapis.com/token",
+        oauth_scopes=["https://www.googleapis.com/auth/drive"],
+        supported_entities=[EntityType.FILE],
+        supported_directions=[ModelSyncDirection.INBOUND, ModelSyncDirection.OUTBOUND],
+        supports_webhooks=True,
+        webhook_events=["file.created", "file.updated", "file.deleted"],
+        documentation_url="https://developers.google.com/drive",
+    ),
+    ModelConnectorType.GOOGLE_SHEETS: ConnectorDefinition(
+        connector_type=ModelConnectorType.GOOGLE_SHEETS,
+        name="google_sheets",
+        display_name="Google Sheets",
+        description="Tableurs Google pour import/export de donnees",
+        category="productivity",
+        color="#0F9D58",
+        auth_type="oauth2",
+        base_url="https://sheets.googleapis.com/v4",
+        oauth_authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
+        oauth_token_url="https://oauth2.googleapis.com/token",
+        oauth_scopes=["https://www.googleapis.com/auth/spreadsheets"],
+        supported_entities=[EntityType.CUSTOM],
+        supported_directions=[ModelSyncDirection.INBOUND, ModelSyncDirection.OUTBOUND],
+        documentation_url="https://developers.google.com/sheets",
+    ),
+
+    # Microsoft
+    ModelConnectorType.MICROSOFT_365: ConnectorDefinition(
+        connector_type=ModelConnectorType.MICROSOFT_365,
+        name="microsoft_365",
+        display_name="Microsoft 365",
+        description="Suite Microsoft 365 (OneDrive, Outlook, etc.)",
+        category="productivity",
+        color="#0078D4",
+        auth_type="oauth2",
+        base_url="https://graph.microsoft.com/v1.0",
+        oauth_authorize_url="https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        oauth_token_url="https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        oauth_scopes=["openid", "profile", "email", "Files.ReadWrite"],
+        supported_entities=[EntityType.FILE, EntityType.EVENT, EntityType.CONTACT],
+        supported_directions=[ModelSyncDirection.BIDIRECTIONAL],
+        supports_webhooks=True,
+        documentation_url="https://learn.microsoft.com/en-us/graph/",
+    ),
+
+    # Slack
+    ModelConnectorType.SLACK: ConnectorDefinition(
+        connector_type=ModelConnectorType.SLACK,
+        name="slack",
+        display_name="Slack",
+        description="Messagerie d'equipe et notifications",
+        category="communication",
+        color="#4A154B",
+        auth_type="oauth2",
+        base_url="https://slack.com/api",
+        oauth_authorize_url="https://slack.com/oauth/v2/authorize",
+        oauth_token_url="https://slack.com/api/oauth.v2.access",
+        oauth_scopes=["chat:write", "channels:read"],
+        supported_entities=[EntityType.MESSAGE],
+        supported_directions=[ModelSyncDirection.OUTBOUND],
+        supports_webhooks=True,
+        webhook_events=["message", "reaction_added"],
+        documentation_url="https://api.slack.com/",
+    ),
+
+    # Salesforce
+    ModelConnectorType.SALESFORCE: ConnectorDefinition(
+        connector_type=ModelConnectorType.SALESFORCE,
+        name="salesforce",
+        display_name="Salesforce",
+        description="CRM Salesforce",
+        category="crm",
+        color="#00A1E0",
+        auth_type="oauth2",
+        base_url="https://login.salesforce.com",
+        oauth_authorize_url="https://login.salesforce.com/services/oauth2/authorize",
+        oauth_token_url="https://login.salesforce.com/services/oauth2/token",
+        supported_entities=[EntityType.CUSTOMER, EntityType.CONTACT, EntityType.LEAD, EntityType.OPPORTUNITY],
+        supported_directions=[ModelSyncDirection.BIDIRECTIONAL],
+        supports_webhooks=True,
+        is_premium=True,
+        documentation_url="https://developer.salesforce.com/docs",
+    ),
+
+    # HubSpot
+    ModelConnectorType.HUBSPOT: ConnectorDefinition(
+        connector_type=ModelConnectorType.HUBSPOT,
+        name="hubspot",
+        display_name="HubSpot",
+        description="CRM et marketing HubSpot",
+        category="crm",
+        color="#FF7A59",
+        auth_type="oauth2",
+        base_url="https://api.hubapi.com",
+        oauth_authorize_url="https://app.hubspot.com/oauth/authorize",
+        oauth_token_url="https://api.hubapi.com/oauth/v1/token",
+        supported_entities=[EntityType.CONTACT, EntityType.CUSTOMER, EntityType.LEAD],
+        supported_directions=[ModelSyncDirection.BIDIRECTIONAL],
+        supports_webhooks=True,
+        documentation_url="https://developers.hubspot.com/docs",
+    ),
+
+    # Stripe
+    ModelConnectorType.STRIPE: ConnectorDefinition(
+        connector_type=ModelConnectorType.STRIPE,
+        name="stripe",
+        display_name="Stripe",
+        description="Paiements en ligne Stripe",
+        category="payment",
+        color="#635BFF",
+        auth_type="api_key",
+        base_url="https://api.stripe.com/v1",
+        required_fields=["api_key"],
+        supported_entities=[EntityType.CUSTOMER, EntityType.PAYMENT, EntityType.INVOICE],
+        supported_directions=[ModelSyncDirection.BIDIRECTIONAL],
+        supports_webhooks=True,
+        webhook_events=["payment_intent.succeeded", "invoice.paid", "customer.created"],
+        documentation_url="https://stripe.com/docs/api",
+    ),
+
+    # Shopify
+    ModelConnectorType.SHOPIFY: ConnectorDefinition(
+        connector_type=ModelConnectorType.SHOPIFY,
+        name="shopify",
+        display_name="Shopify",
+        description="Plateforme e-commerce Shopify",
+        category="ecommerce",
+        color="#96BF48",
+        auth_type="oauth2",
+        base_url="https://admin.shopify.com/admin/api/2024-01",
+        oauth_authorize_url="https://{shop}.myshopify.com/admin/oauth/authorize",
+        oauth_token_url="https://{shop}.myshopify.com/admin/oauth/access_token",
+        required_fields=["shop"],
+        supported_entities=[EntityType.CUSTOMER, EntityType.PRODUCT, EntityType.ORDER],
+        supported_directions=[ModelSyncDirection.BIDIRECTIONAL],
+        supports_webhooks=True,
+        webhook_events=["orders/create", "products/update", "customers/create"],
+        documentation_url="https://shopify.dev/docs/api",
+    ),
+
+    # API Generique
+    ModelConnectorType.REST_API: ConnectorDefinition(
+        connector_type=ModelConnectorType.REST_API,
+        name="rest_api",
+        display_name="REST API",
+        description="Connecteur API REST generique",
+        category="custom",
+        color="#6B7280",
+        auth_type="custom",
+        required_fields=["base_url"],
+        optional_fields=["headers", "auth_type", "api_key"],
+        supported_entities=[EntityType.CUSTOM],
+        supported_directions=[ModelSyncDirection.BIDIRECTIONAL],
+        documentation_url="",
+    ),
+
+    # Webhook
+    ModelConnectorType.WEBHOOK: ConnectorDefinition(
+        connector_type=ModelConnectorType.WEBHOOK,
+        name="webhook",
+        display_name="Webhook",
+        description="Webhook personnalise entrant/sortant",
+        category="custom",
+        color="#6B7280",
+        auth_type="custom",
+        required_fields=["webhook_url"],
+        supported_entities=[EntityType.CUSTOM],
+        supported_directions=[ModelSyncDirection.BIDIRECTIONAL],
+        supports_webhooks=True,
+    ),
+}

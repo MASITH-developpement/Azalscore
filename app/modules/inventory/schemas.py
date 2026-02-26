@@ -4,6 +4,8 @@ AZALS MODULE M5 - Schémas Inventaire
 
 Schémas Pydantic pour la gestion des stocks et logistique.
 """
+from __future__ import annotations
+
 
 
 import json

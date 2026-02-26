@@ -15,6 +15,8 @@ Conforme aux exigences:
 - RGPD (Article 30 - Records of processing activities)
 - NIS2 (Article 21 - Cybersecurity risk-management measures)
 """
+from __future__ import annotations
+
 
 import asyncio
 import hashlib
@@ -168,13 +170,17 @@ class AuditEvent:
 
     def to_dict(self) -> dict:
         """Convertit l'événement en dictionnaire."""
+        # Handle both enum and string values
+        cat_val = self.category.value if hasattr(self.category, 'value') else str(self.category)
+        sev_val = self.severity.value if hasattr(self.severity, 'value') else str(self.severity)
+        out_val = self.outcome.value if hasattr(self.outcome, 'value') else str(self.outcome)
         return {
             "event_id": self.event_id,
             "timestamp": self.timestamp.isoformat() + "Z",
-            "category": self.category.value,
+            "category": cat_val,
             "action": self.action,
-            "severity": self.severity.value,
-            "outcome": self.outcome.value,
+            "severity": sev_val,
+            "outcome": out_val,
             "actor": asdict(self.actor),
             "target": asdict(self.target) if self.target else None,
             "context": asdict(self.context),
@@ -189,10 +195,12 @@ class AuditEvent:
 
     def compute_hash(self, secret_key: bytes) -> str:
         """Calcule le hash HMAC-SHA256 de l'événement."""
+        # Handle both enum and string values for category
+        category_value = self.category.value if hasattr(self.category, 'value') else str(self.category)
         data = {
             "event_id": self.event_id,
             "timestamp": self.timestamp.isoformat(),
-            "category": self.category.value,
+            "category": category_value,
             "action": self.action,
             "actor": asdict(self.actor),
             "target": asdict(self.target) if self.target else None,
@@ -1185,7 +1193,9 @@ class AuditTrailService:
 
         # Obtenir le numéro de séquence et hash précédent
         with self._lock:
-            chain_key = f"{tenant_id}:{category.value}"
+            # Handle both enum and string values for category
+            category_value = category.value if hasattr(category, 'value') else str(category)
+            chain_key = f"{tenant_id}:{category_value}"
 
             if chain_key not in self._sequence_counters:
                 self._sequence_counters[chain_key] = 0

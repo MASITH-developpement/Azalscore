@@ -19,6 +19,8 @@ REGLES AZALSCORE:
 - Audit complet (created_by, updated_by, etc.)
 - Versioning des modifications
 """
+from __future__ import annotations
+
 
 import enum
 import uuid

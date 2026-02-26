@@ -9,6 +9,8 @@ AZALS MODULE PRODUCTION - Router API v2 (CORE SaaS)
 
 API REST pour la gestion de production (Manufacturing).
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

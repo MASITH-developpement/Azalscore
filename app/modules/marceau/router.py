@@ -4,6 +4,8 @@ AZALS MODULE - Marceau Router
 
 Routes API FastAPI pour l'agent Marceau.
 """
+from __future__ import annotations
+
 
 import uuid
 from datetime import date, datetime

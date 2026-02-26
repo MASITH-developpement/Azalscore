@@ -12,6 +12,8 @@ Gestion des processus métier:
 - Historique et audit
 - Parallélisme et jonctions
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

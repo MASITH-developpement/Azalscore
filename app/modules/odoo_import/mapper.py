@@ -5,6 +5,8 @@ AZALS MODULE - Odoo Import - Mapper
 Mapping des champs Odoo vers les modeles AZALSCORE.
 Gere les transformations et conversions de donnees.
 """
+from __future__ import annotations
+
 
 import logging
 import re

@@ -4,6 +4,8 @@ AZALS MODULE - Appointments - Schemas Pydantic
 
 Schemas de validation et serialisation pour le module Rendez-vous.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date, time
 from decimal import Decimal

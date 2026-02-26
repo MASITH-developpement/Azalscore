@@ -5,6 +5,8 @@ AZALS MODULE EVENTS - Service Implementation
 Service metier complet pour la gestion d'evenements.
 Encapsule la logique metier et coordonne les repositories.
 """
+from __future__ import annotations
+
 
 import logging
 import re

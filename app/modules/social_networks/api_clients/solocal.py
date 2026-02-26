@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Solocal Client
 ===============================================
 Client API pour Solocal (PagesJaunes)
 """
+from __future__ import annotations
+
 
 import logging
 import os

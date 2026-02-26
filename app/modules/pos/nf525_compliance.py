@@ -11,6 +11,8 @@ Exigences principales:
 
 BOI-TVA-DECLA-30-10-30 - Article 286 CGI
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac

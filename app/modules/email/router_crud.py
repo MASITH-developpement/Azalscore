@@ -5,6 +5,8 @@ AZALS MODULE EMAIL - Router Unifié
 API REST unifiée pour les emails transactionnels avec file d'attente.
 Compatible v1 et v2 via double enregistrement.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 

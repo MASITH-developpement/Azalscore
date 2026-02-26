@@ -13,6 +13,8 @@ Utilisation:
 - Backend: from app.core.module_settings_registry import get_module_settings_schema
 - Frontend: GET /api/v1/settings/modules/{module_code}/schema
 """
+from __future__ import annotations
+
 
 from typing import Any
 from enum import Enum

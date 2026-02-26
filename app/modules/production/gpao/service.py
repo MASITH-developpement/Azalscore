@@ -12,6 +12,8 @@ Fonctionnalités:
 - Planification de capacité finie
 - Suivi d'avancement temps réel
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

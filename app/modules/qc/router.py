@@ -4,6 +4,8 @@ AZALS MODULE T4 - Router API Contrôle Qualité
 
 Endpoints REST pour le module de contrôle qualité central.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Optional

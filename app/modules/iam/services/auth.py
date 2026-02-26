@@ -4,6 +4,8 @@ AZALS MODULE T0 - Auth Service
 
 Gestion de l'authentification.
 """
+from __future__ import annotations
+
 
 import logging
 import secrets

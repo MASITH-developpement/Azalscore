@@ -5,6 +5,8 @@ AZALS - Schémas E-Invoicing France 2026
 Schémas Pydantic pour l'API de facturation électronique.
 Multi-tenant avec intégration aux données financières.
 """
+from __future__ import annotations
+
 
 import enum
 from datetime import date, datetime

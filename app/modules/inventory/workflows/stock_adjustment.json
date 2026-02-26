@@ -1,0 +1,101 @@
+{
+  "module_id": "azalscore.inventory.stock_adjustment",
+  "version": "1.0.0",
+  "description": "Workflow d'ajustement de stock avec validation et comptabilisation",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_adjustment",
+      "use": "azalscore.validators.inventory.validate_stock_adjustment@1.0.0",
+      "inputs": {
+        "adjustment_id": "{{context.adjustment_id}}",
+        "warehouse_id": "{{context.warehouse_id}}",
+        "items": "{{context.items}}",
+        "reason_code": "{{context.reason_code}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "get_current_stock",
+      "use": "azalscore.calculations.inventory.get_stock_levels@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "product_ids": "{{context.product_ids}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_variance",
+      "use": "azalscore.calculations.inventory.calculate_stock_variance@1.0.0",
+      "inputs": {
+        "current_stock": "{{get_current_stock.levels}}",
+        "adjustments": "{{context.items}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "check_approval_required",
+      "use": "azalscore.validators.inventory.check_adjustment_approval@1.0.0",
+      "inputs": {
+        "variance_value": "{{calculate_variance.total_value}}",
+        "threshold": "{{context.approval_threshold}}",
+        "user_role": "{{context.user_role}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "create_adjustment_movements",
+      "condition": "{{check_approval_required.approved}} == true",
+      "use": "azalscore.generators.inventory.create_adjustment_movements@1.0.0",
+      "inputs": {
+        "adjustment_id": "{{context.adjustment_id}}",
+        "warehouse_id": "{{context.warehouse_id}}",
+        "items": "{{context.items}}",
+        "reason_code": "{{context.reason_code}}",
+        "adjustment_date": "{{context.adjustment_date}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "create_accounting_entries",
+      "condition": "{{calculate_variance.total_value}} != 0",
+      "use": "azalscore.generators.accounting.create_inventory_adjustment_entries@1.0.0",
+      "inputs": {
+        "adjustment_id": "{{context.adjustment_id}}",
+        "variance_value": "{{calculate_variance.total_value}}",
+        "stock_account": "371000",
+        "adjustment_account": "603100",
+        "journal_code": "OD"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "alert_significant_variance",
+      "condition": "{{calculate_variance.is_significant}} == true",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "stock_variance",
+        "severity": "warning",
+        "title": "Ecart de stock significatif",
+        "message": "Ajustement de {{calculate_variance.total_value}} EUR",
+        "data": "{{calculate_variance.details}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    }
+  ],
+  "outputs": {
+    "adjustment_id": "{{context.adjustment_id}}",
+    "movements_created": "{{create_adjustment_movements.count}}",
+    "total_variance_value": "{{calculate_variance.total_value}}",
+    "accounting_entry_id": "{{create_accounting_entries.entry_id}}",
+    "approval_status": "{{check_approval_required.status}}"
+  }
+}

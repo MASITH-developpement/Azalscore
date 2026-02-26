@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Order Service
 
 Gestion des commandes et checkout.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

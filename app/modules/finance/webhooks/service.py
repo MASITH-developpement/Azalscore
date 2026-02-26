@@ -12,6 +12,8 @@ Fonctionnalités:
 - Retry automatique
 - Audit trail complet
 """
+from __future__ import annotations
+
 
 import json
 import logging

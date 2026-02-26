@@ -11,6 +11,8 @@ Actions:
 - send_newsletter: Envoi newsletter
 - analyze_performance: Analyse performances
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

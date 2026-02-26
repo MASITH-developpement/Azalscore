@@ -34,6 +34,8 @@ Endpoints Capacité:
 - GET  /v3/production/gpao/stats - Statistiques
 - GET  /v3/production/gpao/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime

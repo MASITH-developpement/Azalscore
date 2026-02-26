@@ -3,6 +3,8 @@ AZALS MODULE 16 - Helpdesk Router
 ==================================
 API endpoints pour le système de support client.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query

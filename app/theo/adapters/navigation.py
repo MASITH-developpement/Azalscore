@@ -7,6 +7,8 @@ Adapter pour la navigation dans l'ERP:
 - Ouvrir une page
 - Actions rapides
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, List, Optional
 import logging

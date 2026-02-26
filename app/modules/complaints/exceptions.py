@@ -4,6 +4,8 @@ AZALS MODULE - Complaints Exceptions
 
 Exceptions personnalisees pour le module de gestion des reclamations.
 """
+from __future__ import annotations
+
 
 from typing import Any
 

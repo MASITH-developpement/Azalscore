@@ -4,6 +4,8 @@ AZALS MODULE T0 - Role Service
 
 Gestion des rôles.
 """
+from __future__ import annotations
+
 
 import json
 import logging

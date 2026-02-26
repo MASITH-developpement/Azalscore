@@ -44,7 +44,7 @@ const useCanViewCockpit = () => {
 
     // Vérifier les rôles
     const allowedRoles = ['dirigeant', 'admin', 'superadmin', 'root'];
-    return user.roles?.some(role => allowedRoles.includes(role.toLowerCase())) ?? false;
+    return user.roles?.some((role: string) => allowedRoles.includes(role.toLowerCase())) ?? false;
   }, [user, capabilities]);
 
   return canView;

@@ -5,6 +5,8 @@ AZALS MODULE - Cache - Repository
 Repository pour la gestion du cache applicatif.
 Herite de BaseRepository avec methodes metier specifiques.
 """
+from __future__ import annotations
+
 
 import hashlib
 import logging

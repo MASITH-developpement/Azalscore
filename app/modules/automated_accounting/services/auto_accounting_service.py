@@ -5,6 +5,8 @@ AZALS MODULE M2A - Service Comptabilisation Automatique
 Service de génération automatique des écritures comptables.
 ZÉRO saisie manuelle - l'humain valide par exception uniquement.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

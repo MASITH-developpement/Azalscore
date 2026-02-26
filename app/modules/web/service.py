@@ -4,6 +4,8 @@ AZALS MODULE T7 - Service Web Transverse
 
 Service métier pour la gestion des composants web.
 """
+from __future__ import annotations
+
 
 import json
 from datetime import datetime

@@ -5,6 +5,8 @@ AZALS MODULE M4 - Router Procurement v2
 API REST pour la gestion des achats (Procurement) - CORE SaaS v2.
 Migration vers SaaSContext pour l'authentification et l'isolation tenant.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

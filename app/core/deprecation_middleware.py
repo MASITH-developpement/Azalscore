@@ -10,6 +10,8 @@ Ce middleware permet de:
 
 Conformité : AZA-NF-005
 """
+from __future__ import annotations
+
 
 import logging
 import time

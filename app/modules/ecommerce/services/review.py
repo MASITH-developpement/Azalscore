@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Review Service
 
 Gestion des avis produits.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional

@@ -4,6 +4,8 @@ AZALS MODULE GAMIFICATION - Router API
 
 Endpoints REST pour le module de gamification.
 """
+from __future__ import annotations
+
 
 import math
 from datetime import datetime

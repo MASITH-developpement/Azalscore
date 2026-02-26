@@ -29,6 +29,8 @@ Usage:
     # Obtenir l'audio de reponse
     audio_response = response.audio_data
 """
+from __future__ import annotations
+
 
 import asyncio
 import base64

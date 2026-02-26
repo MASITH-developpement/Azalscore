@@ -10,6 +10,8 @@ Integration avec les providers de signature electronique:
 
 Architecture: Interface commune + implementations specifiques.
 """
+from __future__ import annotations
+
 
 import base64
 import hashlib

@@ -137,6 +137,8 @@ from app.modules.ecommerce.router_crud import router as ecommerce_router
 
 # Module SOCIAL NETWORKS - Métriques Marketing (Administration)
 from app.modules.social_networks import router as social_networks_router
+# Module SOCIAL PUBLICATIONS - Publications & Leads (Marketing)
+from app.modules.social_networks import publication_router as social_publications_router
 
 # ===========================================================================
 # MODULES GAP HAUTE PRIORITÉ (Wave 9)
@@ -714,6 +716,9 @@ api_v1.include_router(ecommerce_router)
 
 # Module SOCIAL NETWORKS - Administration > Réseaux Sociaux
 api_v1.include_router(social_networks_router)
+
+# Module SOCIAL PUBLICATIONS - Marketing > Publications & Leads
+api_v1.include_router(social_publications_router)
 
 # ===========================================================================
 # MODULES GAP HAUTE PRIORITÉ (Wave 9) - CRUD Multi-tenant

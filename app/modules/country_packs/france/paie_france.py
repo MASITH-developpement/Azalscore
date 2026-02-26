@@ -15,6 +15,8 @@ Taux 2024-2025:
 - PMSS (Plafond Mensuel Sécurité Sociale): 3 864 EUR (2024)
 - SMIC horaire: 11,65 EUR (2024)
 """
+from __future__ import annotations
+
 
 import logging
 from dataclasses import dataclass, field

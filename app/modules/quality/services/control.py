@@ -4,6 +4,8 @@ AZALS MODULE M7 - Control Service
 
 Gestion des contrôles qualité.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime

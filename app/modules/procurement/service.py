@@ -4,6 +4,8 @@ AZALS MODULE M4 - Service Achats
 
 Service métier pour la gestion des achats.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal

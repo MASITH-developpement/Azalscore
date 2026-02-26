@@ -4,6 +4,8 @@ AZALS MODULE - TREASURY: Schémas
 
 Schémas Pydantic pour validation et sérialisation.
 """
+from __future__ import annotations
+
 
 import datetime
 from decimal import Decimal

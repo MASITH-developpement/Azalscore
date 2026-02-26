@@ -4,6 +4,8 @@ AZALS MODULE M7 - Indicator Service
 
 Gestion des indicateurs qualité.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

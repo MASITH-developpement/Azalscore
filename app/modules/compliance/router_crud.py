@@ -4,6 +4,8 @@ AZALS MODULE COMPLIANCE - Router Unifié
 Router unifié compatible v1/v2 via double enregistrement.
 Utilise get_context() de app.core.compat pour l'isolation tenant.
 """
+from __future__ import annotations
+
 
 from decimal import Decimal
 from uuid import UUID

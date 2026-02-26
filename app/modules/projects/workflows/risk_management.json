@@ -1,0 +1,106 @@
+{
+  "module_id": "azalscore.projects.risk_management",
+  "version": "1.0.0",
+  "description": "Workflow de gestion des risques projet",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_project_risks",
+      "use": "azalscore.calculations.projects.get_active_risks@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "include_closed": false
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_risk_scores",
+      "use": "azalscore.calculations.projects.calculate_risk_score@1.0.0",
+      "inputs": {
+        "risks": "{{get_project_risks.risks}}",
+        "scoring_matrix": "{{context.risk_matrix}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "identify_critical_risks",
+      "use": "azalscore.calculations.projects.identify_critical_risks@1.0.0",
+      "inputs": {
+        "scored_risks": "{{calculate_risk_scores.risks}}",
+        "critical_threshold": 15,
+        "high_threshold": 10
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "check_mitigation_status",
+      "use": "azalscore.validators.projects.check_risk_mitigations@1.0.0",
+      "inputs": {
+        "risks": "{{get_project_risks.risks}}",
+        "require_mitigation_plan": true
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "calculate_exposure",
+      "use": "azalscore.calculations.projects.calculate_risk_exposure@1.0.0",
+      "inputs": {
+        "risks": "{{calculate_risk_scores.risks}}",
+        "project_budget": "{{context.project_budget}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "alert_critical_risks",
+      "condition": "{{identify_critical_risks.critical_count}} > 0",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "critical_project_risk",
+        "severity": "critical",
+        "title": "ALERTE - Risques critiques projet",
+        "message": "{{identify_critical_risks.critical_count}} risques critiques identifies",
+        "data": "{{identify_critical_risks.critical_risks}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    },
+    {
+      "id": "update_risk_register",
+      "use": "azalscore.transformers.projects.update_risk_register@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "risks": "{{calculate_risk_scores.risks}}",
+        "review_date": "{{context.review_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_risk_report",
+      "use": "azalscore.generators.documents.generate_risk_report@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "risks": "{{calculate_risk_scores.risks}}",
+        "exposure": "{{calculate_exposure}}",
+        "mitigation_status": "{{check_mitigation_status}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "total_risks": "{{get_project_risks.count}}",
+    "critical_count": "{{identify_critical_risks.critical_count}}",
+    "high_count": "{{identify_critical_risks.high_count}}",
+    "total_exposure": "{{calculate_exposure.total}}",
+    "exposure_percent": "{{calculate_exposure.percent_of_budget}}",
+    "unmitigated_count": "{{check_mitigation_status.unmitigated_count}}",
+    "report_url": "{{generate_risk_report.url}}"
+  }
+}

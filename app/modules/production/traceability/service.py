@@ -11,6 +11,8 @@ Fonctionnalités:
 - Gestion des rappels produits
 - Historique des mouvements
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

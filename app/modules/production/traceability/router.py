@@ -29,6 +29,8 @@ Endpoints Traçabilité:
 - GET  /v3/production/traceability/chain - Chaîne complète
 - POST /v3/production/traceability/recall - Initier rappel
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

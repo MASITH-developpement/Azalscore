@@ -11,6 +11,8 @@ Gestion des expéditions:
 - Points relais
 - Retours et réclamations
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal

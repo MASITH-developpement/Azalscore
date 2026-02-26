@@ -4,6 +4,8 @@ AZALS MODULE T0 - MFA Service
 
 Gestion de l'authentification multi-facteurs.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

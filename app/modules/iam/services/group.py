@@ -4,6 +4,8 @@ AZALS MODULE T0 - Group Service
 
 Gestion des groupes.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

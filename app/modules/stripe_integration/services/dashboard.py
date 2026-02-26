@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe Dashboard Service
 
 Analytics et statistiques Stripe.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import timedelta

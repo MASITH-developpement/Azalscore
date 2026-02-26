@@ -7,6 +7,8 @@ Provider pour l'API Pappers (donnees entreprises et analyse de risque).
 API Documentation: https://www.pappers.fr/api/documentation
 Version gratuite: 100 requetes/mois
 """
+from __future__ import annotations
+
 
 import logging
 import re

@@ -1,0 +1,69 @@
+{
+  "module_id": "azalscore.accounting.close_period",
+  "version": "1.0.0",
+  "description": "Workflow de cloture de periode comptable",
+  "steps": [
+    {
+      "id": "validate_period_status",
+      "use": "azalscore.validators.finance.validate_period_status@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}",
+        "expected_status": "open"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_pending_entries",
+      "use": "azalscore.accounting.check_pending_entries@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "validate_all_balanced",
+      "use": "azalscore.validators.finance.validate_period_balance@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_trial_balance",
+      "use": "azalscore.accounting.generate_trial_balance@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "lock_period",
+      "use": "azalscore.accounting.lock_period@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}",
+        "closed_by": "{{context.user_id}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_closing_entry",
+      "use": "azalscore.accounting.create_closing_entry@1.0.0",
+      "inputs": {
+        "period_id": "{{context.period_id}}",
+        "trial_balance": "{{generate_trial_balance.data}}"
+      },
+      "condition": "{{context.create_closing_entry}} == true",
+      "retry": 2,
+      "timeout": 30000
+    }
+  ],
+  "outputs": {
+    "period_status": "closed",
+    "trial_balance_id": "{{generate_trial_balance.id}}"
+  }
+}

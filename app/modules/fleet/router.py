@@ -4,6 +4,8 @@ Routes API - Module Fleet Management (GAP-062)
 CRUD complet, Autocomplete, Dashboard, Rapports.
 Permissions verifiees sur chaque endpoint.
 """
+from __future__ import annotations
+
 from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional

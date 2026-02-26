@@ -5,6 +5,8 @@ AZALS MODULE - Réseaux Sociaux - Router API
 Endpoints pour l'administration des métriques marketing.
 Accessible via: Administration > Réseaux Sociaux
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

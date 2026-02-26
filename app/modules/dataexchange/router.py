@@ -6,6 +6,8 @@ Endpoints REST pour l'import/export de donnees.
 Inspire de: Sage Data Exchange, Axonaut Import, Pennylane Connect,
 Odoo Import/Export, Microsoft Dynamics 365 Data Management.
 """
+from __future__ import annotations
+
 import math
 from datetime import datetime
 from typing import Optional, List

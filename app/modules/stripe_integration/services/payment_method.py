@@ -4,6 +4,8 @@ AZALS MODULE 15 - Stripe Payment Method Service
 
 Gestion des méthodes de paiement Stripe.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any, Dict, List, Optional

@@ -3,6 +3,8 @@ Fixtures pour les tests du module BI - CORE SaaS v2
 
 Hérite des fixtures globales de app/conftest.py.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from typing import Any

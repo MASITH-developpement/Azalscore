@@ -11,6 +11,8 @@ Endpoints:
 - POST /v3/finance/webhooks/retry - Retenter les événements échoués
 - GET  /v3/finance/webhooks/health - Health check webhooks
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional

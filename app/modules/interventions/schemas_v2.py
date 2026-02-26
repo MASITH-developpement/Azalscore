@@ -11,6 +11,8 @@ Différences avec v1 :
 - Champs aliasés pour compatibilité frontend
   (travaux_realises = resume_actions, observations = anomalies)
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

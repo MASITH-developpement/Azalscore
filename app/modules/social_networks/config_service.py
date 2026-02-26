@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Service de Configuration
 =========================================================
 Gestion des configurations de plateformes et synchronisation automatique
 """
+from __future__ import annotations
+
 
 import logging
 import secrets

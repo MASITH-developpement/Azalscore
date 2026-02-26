@@ -11,6 +11,8 @@ Actions:
     - health_check: Verification sante des modules
     - generate_report: Rapport d'activite global
 """
+from __future__ import annotations
+
 
 import asyncio
 import json

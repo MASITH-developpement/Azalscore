@@ -5,6 +5,8 @@ AZALS - Service E-Invoicing France 2026
 Service métier pour la facturation électronique.
 Intégration complète avec les données financières et comptables du tenant.
 """
+from __future__ import annotations
+
 
 import asyncio
 import hashlib

@@ -6,6 +6,8 @@ Actif en permanence sur tous les flux.
 
 Conformité: AZA-SEC, AZA-NF-009
 """
+from __future__ import annotations
+
 
 import re
 import logging

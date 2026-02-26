@@ -5,6 +5,8 @@ Permet d'exécuter des workflows DAG déclaratifs
 
 Conformité : AZA-NF-003, Architecture cible
 """
+from __future__ import annotations
+
 
 import logging
 from fastapi import APIRouter, HTTPException, Depends

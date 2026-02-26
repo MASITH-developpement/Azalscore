@@ -25,6 +25,8 @@ Endpoints:
 - GET  /v3/finance/approval/stats - Statistiques
 - GET  /v3/finance/approval/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

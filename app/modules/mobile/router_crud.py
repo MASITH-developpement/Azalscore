@@ -5,6 +5,8 @@ AZALS - Module Mobile - Router Unifié
 API backend unifiée pour applications mobiles iOS/Android.
 Compatible v1 et v2 via double enregistrement.
 """
+from __future__ import annotations
+
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

@@ -3,6 +3,8 @@ Repository Resources / Réservation
 ==================================
 Pattern Repository avec tenant isolation obligatoire.
 """
+from __future__ import annotations
+
 from datetime import datetime, date, time
 from decimal import Decimal
 from typing import List, Optional, Tuple

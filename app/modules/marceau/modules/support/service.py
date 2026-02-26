@@ -11,6 +11,8 @@ Actions:
 - escalate: Escalade ticket
 - resolve: Resolution ticket
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

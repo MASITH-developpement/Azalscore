@@ -7,6 +7,8 @@ Compatible v1 et v2 via double enregistrement.
 
 Note: Ce module utilise db injecté séparément car le service ne supporte pas context.db
 """
+from __future__ import annotations
+
 
 import logging
 

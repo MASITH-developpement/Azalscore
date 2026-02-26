@@ -3,6 +3,8 @@ Repository - Module Integrations (GAP-086)
 
 CRITIQUE: Toutes les requêtes filtrées par tenant_id.
 """
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 from uuid import UUID

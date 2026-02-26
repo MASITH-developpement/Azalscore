@@ -9,6 +9,8 @@ AZALS MODULE INVENTORY - Router API v2 (CORE SaaS)
 
 API REST pour la gestion des stocks et logistique.
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime
 from uuid import UUID

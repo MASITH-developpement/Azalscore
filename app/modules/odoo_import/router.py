@@ -5,6 +5,8 @@ AZALS MODULE - Odoo Import - Router
 Endpoints API pour l'import de donnees Odoo.
 Module activable depuis Administration > Acces Modules > Import de donnees.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional

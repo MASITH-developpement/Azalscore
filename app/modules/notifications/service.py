@@ -13,6 +13,8 @@ Gestion multicanal des notifications:
 - Rate limiting
 - Batch et scheduling
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

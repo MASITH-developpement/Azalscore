@@ -8,6 +8,8 @@ Gère les sessions vocales utilisateur:
 - Mémoire longue contrôlée (préférences fonctionnelles)
 - État d'attente (confirmation, clarification)
 """
+from __future__ import annotations
+
 
 from enum import Enum
 from typing import Dict, List, Optional, Any

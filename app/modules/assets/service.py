@@ -17,6 +17,8 @@ Conformité:
 
 Architecture multi-tenant avec isolation stricte.
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date, timedelta

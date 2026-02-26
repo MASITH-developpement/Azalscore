@@ -6,6 +6,8 @@ Utilise get_context() de app.core.compat pour l'isolation tenant.
 
 Configuration automatique par fonction avec gestion des profils de poste.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query

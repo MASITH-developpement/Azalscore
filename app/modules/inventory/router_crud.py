@@ -28,6 +28,8 @@ ENDPOINTS (45 total):
 - Pickings (8): CRUD + assign/start/complete + pick line
 - Dashboard (1)
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

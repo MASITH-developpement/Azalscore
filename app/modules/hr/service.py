@@ -4,6 +4,8 @@ AZALS MODULE M3 - Service RH
 
 Service métier pour la gestion des ressources humaines.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime, timedelta

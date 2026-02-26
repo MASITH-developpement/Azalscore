@@ -11,6 +11,8 @@ Endpoints:
 - POST /v3/finance/reconciliation/undo - Annuler une réconciliation
 - GET  /v3/finance/reconciliation/stats - Statistiques
 """
+from __future__ import annotations
+
 
 import logging
 from decimal import Decimal

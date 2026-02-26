@@ -20,6 +20,8 @@ ENDPOINTS MIGRÉS (32):
 - Sessions (2): list_my_sessions + revoke_sessions
 - Password Policy (2): get + update
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from uuid import UUID

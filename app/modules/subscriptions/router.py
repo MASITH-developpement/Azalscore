@@ -3,6 +3,8 @@ AZALS MODULE 14 - Subscriptions Router
 ========================================
 Endpoints API pour la gestion des abonnements.
 """
+from __future__ import annotations
+
 
 from datetime import date
 

@@ -5,6 +5,8 @@ AZALS MODULE - Documents (GED) - Repository
 Repository specialise pour les documents avec isolation tenant.
 Utilise BaseRepository avec methodes metier specifiques.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

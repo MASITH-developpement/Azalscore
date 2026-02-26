@@ -5,6 +5,8 @@ AZALS MODULE - Odoo Import Base Service
 Service de base avec fonctionnalités communes pour tous les sous-services.
 Gère le chiffrement des credentials, la création de connecteurs et mappers.
 """
+from __future__ import annotations
+
 
 import logging
 import os

@@ -7,6 +7,8 @@ Gestion des webhooks pour la facturation électronique:
 - Validation des webhooks entrants
 - File d'attente et retry logic
 """
+from __future__ import annotations
+
 
 import asyncio
 import hashlib

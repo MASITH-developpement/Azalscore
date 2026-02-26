@@ -1269,7 +1269,7 @@ export const SupplierFormPage: React.FC = () => {
     e.preventDefault();
     if (isNew) {
       const result = await createMutation.mutateAsync(form);
-      navigate(`/purchases/suppliers/${result.id}`);
+      if (result?.id) navigate(`/purchases/suppliers/${result.id}`);
     } else {
       await updateMutation.mutateAsync({ id: id!, data: form });
       navigate(`/purchases/suppliers/${id}`);

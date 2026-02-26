@@ -26,6 +26,8 @@ Endpoints Expédition:
 - POST /v3/production/delivery/shipments/{id}/update - Maj statut
 - POST /v3/production/delivery/shipments/{id}/deliver - Confirmer livraison
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

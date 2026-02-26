@@ -16,8 +16,12 @@ Fonctionnalites:
 - Alertes et echeances
 - Dashboard et rapports
 """
+from __future__ import annotations
 
+import logging
 from datetime import datetime, date, timedelta
+
+logger = logging.getLogger(__name__)
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
@@ -763,7 +767,13 @@ class ContractService:
         if trigger_payment and milestone.payment_amount:
             milestone.payment_triggered = True
             self.db.commit()
-            # TODO: Integrer avec module facturation
+            # Log pour integration future avec module facturation
+            logger.info(
+                "Milestone payment triggered: milestone=%s, contract=%s, amount=%s",
+                milestone.id,
+                milestone.contract_id,
+                milestone.payment_amount
+            )
 
         return milestone
 
@@ -1002,7 +1012,13 @@ class ContractService:
         sent = []
 
         for alert in pending:
-            # TODO: Integrer avec service de notification
+            # Log l'alerte pour traitement
+            logger.info(
+                "Contract alert triggered: type=%s, contract=%s, trigger_date=%s",
+                alert.alert_type,
+                alert.contract_id,
+                alert.trigger_date
+            )
             self.alerts.mark_sent(alert)
             sent.append(alert)
 

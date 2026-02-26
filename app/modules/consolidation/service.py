@@ -28,6 +28,8 @@ REGLES CRITIQUES:
 Auteur: AZALSCORE Team
 Version: 2.0.0
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date
 from decimal import Decimal, ROUND_HALF_UP

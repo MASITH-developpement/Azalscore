@@ -2,6 +2,8 @@
 AZALS - Endpoints Journal APPEND-ONLY
 API pour écriture et lecture du journal d'audit
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, status

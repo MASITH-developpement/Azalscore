@@ -27,6 +27,8 @@ INVARIANT CRITIQUE:
 - Toute requête sur un modèle avec tenant_id DOIT être filtrée
 - Violation = vulnérabilité de sécurité P0
 """
+from __future__ import annotations
+
 
 import contextvars
 import logging

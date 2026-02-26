@@ -3,6 +3,8 @@ AZALS - Admin Dashboard API
 ===========================
 API pour le tableau de bord d'administration.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime, timedelta

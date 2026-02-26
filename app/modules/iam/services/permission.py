@@ -4,6 +4,8 @@ AZALS MODULE T0 - Permission Service
 
 Gestion des permissions.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

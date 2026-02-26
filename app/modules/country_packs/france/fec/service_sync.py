@@ -13,6 +13,8 @@ Conformité DGFiP:
 - Numérotation continue sans rupture
 - Équilibre débit/crédit par écriture
 """
+from __future__ import annotations
+
 
 import hashlib
 import logging

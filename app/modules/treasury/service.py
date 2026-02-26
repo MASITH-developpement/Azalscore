@@ -18,6 +18,8 @@ Auteur: AZALSCORE Team
 Version: 2.0.0
 Dernière mise à jour: 2026-02-16
 """
+from __future__ import annotations
+
 
 from datetime import datetime, timedelta
 from decimal import Decimal

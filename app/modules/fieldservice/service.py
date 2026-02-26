@@ -10,6 +10,8 @@ Gestion des interventions terrain:
 - Signatures et photos
 - Rapports d'intervention
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date, timedelta

@@ -4,6 +4,8 @@ AZALS MODULE T0 - User Service
 
 Gestion des utilisateurs.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

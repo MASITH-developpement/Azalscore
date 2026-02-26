@@ -7,6 +7,8 @@ des sous-programmes avec gestion centralisée des erreurs.
 Conformité : AZA-NF-003, Charte Développeur
 Principe : "Le code métier est pur, le moteur gère tout le reste"
 """
+from __future__ import annotations
+
 
 import json
 import re

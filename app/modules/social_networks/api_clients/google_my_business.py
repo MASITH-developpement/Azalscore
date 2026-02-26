@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Google My Business Client
 ==========================================================
 Client API pour Google Business Profile (anciennement Google My Business)
 """
+from __future__ import annotations
+
 
 import logging
 import os

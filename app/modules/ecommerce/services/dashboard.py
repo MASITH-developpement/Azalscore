@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Dashboard Service
 
 Statistiques et analytics e-commerce.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

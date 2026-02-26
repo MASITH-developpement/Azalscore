@@ -11,6 +11,8 @@ Fonctionnalités:
 - Configuration centralisée
 - Workflows cross-modules
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

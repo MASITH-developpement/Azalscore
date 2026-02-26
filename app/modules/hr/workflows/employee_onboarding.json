@@ -1,0 +1,129 @@
+{
+  "module_id": "azalscore.hr.employee_onboarding",
+  "version": "1.0.0",
+  "description": "Workflow d'integration d'un nouveau collaborateur",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_employee_data",
+      "use": "azalscore.validators.hr.validate_employee_data@1.0.0",
+      "inputs": {
+        "employee_data": "{{context.employee_data}}",
+        "required_fields": ["first_name", "last_name", "email", "hire_date", "position_id"]
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "validate_nir",
+      "use": "azalscore.validators.hr.validate_nir@1.0.0",
+      "inputs": {
+        "nir": "{{context.employee_data.nir}}",
+        "birth_date": "{{context.employee_data.birth_date}}",
+        "gender": "{{context.employee_data.gender}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "generate_employee_number",
+      "use": "azalscore.generators.sequences.generate_employee_number@1.0.0",
+      "inputs": {
+        "company_code": "{{context.company_code}}",
+        "hire_year": "{{context.hire_year}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "create_employee_record",
+      "use": "azalscore.transformers.hr.create_employee_record@1.0.0",
+      "inputs": {
+        "employee_number": "{{generate_employee_number.number}}",
+        "employee_data": "{{context.employee_data}}",
+        "contract_type": "{{context.contract_type}}",
+        "manager_id": "{{context.manager_id}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_user_account",
+      "use": "azalscore.generators.iam.create_user_account@1.0.0",
+      "inputs": {
+        "employee_id": "{{create_employee_record.employee_id}}",
+        "email": "{{context.employee_data.email}}",
+        "role": "{{context.initial_role}}",
+        "send_welcome_email": true
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "setup_payroll",
+      "use": "azalscore.transformers.hr.setup_employee_payroll@1.0.0",
+      "inputs": {
+        "employee_id": "{{create_employee_record.employee_id}}",
+        "salary": "{{context.salary}}",
+        "payment_method": "{{context.payment_method}}",
+        "bank_details": "{{context.bank_details}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "initialize_leave_balance",
+      "use": "azalscore.transformers.hr.initialize_leave_balance@1.0.0",
+      "inputs": {
+        "employee_id": "{{create_employee_record.employee_id}}",
+        "hire_date": "{{context.employee_data.hire_date}}",
+        "leave_policy_id": "{{context.leave_policy_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "assign_equipment",
+      "condition": "{{context.equipment_list}} != null",
+      "use": "azalscore.transformers.hr.assign_equipment@1.0.0",
+      "inputs": {
+        "employee_id": "{{create_employee_record.employee_id}}",
+        "equipment_list": "{{context.equipment_list}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_onboarding_tasks",
+      "use": "azalscore.generators.hr.create_onboarding_checklist@1.0.0",
+      "inputs": {
+        "employee_id": "{{create_employee_record.employee_id}}",
+        "position_id": "{{context.employee_data.position_id}}",
+        "manager_id": "{{context.manager_id}}",
+        "hire_date": "{{context.employee_data.hire_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "notify_stakeholders",
+      "use": "azalscore.generators.communications.notify_new_hire@1.0.0",
+      "inputs": {
+        "employee": "{{create_employee_record}}",
+        "manager_email": "{{context.manager_email}}",
+        "hr_email": "{{context.hr_email}}",
+        "it_email": "{{context.it_email}}"
+      },
+      "retry": 3,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "employee_id": "{{create_employee_record.employee_id}}",
+    "employee_number": "{{generate_employee_number.number}}",
+    "user_account_id": "{{create_user_account.user_id}}",
+    "onboarding_checklist_id": "{{create_onboarding_tasks.checklist_id}}",
+    "payroll_setup": "{{setup_payroll.status}}"
+  }
+}

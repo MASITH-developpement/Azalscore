@@ -2,6 +2,8 @@
 AZALS - API endpoints pour validation workflow RED
 Endpoints de validation en 3 étapes pour décisions RED
 """
+from __future__ import annotations
+
 
 import json
 

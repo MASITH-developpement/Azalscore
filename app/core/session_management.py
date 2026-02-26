@@ -15,6 +15,8 @@ Conformité:
 - NIST SP 800-63B (Session Management)
 - RFC 6819 (OAuth 2.0 Security)
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac

@@ -155,6 +155,30 @@ export const BlogIndex: React.FC = () => {
         <meta property="og:description" content="Articles et guides sur la gestion d'entreprise, la conformité et les meilleures pratiques ERP." />
         <meta property="og:url" content="https://azalscore.com/blog" />
         <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Blog",
+            "name": "Blog Azalscore",
+            "description": "Articles et guides sur la gestion d'entreprise pour les PME françaises",
+            "url": "https://azalscore.com/blog",
+            "publisher": {
+              "@type": "Organization",
+              "name": "AZALSCORE",
+              "logo": "https://azalscore.com/logo.png"
+            }
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://azalscore.com" },
+              { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://azalscore.com/blog" }
+            ]
+          })}
+        </script>
       </Helmet>
 
       <div className="blog-page">

@@ -1,0 +1,79 @@
+{
+  "module_id": "azalscore.purchases.create_purchase_order",
+  "version": "1.0.0",
+  "description": "Workflow de creation de commande d'achat",
+  "steps": [
+    {
+      "id": "validate_supplier",
+      "use": "azalscore.validators.commercial.validate_supplier@1.0.0",
+      "inputs": {
+        "supplier_id": "{{context.supplier_id}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_budget",
+      "use": "azalscore.calculations.finance.check_budget_availability@1.0.0",
+      "inputs": {
+        "budget_id": "{{context.budget_id}}",
+        "amount": "{{context.total_amount}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_po_number",
+      "use": "azalscore.generators.sequences.generate_document_number@1.0.0",
+      "inputs": {
+        "prefix": "{{context.po_prefix}}",
+        "year": "{{context.fiscal_year}}",
+        "sequence_type": "purchase_order"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "calculate_totals",
+      "use": "azalscore.calculations.commercial.calculate_document_total@1.0.0",
+      "inputs": {
+        "lines": "{{context.order_lines}}",
+        "currency": "{{context.currency}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_order",
+      "use": "azalscore.purchases.create_order@1.0.0",
+      "inputs": {
+        "supplier_id": "{{context.supplier_id}}",
+        "order_number": "{{generate_po_number.number}}",
+        "lines": "{{context.order_lines}}",
+        "total": "{{calculate_totals.total}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "notify_supplier",
+      "use": "azalscore.external.communications.send_email@1.0.0",
+      "inputs": {
+        "to": "{{context.supplier_email}}",
+        "template": "purchase_order_created",
+        "data": {
+          "order_number": "{{generate_po_number.number}}",
+          "total": "{{calculate_totals.total}}"
+        }
+      },
+      "condition": "{{context.send_notification}} == true",
+      "retry": 3,
+      "timeout": 30000
+    }
+  ],
+  "outputs": {
+    "order_id": "{{create_order.id}}",
+    "order_number": "{{generate_po_number.number}}",
+    "total": "{{calculate_totals.total}}"
+  }
+}

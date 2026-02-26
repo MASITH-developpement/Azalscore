@@ -8,6 +8,8 @@ Service OCR spécialisé pour les factures fournisseurs avec:
 - Matching fournisseur intelligent
 - Proposition d'écritures comptables
 """
+from __future__ import annotations
+
 
 import hashlib
 import logging

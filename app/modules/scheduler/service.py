@@ -11,6 +11,8 @@ Gestion des tâches planifiées:
 - Historique d'exécution
 - Dépendances entre jobs
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

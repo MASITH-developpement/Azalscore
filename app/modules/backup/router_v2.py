@@ -9,6 +9,8 @@ AZALS MODULE BACKUP - Router API v2 (CORE SaaS)
 
 API REST pour les sauvegardes chiffrées AES-256.
 """
+from __future__ import annotations
+
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

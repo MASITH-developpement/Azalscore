@@ -10,6 +10,8 @@ Fonctionnalités:
 - Validation de conformité
 - Migration PCG 2024 -> 2025
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

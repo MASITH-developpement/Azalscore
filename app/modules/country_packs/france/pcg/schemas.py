@@ -4,6 +4,8 @@ AZALS MODULE - PCG 2025: Schemas
 
 Schémas Pydantic pour le Plan Comptable Général 2025.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Literal, Optional

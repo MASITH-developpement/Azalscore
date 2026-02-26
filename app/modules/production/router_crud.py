@@ -28,6 +28,8 @@ ENDPOINTS (43 total):
 - Maintenance (3): schedule + list + due
 - Dashboard (1)
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

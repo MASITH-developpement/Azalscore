@@ -4,6 +4,8 @@ AZALS MODULE T3 - Schémas Audit & Benchmark
 
 Schémas Pydantic pour validation et sérialisation.
 """
+from __future__ import annotations
+
 
 
 import json

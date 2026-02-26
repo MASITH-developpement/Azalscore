@@ -5,6 +5,8 @@ AZALS MODULE TRIGGERS - Router v2 CORE SaaS
 Endpoints pour le système de déclencheurs et alertes.
 Migration CORE SaaS v2 avec SaaSContext.
 """
+from __future__ import annotations
+
 
 from typing import Any
 from uuid import UUID

@@ -9,6 +9,8 @@ Gestion des intégrations tierces:
 - Gestion des conflits
 - Monitoring des connexions
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

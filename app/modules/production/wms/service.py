@@ -4,6 +4,8 @@ WMS Service - Warehouse Management System
 
 Gestion complète d'entrepôt avec emplacements, mouvements et inventaires.
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime

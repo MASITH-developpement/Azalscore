@@ -22,6 +22,8 @@ ENDPOINTS MIGRÉS (45):
 - Dashboard (1): get dashboard
 - Exports (3): customers + contacts + opportunities
 """
+from __future__ import annotations
+
 
 from datetime import date, datetime as dt
 from uuid import UUID

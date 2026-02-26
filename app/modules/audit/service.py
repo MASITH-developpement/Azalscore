@@ -5,6 +5,8 @@ AZALS MODULE T3 - Service Audit & Benchmark
 Logique métier pour l'audit et les benchmarks.
 """
 
+from __future__ import annotations
+
 import json
 import uuid
 from datetime import datetime, timedelta

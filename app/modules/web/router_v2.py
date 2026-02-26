@@ -5,6 +5,8 @@ AZALS MODULE WEB - Router v2 CORE SaaS
 Endpoints pour la gestion des composants web transverses.
 Migration CORE SaaS v2 avec SaaSContext.
 """
+from __future__ import annotations
+
 
 from typing import List
 from uuid import UUID

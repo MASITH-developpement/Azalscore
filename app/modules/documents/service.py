@@ -11,6 +11,8 @@ Gestion complète de la génération documentaire:
 - Archivage automatique
 - Intégration GED
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date

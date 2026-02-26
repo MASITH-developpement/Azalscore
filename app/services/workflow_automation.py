@@ -2,6 +2,8 @@
 Service de Workflow Automation - AZALSCORE
 Automatisation des processus métier avec workflows configurables
 """
+from __future__ import annotations
+
 
 import ast
 import asyncio

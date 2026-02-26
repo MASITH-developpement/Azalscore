@@ -1,6 +1,8 @@
 """
 AZALS API - Invoicing (Devis, Factures, Avoirs)
 """
+from __future__ import annotations
+
 import datetime
 from decimal import Decimal
 from uuid import UUID

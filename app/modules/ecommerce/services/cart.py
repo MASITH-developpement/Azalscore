@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Cart Service
 
 Gestion du panier d'achat.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

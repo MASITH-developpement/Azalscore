@@ -10,6 +10,8 @@ Providers pour les APIs Open Facts (code-barres produits).
 
 API Documentation: https://world.openfoodfacts.org/data
 """
+from __future__ import annotations
+
 
 import logging
 import re

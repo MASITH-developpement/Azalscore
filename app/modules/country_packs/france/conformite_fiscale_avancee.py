@@ -18,6 +18,8 @@ Références:
 - BOI-TVA-CHAMP
 - BOI-TVA-DECLA-20
 """
+from __future__ import annotations
+
 
 import logging
 from dataclasses import dataclass, field

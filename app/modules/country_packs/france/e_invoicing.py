@@ -23,6 +23,8 @@ Standards:
 - EN 16931 (norme européenne facturation électronique)
 - Semantic model européen
 """
+from __future__ import annotations
+
 
 import hashlib
 import uuid

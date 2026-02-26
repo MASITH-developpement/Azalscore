@@ -6,6 +6,8 @@ Toutes les configurations sont versionnées et traçables.
 
 Conformité: AZA-NF-009, AZA-IA-002
 """
+from __future__ import annotations
+
 
 import os
 from dataclasses import dataclass

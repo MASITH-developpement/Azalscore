@@ -5,6 +5,8 @@ AZALS MODULE M11 - Service Conformité
 Service métier pour la gestion de la conformité réglementaire.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal

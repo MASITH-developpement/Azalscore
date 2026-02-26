@@ -5,6 +5,8 @@ AZALS MODULE - CURRENCY: Repository
 Repository avec isolation tenant stricte.
 Toutes les requetes sont filtrees par tenant_id.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal, ROUND_HALF_UP

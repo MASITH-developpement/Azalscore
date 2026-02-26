@@ -6,6 +6,8 @@ Repository pour l'acces aux donnees des reclamations avec isolation tenant.
 Utilise le pattern BaseRepository d'AZALSCORE.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal

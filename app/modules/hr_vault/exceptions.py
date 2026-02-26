@@ -4,6 +4,8 @@ AZALS MODULE HR_VAULT - Exceptions
 
 Exceptions personnalisees pour le module coffre-fort RH.
 """
+from __future__ import annotations
+
 
 from typing import Any, Optional
 

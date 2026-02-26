@@ -11,6 +11,8 @@ Gestion des formations:
 - E-learning intégré
 - Budget formation
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date

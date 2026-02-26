@@ -19,6 +19,8 @@ Fonctionnalites:
 Auteur: AZALSCORE Team
 Version: 2.0.0
 """
+from __future__ import annotations
+
 
 import calendar
 import uuid

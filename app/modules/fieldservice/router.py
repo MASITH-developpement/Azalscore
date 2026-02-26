@@ -3,6 +3,8 @@ Routes API - Module Field Service (GAP-081)
 
 CRUD complet, Autocomplete, Permissions vérifiées.
 """
+from __future__ import annotations
+
 from datetime import date
 from typing import List, Optional
 from uuid import UUID

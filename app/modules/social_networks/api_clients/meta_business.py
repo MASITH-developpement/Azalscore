@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Meta Business Client
 =====================================================
 Client API pour Meta Business Suite (Facebook, Instagram)
 """
+from __future__ import annotations
+
 
 import logging
 import os

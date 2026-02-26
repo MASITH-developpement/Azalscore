@@ -10,6 +10,8 @@ Fonctionnalités:
 - Apprentissage des associations utilisateur
 - Suggestions de comptes comptables
 """
+from __future__ import annotations
+
 
 import logging
 import re

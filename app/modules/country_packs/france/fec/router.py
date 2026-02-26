@@ -4,6 +4,8 @@ AZALS MODULE - FEC: Router API
 
 Endpoints REST pour la génération et validation du FEC.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional

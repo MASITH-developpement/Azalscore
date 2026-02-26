@@ -3,6 +3,8 @@ Schemas Pydantic - Module Commissions (GAP-041)
 
 Schemas de validation et serialisation pour l'API REST.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum

@@ -16,6 +16,8 @@ Fonctionnalités:
 - e-reporting B2C
 - Génération PDF/A-3 Factur-X
 """
+from __future__ import annotations
+
 
 import asyncio
 import base64

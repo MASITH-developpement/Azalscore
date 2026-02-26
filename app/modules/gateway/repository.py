@@ -5,6 +5,8 @@ AZALS MODULE GATEWAY - Repository
 Couche d'acces aux donnees avec isolation tenant automatique.
 Utilise _base_query() filtre pour garantir l'isolation.
 """
+from __future__ import annotations
+
 
 import json
 import logging

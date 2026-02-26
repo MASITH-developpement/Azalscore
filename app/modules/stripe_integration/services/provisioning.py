@@ -11,6 +11,8 @@ Flux:
 4. Utilisateur admin créé
 5. Email de bienvenue envoyé (optionnel)
 """
+from __future__ import annotations
+
 
 import logging
 import re

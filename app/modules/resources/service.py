@@ -3,6 +3,8 @@ Service Resources / Réservation
 ===============================
 Logique métier avec tenant isolation.
 """
+from __future__ import annotations
+
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple

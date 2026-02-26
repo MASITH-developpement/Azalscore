@@ -11,6 +11,8 @@ Fonctionnalités:
 - Journalisation des écritures
 - Validation croisée
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

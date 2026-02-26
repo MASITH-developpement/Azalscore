@@ -11,6 +11,8 @@ Gestion des événements:
 - Badges et certificats
 - Analytics événementiels
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date

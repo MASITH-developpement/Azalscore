@@ -1,0 +1,107 @@
+{
+  "module_id": "azalscore.projects.milestone_validation",
+  "version": "1.0.0",
+  "description": "Workflow de validation de jalon projet avec delivrables",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_milestone",
+      "use": "azalscore.calculations.projects.get_milestone_details@1.0.0",
+      "inputs": {
+        "milestone_id": "{{context.milestone_id}}",
+        "include_deliverables": true
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_task_completion",
+      "use": "azalscore.validators.projects.check_milestone_tasks@1.0.0",
+      "inputs": {
+        "milestone_id": "{{context.milestone_id}}",
+        "require_all_complete": "{{context.require_all_tasks}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "validate_deliverables",
+      "use": "azalscore.validators.projects.validate_deliverables@1.0.0",
+      "inputs": {
+        "deliverables": "{{get_milestone.deliverables}}",
+        "acceptance_criteria": "{{get_milestone.acceptance_criteria}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_milestone_metrics",
+      "use": "azalscore.calculations.projects.calculate_milestone_metrics@1.0.0",
+      "inputs": {
+        "milestone_id": "{{context.milestone_id}}",
+        "planned_date": "{{get_milestone.planned_date}}",
+        "actual_date": "{{context.completion_date}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "update_project_progress",
+      "use": "azalscore.transformers.projects.update_project_progress@1.0.0",
+      "inputs": {
+        "project_id": "{{get_milestone.project_id}}",
+        "milestone_id": "{{context.milestone_id}}",
+        "status": "completed",
+        "completion_date": "{{context.completion_date}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "trigger_billing",
+      "condition": "{{get_milestone.billable}} == true",
+      "use": "azalscore.generators.invoicing.create_milestone_invoice@1.0.0",
+      "inputs": {
+        "milestone_id": "{{context.milestone_id}}",
+        "amount": "{{get_milestone.billing_amount}}",
+        "client_id": "{{get_milestone.client_id}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "notify_stakeholders",
+      "use": "azalscore.generators.communications.notify_milestone_complete@1.0.0",
+      "inputs": {
+        "project_id": "{{get_milestone.project_id}}",
+        "milestone_name": "{{get_milestone.name}}",
+        "completion_date": "{{context.completion_date}}",
+        "metrics": "{{calculate_milestone_metrics}}",
+        "stakeholder_emails": "{{context.stakeholder_emails}}"
+      },
+      "retry": 3,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_completion_report",
+      "use": "azalscore.generators.documents.generate_milestone_report@1.0.0",
+      "inputs": {
+        "milestone": "{{get_milestone}}",
+        "deliverables": "{{validate_deliverables}}",
+        "metrics": "{{calculate_milestone_metrics}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "milestone_id": "{{context.milestone_id}}",
+    "tasks_complete": "{{check_task_completion.all_complete}}",
+    "deliverables_accepted": "{{validate_deliverables.all_accepted}}",
+    "on_time": "{{calculate_milestone_metrics.on_time}}",
+    "variance_days": "{{calculate_milestone_metrics.variance_days}}",
+    "invoice_id": "{{trigger_billing.invoice_id}}",
+    "report_url": "{{generate_completion_report.url}}"
+  }
+}

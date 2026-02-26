@@ -10,6 +10,8 @@ AZALS MODULE AUDIT - Router API v2 (CORE SaaS)
 
 Endpoints API pour l'audit et les benchmarks.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from uuid import UUID

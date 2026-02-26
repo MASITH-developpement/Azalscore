@@ -4,6 +4,8 @@ AZALS MODULE GAP-086 - Router Integration
 
 Endpoints REST pour la gestion des integrations.
 """
+from __future__ import annotations
+
 
 import math
 from datetime import datetime

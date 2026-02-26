@@ -564,7 +564,464 @@ PERIOD_CLOSE_WORKFLOW = WorkflowDefinition(
     ],
 )
 
+# =============================================================================
+# WORKFLOWS DOCUMENTS COMMERCIAUX
+# =============================================================================
+
+# Workflow approbation devis
+QUOTE_WORKFLOW = WorkflowDefinition(
+    name="quote_approval",
+    description="Workflow d'approbation des devis",
+    document_types=["quote", "estimate"],
+    steps=[
+        ApprovalStep(
+            name="verification_commerciale",
+            role="sales_rep",
+            action="validate",
+            permission="commercial.quote.validate",
+            timeout_hours=24,
+        ),
+        ApprovalStep(
+            name="approbation_responsable",
+            role="sales_manager",
+            action="approve",
+            permission="commercial.quote.approve",
+            threshold=10000,
+            timeout_hours=48,
+            auto_escalate=True,
+            escalate_to_role="commercial_director",
+        ),
+        ApprovalStep(
+            name="approbation_direction",
+            role="commercial_director",
+            action="approve",
+            permission="commercial.quote.approve_high",
+            threshold=50000,
+            timeout_hours=72,
+        ),
+    ],
+)
+
+# Workflow approbation facture client
+INVOICE_WORKFLOW = WorkflowDefinition(
+    name="invoice_approval",
+    description="Workflow d'approbation des factures clients",
+    document_types=["invoice", "credit_note"],
+    steps=[
+        ApprovalStep(
+            name="verification_comptable",
+            role="accountant",
+            action="validate",
+            permission="invoicing.invoice.validate",
+            timeout_hours=24,
+        ),
+        ApprovalStep(
+            name="approbation_finance",
+            role="finance_manager",
+            action="approve",
+            permission="invoicing.invoice.approve",
+            threshold=25000,
+            timeout_hours=48,
+        ),
+    ],
+)
+
+# Workflow approbation commande client
+SALES_ORDER_WORKFLOW = WorkflowDefinition(
+    name="sales_order_approval",
+    description="Workflow d'approbation des commandes clients",
+    document_types=["sales_order"],
+    steps=[
+        ApprovalStep(
+            name="verification_stock",
+            role="warehouse_manager",
+            action="validate",
+            permission="sales.order.validate_stock",
+            timeout_hours=12,
+        ),
+        ApprovalStep(
+            name="verification_credit",
+            role="credit_manager",
+            action="validate",
+            permission="sales.order.validate_credit",
+            threshold=5000,
+            timeout_hours=24,
+        ),
+        ApprovalStep(
+            name="approbation_commerciale",
+            role="sales_manager",
+            action="approve",
+            permission="sales.order.approve",
+            threshold=20000,
+            timeout_hours=48,
+        ),
+    ],
+)
+
+
+# =============================================================================
+# WORKFLOWS ACHATS
+# =============================================================================
+
+# Workflow demande d'achat
+PURCHASE_REQUEST_WORKFLOW = WorkflowDefinition(
+    name="purchase_request_approval",
+    description="Workflow d'approbation des demandes d'achat",
+    document_types=["purchase_request", "requisition"],
+    steps=[
+        ApprovalStep(
+            name="validation_responsable",
+            role="department_manager",
+            action="validate",
+            permission="purchase.request.validate",
+            timeout_hours=24,
+        ),
+        ApprovalStep(
+            name="approbation_achats",
+            role="purchase_manager",
+            action="approve",
+            permission="purchase.request.approve",
+            threshold=5000,
+            timeout_hours=48,
+        ),
+        ApprovalStep(
+            name="approbation_direction",
+            role="cfo",
+            action="approve",
+            permission="purchase.request.approve_high",
+            threshold=25000,
+            timeout_hours=72,
+        ),
+    ],
+)
+
+# Workflow commande fournisseur
+PURCHASE_ORDER_WORKFLOW = WorkflowDefinition(
+    name="purchase_order_approval",
+    description="Workflow d'approbation des commandes fournisseurs",
+    document_types=["purchase_order"],
+    steps=[
+        ApprovalStep(
+            name="verification_budget",
+            role="budget_controller",
+            action="validate",
+            permission="purchase.order.validate_budget",
+            timeout_hours=24,
+        ),
+        ApprovalStep(
+            name="approbation_achats",
+            role="purchase_manager",
+            action="approve",
+            permission="purchase.order.approve",
+            threshold=10000,
+            timeout_hours=48,
+        ),
+        ApprovalStep(
+            name="approbation_finance",
+            role="finance_manager",
+            action="approve",
+            permission="purchase.order.approve_finance",
+            threshold=50000,
+            timeout_hours=72,
+        ),
+        ApprovalStep(
+            name="approbation_direction",
+            role="cfo",
+            action="approve",
+            permission="purchase.order.approve_high",
+            threshold=100000,
+            timeout_hours=96,
+        ),
+    ],
+)
+
+# Workflow facture fournisseur
+SUPPLIER_INVOICE_WORKFLOW = WorkflowDefinition(
+    name="supplier_invoice_approval",
+    description="Workflow d'approbation des factures fournisseurs",
+    document_types=["supplier_invoice", "purchase_invoice"],
+    steps=[
+        ApprovalStep(
+            name="rapprochement_commande",
+            role="accountant",
+            action="validate",
+            permission="purchase.invoice.validate",
+            timeout_hours=48,
+        ),
+        ApprovalStep(
+            name="approbation_paiement",
+            role="finance_manager",
+            action="approve",
+            permission="purchase.invoice.approve",
+            threshold=10000,
+            timeout_hours=72,
+        ),
+    ],
+)
+
+
+# =============================================================================
+# MODELE DELEGATION APPROBATION
+# =============================================================================
+
+class ApprovalDelegation(Base):
+    """Délégation de pouvoir d'approbation."""
+
+    __tablename__ = "workflow_delegations"
+
+    id = Column(UniversalUUID, primary_key=True, default=uuid4)
+    tenant_id = Column(UniversalUUID, nullable=False, index=True)
+
+    # Délégant
+    delegator_id = Column(UniversalUUID, nullable=False)
+    delegator_role = Column(String(100), nullable=False)
+
+    # Délégataire
+    delegate_id = Column(UniversalUUID, nullable=False)
+    delegate_role = Column(String(100), nullable=True)
+
+    # Périmètre
+    workflow_names = Column(JSONB, default=list)  # [] = tous les workflows
+    document_types = Column(JSONB, default=list)  # [] = tous les documents
+    max_amount = Column(Integer, nullable=True)  # Plafond montant
+
+    # Validité
+    valid_from = Column(DateTime(timezone=True), nullable=False)
+    valid_until = Column(DateTime(timezone=True), nullable=False)
+    reason = Column(Text, nullable=True)  # Ex: "Congés du 01/03 au 15/03"
+
+    # Statut
+    is_active = Column(Boolean, default=True)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    revoked_by = Column(UniversalUUID, nullable=True)
+    revoke_reason = Column(Text, nullable=True)
+
+    # Audit
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_by = Column(UniversalUUID, nullable=False)
+
+    __table_args__ = (
+        Index("ix_delegation_delegator", "tenant_id", "delegator_id"),
+        Index("ix_delegation_delegate", "tenant_id", "delegate_id"),
+        Index("ix_delegation_active", "tenant_id", "is_active", "valid_from", "valid_until"),
+    )
+
+
+# =============================================================================
+# ANALYTICS APPROBATION
+# =============================================================================
+
+@dataclass
+class ApprovalAnalytics:
+    """Statistiques d'approbation."""
+    total_workflows: int = 0
+    approved_count: int = 0
+    rejected_count: int = 0
+    pending_count: int = 0
+    expired_count: int = 0
+
+    approval_rate: float = 0.0
+    rejection_rate: float = 0.0
+
+    avg_approval_time_hours: float = 0.0
+    avg_steps_to_approval: float = 0.0
+
+    by_workflow: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    by_approver: Dict[str, int] = field(default_factory=dict)
+
+
+class WorkflowAnalyticsService:
+    """Service d'analytics pour les workflows."""
+
+    def __init__(self, db: Session, tenant_id: UUID):
+        self.db = db
+        self.tenant_id = tenant_id
+
+    def get_analytics(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        workflow_name: Optional[str] = None,
+    ) -> ApprovalAnalytics:
+        """Calcule les statistiques d'approbation."""
+        from sqlalchemy import case, extract
+
+        query = self.db.query(WorkflowInstance).filter(
+            WorkflowInstance.tenant_id == self.tenant_id
+        )
+
+        if start_date:
+            query = query.filter(WorkflowInstance.initiated_at >= start_date)
+        if end_date:
+            query = query.filter(WorkflowInstance.initiated_at <= end_date)
+        if workflow_name:
+            query = query.filter(WorkflowInstance.workflow_name == workflow_name)
+
+        instances = query.all()
+
+        analytics = ApprovalAnalytics()
+        analytics.total_workflows = len(instances)
+
+        total_time_hours = 0.0
+        total_steps = 0
+        completed_count = 0
+
+        for inst in instances:
+            if inst.status == WorkflowStatus.APPROVED:
+                analytics.approved_count += 1
+                if inst.completed_at and inst.started_at:
+                    delta = (inst.completed_at - inst.started_at).total_seconds() / 3600
+                    total_time_hours += delta
+                    total_steps += inst.current_step + 1
+                    completed_count += 1
+            elif inst.status == WorkflowStatus.REJECTED:
+                analytics.rejected_count += 1
+            elif inst.status in [WorkflowStatus.PENDING, WorkflowStatus.IN_PROGRESS]:
+                analytics.pending_count += 1
+            elif inst.status == WorkflowStatus.EXPIRED:
+                analytics.expired_count += 1
+
+            # Stats par workflow
+            wf_name = inst.workflow_name
+            if wf_name not in analytics.by_workflow:
+                analytics.by_workflow[wf_name] = {"approved": 0, "rejected": 0, "pending": 0}
+            if inst.status == WorkflowStatus.APPROVED:
+                analytics.by_workflow[wf_name]["approved"] += 1
+            elif inst.status == WorkflowStatus.REJECTED:
+                analytics.by_workflow[wf_name]["rejected"] += 1
+            else:
+                analytics.by_workflow[wf_name]["pending"] += 1
+
+        # Calcul des taux
+        if analytics.total_workflows > 0:
+            analytics.approval_rate = analytics.approved_count / analytics.total_workflows * 100
+            analytics.rejection_rate = analytics.rejected_count / analytics.total_workflows * 100
+
+        if completed_count > 0:
+            analytics.avg_approval_time_hours = total_time_hours / completed_count
+            analytics.avg_steps_to_approval = total_steps / completed_count
+
+        # Stats par approbateur
+        steps = self.db.query(WorkflowStep).join(WorkflowInstance).filter(
+            WorkflowInstance.tenant_id == self.tenant_id,
+            WorkflowStep.approved_by.isnot(None),
+        ).all()
+
+        for step in steps:
+            approver_id = str(step.approved_by)
+            analytics.by_approver[approver_id] = analytics.by_approver.get(approver_id, 0) + 1
+
+        return analytics
+
+
+# =============================================================================
+# SERVICE ESCALADE AUTOMATIQUE
+# =============================================================================
+
+class EscalationService:
+    """Service de gestion des escalades automatiques."""
+
+    def __init__(self, db: Session, tenant_id: UUID):
+        self.db = db
+        self.tenant_id = tenant_id
+
+    def check_and_escalate(self) -> List[WorkflowStep]:
+        """Vérifie et escalade les étapes expirées."""
+        now = datetime.utcnow()
+
+        # Trouver les étapes en attente dépassées
+        overdue_steps = self.db.query(WorkflowStep).join(WorkflowInstance).filter(
+            WorkflowInstance.tenant_id == self.tenant_id,
+            WorkflowStep.status == WorkflowStatus.PENDING,
+            WorkflowStep.due_at < now,
+            WorkflowStep.escalated == False,
+        ).all()
+
+        escalated = []
+
+        for step in overdue_steps:
+            # Récupérer la définition du workflow
+            instance = step.workflow
+            definition = WorkflowEngine.PREDEFINED_WORKFLOWS.get(instance.workflow_name)
+
+            if not definition or step.step_number >= len(definition.steps):
+                continue
+
+            step_def = definition.steps[step.step_number]
+
+            if step_def.auto_escalate and step_def.escalate_to_role:
+                # Marquer comme escaladé
+                step.escalated = True
+                step.required_role = step_def.escalate_to_role
+                step.due_at = now + timedelta(hours=step_def.timeout_hours)
+
+                # Créer notification d'escalade
+                notif = WorkflowNotification(
+                    tenant_id=self.tenant_id,
+                    workflow_id=instance.id,
+                    step_id=step.id,
+                    notification_type=NotificationType.ESCALATED,
+                    recipient_id=step.assigned_to or instance.initiated_by,
+                    title=f"Workflow escaladé: {step.step_name}",
+                    message=f"L'étape '{step.step_name}' a été escaladée vers {step_def.escalate_to_role}",
+                    link=f"/workflows/{instance.id}",
+                )
+                self.db.add(notif)
+
+                escalated.append(step)
+                logger.warning(
+                    f"Workflow step escalated: {instance.id}/{step.step_number} -> {step_def.escalate_to_role}"
+                )
+
+        if escalated:
+            self.db.commit()
+
+        return escalated
+
+    def send_reminders(self, hours_before_due: int = 24) -> List[WorkflowNotification]:
+        """Envoie des rappels pour les étapes bientôt expirées."""
+        reminder_threshold = datetime.utcnow() + timedelta(hours=hours_before_due)
+
+        pending_steps = self.db.query(WorkflowStep).join(WorkflowInstance).filter(
+            WorkflowInstance.tenant_id == self.tenant_id,
+            WorkflowStep.status == WorkflowStatus.PENDING,
+            WorkflowStep.due_at <= reminder_threshold,
+            WorkflowStep.due_at > datetime.utcnow(),
+            WorkflowStep.reminder_sent == False,
+        ).all()
+
+        notifications = []
+
+        for step in pending_steps:
+            instance = step.workflow
+
+            notif = WorkflowNotification(
+                tenant_id=self.tenant_id,
+                workflow_id=instance.id,
+                step_id=step.id,
+                notification_type=NotificationType.REMINDER,
+                recipient_id=step.assigned_to or instance.initiated_by,
+                title=f"Rappel: Approbation en attente",
+                message=f"L'étape '{step.step_name}' expire bientôt ({step.due_at})",
+                link=f"/workflows/{instance.id}",
+            )
+            self.db.add(notif)
+            step.reminder_sent = True
+            notifications.append(notif)
+
+        if notifications:
+            self.db.commit()
+
+        return notifications
+
+
 # Enregistrer les workflows
 WorkflowEngine.register_workflow(JOURNAL_ENTRY_WORKFLOW)
 WorkflowEngine.register_workflow(PAYMENT_WORKFLOW)
 WorkflowEngine.register_workflow(PERIOD_CLOSE_WORKFLOW)
+WorkflowEngine.register_workflow(QUOTE_WORKFLOW)
+WorkflowEngine.register_workflow(INVOICE_WORKFLOW)
+WorkflowEngine.register_workflow(SALES_ORDER_WORKFLOW)
+WorkflowEngine.register_workflow(PURCHASE_REQUEST_WORKFLOW)
+WorkflowEngine.register_workflow(PURCHASE_ORDER_WORKFLOW)
+WorkflowEngine.register_workflow(SUPPLIER_INVOICE_WORKFLOW)

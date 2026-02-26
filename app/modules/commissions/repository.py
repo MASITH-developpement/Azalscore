@@ -4,6 +4,8 @@ Repository - Module Commissions (GAP-041)
 CRITIQUE: Toutes les requetes filtrees par tenant_id.
 Utilise _base_query() pour garantir l'isolation multi-tenant.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Any, List, Optional, Tuple

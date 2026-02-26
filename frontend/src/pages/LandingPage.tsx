@@ -349,13 +349,16 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
           <div className="landing-hero-image">
-            <img
-              src="/screenshots/mockup-dashboard.png"
-              alt="Interface AZALSCORE - Tableau de bord ERP avec CRM, Facturation et Gestion"
-              loading="eager"
-              width="800"
-              height="500"
-            />
+            <picture>
+              <source srcSet="/screenshots/mockup-dashboard.webp" type="image/webp" />
+              <img
+                src="/screenshots/mockup-dashboard.png"
+                alt="Interface AZALSCORE - Tableau de bord ERP avec CRM, Facturation et Gestion"
+                loading="eager"
+                width="800"
+                height="500"
+              />
+            </picture>
           </div>
         </div>
       </section>

@@ -1,0 +1,161 @@
+{
+  "module_id": "azalscore.hr.payroll_processing",
+  "version": "1.0.0",
+  "description": "Workflow de traitement de la paie mensuelle",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "get_active_employees",
+      "use": "azalscore.calculations.hr.get_payroll_employees@1.0.0",
+      "inputs": {
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}",
+        "include_contractors": "{{context.include_contractors}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "calculate_working_days",
+      "use": "azalscore.calculations.hr.calculate_working_days@1.0.0",
+      "inputs": {
+        "employees": "{{get_active_employees.employees}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}",
+        "country": "FR"
+      },
+      "retry": 1,
+      "timeout": 15000
+    },
+    {
+      "id": "get_time_entries",
+      "use": "azalscore.calculations.hr.get_time_entries@1.0.0",
+      "inputs": {
+        "employee_ids": "{{get_active_employees.employee_ids}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "calculate_overtime",
+      "use": "azalscore.calculations.hr.calculate_overtime@1.0.0",
+      "inputs": {
+        "time_entries": "{{get_time_entries.entries}}",
+        "overtime_rules": "{{context.overtime_rules}}"
+      },
+      "retry": 1,
+      "timeout": 15000
+    },
+    {
+      "id": "get_absences",
+      "use": "azalscore.calculations.hr.get_period_absences@1.0.0",
+      "inputs": {
+        "employee_ids": "{{get_active_employees.employee_ids}}",
+        "period_start": "{{context.period_start}}",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_gross_salaries",
+      "use": "azalscore.calculations.hr.calculate_gross_salary@1.0.0",
+      "inputs": {
+        "employees": "{{get_active_employees.employees}}",
+        "working_days": "{{calculate_working_days}}",
+        "overtime": "{{calculate_overtime}}",
+        "absences": "{{get_absences.absences}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "calculate_bonuses",
+      "use": "azalscore.calculations.hr.calculate_bonuses@1.0.0",
+      "inputs": {
+        "employees": "{{get_active_employees.employees}}",
+        "period": "{{context.period}}",
+        "bonus_rules": "{{context.bonus_rules}}"
+      },
+      "retry": 1,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_social_charges",
+      "use": "azalscore.calculations.hr.calculate_social_charges@1.0.0",
+      "inputs": {
+        "gross_salaries": "{{calculate_gross_salaries}}",
+        "bonuses": "{{calculate_bonuses}}",
+        "charge_rates": "{{context.charge_rates}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "calculate_net_salaries",
+      "use": "azalscore.calculations.hr.calculate_gross_to_net@1.0.0",
+      "inputs": {
+        "gross_salaries": "{{calculate_gross_salaries}}",
+        "bonuses": "{{calculate_bonuses}}",
+        "social_charges": "{{calculate_social_charges}}",
+        "tax_at_source": "{{context.pas_rates}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "generate_payslips",
+      "use": "azalscore.generators.documents.generate_payslip_pdf@1.0.0",
+      "inputs": {
+        "payroll_data": "{{calculate_net_salaries}}",
+        "period": "{{context.period}}",
+        "company_info": "{{context.company_info}}"
+      },
+      "retry": 2,
+      "timeout": 60000
+    },
+    {
+      "id": "create_accounting_entries",
+      "use": "azalscore.generators.accounting.create_payroll_entries@1.0.0",
+      "inputs": {
+        "payroll_data": "{{calculate_net_salaries}}",
+        "journal_code": "PA",
+        "period_end": "{{context.period_end}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "schedule_payments",
+      "use": "azalscore.generators.payments.schedule_salary_payments@1.0.0",
+      "inputs": {
+        "payroll_data": "{{calculate_net_salaries}}",
+        "payment_date": "{{context.payment_date}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "distribute_payslips",
+      "use": "azalscore.generators.communications.send_payslips@1.0.0",
+      "inputs": {
+        "payslips": "{{generate_payslips.payslips}}",
+        "delivery_method": "{{context.delivery_method}}"
+      },
+      "retry": 3,
+      "timeout": 60000
+    }
+  ],
+  "outputs": {
+    "employees_processed": "{{get_active_employees.count}}",
+    "total_gross": "{{calculate_gross_salaries.total}}",
+    "total_charges": "{{calculate_social_charges.total}}",
+    "total_net": "{{calculate_net_salaries.total}}",
+    "payslips_generated": "{{generate_payslips.count}}",
+    "accounting_entry_id": "{{create_accounting_entries.entry_id}}",
+    "payments_scheduled": "{{schedule_payments.payment_ids}}"
+  }
+}

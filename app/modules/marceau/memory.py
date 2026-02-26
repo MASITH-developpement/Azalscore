@@ -5,6 +5,8 @@ AZALS MODULE - Marceau Memory Service
 Service de memoire contextuelle avec ChromaDB pour RAG.
 Chaque tenant a sa propre collection isolee.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

@@ -1,0 +1,116 @@
+{
+  "module_id": "azalscore.projects.project_initiation",
+  "version": "1.0.0",
+  "description": "Workflow d'initialisation de projet avec budget et equipe",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_project_request",
+      "use": "azalscore.validators.projects.validate_project_request@1.0.0",
+      "inputs": {
+        "project_data": "{{context.project_data}}",
+        "required_fields": ["name", "client_id", "start_date", "budget"]
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "generate_project_code",
+      "use": "azalscore.generators.sequences.generate_project_code@1.0.0",
+      "inputs": {
+        "client_code": "{{context.client_code}}",
+        "project_type": "{{context.project_type}}",
+        "year": "{{context.start_year}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "create_project_record",
+      "use": "azalscore.transformers.projects.create_project@1.0.0",
+      "inputs": {
+        "project_code": "{{generate_project_code.code}}",
+        "project_data": "{{context.project_data}}",
+        "project_manager_id": "{{context.project_manager_id}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_budget_structure",
+      "use": "azalscore.generators.projects.create_project_budget@1.0.0",
+      "inputs": {
+        "project_id": "{{create_project_record.project_id}}",
+        "total_budget": "{{context.project_data.budget}}",
+        "budget_categories": "{{context.budget_categories}}",
+        "currency": "{{context.currency}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_phase_structure",
+      "use": "azalscore.generators.projects.create_project_phases@1.0.0",
+      "inputs": {
+        "project_id": "{{create_project_record.project_id}}",
+        "phases": "{{context.phases}}",
+        "start_date": "{{context.project_data.start_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "assign_team",
+      "use": "azalscore.transformers.projects.assign_project_team@1.0.0",
+      "inputs": {
+        "project_id": "{{create_project_record.project_id}}",
+        "team_members": "{{context.team_members}}",
+        "roles": "{{context.team_roles}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "create_project_folder",
+      "use": "azalscore.generators.documents.create_project_folder_structure@1.0.0",
+      "inputs": {
+        "project_id": "{{create_project_record.project_id}}",
+        "project_code": "{{generate_project_code.code}}",
+        "folder_template": "{{context.folder_template}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "create_accounting_codes",
+      "use": "azalscore.generators.accounting.create_project_cost_center@1.0.0",
+      "inputs": {
+        "project_id": "{{create_project_record.project_id}}",
+        "project_code": "{{generate_project_code.code}}",
+        "budget": "{{context.project_data.budget}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "notify_stakeholders",
+      "use": "azalscore.generators.communications.notify_project_launch@1.0.0",
+      "inputs": {
+        "project": "{{create_project_record}}",
+        "team_members": "{{assign_team.members}}",
+        "client_email": "{{context.client_email}}"
+      },
+      "retry": 3,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "project_id": "{{create_project_record.project_id}}",
+    "project_code": "{{generate_project_code.code}}",
+    "budget_id": "{{create_budget_structure.budget_id}}",
+    "team_assigned": "{{assign_team.member_count}}",
+    "phases_created": "{{create_phase_structure.phase_count}}",
+    "cost_center": "{{create_accounting_codes.cost_center}}"
+  }
+}

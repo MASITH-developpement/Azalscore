@@ -3,6 +3,8 @@ AZALS - PACK PAYS FRANCE - Service
 ====================================
 Logique métier pour la localisation française.
 """
+from __future__ import annotations
+
 
 import uuid
 from datetime import date, datetime, timedelta

@@ -8,6 +8,8 @@ Délégation → Réponse → TTS → Restitution
 
 Théo ne sait rien. Théo sait à qui demander.
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass

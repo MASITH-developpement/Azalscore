@@ -11,6 +11,8 @@ Actions:
 - follow_up: Relance automatique devis
 - sync_crm: Synchronisation HubSpot
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

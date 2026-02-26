@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Coupon Service
 
 Gestion des codes promo.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional

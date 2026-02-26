@@ -22,6 +22,8 @@ ENDPOINTS MIGRÉS (30):
 - Provisioning (2): provision + provision_masith
 - Platform (1): stats
 """
+from __future__ import annotations
+
 
 from datetime import datetime, timedelta
 

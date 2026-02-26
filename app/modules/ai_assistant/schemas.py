@@ -3,6 +3,8 @@ AZALS - MODULE IA TRANSVERSE - Schémas Pydantic
 ================================================
 Schémas pour validation et sérialisation.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Any

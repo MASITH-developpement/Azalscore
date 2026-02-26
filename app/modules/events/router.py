@@ -5,6 +5,8 @@ AZALS MODULE EVENTS - Router API
 API REST pour la gestion des evenements.
 Tous les endpoints sont securises et isoles par tenant.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from typing import Optional

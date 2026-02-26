@@ -10,6 +10,8 @@ Ce module fournit des adaptateurs pour unifier ces deux patterns.
 
 Conformité : AZA-NF-004
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Set

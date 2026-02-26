@@ -4,6 +4,8 @@ AZALS - Module Backup - Service
 Service de sauvegarde chiffrée AES-256 par tenant.
 """
 
+from __future__ import annotations
+
 import base64
 import contextlib
 import gzip

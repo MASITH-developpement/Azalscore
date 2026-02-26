@@ -1,6 +1,8 @@
 """
 Schémas Pydantic - Module Integrations (GAP-086)
 """
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum

@@ -4,6 +4,8 @@ AZALS MODULE M7 - Control Template Service
 
 Gestion des templates de contrôle qualité.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Optional, Tuple, List

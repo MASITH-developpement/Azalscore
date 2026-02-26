@@ -5,6 +5,8 @@ AZALS MODULE M1 - Service Commercial
 Service pour le CRM et la gestion commerciale.
 """
 
+from __future__ import annotations
+
 import csv
 import io
 import logging

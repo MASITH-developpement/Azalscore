@@ -1,0 +1,97 @@
+{
+  "module_id": "azalscore.projects.task_assignment",
+  "version": "1.0.0",
+  "description": "Workflow d'assignation de taches avec verification de disponibilite",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_task",
+      "use": "azalscore.validators.projects.validate_task_data@1.0.0",
+      "inputs": {
+        "task_data": "{{context.task_data}}",
+        "project_id": "{{context.project_id}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "check_dependencies",
+      "use": "azalscore.validators.projects.check_task_dependencies@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "predecessor_ids": "{{context.task_data.predecessors}}",
+        "planned_start": "{{context.task_data.planned_start}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_resource_availability",
+      "use": "azalscore.calculations.projects.check_resource_availability@1.0.0",
+      "inputs": {
+        "resource_id": "{{context.assignee_id}}",
+        "start_date": "{{context.task_data.planned_start}}",
+        "end_date": "{{context.task_data.planned_end}}",
+        "hours_required": "{{context.task_data.estimated_hours}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "calculate_task_schedule",
+      "use": "azalscore.calculations.projects.calculate_task_hours@1.0.0",
+      "inputs": {
+        "start_date": "{{context.task_data.planned_start}}",
+        "end_date": "{{context.task_data.planned_end}}",
+        "resource_calendar": "{{check_resource_availability.calendar}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "create_task",
+      "use": "azalscore.transformers.projects.create_task@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "task_data": "{{context.task_data}}",
+        "assignee_id": "{{context.assignee_id}}",
+        "scheduled_hours": "{{calculate_task_schedule.total_hours}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "update_resource_allocation",
+      "use": "azalscore.transformers.projects.allocate_resource@1.0.0",
+      "inputs": {
+        "resource_id": "{{context.assignee_id}}",
+        "task_id": "{{create_task.task_id}}",
+        "hours": "{{context.task_data.estimated_hours}}",
+        "start_date": "{{context.task_data.planned_start}}",
+        "end_date": "{{context.task_data.planned_end}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "notify_assignee",
+      "use": "azalscore.generators.communications.notify_task_assignment@1.0.0",
+      "inputs": {
+        "assignee_email": "{{context.assignee_email}}",
+        "task": "{{create_task}}",
+        "project_name": "{{validate_task.project_name}}",
+        "due_date": "{{context.task_data.planned_end}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "task_id": "{{create_task.task_id}}",
+    "assignee_id": "{{context.assignee_id}}",
+    "scheduled_hours": "{{calculate_task_schedule.total_hours}}",
+    "resource_available": "{{check_resource_availability.available}}",
+    "dependencies_met": "{{check_dependencies.all_met}}"
+  }
+}

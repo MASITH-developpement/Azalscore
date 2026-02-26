@@ -19,6 +19,8 @@ Endpoints:
 Auteur: AZALSCORE Team
 Version: 1.0.0
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 from uuid import UUID

@@ -11,6 +11,8 @@ Usage:
     llm = get_llm_client()
     response = await llm.generate("Ton prompt ici")
 """
+from __future__ import annotations
+
 
 import json
 import logging

@@ -7,6 +7,8 @@ Compatible v1, v2, et v3 via app.azals.
 
 Conformite : AZA-NF-006
 """
+from __future__ import annotations
+
 
 from datetime import date
 from datetime import datetime as dt

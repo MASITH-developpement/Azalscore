@@ -11,6 +11,8 @@ Fonctionnalités:
 - Preuves de livraison
 - Retours et avoirs
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

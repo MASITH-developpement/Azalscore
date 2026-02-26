@@ -2,6 +2,8 @@
 Service d'Import/Export de Données - AZALSCORE
 Import et export de données multi-format avec validation et transformation
 """
+from __future__ import annotations
+
 
 import csv
 import json

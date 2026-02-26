@@ -1,0 +1,97 @@
+{
+  "module_id": "azalscore.inventory.stock_transfer",
+  "version": "1.0.0",
+  "description": "Workflow de transfert de stock entre entrepots ou emplacements",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_transfer_request",
+      "use": "azalscore.validators.inventory.validate_transfer_request@1.0.0",
+      "inputs": {
+        "transfer_id": "{{context.transfer_id}}",
+        "source_warehouse": "{{context.source_warehouse_id}}",
+        "destination_warehouse": "{{context.destination_warehouse_id}}",
+        "items": "{{context.items}}"
+      },
+      "retry": 1,
+      "timeout": 3000
+    },
+    {
+      "id": "check_source_availability",
+      "use": "azalscore.validators.inventory.validate_stock_availability@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.source_warehouse_id}}",
+        "items": "{{context.items}}",
+        "check_reservations": true
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "check_destination_capacity",
+      "use": "azalscore.validators.inventory.validate_warehouse_capacity@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.destination_warehouse_id}}",
+        "items": "{{context.items}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_outbound_movement",
+      "use": "azalscore.generators.inventory.create_transfer_out@1.0.0",
+      "inputs": {
+        "transfer_id": "{{context.transfer_id}}",
+        "warehouse_id": "{{context.source_warehouse_id}}",
+        "items": "{{context.items}}",
+        "movement_date": "{{context.transfer_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "update_in_transit",
+      "use": "azalscore.transformers.inventory.mark_in_transit@1.0.0",
+      "inputs": {
+        "transfer_id": "{{context.transfer_id}}",
+        "items": "{{context.items}}",
+        "expected_arrival": "{{context.expected_arrival}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_inbound_movement",
+      "condition": "{{context.immediate_receipt}} == true",
+      "use": "azalscore.generators.inventory.create_transfer_in@1.0.0",
+      "inputs": {
+        "transfer_id": "{{context.transfer_id}}",
+        "warehouse_id": "{{context.destination_warehouse_id}}",
+        "items": "{{context.items}}",
+        "movement_date": "{{context.transfer_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "notify_destination",
+      "use": "azalscore.generators.communications.notify_transfer@1.0.0",
+      "inputs": {
+        "destination_warehouse": "{{context.destination_warehouse_id}}",
+        "transfer_id": "{{context.transfer_id}}",
+        "items": "{{context.items}}",
+        "expected_arrival": "{{context.expected_arrival}}"
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "transfer_id": "{{context.transfer_id}}",
+    "outbound_movement_id": "{{create_outbound_movement.movement_id}}",
+    "inbound_movement_id": "{{create_inbound_movement.movement_id}}",
+    "status": "{{update_in_transit.status}}",
+    "items_transferred": "{{create_outbound_movement.item_count}}"
+  }
+}

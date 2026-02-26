@@ -1,0 +1,67 @@
+{
+  "module_id": "azalscore.accounting.generate_reports",
+  "version": "1.0.0",
+  "description": "Workflow de generation des etats financiers",
+  "steps": [
+    {
+      "id": "validate_period",
+      "use": "azalscore.validators.finance.validate_report_period@1.0.0",
+      "inputs": {
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "calculate_balances",
+      "use": "azalscore.calculations.finance.calculate_period_balances@1.0.0",
+      "inputs": {
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "generate_balance_sheet",
+      "use": "azalscore.generators.reports.generate_balance_sheet@1.0.0",
+      "inputs": {
+        "balances": "{{calculate_balances.data}}",
+        "as_of_date": "{{context.end_date}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "generate_income_statement",
+      "use": "azalscore.generators.reports.generate_income_statement@1.0.0",
+      "inputs": {
+        "balances": "{{calculate_balances.data}}",
+        "start_date": "{{context.start_date}}",
+        "end_date": "{{context.end_date}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "generate_pdf",
+      "use": "azalscore.generators.documents.generate_report_pdf@1.0.0",
+      "inputs": {
+        "report_type": "{{context.report_type}}",
+        "data": {
+          "balance_sheet": "{{generate_balance_sheet.data}}",
+          "income_statement": "{{generate_income_statement.data}}"
+        }
+      },
+      "condition": "{{context.generate_pdf}} == true",
+      "retry": 2,
+      "timeout": 60000
+    }
+  ],
+  "outputs": {
+    "balance_sheet": "{{generate_balance_sheet.data}}",
+    "income_statement": "{{generate_income_statement.data}}",
+    "pdf_url": "{{generate_pdf.url}}"
+  }
+}

@@ -4,6 +4,8 @@ AZALS MODULE - CURRENCY: Schemas Pydantic
 
 Schemas de validation pour la gestion multi-devises.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date
 from decimal import Decimal

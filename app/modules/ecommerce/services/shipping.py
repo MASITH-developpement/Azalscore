@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Shipping Service
 
 Gestion des méthodes de livraison et expéditions.
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

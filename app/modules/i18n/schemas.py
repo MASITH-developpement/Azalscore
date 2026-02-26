@@ -4,6 +4,8 @@ AZALSCORE Module I18N - Schemas Pydantic
 
 Schemas de validation pour l'API REST.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

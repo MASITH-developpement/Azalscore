@@ -4,6 +4,8 @@ AZALS - Endpoints Items Multi-Tenant ÉLITE
 CRUD sécurisé avec isolation stricte par tenant_id.
 Pagination standardisée pour performance.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, status

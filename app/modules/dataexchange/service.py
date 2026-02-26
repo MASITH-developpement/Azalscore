@@ -11,6 +11,8 @@ Service Import/Export de Données - GAP-048
 - Historique et audit
 - Intégrations tierces
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, date

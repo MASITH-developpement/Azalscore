@@ -10,6 +10,8 @@ est traduite vers Théo.
 Un seul acteur réel: Théo.
 Les compagnons ne font que traduire et incarner.
 """
+from __future__ import annotations
+
 
 from typing import Optional, Tuple
 import re

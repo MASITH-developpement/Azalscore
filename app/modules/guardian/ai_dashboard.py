@@ -8,6 +8,8 @@ Mode C: Calcul d'indicateurs objectifs
 - Agrégations pour visualisation
 - Pas d'action, pas de décision
 """
+from __future__ import annotations
+
 
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional

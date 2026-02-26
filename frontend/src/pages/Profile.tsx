@@ -25,7 +25,7 @@ const ProfilePage: React.FC = () => {
             </div>
             <div className="azals-profile__field">
               <span className="azals-profile__label">Rôles</span>
-              <span>{user?.roles.join(', ')}</span>
+              <span>{user?.roles?.join(', ') || 'Aucun rôle'}</span>
             </div>
             <div className="azals-profile__field">
               <span className="azals-profile__label">Dernière connexion</span>

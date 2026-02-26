@@ -3,6 +3,8 @@ AZALS - Module Marketplace - Router
 ===================================
 Endpoints API pour le site marchand.
 """
+from __future__ import annotations
+
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request

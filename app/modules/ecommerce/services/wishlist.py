@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Wishlist Service
 
 Gestion des listes de souhaits.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import List, Optional

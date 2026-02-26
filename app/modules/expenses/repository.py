@@ -3,6 +3,8 @@ Repository - Module Expenses (GAP-084)
 
 CRITIQUE: Toutes les requêtes filtrées par tenant_id.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Any, List, Optional, Tuple

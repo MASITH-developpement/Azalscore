@@ -7,6 +7,8 @@ Orchestre les repositories, providers et logique metier.
 
 Architecture multi-tenant avec audit complet.
 """
+from __future__ import annotations
+
 
 import hashlib
 import logging

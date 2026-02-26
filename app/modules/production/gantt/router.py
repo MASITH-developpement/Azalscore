@@ -34,6 +34,8 @@ Endpoints Timeline:
 - GET  /v3/production/gantt/critical-path - Chemin critique
 - GET  /v3/production/gantt/stats - Statistiques
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime

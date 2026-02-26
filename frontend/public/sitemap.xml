@@ -10,13 +10,13 @@
   <!-- =================================================================
        AZALSCORE ERP - SITEMAP COMPLET
        Site: https://azalscore.com
-       Derniere mise a jour: 2026-02-17
+       Derniere mise a jour: 2026-02-25
        ================================================================= -->
 
   <!-- PAGE D'ACCUEIL - Priorite maximale -->
   <url>
     <loc>https://azalscore.com/</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -33,7 +33,7 @@
   <!-- ESSAI GRATUIT - Page de conversion critique -->
   <url>
     <loc>https://azalscore.com/essai-gratuit</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
@@ -41,7 +41,7 @@
   <!-- FONCTIONNALITES - Pages detaillees par module -->
   <url>
     <loc>https://azalscore.com/features</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <image:image>
@@ -53,7 +53,7 @@
   <!-- MODULES SPECIFIQUES -->
   <url>
     <loc>https://azalscore.com/features/crm</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -64,7 +64,7 @@
 
   <url>
     <loc>https://azalscore.com/features/facturation</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -75,7 +75,7 @@
 
   <url>
     <loc>https://azalscore.com/features/comptabilite</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -86,7 +86,7 @@
 
   <url>
     <loc>https://azalscore.com/features/inventaire</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -97,7 +97,7 @@
 
   <url>
     <loc>https://azalscore.com/features/rh</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -108,7 +108,7 @@
 
   <url>
     <loc>https://azalscore.com/features/tresorerie</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -119,7 +119,7 @@
 
   <url>
     <loc>https://azalscore.com/features/pos</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -130,15 +130,19 @@
 
   <url>
     <loc>https://azalscore.com/features/interventions</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://azalscore.com/screenshots/real-interventions.png</image:loc>
+      <image:title>Module Interventions Azalscore - Gestion terrain</image:title>
+    </image:image>
   </url>
 
   <!-- TARIFS -->
   <url>
     <loc>https://azalscore.com/pricing</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -146,7 +150,7 @@
   <!-- DEMO -->
   <url>
     <loc>https://azalscore.com/demo</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
@@ -154,7 +158,7 @@
   <!-- CONTACT -->
   <url>
     <loc>https://azalscore.com/contact</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -162,7 +166,7 @@
   <!-- A PROPOS -->
   <url>
     <loc>https://azalscore.com/about</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -170,21 +174,21 @@
   <!-- DOCUMENTATION -->
   <url>
     <loc>https://azalscore.com/docs</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/docs/api</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/docs/guides</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -192,115 +196,139 @@
   <!-- BLOG / ARTICLES (important pour SEO) -->
   <url>
     <loc>https://azalscore.com/blog</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/blog/facturation-electronique-2026</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/blog/erp-pme-guide-complet</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/blog/conformite-rgpd-erp</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/blog/gestion-tresorerie-pme</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/blog/crm-relation-client</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/blog/gestion-stock-optimisation</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <!-- COMPARATIFS -->
   <url>
-    <loc>https://azalscore.com/comparatif/azalscore-vs-odoo</loc>
-    <lastmod>2026-02-17</lastmod>
+    <loc>https://azalscore.com/comparatif/odoo</loc>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://azalscore.com/screenshots/comparatif-odoo.png</image:loc>
+      <image:title>Comparatif Azalscore vs Odoo - ERP francais</image:title>
+    </image:image>
   </url>
 
   <url>
-    <loc>https://azalscore.com/comparatif/azalscore-vs-sage</loc>
-    <lastmod>2026-02-17</lastmod>
+    <loc>https://azalscore.com/comparatif/sage</loc>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://azalscore.com/screenshots/comparatif-sage.png</image:loc>
+      <image:title>Comparatif Azalscore vs Sage - Logiciel gestion PME</image:title>
+    </image:image>
   </url>
 
   <url>
-    <loc>https://azalscore.com/comparatif/azalscore-vs-ebp</loc>
-    <lastmod>2026-02-17</lastmod>
+    <loc>https://azalscore.com/comparatif/ebp</loc>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://azalscore.com/screenshots/comparatif-ebp.png</image:loc>
+      <image:title>Comparatif Azalscore vs EBP - Solution ERP</image:title>
+    </image:image>
   </url>
 
   <!-- CAS D'USAGE PAR SECTEUR -->
   <url>
     <loc>https://azalscore.com/secteurs/commerce</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://azalscore.com/screenshots/real-pos.png</image:loc>
+      <image:title>ERP Commerce et Retail - Azalscore</image:title>
+    </image:image>
   </url>
 
   <url>
     <loc>https://azalscore.com/secteurs/services</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://azalscore.com/screenshots/real-interventions.png</image:loc>
+      <image:title>ERP Services et Interventions - Azalscore</image:title>
+    </image:image>
   </url>
 
   <url>
     <loc>https://azalscore.com/secteurs/industrie</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://azalscore.com/screenshots/real-production.png</image:loc>
+      <image:title>ERP Industrie et Production - Azalscore</image:title>
+    </image:image>
   </url>
 
   <!-- PAGES LEGALES -->
   <url>
     <loc>https://azalscore.com/mentions-legales</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/confidentialite</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://azalscore.com/cgv</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -308,7 +336,7 @@
   <!-- CONNEXION -->
   <url>
     <loc>https://azalscore.com/login</loc>
-    <lastmod>2026-02-17</lastmod>
+    <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

@@ -4,6 +4,8 @@ AZALS MODULE EVENTS - Exceptions
 
 Exceptions personnalisees pour le module Events.
 """
+from __future__ import annotations
+
 
 from typing import Any, Optional
 

@@ -4,6 +4,8 @@ AZALS MODULE M2 - Service Finance
 
 Service métier pour la comptabilité et la trésorerie.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime

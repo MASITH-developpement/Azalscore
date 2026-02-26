@@ -16,6 +16,8 @@ Documentation: https://docs.swan.io/
 Multi-tenant: OUI - Chaque requête filtrée par tenant_id
 Sécurité: OAuth2 + API Key + Webhook signature HMAC-SHA256
 """
+from __future__ import annotations
+
 
 import hashlib
 import hmac

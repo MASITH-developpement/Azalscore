@@ -74,7 +74,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await api.get<{ modules: ModuleInfo[] }>('/modules');
-      set({ modules: response.data.modules, isLoading: false });
+      set({ modules: response.data?.modules ?? [], isLoading: false });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load modules',
@@ -161,7 +161,7 @@ export const useNotificationStore = create<NotificationState>((set, _get) => ({
     set({ isLoading: true });
     try {
       const response = await api.get<{ notifications: Notification[] }>('/notifications');
-      const notifications = response.data.notifications;
+      const notifications = response.data?.notifications ?? [];
       set({
         notifications,
         unreadCount: notifications.filter((n) => !n.read).length,

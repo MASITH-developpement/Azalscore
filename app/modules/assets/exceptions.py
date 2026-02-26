@@ -4,6 +4,8 @@ AZALS MODULE ASSETS - Exceptions
 
 Exceptions personnalisees pour le module de gestion des immobilisations.
 """
+from __future__ import annotations
+
 
 from typing import Any
 

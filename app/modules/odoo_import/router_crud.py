@@ -4,6 +4,8 @@ AZALS - Odoo Import Router (CRUDRouter v3)
 
 Router minimaliste utilisant CRUDRouter.
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 from uuid import UUID

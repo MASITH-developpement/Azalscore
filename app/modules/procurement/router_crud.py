@@ -26,6 +26,8 @@ ENDPOINTS (38 total):
 - Evaluations (1): create
 - Dashboard (1)
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

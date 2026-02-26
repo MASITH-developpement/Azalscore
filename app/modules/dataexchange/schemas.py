@@ -3,6 +3,8 @@ AZALS - Module DataExchange - Schemas Pydantic
 ===============================================
 Schemas de validation pour Import/Export de donnees.
 """
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum

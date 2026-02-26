@@ -3,6 +3,8 @@ Fixtures pour les tests audit v2
 
 Hérite des fixtures globales de app/conftest.py.
 """
+from __future__ import annotations
+
 
 import pytest
 from datetime import datetime, timedelta, date

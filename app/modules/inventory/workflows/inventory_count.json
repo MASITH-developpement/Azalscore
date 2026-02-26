@@ -1,0 +1,131 @@
+{
+  "module_id": "azalscore.inventory.inventory_count",
+  "version": "1.0.0",
+  "description": "Workflow d'inventaire physique avec comptage et reconciliation",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "initialize_count",
+      "use": "azalscore.transformers.inventory.initialize_inventory_count@1.0.0",
+      "inputs": {
+        "count_id": "{{context.count_id}}",
+        "warehouse_id": "{{context.warehouse_id}}",
+        "count_type": "{{context.count_type}}",
+        "locations": "{{context.locations}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "freeze_stock",
+      "condition": "{{context.freeze_stock}} == true",
+      "use": "azalscore.transformers.inventory.freeze_stock_movements@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "locations": "{{context.locations}}",
+        "freeze_until": "{{context.expected_end}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "get_theoretical_stock",
+      "use": "azalscore.calculations.inventory.get_theoretical_stock@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "locations": "{{context.locations}}",
+        "as_of_date": "{{context.count_date}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "generate_count_sheets",
+      "use": "azalscore.generators.documents.generate_count_sheets@1.0.0",
+      "inputs": {
+        "count_id": "{{context.count_id}}",
+        "theoretical_stock": "{{get_theoretical_stock.items}}",
+        "locations": "{{context.locations}}",
+        "blind_count": "{{context.blind_count}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "process_count_results",
+      "use": "azalscore.transformers.inventory.process_count_results@1.0.0",
+      "inputs": {
+        "count_id": "{{context.count_id}}",
+        "counted_items": "{{context.counted_items}}"
+      },
+      "retry": 2,
+      "timeout": 20000
+    },
+    {
+      "id": "calculate_variances",
+      "use": "azalscore.calculations.inventory.calculate_inventory_variance@1.0.0",
+      "inputs": {
+        "theoretical": "{{get_theoretical_stock.items}}",
+        "counted": "{{process_count_results.items}}"
+      },
+      "retry": 1,
+      "timeout": 10000
+    },
+    {
+      "id": "recount_variances",
+      "condition": "{{calculate_variances.has_significant_variance}} == true && {{context.allow_recount}} == true",
+      "use": "azalscore.transformers.inventory.flag_for_recount@1.0.0",
+      "inputs": {
+        "count_id": "{{context.count_id}}",
+        "variance_items": "{{calculate_variances.significant_items}}"
+      },
+      "retry": 1,
+      "timeout": 5000
+    },
+    {
+      "id": "create_adjustments",
+      "condition": "{{context.auto_adjust}} == true",
+      "use": "azalscore.generators.inventory.create_count_adjustments@1.0.0",
+      "inputs": {
+        "count_id": "{{context.count_id}}",
+        "variances": "{{calculate_variances.items}}",
+        "reason_code": "INV_COUNT"
+      },
+      "retry": 2,
+      "timeout": 20000
+    },
+    {
+      "id": "unfreeze_stock",
+      "condition": "{{context.freeze_stock}} == true",
+      "use": "azalscore.transformers.inventory.unfreeze_stock@1.0.0",
+      "inputs": {
+        "warehouse_id": "{{context.warehouse_id}}",
+        "locations": "{{context.locations}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "generate_count_report",
+      "use": "azalscore.generators.documents.generate_inventory_count_report@1.0.0",
+      "inputs": {
+        "count_id": "{{context.count_id}}",
+        "theoretical": "{{get_theoretical_stock}}",
+        "counted": "{{process_count_results}}",
+        "variances": "{{calculate_variances}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    }
+  ],
+  "outputs": {
+    "count_id": "{{context.count_id}}",
+    "items_counted": "{{process_count_results.count}}",
+    "total_variance_qty": "{{calculate_variances.total_qty_variance}}",
+    "total_variance_value": "{{calculate_variances.total_value_variance}}",
+    "accuracy_rate": "{{calculate_variances.accuracy_rate}}",
+    "adjustments_created": "{{create_adjustments.count}}",
+    "report_url": "{{generate_count_report.url}}"
+  }
+}

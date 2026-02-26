@@ -14,6 +14,8 @@ Endpoints:
 - GET  /v3/finance/currency/currency/{code} - Infos d'une devise
 - GET  /v3/finance/currency/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date

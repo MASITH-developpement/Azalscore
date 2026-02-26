@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Base API Client
 ================================================
 Classe de base pour tous les clients API marketing
 """
+from __future__ import annotations
+
 
 import logging
 from abc import ABC, abstractmethod

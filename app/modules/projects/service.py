@@ -4,6 +4,8 @@ AZALS MODULE M9 - Service Projets
 
 Logique métier pour la gestion de projets.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime, timedelta

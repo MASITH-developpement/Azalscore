@@ -150,7 +150,7 @@ const usePreviewSequence = (
         if (config.separator) params.append('separator', config.separator);
         const queryString = params.toString();
         const res = await api.get<PreviewResponse>(`/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
-        return unwrapApiResponse(res);
+        return unwrapApiResponse(res) ?? null;
       } catch {
         return null;
       }

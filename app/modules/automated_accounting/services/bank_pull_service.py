@@ -10,6 +10,8 @@ Déclencheurs de synchronisation:
 - Avant génération d'un rapport
 - À la demande explicite de l'utilisateur
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

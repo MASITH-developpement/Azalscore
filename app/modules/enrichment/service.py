@@ -4,6 +4,8 @@ AZALS MODULE - Auto-Enrichment - Service
 
 Service principal d'orchestration des enrichissements.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

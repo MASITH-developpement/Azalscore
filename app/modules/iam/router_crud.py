@@ -11,6 +11,8 @@ ENDPOINTS (35 total):
 - Endpoints publics (3): login, refresh, accept_invitation
 - Endpoints proteges (32): users, roles, permissions, groups, MFA, invitations, sessions, password policy
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import List, Optional

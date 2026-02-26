@@ -8,6 +8,8 @@ Module de sous-programmes réutilisables par tous les autres modules.
 Frontend: /v2/contacts/*
 Backend: Module Contacts Unifié
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 from uuid import UUID

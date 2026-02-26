@@ -4,6 +4,8 @@ AZALS MODULE T0 - Service IAM
 
 Logique métier pour la gestion des identités et accès.
 """
+from __future__ import annotations
+
 
 import json
 import logging

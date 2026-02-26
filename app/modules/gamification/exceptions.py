@@ -4,6 +4,8 @@ AZALS MODULE GAMIFICATION - Exceptions
 
 Exceptions specifiques au module de gamification.
 """
+from __future__ import annotations
+
 
 from typing import Any
 

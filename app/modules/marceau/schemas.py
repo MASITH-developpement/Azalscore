@@ -4,6 +4,8 @@ AZALS MODULE - Marceau Schemas
 
 Schemas Pydantic pour validation des donnees Marceau.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Any

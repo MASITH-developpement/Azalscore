@@ -882,7 +882,7 @@ const MenuItemComponent: React.FC<MenuItemComponentProps> = ({
   // Auto-expand si un enfant est actif
   const isChildActive = useMemo(() => {
     if (!item.children) return false;
-    return item.children.some((child) => location.pathname.startsWith(child.path || ''));
+    return item.children.some((child: MenuItem) => location.pathname.startsWith(child.path || ''));
   }, [item.children, location.pathname]);
 
   React.useEffect(() => {
@@ -921,7 +921,7 @@ const MenuItemComponent: React.FC<MenuItemComponentProps> = ({
 
         {isExpanded && (
           <div className="azals-menu-submenu">
-            {item.children?.map((child) => (
+            {item.children?.map((child: MenuItem) => (
               <CapabilityGuard key={child.id} capability={child.capability}>
                 <MenuItemComponent
                   item={child}
@@ -983,7 +983,7 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
   // Filtrer les items selon les capacités
   // CRITICAL: Utiliser `capabilities` directement pour que le memo se recalcule
   const visibleItems = useMemo(() => {
-    const filtered = section.items.filter((item) => {
+    const filtered = section.items.filter((item: MenuItem) => {
       if (!item.capability) return true;
       const hasCapability = capabilities.includes(item.capability);
       return hasCapability;
@@ -1005,7 +1005,7 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
     <div className="azals-menu-section">
       <h3 className="azals-menu-section__title">{section.title}</h3>
       <ul className="azals-menu-section__list">
-        {visibleItems.map((item) => (
+        {visibleItems.map((item: MenuItem) => (
           <li key={item.id}>
             <MenuItemComponent item={item} onItemClick={onItemClick} />
           </li>

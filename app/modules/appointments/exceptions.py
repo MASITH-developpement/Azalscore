@@ -4,6 +4,8 @@ AZALS MODULE - Appointments - Exceptions
 
 Exceptions metier pour le module Rendez-vous.
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 

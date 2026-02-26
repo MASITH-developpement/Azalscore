@@ -3,6 +3,8 @@ Schémas Pydantic - Module Forecasting (GAP-076)
 
 Validation stricte, types correspondant au frontend.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum

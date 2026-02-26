@@ -4,6 +4,8 @@ AZALS - Utilitaires de Pagination ÉLITE
 Pagination standardisée avec métadonnées complètes.
 Optimisé pour performance avec count optionnel.
 """
+from __future__ import annotations
+
 
 from math import ceil
 from typing import Any, Callable, Generic, TypeVar

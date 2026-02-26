@@ -5,6 +5,8 @@ AZALS MODULE GAMIFICATION - Repository
 Repositories avec isolation tenant et soft delete.
 Pattern _base_query() filtre obligatoire.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal

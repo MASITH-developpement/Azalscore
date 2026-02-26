@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Base Service
 
 Service de base avec fonctionnalités communes.
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Generic, List, Optional, Tuple, Type, TypeVar

@@ -4,6 +4,8 @@ AZALS MODULE M6 - Routes Production
 
 API REST pour la gestion de production.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

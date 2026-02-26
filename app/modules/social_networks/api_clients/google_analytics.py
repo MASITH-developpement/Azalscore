@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Google Analytics Client
 ========================================================
 Client API pour Google Analytics 4 (GA4)
 """
+from __future__ import annotations
+
 
 import logging
 import os

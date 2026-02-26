@@ -15,6 +15,8 @@ Fonctionnalites:
 - Cache des traductions
 - Dashboard couverture traduction
 """
+from __future__ import annotations
+
 
 import json
 import logging

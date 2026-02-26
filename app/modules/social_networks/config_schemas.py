@@ -3,6 +3,8 @@ AZALS MODULE - Réseaux Sociaux - Schémas Configuration
 =======================================================
 Schémas Pydantic pour la configuration des connexions API
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from typing import Optional

@@ -4,6 +4,8 @@ AZALS MODULE HR - Router Unifié
 Router unifié compatible v1/v2 avec get_context().
 Migration: Remplace router.py et router_v2.py.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

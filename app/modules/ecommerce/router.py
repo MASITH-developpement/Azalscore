@@ -3,6 +3,8 @@ AZALS MODULE 12 - E-Commerce Router
 =====================================
 Endpoints API REST pour la plateforme e-commerce.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

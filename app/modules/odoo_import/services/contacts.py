@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import Contacts Service
 
 Service d'import des contacts et fournisseurs depuis Odoo.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

@@ -1,0 +1,67 @@
+{
+  "module_id": "azalscore.treasury.bank_reconciliation",
+  "version": "1.0.0",
+  "description": "Workflow de rapprochement bancaire",
+  "steps": [
+    {
+      "id": "import_statement",
+      "use": "azalscore.external.banking.import_bank_statement@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "statement_file": "{{context.statement_file}}",
+        "format": "{{context.statement_format}}"
+      },
+      "retry": 3,
+      "timeout": 60000
+    },
+    {
+      "id": "parse_transactions",
+      "use": "azalscore.transformers.import.parse_bank_statement@1.0.0",
+      "inputs": {
+        "raw_data": "{{import_statement.data}}",
+        "format": "{{context.statement_format}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "match_transactions",
+      "use": "azalscore.treasury.match_bank_transactions@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "bank_transactions": "{{parse_transactions.transactions}}",
+        "matching_rules": "{{context.matching_rules}}"
+      },
+      "retry": 2,
+      "timeout": 60000
+    },
+    {
+      "id": "create_reconciliation",
+      "use": "azalscore.treasury.create_reconciliation@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "statement_date": "{{context.statement_date}}",
+        "matched_transactions": "{{match_transactions.matched}}",
+        "unmatched_transactions": "{{match_transactions.unmatched}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "update_balances",
+      "use": "azalscore.treasury.update_account_balance@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "reconciled_balance": "{{create_reconciliation.balance}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "reconciliation_id": "{{create_reconciliation.id}}",
+    "matched_count": "{{match_transactions.matched_count}}",
+    "unmatched_count": "{{match_transactions.unmatched_count}}",
+    "balance": "{{create_reconciliation.balance}}"
+  }
+}

@@ -5,6 +5,8 @@ AZALS MODULE T6 - Service Diffusion Périodique
 Service métier pour la gestion des diffusions automatiques.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import uuid

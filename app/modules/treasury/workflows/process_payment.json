@@ -1,0 +1,81 @@
+{
+  "module_id": "azalscore.treasury.process_payment",
+  "version": "1.0.0",
+  "description": "Workflow de traitement de paiement",
+  "steps": [
+    {
+      "id": "validate_payment",
+      "use": "azalscore.validators.payments.validate_payment_data@1.0.0",
+      "inputs": {
+        "payment_data": "{{context.payment_data}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "check_balance",
+      "use": "azalscore.treasury.check_account_balance@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "amount": "{{context.amount}}"
+      },
+      "retry": 2,
+      "timeout": 5000
+    },
+    {
+      "id": "create_payment",
+      "use": "azalscore.treasury.create_payment@1.0.0",
+      "inputs": {
+        "bank_account_id": "{{context.bank_account_id}}",
+        "beneficiary_id": "{{context.beneficiary_id}}",
+        "amount": "{{context.amount}}",
+        "reference": "{{context.reference}}",
+        "payment_date": "{{context.payment_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "execute_transfer",
+      "use": "azalscore.external.banking.execute_transfer@1.0.0",
+      "inputs": {
+        "payment_id": "{{create_payment.id}}",
+        "from_iban": "{{context.from_iban}}",
+        "to_iban": "{{context.to_iban}}",
+        "amount": "{{context.amount}}"
+      },
+      "condition": "{{context.execute_immediately}} == true",
+      "retry": 3,
+      "timeout": 60000
+    },
+    {
+      "id": "create_accounting_entry",
+      "use": "azalscore.accounting.create_journal_entry@1.0.0",
+      "inputs": {
+        "journal_code": "BNQ",
+        "date": "{{context.payment_date}}",
+        "reference": "{{create_payment.reference}}",
+        "lines": "{{context.accounting_lines}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "update_invoice_status",
+      "use": "azalscore.purchases.update_invoice_payment_status@1.0.0",
+      "inputs": {
+        "invoice_id": "{{context.invoice_id}}",
+        "payment_id": "{{create_payment.id}}",
+        "amount_paid": "{{context.amount}}"
+      },
+      "condition": "{{context.invoice_id}} != null",
+      "retry": 2,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "payment_id": "{{create_payment.id}}",
+    "payment_reference": "{{create_payment.reference}}",
+    "entry_id": "{{create_accounting_entry.id}}"
+  }
+}

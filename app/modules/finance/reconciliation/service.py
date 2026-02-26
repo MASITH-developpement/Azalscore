@@ -17,6 +17,8 @@ Scoring:
 - Score 50-70: Suggestion moyenne
 - Score < 50: Suggestion faible
 """
+from __future__ import annotations
+
 
 import logging
 import re

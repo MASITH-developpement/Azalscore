@@ -5,6 +5,8 @@ Acces aux donnees avec isolation tenant automatique.
 
 CRITIQUE: Toutes les requetes filtrees par tenant_id.
 """
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 from uuid import UUID

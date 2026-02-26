@@ -6,6 +6,8 @@ Repository pattern pour l'acces aux donnees du coffre-fort RH.
 Toutes les requetes sont filtrees par tenant_id.
 """
 
+from __future__ import annotations
+
 import hashlib
 import uuid
 from datetime import date, datetime, timedelta

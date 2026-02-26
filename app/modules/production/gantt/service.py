@@ -12,6 +12,8 @@ Fonctionnalités:
 - Détection et résolution des conflits
 - Optimisation du planning (earliest/latest start)
 """
+from __future__ import annotations
+
 
 import logging
 import uuid

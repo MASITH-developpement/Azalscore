@@ -3,6 +3,8 @@ Routes API - Module Forecasting (GAP-076)
 
 CRUD complet, Autocomplete, Permissions vérifiées.
 """
+from __future__ import annotations
+
 from typing import List, Optional
 from uuid import UUID
 

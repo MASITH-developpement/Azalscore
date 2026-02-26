@@ -4,6 +4,8 @@ AZALS MODULE - Cache - Router
 
 Endpoints API pour la gestion du cache applicatif.
 """
+from __future__ import annotations
+
 
 from typing import List, Optional
 from uuid import UUID

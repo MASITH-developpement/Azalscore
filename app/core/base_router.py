@@ -36,6 +36,8 @@ USAGE:
 
 Conformité: AZA-NF-007
 """
+from __future__ import annotations
+
 
 import logging
 from typing import Any, Callable, Generic, List, Optional, Type, TypeVar

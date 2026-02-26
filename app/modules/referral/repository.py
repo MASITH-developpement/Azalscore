@@ -4,6 +4,8 @@ Repository Referral / Parrainage
 - CRITIQUE: Toutes les requêtes filtrées par tenant_id
 - Optimisations et cache
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple

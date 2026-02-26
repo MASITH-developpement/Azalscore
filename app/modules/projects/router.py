@@ -4,6 +4,8 @@ AZALS MODULE M9 - Router Projets
 
 API REST pour la gestion de projets.
 """
+from __future__ import annotations
+
 
 from datetime import date
 from uuid import UUID

@@ -3,6 +3,8 @@ Router API - Module Integrations (GAP-086)
 
 Endpoints REST pour la gestion des intégrations.
 """
+from __future__ import annotations
+
 import math
 from datetime import datetime, timedelta
 from typing import Optional, List

@@ -12,6 +12,8 @@ Logique metier complete pour la gestion de flotte:
 - Alertes et echeances
 - Dashboard et rapports
 """
+from __future__ import annotations
+
 from datetime import datetime, date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional, Tuple

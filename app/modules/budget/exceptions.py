@@ -7,6 +7,8 @@ Exceptions personnalisees pour le module de gestion budgetaire.
 Auteur: AZALSCORE Team
 Version: 2.0.0
 """
+from __future__ import annotations
+
 
 from typing import Any, Dict, Optional
 from uuid import UUID

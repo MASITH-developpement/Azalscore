@@ -5,6 +5,8 @@ AZALS MODULE - Contacts Unifiés - Service
 Service métier pour la gestion des contacts.
 Applique l'isolation totale par tenant.
 """
+from __future__ import annotations
+
 
 import uuid
 from datetime import datetime

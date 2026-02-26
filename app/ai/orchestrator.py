@@ -6,6 +6,8 @@ Gère le routage, la coordination et la consolidation.
 
 Conformité: AZA-NF-003, AZA-IA
 """
+from __future__ import annotations
+
 
 import os
 import time

@@ -6,6 +6,8 @@ Utilise QueryOptimizer en interne pour eviter N+1 queries.
 
 Conformite : AZA-NF-002
 """
+from __future__ import annotations
+
 
 import logging
 from typing import TypeVar, Generic, Optional, List, Any

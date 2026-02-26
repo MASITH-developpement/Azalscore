@@ -4,6 +4,8 @@ AZALS MODULE HR_VAULT - Router API
 
 Endpoints REST pour le coffre-fort RH.
 """
+from __future__ import annotations
+
 
 import os
 import uuid
@@ -389,12 +391,27 @@ async def request_document_signature(
 @router.post("/webhooks/signature")
 async def signature_webhook(
     payload: dict,
-    db: AsyncSession = Depends(get_db),
+    service: HRVaultService = Depends(get_vault_service),
 ):
     """Webhook pour les notifications de signature."""
-    # TODO: Valider la signature du webhook
-    # TODO: Traiter l'evenement
-    return {"status": "ok"}
+    # Extraire les informations du webhook
+    event = payload.get("event", "")
+    signature_request_id = payload.get("signature_request_id", "")
+
+    if not event or not signature_request_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Payload invalide: event et signature_request_id requis"
+        )
+
+    # Traiter l'evenement via le service
+    await service.process_signature_webhook(
+        signature_request_id=signature_request_id,
+        event=event,
+        data=payload
+    )
+
+    return {"status": "ok", "event": event}
 
 
 # ============================================================================

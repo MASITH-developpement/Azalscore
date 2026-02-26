@@ -10,6 +10,8 @@ Fonctionnalités:
 - Conversion multi-devises
 - Calcul gains/pertes de change
 """
+from __future__ import annotations
+
 
 import logging
 from dataclasses import dataclass, field

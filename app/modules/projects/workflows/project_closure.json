@@ -1,0 +1,136 @@
+{
+  "module_id": "azalscore.projects.project_closure",
+  "version": "1.0.0",
+  "description": "Workflow de cloture de projet avec bilan et archivage",
+  "author": "AZALSCORE",
+  "created_at": "2026-02-23",
+  "steps": [
+    {
+      "id": "validate_closure_readiness",
+      "use": "azalscore.validators.projects.validate_closure_criteria@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "closure_criteria": "{{context.closure_criteria}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "check_open_items",
+      "use": "azalscore.calculations.projects.get_open_items@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "item_types": ["tasks", "issues", "risks", "change_requests"]
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "calculate_final_metrics",
+      "use": "azalscore.calculations.projects.calculate_project_health@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "include_history": true
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "calculate_earned_value",
+      "use": "azalscore.calculations.projects.calculate_earned_value@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "as_of_date": "{{context.closure_date}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "finalize_financials",
+      "use": "azalscore.calculations.projects.finalize_project_costs@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "include_accruals": true
+      },
+      "retry": 2,
+      "timeout": 20000
+    },
+    {
+      "id": "create_final_invoice",
+      "condition": "{{finalize_financials.unbilled_amount}} > 0",
+      "use": "azalscore.generators.invoicing.create_final_project_invoice@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "unbilled_items": "{{finalize_financials.unbilled_items}}"
+      },
+      "retry": 2,
+      "timeout": 15000
+    },
+    {
+      "id": "release_resources",
+      "use": "azalscore.transformers.projects.release_project_resources@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "release_date": "{{context.closure_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "generate_closure_report",
+      "use": "azalscore.generators.documents.generate_project_closure_report@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "metrics": "{{calculate_final_metrics}}",
+        "earned_value": "{{calculate_earned_value}}",
+        "financials": "{{finalize_financials}}",
+        "lessons_learned": "{{context.lessons_learned}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "archive_project",
+      "use": "azalscore.transformers.projects.archive_project@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "archive_documents": true,
+        "retention_years": "{{context.retention_years}}"
+      },
+      "retry": 2,
+      "timeout": 30000
+    },
+    {
+      "id": "close_cost_center",
+      "use": "azalscore.transformers.accounting.close_cost_center@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "closure_date": "{{context.closure_date}}"
+      },
+      "retry": 2,
+      "timeout": 10000
+    },
+    {
+      "id": "notify_stakeholders",
+      "use": "azalscore.generators.communications.notify_project_closure@1.0.0",
+      "inputs": {
+        "project_id": "{{context.project_id}}",
+        "closure_report_url": "{{generate_closure_report.url}}",
+        "final_metrics": "{{calculate_final_metrics}}",
+        "stakeholder_emails": "{{context.stakeholder_emails}}"
+      },
+      "retry": 3,
+      "timeout": 10000
+    }
+  ],
+  "outputs": {
+    "closure_date": "{{context.closure_date}}",
+    "final_cost": "{{finalize_financials.total_cost}}",
+    "budget_variance": "{{finalize_financials.variance}}",
+    "schedule_variance_days": "{{calculate_final_metrics.schedule_variance}}",
+    "earned_value_metrics": "{{calculate_earned_value}}",
+    "closure_report_url": "{{generate_closure_report.url}}",
+    "archived": "{{archive_project.success}}",
+    "resources_released": "{{release_resources.count}}"
+  }
+}

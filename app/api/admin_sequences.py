@@ -5,6 +5,8 @@ AZALSCORE - API Administration des Sequences
 Endpoints pour parametrer les numerotations automatiques.
 Accessible uniquement aux administrateurs.
 """
+from __future__ import annotations
+
 
 from typing import Optional
 from pydantic import BaseModel, Field

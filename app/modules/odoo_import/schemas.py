@@ -4,6 +4,8 @@ AZALS MODULE - Odoo Import - Schemas
 
 Schemas Pydantic pour les requetes/reponses API du module Odoo Import.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from decimal import Decimal

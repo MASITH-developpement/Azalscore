@@ -11,6 +11,8 @@ Actions:
     - post_entry: Creation ecriture comptable
     - generate_report: Generation rapports comptables
 """
+from __future__ import annotations
+
 
 import json
 import logging

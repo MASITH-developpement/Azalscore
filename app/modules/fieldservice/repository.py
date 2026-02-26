@@ -3,6 +3,8 @@ Repository - Module Field Service (GAP-081)
 
 CRITIQUE: Toutes les requêtes filtrées par tenant_id.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Dict, Any, List, Optional, Tuple

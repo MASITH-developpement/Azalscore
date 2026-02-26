@@ -11,6 +11,8 @@ Gestion de la location:
 - Facturation récurrente
 - Prolongations et retours
 """
+from __future__ import annotations
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date

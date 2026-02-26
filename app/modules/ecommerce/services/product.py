@@ -4,6 +4,8 @@ AZALS MODULE 12 - E-Commerce Product Service
 
 Gestion des produits et variantes.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

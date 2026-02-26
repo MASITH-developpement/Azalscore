@@ -17,6 +17,8 @@ Endpoints:
 - GET  /v3/finance/integration/stats - Statistiques
 - GET  /v3/finance/integration/health - Health check
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime

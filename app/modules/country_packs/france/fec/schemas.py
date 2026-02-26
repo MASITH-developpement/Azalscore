@@ -4,6 +4,8 @@ AZALS MODULE - FEC: Schémas Pydantic
 
 Schémas de validation pour l'API FEC.
 """
+from __future__ import annotations
+
 
 from datetime import datetime, date
 from decimal import Decimal

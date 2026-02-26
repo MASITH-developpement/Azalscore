@@ -17,6 +17,8 @@ Conformité:
 - RGPD Article 32 (Security of processing)
 - NF525 (Archivage légal France)
 """
+from __future__ import annotations
+
 
 import asyncio
 import hashlib

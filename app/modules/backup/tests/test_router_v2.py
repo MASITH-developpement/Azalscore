@@ -1,6 +1,8 @@
 """
 Tests pour Backup Router v2 (CORE SaaS)
 """
+from __future__ import annotations
+
 
 import pytest
 from unittest.mock import MagicMock

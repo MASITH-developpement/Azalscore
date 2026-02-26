@@ -25,6 +25,8 @@ Usage:
     response = await dm.process_utterance("C'est pour une fuite d'eau")
     # Continue la conversation avec contexte...
 """
+from __future__ import annotations
+
 
 import asyncio
 import json

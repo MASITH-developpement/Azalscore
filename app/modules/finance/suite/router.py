@@ -24,6 +24,8 @@ Endpoints:
 - GET  /v3/finance/suite/kpis - KPIs
 - GET  /v3/finance/suite/health - Health check global
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import date, datetime
