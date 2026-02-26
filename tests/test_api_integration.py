@@ -357,11 +357,11 @@ class TestComplianceAPIEndpoints:
 
         report_data = [
             {
-                "event_id": e.id,
+                "event_id": e.event_id,
                 "timestamp": e.timestamp.isoformat(),
-                "category": e.category.value,
+                "category": e.category.value if hasattr(e.category, 'value') else str(e.category),
                 "action": e.action,
-                "user_id": e.actor.user_id if e.actor else "system"
+                "user_id": e.actor.actor_id if e.actor else "system"
             }
             for e in events
         ]
@@ -369,17 +369,17 @@ class TestComplianceAPIEndpoints:
         report_engine = get_reporting_engine()
 
         template = ReportTemplate(
-            id="tpl_compliance_audit",
+            template_id="tpl_compliance_audit",
             name="Rapport Conformité Audit",
             description="Rapport de conformité des événements d'audit",
             category="compliance",
-            format_default="pdf",
-            fields=[
-                ReportField(name="event_id", label="ID Événement", data_type="string"),
-                ReportField(name="timestamp", label="Date/Heure", data_type="datetime"),
-                ReportField(name="category", label="Catégorie", data_type="string"),
-                ReportField(name="action", label="Action", data_type="string"),
-                ReportField(name="user_id", label="Utilisateur", data_type="string")
+            default_format=OutputFormat.PDF,
+            columns=[
+                ReportColumn(name="event_id", label="ID Événement", data_type="string"),
+                ReportColumn(name="timestamp", label="Date/Heure", data_type="datetime"),
+                ReportColumn(name="category", label="Catégorie", data_type="string"),
+                ReportColumn(name="action", label="Action", data_type="string"),
+                ReportColumn(name="user_id", label="Utilisateur", data_type="string")
             ],
             tenant_id=test_tenant_id
         )
@@ -420,7 +420,7 @@ class TestEncryptionAPIEndpoints:
 
         response = {
             "encrypted": True,
-            "kek_id": encrypted.kek_id,
+            "key_id": encrypted.key_id,
             "algorithm": encrypted.algorithm
         }
 
@@ -444,7 +444,24 @@ class TestEncryptionAPIEndpoints:
         """Test endpoint de tokenisation"""
         from app.core.encryption_advanced import TokenizationService
 
-        token_service = TokenizationService()
+        # Simple in-memory token store for testing
+        class SimpleTokenStore:
+            def __init__(self):
+                self._tokens = {}
+            def store(self, token, value):
+                self._tokens[token] = value
+            def get(self, token, tenant_id=None):
+                return self._tokens.get(token)
+            def exists(self, token, tenant_id=None):
+                return token in self._tokens
+            def delete(self, token, tenant_id=None):
+                return self._tokens.pop(token, None) is not None
+
+        token_store = SimpleTokenStore()
+        token_service = TokenizationService(
+            token_store=token_store,
+            secret_key=b"test-secret-key-for-tokenization"
+        )
 
         sensitive_value = "FR7630006000011234567890189"
 

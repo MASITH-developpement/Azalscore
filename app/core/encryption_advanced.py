@@ -692,12 +692,15 @@ class KeyManagementService:
 
         self._key_store.store_key(key)
 
+        # Handle both enum and string values for logging
+        key_type_val = key_type.value if hasattr(key_type, 'value') else str(key_type)
+        algo_val = algorithm.value if hasattr(algorithm, 'value') else str(algorithm)
         logger.info(
             f"Key generated: {key_id}",
             extra={
                 "key_id": key_id,
-                "key_type": key_type.value,
-                "algorithm": algorithm.value,
+                "key_type": key_type_val,
+                "algorithm": algo_val,
                 "tenant_id": tenant_id,
             }
         )
