@@ -476,7 +476,7 @@ class TokenService:
 
         self._blacklist = TokenBlacklist()
         self._refresh_tokens: dict[str, RefreshToken] = {}
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()  # RLock pour permettre appels imbriqués
 
     def create_access_token(
         self,
