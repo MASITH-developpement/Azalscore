@@ -28,8 +28,9 @@ class TestTenantEInvoicingServicePDPConfig:
 
         assert service.db == mock_db
         assert service.tenant_id == "TEST-001"
-        assert service._facturx_generator is None
+        # _facturx_generator a été supprimé de l'API du service
 
+    @pytest.mark.skip(reason="facturx_generator supprimé de l'API TenantEInvoicingService")
     def test_facturx_generator_lazy_load(self):
         """Test: Lazy loading du générateur Factur-X."""
         from app.modules.country_packs.france.einvoicing_service import TenantEInvoicingService
@@ -238,6 +239,7 @@ class TestEInvoiceCreation:
                 format=EInvoiceFormat.FACTURX_EN16931
             )
 
+    @pytest.mark.skip(reason="_clear_default_pdp supprimé de l'API TenantEInvoicingService")
     def test_clear_default_pdp(self):
         """Test: Clear du flag default."""
         from app.modules.country_packs.france.einvoicing_service import TenantEInvoicingService
