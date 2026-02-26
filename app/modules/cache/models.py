@@ -443,10 +443,10 @@ class CacheAlert(Base):
     triggered_at = Column(DateTime, server_default=func.current_timestamp(), nullable=False, index=True)
 
     __table_args__ = (
-        Index('idx_alert_tenant', 'tenant_id'),
-        Index('idx_alert_status', 'status'),
-        Index('idx_alert_severity', 'severity'),
-        Index('idx_alert_triggered', 'triggered_at'),
+        Index('idx_cache_alert_tenant', 'tenant_id'),
+        Index('idx_cache_alert_status', 'status'),
+        Index('idx_cache_alert_severity', 'severity'),
+        Index('idx_cache_alert_triggered', 'triggered_at'),
     )
 
 

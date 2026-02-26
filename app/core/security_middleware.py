@@ -61,14 +61,31 @@ def setup_cors(app: FastAPI) -> None:
     """
     Configure CORS pour l'application.
     PRODUCTION: Utilise CORS_ORIGINS depuis la configuration (OBLIGATOIRE).
-    DÉVELOPPEMENT: Autorise toutes les origines.
+    DÉVELOPPEMENT/TEST: Autorise localhost et règles plus souples.
 
-    SÉCURITÉ:
+    SÉCURITÉ (production seulement):
     - Interdit les wildcards (*)
     - Interdit localhost/127.0.0.1
     - Interdit les adresses IP (utiliser des noms de domaine)
     """
     settings = get_settings()
+
+    # DEV/TEST: Règles souples
+    if settings.is_development:
+        # En dev/test, accepter localhost ou valeur par défaut
+        origins = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"]
+        if settings.cors_origins:
+            origins = [origin.strip() for origin in settings.cors_origins.split(",")]
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+        logger.info(f"[CORS] Mode développement/test - Origins: {origins}")
+        return
 
     # PRODUCTION: CORS restrictif OBLIGATOIRE
     if not settings.cors_origins:

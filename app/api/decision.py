@@ -29,7 +29,7 @@ class DecisionResponse(BaseModel):
     """
     Réponse de classification.
     """
-    id: int
+    id: str  # UUID converti en string
     tenant_id: str
     entity_type: str
     entity_id: str
@@ -75,7 +75,7 @@ async def classify_decision(
         )
 
         return DecisionResponse(
-            id=decision.id,
+            id=str(decision.id),
             tenant_id=decision.tenant_id,
             entity_type=decision.entity_type,
             entity_id=decision.entity_id,

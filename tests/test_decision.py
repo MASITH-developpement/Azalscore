@@ -3,6 +3,13 @@ AZALS - Tests du moteur de classification décisionnelle
 Validation des règles d'irréversibilité RED
 """
 
+import os
+# Configuration test AVANT import app
+os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test_decision.db")
+os.environ.setdefault("SECRET_KEY", "test-key-minimum-32-characters-long-for-tests")
+os.environ.setdefault("CORS_ORIGINS", "http://localhost:3000")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -68,7 +75,7 @@ def create_test_user_and_jwt(tenant_id: str, email: str) -> tuple[int, str]:
     
     payload = {
         "sub": str(user.id),
-        "user_id": user.id,
+        "user_id": str(user.id),
         "tenant_id": tenant_id,
         "role": "DIRIGEANT",
         "exp": datetime.utcnow() + timedelta(hours=1)
