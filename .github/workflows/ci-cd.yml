@@ -262,12 +262,7 @@ jobs:
 
           if [ "$SECRETS_COUNT" -gt "0" ]; then
             echo "::warning::Found $SECRETS_COUNT potential secrets - review required"
-            cat secrets-scan.json | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-for file, secrets in data.get('results', {}).items():
-    for s in secrets:
-        print(f'  - {file}:{s.get(\"line_number\")}: {s.get(\"type\")}')"
+            cat secrets-scan.json | python3 -c "import json,sys;data=json.load(sys.stdin);[print(f'  - {f}:{s.get(chr(108)+chr(105)+chr(110)+chr(101)+chr(95)+chr(110)+chr(117)+chr(109)+chr(98)+chr(101)+chr(114))}: {s.get(chr(116)+chr(121)+chr(112)+chr(101))}') for f,secs in data.get('results',{}).items() for s in secs]"
           fi
 
       - name: Upload secret scan
@@ -304,12 +299,7 @@ for file, secrets in data.get('results', {}).items():
           pip-licenses --format=json --output-file=licenses.json
 
           # Check for problematic licenses
-          COPYLEFT=$(pip-licenses --format=json | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-problematic = ['GPL', 'AGPL', 'LGPL']
-found = [p for p in data if any(lic in p.get('License', '') for lic in problematic)]
-print(len(found))")
+          COPYLEFT=$(pip-licenses --format=json | python3 -c "import json,sys;data=json.load(sys.stdin);problematic=['GPL','AGPL','LGPL'];found=[p for p in data if any(lic in p.get('License','') for lic in problematic)];print(len(found))")
 
           if [ "$COPYLEFT" -gt "0" ]; then
             echo "::warning::Found $COPYLEFT packages with copyleft licenses - review for compatibility"

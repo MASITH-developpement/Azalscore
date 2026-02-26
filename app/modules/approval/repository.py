@@ -3,6 +3,8 @@ Repository - Module Approval Workflow (GAP-083)
 
 CRITIQUE: Toutes les requêtes filtrées par tenant_id.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Dict, Any, List, Optional, Tuple
@@ -13,7 +15,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .models import (
-    Workflow, WorkflowStep, ApprovalRequest, ApprovalAction, Delegation,
+    Workflow, ApprovalWorkflowStep as WorkflowStep, ApprovalRequest, ApprovalAction, Delegation,
     WorkflowStatus, RequestStatus, ApprovalType, ActionType
 )
 from .schemas import WorkflowFilters, ApprovalRequestFilters

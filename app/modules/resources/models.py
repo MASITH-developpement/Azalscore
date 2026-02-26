@@ -11,7 +11,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint, CheckConstraint,
     Numeric, Enum as SQLEnum
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from app.core.types import UniversalUUID as UUID, JSONB, ARRAY
 from sqlalchemy.orm import relationship
 from datetime import datetime, time
 from decimal import Decimal
@@ -101,8 +101,8 @@ class ResourceLocation(Base):
     """Localisation d'une ressource"""
     __tablename__ = "resource_locations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     name = Column(String(200), nullable=False)
     code = Column(String(50), nullable=False)
@@ -122,14 +122,14 @@ class ResourceLocation(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -148,8 +148,8 @@ class Amenity(Base):
     """Équipement/caractéristique disponible"""
     __tablename__ = "resource_amenities"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     name = Column(String(100), nullable=False)
     code = Column(String(50), nullable=False)
@@ -161,12 +161,12 @@ class Amenity(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "code", name="uq_amenity_tenant_code"),
@@ -178,8 +178,8 @@ class Resource(Base):
     """Ressource réservable"""
     __tablename__ = "resources"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     name = Column(String(200), nullable=False)
     code = Column(String(50), nullable=False)
@@ -189,7 +189,7 @@ class Resource(Base):
     status = Column(SQLEnum(ResourceStatus), default=ResourceStatus.AVAILABLE, nullable=False)
 
     # Localisation
-    location_id = Column(UUID(as_uuid=True), ForeignKey("resource_locations.id"), nullable=True)
+    location_id = Column(UUID(), ForeignKey("resource_locations.id"), nullable=True)
     location_details = Column(String(200), default="")
 
     # Capacité
@@ -197,7 +197,7 @@ class Resource(Base):
     min_capacity = Column(Integer, default=1)
 
     # Équipements (array of amenity IDs)
-    amenity_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    amenity_ids = Column(ARRAY(UUID()), default=list)
     equipment = Column(ARRAY(String), default=list)
 
     # Tarification
@@ -220,12 +220,12 @@ class Resource(Base):
 
     # Approbation
     requires_approval = Column(Boolean, default=False)
-    approver_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    approver_ids = Column(ARRAY(UUID()), default=list)
 
     # Restrictions
-    allowed_user_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
-    allowed_department_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
-    priority_user_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    allowed_user_ids = Column(ARRAY(UUID()), default=list)
+    allowed_department_ids = Column(ARRAY(UUID()), default=list)
+    priority_user_ids = Column(ARRAY(UUID()), default=list)
 
     # Images
     images = Column(ARRAY(String), default=list)
@@ -239,14 +239,14 @@ class Resource(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -269,11 +269,11 @@ class Booking(Base):
     """Réservation de ressource"""
     __tablename__ = "resource_bookings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    resource_id = Column(UUID(as_uuid=True), ForeignKey("resources.id"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    resource_id = Column(UUID(), ForeignKey("resources.id"), nullable=False)
+    user_id = Column(UUID(), nullable=False)
 
     # Période
     start_datetime = Column(DateTime, nullable=False)
@@ -283,7 +283,7 @@ class Booking(Base):
     # Récurrence
     recurrence_type = Column(SQLEnum(RecurrenceType), default=RecurrenceType.NONE)
     recurrence_rule = Column(JSONB, nullable=True)
-    parent_booking_id = Column(UUID(as_uuid=True), ForeignKey("resource_bookings.id"), nullable=True)
+    parent_booking_id = Column(UUID(), ForeignKey("resource_bookings.id"), nullable=True)
     is_recurring = Column(Boolean, default=False)
 
     # Statut
@@ -296,31 +296,31 @@ class Booking(Base):
     purpose = Column(String(200), default="")
 
     # Participants
-    attendee_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    attendee_ids = Column(ARRAY(UUID()), default=list)
     attendee_count = Column(Integer, default=1)
     external_attendees = Column(ARRAY(String), default=list)
 
     # Équipements demandés
-    requested_amenity_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    requested_amenity_ids = Column(ARRAY(UUID()), default=list)
     special_requests = Column(Text, default="")
 
     # Tarification
     total_cost = Column(Numeric(15, 2), default=Decimal("0"))
     is_paid = Column(Boolean, default=False)
-    payment_id = Column(UUID(as_uuid=True), nullable=True)
+    payment_id = Column(UUID(), nullable=True)
 
     # Check-in/out
     checked_in_at = Column(DateTime, nullable=True)
     checked_out_at = Column(DateTime, nullable=True)
-    checked_in_by = Column(UUID(as_uuid=True), nullable=True)
+    checked_in_by = Column(UUID(), nullable=True)
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     rejection_reason = Column(Text, default="")
 
     # Annulation
-    cancelled_by = Column(UUID(as_uuid=True), nullable=True)
+    cancelled_by = Column(UUID(), nullable=True)
     cancelled_at = Column(DateTime, nullable=True)
     cancellation_reason = Column(Text, default="")
 
@@ -335,14 +335,14 @@ class Booking(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -365,16 +365,16 @@ class BlockedSlot(Base):
     """Créneau bloqué (maintenance, événement spécial)"""
     __tablename__ = "resource_blocked_slots"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    resource_id = Column(UUID(as_uuid=True), ForeignKey("resources.id"), nullable=False)
+    resource_id = Column(UUID(), ForeignKey("resources.id"), nullable=False)
 
     start_datetime = Column(DateTime, nullable=False)
     end_datetime = Column(DateTime, nullable=False)
 
     reason = Column(Text, default="")
-    blocked_by = Column(UUID(as_uuid=True), nullable=True)
+    blocked_by = Column(UUID(), nullable=True)
 
     # Récurrence
     is_recurring = Column(Boolean, default=False)
@@ -384,12 +384,12 @@ class BlockedSlot(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Relationships
     resource = relationship("Resource", back_populates="blocked_slots")
@@ -405,11 +405,11 @@ class WaitlistEntry(Base):
     """Entrée en liste d'attente"""
     __tablename__ = "resource_waitlist"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    resource_id = Column(UUID(as_uuid=True), ForeignKey("resources.id"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    resource_id = Column(UUID(), ForeignKey("resources.id"), nullable=False)
+    user_id = Column(UUID(), nullable=False)
 
     # Période souhaitée
     desired_start = Column(DateTime, nullable=False)
@@ -418,7 +418,7 @@ class WaitlistEntry(Base):
     # Flexibilité
     flexible_time = Column(Boolean, default=False)
     flexible_date = Column(Boolean, default=False)
-    alternative_resource_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    alternative_resource_ids = Column(ARRAY(UUID()), default=list)
 
     # Priorité
     priority = Column(Integer, default=0)
@@ -432,12 +432,12 @@ class WaitlistEntry(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_waitlist_resource", "resource_id"),

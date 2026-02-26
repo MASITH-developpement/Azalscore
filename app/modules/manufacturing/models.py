@@ -17,6 +17,8 @@ Entités:
 - QualityCheck (Contrôle qualité)
 - ProductionLog (Journal de production)
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
@@ -28,7 +30,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint, CheckConstraint,
     Numeric, Enum as SQLEnum, event
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from app.core.types import UniversalUUID as UUID, JSONB, ARRAY
 from sqlalchemy.orm import relationship, validates, backref
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -135,8 +137,8 @@ class BOM(Base):
     __tablename__ = "manufacturing_boms"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -154,7 +156,7 @@ class BOM(Base):
     )
 
     # === Produit fini ===
-    product_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    product_id = Column(UUID(), nullable=False, index=True)
     product_code = Column(String(50), nullable=False)
     product_name = Column(String(255), nullable=False)
     quantity = Column(Numeric(15, 4), default=Decimal("1"), nullable=False)
@@ -167,7 +169,7 @@ class BOM(Base):
     total_cost = Column(Numeric(15, 2), default=Decimal("0"))
 
     # === Gamme associée ===
-    routing_id = Column(UUID(as_uuid=True), nullable=True)
+    routing_id = Column(UUID(), nullable=True)
 
     # === Rendement ===
     yield_rate = Column(Numeric(5, 2), default=Decimal("100"))
@@ -183,13 +185,13 @@ class BOM(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Optimistic Locking ===
     version = Column(Integer, default=1, nullable=False)
@@ -271,10 +273,10 @@ class BOMLine(Base):
     __tablename__ = "manufacturing_bom_lines"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     bom_id = Column(
-        UUID(as_uuid=True),
+        UUID(),
         ForeignKey('manufacturing_boms.id', ondelete='CASCADE'),
         nullable=False,
         index=True
@@ -282,7 +284,7 @@ class BOMLine(Base):
     sequence = Column(Integer, default=10, nullable=False)
 
     # === Composant ===
-    component_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    component_id = Column(UUID(), nullable=False, index=True)
     component_code = Column(String(50), nullable=False)
     component_name = Column(String(255), nullable=False)
 
@@ -299,10 +301,10 @@ class BOMLine(Base):
     scrap_rate = Column(Numeric(5, 2), default=Decimal("0"))
 
     # === Substituts ===
-    substitute_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    substitute_ids = Column(ARRAY(UUID()), default=list)
 
     # === Opération liée ===
-    operation_id = Column(UUID(as_uuid=True), nullable=True)
+    operation_id = Column(UUID(), nullable=True)
 
     # === Notes ===
     notes = Column(Text, nullable=True)
@@ -349,8 +351,8 @@ class Workcenter(Base):
     __tablename__ = "manufacturing_workcenters"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -388,7 +390,7 @@ class Workcenter(Base):
     department = Column(String(100), default="")
 
     # === Opérateurs ===
-    operator_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    operator_ids = Column(ARRAY(UUID()), default=list)
     max_operators = Column(Integer, default=1)
 
     # === Maintenance ===
@@ -396,7 +398,7 @@ class Workcenter(Base):
     next_maintenance = Column(DateTime, nullable=True)
 
     # === Équipements ===
-    equipment_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    equipment_ids = Column(ARRAY(UUID()), default=list)
 
     # === Statut ===
     is_active = Column(Boolean, default=True, nullable=False)
@@ -404,13 +406,13 @@ class Workcenter(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Optimistic Locking ===
     version = Column(Integer, default=1, nullable=False)
@@ -456,15 +458,15 @@ class Routing(Base):
     __tablename__ = "manufacturing_routings"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
 
     # === Produit ===
-    product_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    bom_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UUID(), nullable=False, index=True)
+    bom_id = Column(UUID(), nullable=True)
 
     # === Temps totaux ===
     total_setup_time = Column(Integer, default=0)  # Minutes
@@ -482,13 +484,13 @@ class Routing(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Optimistic Locking ===
     version = Column(Integer, default=1, nullable=False)
@@ -538,10 +540,10 @@ class Operation(Base):
     __tablename__ = "manufacturing_operations"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     routing_id = Column(
-        UUID(as_uuid=True),
+        UUID(),
         ForeignKey('manufacturing_routings.id', ondelete='CASCADE'),
         nullable=False,
         index=True
@@ -551,7 +553,7 @@ class Operation(Base):
     description = Column(Text, nullable=True)
 
     # === Poste de travail ===
-    workcenter_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    workcenter_id = Column(UUID(), nullable=False, index=True)
     workcenter_name = Column(String(255), default="")
 
     # === Temps (minutes) ===
@@ -614,8 +616,8 @@ class WorkOrder(Base):
     __tablename__ = "manufacturing_work_orders"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     number = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
 
@@ -627,11 +629,11 @@ class WorkOrder(Base):
     )
 
     # === Produit ===
-    product_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    product_id = Column(UUID(), nullable=False, index=True)
     product_code = Column(String(50), nullable=False)
     product_name = Column(String(255), nullable=False)
-    bom_id = Column(UUID(as_uuid=True), nullable=True)
-    routing_id = Column(UUID(as_uuid=True), nullable=True)
+    bom_id = Column(UUID(), nullable=True)
+    routing_id = Column(UUID(), nullable=True)
 
     # === Quantités ===
     quantity_to_produce = Column(Numeric(15, 4), nullable=False)
@@ -652,7 +654,7 @@ class WorkOrder(Base):
 
     # === Source ===
     source_type = Column(String(50), default="manual")
-    source_id = Column(UUID(as_uuid=True), nullable=True)
+    source_id = Column(UUID(), nullable=True)
 
     # === Coûts planifiés ===
     planned_material_cost = Column(Numeric(15, 2), default=Decimal("0"))
@@ -670,7 +672,7 @@ class WorkOrder(Base):
     production_location = Column(String(255), default="")
 
     # === Responsable ===
-    responsible_id = Column(UUID(as_uuid=True), nullable=True)
+    responsible_id = Column(UUID(), nullable=True)
 
     # === Notes ===
     notes = Column(Text, nullable=True)
@@ -681,13 +683,13 @@ class WorkOrder(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Optimistic Locking ===
     version = Column(Integer, default=1, nullable=False)
@@ -769,20 +771,20 @@ class WorkOrderOperation(Base):
     __tablename__ = "manufacturing_wo_operations"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     work_order_id = Column(
-        UUID(as_uuid=True),
+        UUID(),
         ForeignKey('manufacturing_work_orders.id', ondelete='CASCADE'),
         nullable=False,
         index=True
     )
-    operation_id = Column(UUID(as_uuid=True), nullable=True)
+    operation_id = Column(UUID(), nullable=True)
     sequence = Column(Integer, default=10, nullable=False)
     name = Column(String(255), nullable=False)
 
     # === Poste de travail ===
-    workcenter_id = Column(UUID(as_uuid=True), nullable=True)
+    workcenter_id = Column(UUID(), nullable=True)
 
     # === Statut ===
     status = Column(
@@ -811,7 +813,7 @@ class WorkOrderOperation(Base):
     quantity_scrapped = Column(Numeric(15, 4), default=Decimal("0"))
 
     # === Opérateur ===
-    operator_id = Column(UUID(as_uuid=True), nullable=True)
+    operator_id = Column(UUID(), nullable=True)
     operator_name = Column(String(255), default="")
 
     # === Qualité ===
@@ -846,15 +848,15 @@ class QualityCheck(Base):
     __tablename__ = "manufacturing_quality_checks"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     work_order_id = Column(
-        UUID(as_uuid=True),
+        UUID(),
         ForeignKey('manufacturing_work_orders.id', ondelete='CASCADE'),
         nullable=False,
         index=True
     )
-    operation_id = Column(UUID(as_uuid=True), nullable=True)
+    operation_id = Column(UUID(), nullable=True)
 
     # === Type et résultat ===
     check_type = Column(
@@ -876,7 +878,7 @@ class QualityCheck(Base):
     failed_count = Column(Integer, default=0)
 
     # === Inspecteur ===
-    inspector_id = Column(UUID(as_uuid=True), nullable=True)
+    inspector_id = Column(UUID(), nullable=True)
     inspector_name = Column(String(255), default="")
 
     # === Date du contrôle ===
@@ -922,15 +924,15 @@ class ProductionLog(Base):
     __tablename__ = "manufacturing_production_logs"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     work_order_id = Column(
-        UUID(as_uuid=True),
+        UUID(),
         ForeignKey('manufacturing_work_orders.id', ondelete='CASCADE'),
         nullable=False,
         index=True
     )
-    operation_id = Column(UUID(as_uuid=True), nullable=True)
+    operation_id = Column(UUID(), nullable=True)
 
     # === Type d'événement ===
     event_type = Column(String(50), nullable=False)
@@ -943,10 +945,10 @@ class ProductionLog(Base):
     duration_minutes = Column(Integer, default=0)
 
     # === Opérateur ===
-    operator_id = Column(UUID(as_uuid=True), nullable=True)
+    operator_id = Column(UUID(), nullable=True)
 
     # === Poste de travail ===
-    workcenter_id = Column(UUID(as_uuid=True), nullable=True)
+    workcenter_id = Column(UUID(), nullable=True)
 
     # === Détails ===
     details = Column(JSONB, default=dict)

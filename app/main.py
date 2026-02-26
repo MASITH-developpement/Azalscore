@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from app.api.admin import AdminUserCreate, AdminUserResponse, router as admin_dashboard_router
-from app.api.admin_migration import router as admin_migration_router
+# admin_migration_router supprimé (U-021) - migration temporaire retirée
 from app.api.admin_sequences import router as admin_sequences_router
 from app.api.auth import router as auth_router
 from app.api.branding import router as branding_router
@@ -43,6 +43,7 @@ from app.api.protected import router as protected_router
 from app.api.red_workflow import router as red_workflow_router
 from app.api.tax import router as tax_router
 from app.api.workflows import router as workflows_router
+from app.api.approval_workflows import router as approval_workflows_router
 from app.core.compression import CompressionMiddleware
 from app.core.config import get_settings
 from app.core.database import engine, get_db
@@ -595,15 +596,22 @@ logger.info("[MIDDLEWARE] Compression activée", extra={"min_size": 1024, "level
 app.add_middleware(MetricsMiddleware)
 logger.info("[MIDDLEWARE] MetricsMiddleware activé")
 
-# 6. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
+# 6. RBAC Middleware - Contrôle d'accès basé sur les rôles
 # Note: Le middleware RBAC vérifie les permissions après authentification
-# Pour la bêta, les routes non configurées génèrent un warning mais passent
-# En production, activer deny-by-default dans rbac_middleware.py
+# SÉCURITÉ P0: Utiliser RBAC_STRICT_MODE=true en production pour deny-by-default
+import os
+_rbac_strict = os.getenv("RBAC_STRICT_MODE", "false").lower() == "true"
 app.add_middleware(RBACMiddleware)
-logger.warning(
-    "[MIDDLEWARE] RBAC en mode BETA — deny-by-default NON activé",
-    extra={"mode": "beta", "consequence": "rbac_permissive", "action_required": "activer deny-by-default"}
-)
+if _rbac_strict:
+    logger.info(
+        "[MIDDLEWARE] RBAC activé — deny-by-default ACTIF (PRODUCTION)",
+        extra={"mode": "strict", "consequence": "rbac_deny_unconfigured"}
+    )
+else:
+    logger.warning(
+        "[MIDDLEWARE] RBAC en mode permissif — définir RBAC_STRICT_MODE=true pour production",
+        extra={"mode": "permissive", "consequence": "rbac_allow_unconfigured", "action_required": "set RBAC_STRICT_MODE=true"}
+    )
 
 # 7. CoreAuthMiddleware - Parse JWT et crée SaaSContext via CORE
 # IMPORTANT: Doit s'exécuter AVANT RBAC pour que request.state.saas_context soit disponible
@@ -659,11 +667,6 @@ api_v1.include_router(red_workflow_router)
 api_v1.include_router(tax_router)
 api_v1.include_router(hr_router)
 api_v1.include_router(legal_router)
-api_v1.include_router(admin_migration_router)  # TEMPORAIRE pour migration
-logger.warning(
-    "[ROUTER] admin_migration_router monté — marqué TEMPORAIRE, à retirer après migration",
-    extra={"router": "admin_migration", "status": "temporary", "action_required": "remove_after_migration"}
-)
 api_v1.include_router(admin_sequences_router)  # Administration des sequences de numerotation
 api_v1.include_router(admin_dashboard_router)  # Administration dashboard (stats systeme)
 api_v1.include_router(partners_router)  # Alias vers module commercial (clients, fournisseurs, contacts)
@@ -689,6 +692,7 @@ api_v1.include_router(ai_orchestration_router) # IA Orchestration
 api_v1.include_router(guardian_ai_router)      # Guardian AI
 api_v1.include_router(incidents_router)        # Incidents
 api_v1.include_router(cockpit_router)          # Cockpit Dashboard
+api_v1.include_router(approval_workflows_router)  # Workflows d'approbation (GAP-093)
 
 # API WORKFLOWS - Orchestration DAG déclarative (AZALSCORE)
 api_v1.include_router(workflows_router)

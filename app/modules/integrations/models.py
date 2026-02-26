@@ -12,7 +12,7 @@ from sqlalchemy import (
     Column, String, Text, Boolean, Integer, DateTime, Numeric,
     ForeignKey, Index, JSON
 )
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UniversalUUID as UUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -110,10 +110,10 @@ class EntityType(str, Enum):
 
 class Connection(Base):
     """Connexion à un service externe."""
-    __tablename__ = "integration_connections"
+    __tablename__ = "integ_legacy_connections"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
@@ -145,30 +145,30 @@ class Connection(Base):
     is_active = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     entity_mappings = relationship("EntityMapping", back_populates="connection", cascade="all, delete-orphan")
     sync_jobs = relationship("SyncJob", back_populates="connection")
 
     __table_args__ = (
-        Index("ix_integration_connections_tenant_code", "tenant_id", "code", unique=True),
-        Index("ix_integration_connections_tenant_type", "tenant_id", "connector_type"),
-        Index("ix_integration_connections_tenant_status", "tenant_id", "status"),
+        Index("ix_integ_leg_conn_tenant_code", "tenant_id", "code", unique=True),
+        Index("ix_integ_leg_conn_tenant_type", "tenant_id", "connector_type"),
+        Index("ix_integ_leg_conn_tenant_status", "tenant_id", "status"),
     )
 
 
 class EntityMapping(Base):
     """Mapping d'une entité entre systèmes."""
-    __tablename__ = "integration_entity_mappings"
+    __tablename__ = "integ_legacy_entity_mappings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    connection_id = Column(UUID(as_uuid=True), ForeignKey("integration_connections.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    connection_id = Column(UUID(), ForeignKey("integ_legacy_connections.id"), nullable=False)
 
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
@@ -195,9 +195,9 @@ class EntityMapping(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     connection = relationship("Connection", back_populates="entity_mappings")
@@ -211,12 +211,12 @@ class EntityMapping(Base):
 
 class SyncJob(Base):
     """Job de synchronisation."""
-    __tablename__ = "integration_sync_jobs"
+    __tablename__ = "integ_legacy_sync_jobs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    connection_id = Column(UUID(as_uuid=True), ForeignKey("integration_connections.id"), nullable=False)
-    entity_mapping_id = Column(UUID(as_uuid=True), ForeignKey("integration_entity_mappings.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    connection_id = Column(UUID(), ForeignKey("integ_legacy_connections.id"), nullable=False)
+    entity_mapping_id = Column(UUID(), ForeignKey("integ_legacy_entity_mappings.id"), nullable=False)
 
     # Configuration
     direction = Column(String(20), nullable=False)
@@ -249,7 +249,7 @@ class SyncJob(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
 
     # Relations
     connection = relationship("Connection", back_populates="sync_jobs")
@@ -264,11 +264,11 @@ class SyncJob(Base):
 
 class SyncLog(Base):
     """Log de synchronisation."""
-    __tablename__ = "integration_sync_logs"
+    __tablename__ = "integ_legacy_sync_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("integration_sync_jobs.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    job_id = Column(UUID(), ForeignKey("integ_legacy_sync_jobs.id"), nullable=False)
 
     # Enregistrement
     source_id = Column(String(255), nullable=False)
@@ -301,11 +301,11 @@ class SyncLog(Base):
 
 class Conflict(Base):
     """Conflit de synchronisation."""
-    __tablename__ = "integration_conflicts"
+    __tablename__ = "integ_legacy_conflicts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("integration_sync_jobs.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    job_id = Column(UUID(), ForeignKey("integ_legacy_sync_jobs.id"), nullable=False)
 
     # Enregistrements en conflit
     source_id = Column(String(255), nullable=False)
@@ -321,7 +321,7 @@ class Conflict(Base):
     resolution = Column(String(20))
     resolved_data = Column(JSON)
     resolved_at = Column(DateTime)
-    resolved_by = Column(UUID(as_uuid=True))
+    resolved_by = Column(UUID())
 
     # Timestamp
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -334,11 +334,11 @@ class Conflict(Base):
 
 class Webhook(Base):
     """Webhook entrant."""
-    __tablename__ = "integration_webhooks"
+    __tablename__ = "integ_legacy_webhooks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    connection_id = Column(UUID(as_uuid=True), ForeignKey("integration_connections.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    connection_id = Column(UUID(), ForeignKey("integ_legacy_connections.id"), nullable=False)
 
     # Configuration
     endpoint_path = Column(String(255), nullable=False)
@@ -354,7 +354,7 @@ class Webhook(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
 
     __table_args__ = (
         Index("ix_webhooks_tenant_path", "tenant_id", "endpoint_path", unique=True),

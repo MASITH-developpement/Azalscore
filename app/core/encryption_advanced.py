@@ -16,6 +16,8 @@ Conformité:
 - RGPD Article 32 (Security of processing)
 - SOC 2 Type II (CC6.1: Logical and Physical Access Controls)
 """
+from __future__ import annotations
+
 
 import base64
 import hashlib
@@ -1290,9 +1292,18 @@ def initialize_encryption_services(
     master_key: Optional[str] = None,
     hsm_type: str = "software",  # software, aws_kms
     hsm_config: Optional[dict] = None,
+    db_session_factory=None,
+    use_database_store: bool = True,
 ) -> dict:
     """
     Initialise tous les services de chiffrement.
+
+    Args:
+        master_key: Clé maître (optionnel, utilise MASTER_ENCRYPTION_KEY si non fourni)
+        hsm_type: Type de HSM ("software", "aws_kms")
+        hsm_config: Configuration HSM
+        db_session_factory: Factory pour sessions DB (pour DatabaseKeyStore)
+        use_database_store: Si True, utilise DatabaseKeyStore (recommandé en production)
 
     Returns:
         Dict avec toutes les instances de services
@@ -1313,8 +1324,26 @@ def initialize_encryption_services(
     elif hsm_type == "aws_kms":
         hsm = AWSKMSProvider(**(hsm_config or {}))
 
-    # Key Store
-    key_store = InMemoryKeyStore()  # NOTE: Production - Utiliser DatabaseKeyStore
+    # Key Store - DatabaseKeyStore en production pour persistance
+    # SÉCURITÉ P0: DatabaseKeyStore chiffre les clés avec la master key avant stockage
+    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+    key_store: KeyStore
+
+    if use_database_store and (db_session_factory is not None or is_production):
+        key_store = DatabaseKeyStore(db_session_factory, master_key_bytes)
+        logger.info(
+            "Using DatabaseKeyStore for key persistence",
+            extra={"mode": "database", "production": is_production}
+        )
+    else:
+        key_store = InMemoryKeyStore()
+        if is_production:
+            logger.warning(
+                "Using InMemoryKeyStore in production - keys will be lost on restart!",
+                extra={"mode": "memory", "risk": "keys_lost_on_restart"}
+            )
+        else:
+            logger.info("Using InMemoryKeyStore (development mode)")
 
     # KMS
     _kms_service = KeyManagementService(key_store, hsm)
@@ -1327,7 +1356,7 @@ def initialize_encryption_services(
 
     logger.info(
         "Encryption services initialized",
-        extra={"hsm_type": hsm_type}
+        extra={"hsm_type": hsm_type, "key_store": type(key_store).__name__}
     )
 
     return {

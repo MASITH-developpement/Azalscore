@@ -71,7 +71,62 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      // Routes API versionnées
+      '/v1': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/v2': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/v3': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      // Routes API legacy (sans préfixe de version)
       '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      // Routes métier (v3 CRUDRouter)
+      '/interventions': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/commercial': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/hr': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/inventory': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/projects': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/accounting': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/treasury': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/purchases': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/auth': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/health': {
         target: 'http://localhost:8000',
         changeOrigin: true
       }

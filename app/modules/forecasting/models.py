@@ -10,6 +10,8 @@ Entités:
 - Budget: Budgétisation
 - KPI: Indicateurs de performance
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
@@ -21,7 +23,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint, CheckConstraint,
     Numeric, Enum as SQLEnum, event
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UniversalUUID as UUID, JSONB
 from sqlalchemy.orm import relationship, validates, backref
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -118,8 +120,8 @@ class Forecast(Base):
     __tablename__ = "forecasts"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -169,7 +171,7 @@ class Forecast(Base):
 
     # === Modèle utilisé ===
     model_id = Column(
-        UUID(as_uuid=True),
+        UUID(),
         ForeignKey('forecast_models.id', ondelete='SET NULL'),
         nullable=True
     )
@@ -179,19 +181,19 @@ class Forecast(Base):
     notes = Column(Text, nullable=True)
 
     # === Approbation ===
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
 
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Version ===
     version = Column(Integer, default=1, nullable=False)
@@ -254,8 +256,8 @@ class ForecastModel(Base):
     __tablename__ = "forecast_models"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -288,13 +290,13 @@ class ForecastModel(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Version ===
     version = Column(Integer, default=1, nullable=False)
@@ -331,8 +333,8 @@ class Scenario(Base):
     __tablename__ = "scenarios"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -346,7 +348,7 @@ class Scenario(Base):
 
     # === Prévision de base ===
     base_forecast_id = Column(
-        UUID(as_uuid=True),
+        UUID(),
         ForeignKey('forecasts.id', ondelete='CASCADE'),
         nullable=False
     )
@@ -371,13 +373,13 @@ class Scenario(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Version ===
     version = Column(Integer, default=1, nullable=False)
@@ -414,8 +416,8 @@ class ForecastBudget(Base):
     __tablename__ = "forecasting_budgets"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -438,7 +440,7 @@ class ForecastBudget(Base):
     )
 
     # === Département ===
-    department_id = Column(UUID(as_uuid=True), nullable=True)
+    department_id = Column(UUID(), nullable=True)
     department_name = Column(String(100), nullable=True)
 
     # === Lignes (stockées en JSONB pour flexibilité) ===
@@ -452,29 +454,29 @@ class ForecastBudget(Base):
     variance_percent = Column(Numeric(8, 2), default=Decimal("0"))
 
     # === Workflow ===
-    submitted_by = Column(UUID(as_uuid=True), nullable=True)
+    submitted_by = Column(UUID(), nullable=True)
     submitted_at = Column(DateTime, nullable=True)
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     rejection_reason = Column(Text, nullable=True)
 
     # === Versioning budget ===
     parent_budget_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey('budgets.id', ondelete='SET NULL'),
+        UUID(),
+        ForeignKey('forecasting_budgets.id', ondelete='SET NULL'),
         nullable=True
     )
 
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Version ===
     version = Column(Integer, default=1, nullable=False)
@@ -515,8 +517,8 @@ class KPI(Base):
     __tablename__ = "kpis"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -560,13 +562,13 @@ class KPI(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Version ===
     version = Column(Integer, default=1, nullable=False)

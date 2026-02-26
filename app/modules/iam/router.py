@@ -4,17 +4,25 @@ AZALS MODULE T0 - Router API IAM
 
 Endpoints REST pour la gestion des identités et accès.
 """
+from __future__ import annotations
+
 
 from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
+from app.core.security import decode_access_token
+from app.core.token_blacklist import blacklist_token
+
+# Security scheme pour extraire le token
+security = HTTPBearer()
 
 from .decorators import require_permission
 from .schemas import (
@@ -192,13 +200,34 @@ async def refresh_token(
 @router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     data: LogoutRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
-    """Déconnexion utilisateur."""
-    # NOTE: Phase 2 - Extraire JTI du token pour révocation ciblée
+    """
+    Déconnexion utilisateur.
+
+    - Par défaut : révoque uniquement le token actuel (via JTI)
+    - all_sessions=True : révoque toutes les sessions de l'utilisateur
+    """
     if data.all_sessions:
+        # Révoquer toutes les sessions
         service.revoke_all_sessions(current_user.id, "User logout all")
+    else:
+        # Extraire et révoquer le token actuel via JTI
+        token = credentials.credentials
+        payload = decode_access_token(token)
+
+        if payload:
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+
+            if jti and exp:
+                # Révoquer ce token spécifique
+                blacklist_token(jti, float(exp))
+            else:
+                # Fallback: révoquer toutes les sessions si JTI manquant
+                service.revoke_all_sessions(current_user.id, "User logout (no JTI)")
 
 
 # ============================================================================

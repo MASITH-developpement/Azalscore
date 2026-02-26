@@ -2,6 +2,8 @@
 Modèles SQLAlchemy Shipping / Expédition - GAP-078
 ==================================================
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
@@ -122,10 +124,10 @@ class Zone(Base):
     __tablename__ = "shipping_zones"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -144,13 +146,13 @@ class Zone(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -167,10 +169,10 @@ class Carrier(Base):
     __tablename__ = "shipping_carriers"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -213,13 +215,13 @@ class Carrier(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -239,17 +241,17 @@ class ShippingRate(Base):
     __tablename__ = "shipping_rates"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     carrier_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipping_carriers.id"), nullable=False
+        UUID(), ForeignKey("shipping_carriers.id"), nullable=False
     )
     zone_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipping_zones.id"), nullable=True
+        UUID(), ForeignKey("shipping_zones.id"), nullable=True
     )
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -296,13 +298,13 @@ class ShippingRate(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -322,16 +324,16 @@ class Shipment(Base):
     __tablename__ = "shipping_shipments"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     shipment_number: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Références
-    order_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    order_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     order_number: Mapped[str] = mapped_column(String(50), default="")
 
     status: Mapped[ShipmentStatus] = mapped_column(
@@ -341,7 +343,7 @@ class Shipment(Base):
 
     # Transporteur
     carrier_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipping_carriers.id"), nullable=True
+        UUID(), ForeignKey("shipping_carriers.id"), nullable=True
     )
     carrier_name: Mapped[str] = mapped_column(String(100), default="")
     shipping_method: Mapped[ShippingMethod] = mapped_column(
@@ -390,7 +392,7 @@ class Shipment(Base):
 
     # Point relais
     pickup_point_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipping_pickup_points.id"), nullable=True
+        UUID(), ForeignKey("shipping_pickup_points.id"), nullable=True
     )
     pickup_point_name: Mapped[str] = mapped_column(String(200), default="")
     pickup_point_address: Mapped[str] = mapped_column(Text, default="")
@@ -411,13 +413,13 @@ class Shipment(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -440,14 +442,14 @@ class Package(Base):
     __tablename__ = "shipping_packages"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     shipment_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipping_shipments.id"), nullable=False
+        UUID(), ForeignKey("shipping_shipments.id"), nullable=False
     )
 
     package_type: Mapped[PackageType] = mapped_column(
@@ -494,14 +496,14 @@ class PickupPoint(Base):
     __tablename__ = "shipping_pickup_points"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     carrier_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipping_carriers.id"), nullable=False
+        UUID(), ForeignKey("shipping_carriers.id"), nullable=False
     )
     external_id: Mapped[str] = mapped_column(String(100), nullable=False)
 
@@ -527,13 +529,13 @@ class PickupPoint(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -551,18 +553,18 @@ class Return(Base):
     __tablename__ = "shipping_returns"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     return_number: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Références
-    order_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    order_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     shipment_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipping_shipments.id"), nullable=True
+        UUID(), ForeignKey("shipping_shipments.id"), nullable=True
     )
 
     status: Mapped[ReturnStatus] = mapped_column(
@@ -579,7 +581,7 @@ class Return(Base):
     items: Mapped[List[dict]] = mapped_column(JSONB, default=list)
 
     # Expédition retour
-    return_carrier_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    return_carrier_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     return_tracking_number: Mapped[str] = mapped_column(String(100), default="")
     return_label_url: Mapped[str] = mapped_column(String(500), default="")
 
@@ -607,18 +609,18 @@ class Return(Base):
     return_shipping_cost: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
     restocking_fee: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
 
-    processed_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    processed_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations

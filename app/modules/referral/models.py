@@ -26,7 +26,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint, CheckConstraint,
     Numeric, Enum as SQLEnum, event
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from app.core.types import UniversalUUID as UUID, JSONB, ARRAY
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -136,8 +136,8 @@ class ReferralProgram(Base):
     __tablename__ = "referral_programs"
 
     # === Identifiants ===
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -180,7 +180,7 @@ class ReferralProgram(Base):
 
     # === Éligibilité ===
     eligible_user_segments = Column(ARRAY(String), default=list)
-    excluded_user_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    excluded_user_ids = Column(ARRAY(UUID()), default=list)
 
     # === Tracking ===
     total_clicks = Column(Integer, default=0)
@@ -194,13 +194,13 @@ class ReferralProgram(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # === Optimistic Locking ===
     version = Column(Integer, default=1, nullable=False)
@@ -266,9 +266,9 @@ class RewardTier(Base):
     """
     __tablename__ = "referral_reward_tiers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    program_id = Column(UUID(as_uuid=True), ForeignKey('referral_programs.id'), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    program_id = Column(UUID(), ForeignKey('referral_programs.id'), nullable=False)
 
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -332,10 +332,10 @@ class ReferralCode(Base):
     """
     __tablename__ = "referral_codes"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    program_id = Column(UUID(as_uuid=True), ForeignKey('referral_programs.id'), nullable=False)
-    referrer_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    program_id = Column(UUID(), ForeignKey('referral_programs.id'), nullable=False)
+    referrer_id = Column(UUID(), nullable=False, index=True)
 
     # === Code ===
     code = Column(String(50), nullable=False)
@@ -412,14 +412,14 @@ class Referral(Base):
     """
     __tablename__ = "referrals"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    program_id = Column(UUID(as_uuid=True), ForeignKey('referral_programs.id'), nullable=False)
-    referral_code_id = Column(UUID(as_uuid=True), ForeignKey('referral_codes.id'), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    program_id = Column(UUID(), ForeignKey('referral_programs.id'), nullable=False)
+    referral_code_id = Column(UUID(), ForeignKey('referral_codes.id'), nullable=False)
 
     # === Acteurs ===
-    referrer_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    referee_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    referrer_id = Column(UUID(), nullable=False, index=True)
+    referee_id = Column(UUID(), nullable=True, index=True)
     referee_email = Column(String(255), default="")
     referee_name = Column(String(255), default="")
 
@@ -437,12 +437,12 @@ class Referral(Base):
     qualification_timestamp = Column(DateTime, nullable=True)
 
     # === Conversion ===
-    conversion_order_id = Column(UUID(as_uuid=True), nullable=True)
+    conversion_order_id = Column(UUID(), nullable=True)
     conversion_amount = Column(Numeric(15, 2), default=Decimal("0"))
 
     # === Multi-niveau ===
     level = Column(Integer, default=1, nullable=False)
-    parent_referral_id = Column(UUID(as_uuid=True), ForeignKey('referrals.id'), nullable=True)
+    parent_referral_id = Column(UUID(), ForeignKey('referrals.id'), nullable=True)
 
     # === Attribution / Tracking ===
     ip_address = Column(String(45), default="")
@@ -459,8 +459,8 @@ class Referral(Base):
     is_suspicious = Column(Boolean, default=False, nullable=False)
 
     # === Récompenses ===
-    referrer_reward_id = Column(UUID(as_uuid=True), nullable=True)
-    referee_reward_id = Column(UUID(as_uuid=True), nullable=True)
+    referrer_reward_id = Column(UUID(), nullable=True)
+    referee_reward_id = Column(UUID(), nullable=True)
 
     # === Notes ===
     notes = Column(Text, default="")
@@ -504,11 +504,11 @@ class Reward(Base):
     """
     __tablename__ = "referral_rewards"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    program_id = Column(UUID(as_uuid=True), ForeignKey('referral_programs.id'), nullable=False)
-    referral_id = Column(UUID(as_uuid=True), ForeignKey('referrals.id'), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    program_id = Column(UUID(), ForeignKey('referral_programs.id'), nullable=False)
+    referral_id = Column(UUID(), ForeignKey('referrals.id'), nullable=False)
+    user_id = Column(UUID(), nullable=False, index=True)
 
     # === Type de bénéficiaire ===
     is_referrer_reward = Column(Boolean, default=True, nullable=False)
@@ -530,11 +530,11 @@ class Reward(Base):
 
     # === Détails selon le type ===
     discount_code = Column(String(50), nullable=True)
-    product_id = Column(UUID(as_uuid=True), nullable=True)
-    credit_transaction_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UUID(), nullable=True)
+    credit_transaction_id = Column(UUID(), nullable=True)
 
     # === Payout ===
-    payout_id = Column(UUID(as_uuid=True), ForeignKey('referral_payouts.id'), nullable=True)
+    payout_id = Column(UUID(), ForeignKey('referral_payouts.id'), nullable=True)
 
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -569,9 +569,9 @@ class Payout(Base):
     """
     __tablename__ = "referral_payouts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    user_id = Column(UUID(), nullable=False, index=True)
 
     # === Montant ===
     amount = Column(Numeric(15, 2), default=Decimal("0"))
@@ -596,7 +596,7 @@ class Payout(Base):
     # === Audit ===
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
 
     # === Soft Delete ===
     is_deleted = Column(Boolean, default=False, nullable=False)
@@ -621,9 +621,9 @@ class FraudCheck(Base):
     """
     __tablename__ = "referral_fraud_checks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    referral_id = Column(UUID(as_uuid=True), ForeignKey('referrals.id'), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    referral_id = Column(UUID(), ForeignKey('referrals.id'), nullable=False)
 
     # === Type de vérification ===
     check_type = Column(String(50), nullable=False)  # ip, device, email, velocity

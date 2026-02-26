@@ -17,6 +17,8 @@ Fonctionnalites:
 
 CRITIQUE: Tous les modeles ont tenant_id pour isolation multi-tenant stricte.
 """
+from __future__ import annotations
+
 
 import uuid
 from datetime import datetime, date
@@ -28,7 +30,7 @@ from sqlalchemy import (
     Column, String, Text, Boolean, Integer, DateTime, Numeric,
     ForeignKey, Index, Date, Float
 )
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UniversalUUID as UUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -408,13 +410,13 @@ class ContractCategory(Base):
     """Categorie de contrat configurable par tenant."""
     __tablename__ = "contract_categories"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("contract_categories.id"))
+    parent_id = Column(UUID(), ForeignKey("contract_categories.id"))
     color = Column(String(20), default="#3B82F6")
     icon = Column(String(50))
     sort_order = Column(Integer, default=0)
@@ -435,11 +437,11 @@ class ContractCategory(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     children = relationship("ContractCategory", backref="parent", remote_side=[id])
@@ -454,14 +456,14 @@ class ContractTemplate(Base):
     """Modele de contrat reutilisable."""
     __tablename__ = "contract_templates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     contract_type = Column(String(50), nullable=False)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("contract_categories.id"))
+    category_id = Column(UUID(), ForeignKey("contract_categories.id"))
 
     # Contenu template
     content = Column(Text)  # HTML ou Markdown
@@ -496,11 +498,11 @@ class ContractTemplate(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     category = relationship("ContractCategory")
@@ -517,9 +519,9 @@ class ClauseTemplate(Base):
     """Modele de clause reutilisable."""
     __tablename__ = "contract_clause_templates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_template_id = Column(UUID(as_uuid=True), ForeignKey("contract_templates.id"))
+    contract_template_id = Column(UUID(), ForeignKey("contract_templates.id"))
 
     code = Column(String(50), nullable=False)
     title = Column(String(255), nullable=False)
@@ -547,11 +549,11 @@ class ClauseTemplate(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract_template = relationship("ContractTemplate", back_populates="clause_templates")
@@ -570,7 +572,7 @@ class Contract(Base):
     """Contrat principal."""
     __tablename__ = "contracts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -581,18 +583,18 @@ class Contract(Base):
 
     # Classification
     contract_type = Column(String(50), nullable=False, default=ContractType.SERVICE.value)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("contract_categories.id"))
-    template_id = Column(UUID(as_uuid=True), ForeignKey("contract_templates.id"))
+    category_id = Column(UUID(), ForeignKey("contract_categories.id"))
+    template_id = Column(UUID(), ForeignKey("contract_templates.id"))
 
     # Hierarchie contrat
-    parent_contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"))  # Contrat cadre
-    master_contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"))  # Contrat maitre
+    parent_contract_id = Column(UUID(), ForeignKey("contracts.id"))  # Contrat cadre
+    master_contract_id = Column(UUID(), ForeignKey("contracts.id"))  # Contrat maitre
 
     # Statut
     status = Column(String(30), default=ContractStatus.DRAFT.value, index=True)
     status_reason = Column(Text)
     status_changed_at = Column(DateTime)
-    status_changed_by = Column(UUID(as_uuid=True))
+    status_changed_by = Column(UUID())
 
     # Contenu
     content = Column(Text)  # Contenu complet du contrat
@@ -650,16 +652,16 @@ class Contract(Base):
     termination_notice_days = Column(Integer, default=90)
     termination_reason = Column(Text)
     termination_date = Column(Date)
-    termination_by = Column(UUID(as_uuid=True))
+    termination_by = Column(UUID())
     early_termination_penalty = Column(Numeric(18, 4))
 
     # Workflow Approbation
     requires_approval = Column(Boolean, default=True)
     approval_status = Column(String(30))
-    current_approver_id = Column(UUID(as_uuid=True))
+    current_approver_id = Column(UUID())
     approval_level = Column(Integer, default=0)
     approved_at = Column(DateTime)
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UUID())
 
     # Signature
     requires_signature = Column(Boolean, default=True)
@@ -668,14 +670,14 @@ class Contract(Base):
     all_parties_signed = Column(Boolean, default=False)
 
     # Documents
-    main_document_id = Column(UUID(as_uuid=True))
-    signed_document_id = Column(UUID(as_uuid=True))
+    main_document_id = Column(UUID())
+    signed_document_id = Column(UUID())
 
     # Attribution
-    owner_id = Column(UUID(as_uuid=True), index=True)  # Responsable interne
+    owner_id = Column(UUID(), index=True)  # Responsable interne
     owner_name = Column(String(255))
-    team_id = Column(UUID(as_uuid=True))
-    department_id = Column(UUID(as_uuid=True))
+    team_id = Column(UUID())
+    department_id = Column(UUID())
 
     # Compliance
     compliance_status = Column(String(30))
@@ -706,11 +708,11 @@ class Contract(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     category = relationship("ContractCategory")
@@ -746,9 +748,9 @@ class ContractParty(Base):
     """Partie contractante."""
     __tablename__ = "contract_parties"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Identification
     party_type = Column(String(30), default=PartyType.COMPANY.value)
@@ -758,7 +760,7 @@ class ContractParty(Base):
 
     # Reference interne
     entity_type = Column(String(50))  # customer, supplier, partner, employee
-    entity_id = Column(UUID(as_uuid=True), index=True)  # ID dans le systeme CRM
+    entity_id = Column(UUID(), index=True)  # ID dans le systeme CRM
 
     # Informations legales
     registration_number = Column(String(50))  # SIRET
@@ -804,11 +806,11 @@ class ContractParty(Base):
     # Audit
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="parties")
@@ -824,9 +826,9 @@ class ContractLine(Base):
     """Ligne de contrat - produit/service avec facturation."""
     __tablename__ = "contract_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Identification
     line_number = Column(Integer, nullable=False)
@@ -834,7 +836,7 @@ class ContractLine(Base):
     description = Column(Text, nullable=False)
 
     # Produit/Service
-    product_id = Column(UUID(as_uuid=True))
+    product_id = Column(UUID())
     product_code = Column(String(50))
     product_name = Column(String(255))
     is_service = Column(Boolean, default=True)
@@ -877,7 +879,7 @@ class ContractLine(Base):
     delivery_status = Column(String(30))
 
     # SLA
-    sla_id = Column(UUID(as_uuid=True))
+    sla_id = Column(UUID())
     response_time_hours = Column(Integer)
     resolution_time_hours = Column(Integer)
 
@@ -899,11 +901,11 @@ class ContractLine(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="lines")
@@ -920,10 +922,10 @@ class ContractClause(Base):
     """Clause specifique d'un contrat."""
     __tablename__ = "contract_clauses"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
-    template_id = Column(UUID(as_uuid=True), ForeignKey("contract_clause_templates.id"))
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
+    template_id = Column(UUID(), ForeignKey("contract_clause_templates.id"))
 
     # Contenu
     title = Column(String(255), nullable=False)
@@ -940,7 +942,7 @@ class ContractClause(Base):
     is_negotiable = Column(Boolean, default=True)
     negotiation_status = Column(String(30), default="accepted")  # accepted, pending, rejected
     negotiation_notes = Column(Text)
-    modified_by_party_id = Column(UUID(as_uuid=True))
+    modified_by_party_id = Column(UUID())
 
     # Historique modifications
     modification_history = Column(JSON, default=list)
@@ -955,7 +957,7 @@ class ContractClause(Base):
     # Approbation clause
     requires_legal_review = Column(Boolean, default=False)
     legal_reviewed = Column(Boolean, default=False)
-    legal_reviewer_id = Column(UUID(as_uuid=True))
+    legal_reviewer_id = Column(UUID())
     legal_review_date = Column(DateTime)
     legal_review_notes = Column(Text)
 
@@ -965,11 +967,11 @@ class ContractClause(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="clauses")
@@ -985,9 +987,9 @@ class ContractObligation(Base):
     """Obligation contractuelle a suivre."""
     __tablename__ = "contract_obligations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Identification
     code = Column(String(50))
@@ -996,8 +998,8 @@ class ContractObligation(Base):
     obligation_type = Column(String(30), nullable=False)
 
     # Partie responsable
-    responsible_party_id = Column(UUID(as_uuid=True), ForeignKey("contract_parties.id"))
-    responsible_user_id = Column(UUID(as_uuid=True))
+    responsible_party_id = Column(UUID(), ForeignKey("contract_parties.id"))
+    responsible_user_id = Column(UUID())
     responsible_name = Column(String(255))
 
     # Echeances
@@ -1021,7 +1023,7 @@ class ContractObligation(Base):
     # Statut
     status = Column(String(30), default=ObligationStatus.PENDING.value)
     completed_at = Column(DateTime)
-    completed_by = Column(UUID(as_uuid=True))
+    completed_by = Column(UUID())
     completion_notes = Column(Text)
 
     # Alertes
@@ -1031,7 +1033,7 @@ class ContractObligation(Base):
 
     # Evidence
     evidence_required = Column(Boolean, default=False)
-    evidence_document_id = Column(UUID(as_uuid=True))
+    evidence_document_id = Column(UUID())
 
     # Penalite
     penalty_on_breach = Column(Numeric(18, 4))
@@ -1046,11 +1048,11 @@ class ContractObligation(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="obligations")
@@ -1068,9 +1070,9 @@ class ContractMilestone(Base):
     """Jalon contractuel."""
     __tablename__ = "contract_milestones"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Identification
     code = Column(String(50))
@@ -1091,11 +1093,11 @@ class ContractMilestone(Base):
     payment_percentage = Column(Numeric(5, 2))  # % du contrat
     payment_currency = Column(String(3), default="EUR")
     payment_triggered = Column(Boolean, default=False)
-    invoice_id = Column(UUID(as_uuid=True))
+    invoice_id = Column(UUID())
 
     # Validation
     requires_approval = Column(Boolean, default=True)
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UUID())
     approved_at = Column(DateTime)
     approval_notes = Column(Text)
 
@@ -1103,14 +1105,14 @@ class ContractMilestone(Base):
     status = Column(String(30), default="pending")  # pending, in_progress, completed, delayed, cancelled
     progress_percentage = Column(Integer, default=0)
     completed_at = Column(DateTime)
-    completed_by = Column(UUID(as_uuid=True))
+    completed_by = Column(UUID())
 
     # Responsable
-    responsible_user_id = Column(UUID(as_uuid=True))
+    responsible_user_id = Column(UUID())
     responsible_name = Column(String(255))
 
     # Dependances
-    depends_on_milestone_id = Column(UUID(as_uuid=True), ForeignKey("contract_milestones.id"))
+    depends_on_milestone_id = Column(UUID(), ForeignKey("contract_milestones.id"))
 
     # Alertes
     alert_days_before = Column(Integer, default=14)
@@ -1122,11 +1124,11 @@ class ContractMilestone(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="milestones")
@@ -1143,9 +1145,9 @@ class ContractAmendment(Base):
     """Avenant au contrat."""
     __tablename__ = "contract_amendments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Identification
     amendment_number = Column(Integer, nullable=False)
@@ -1180,7 +1182,7 @@ class ContractAmendment(Base):
 
     # Approbation
     requires_approval = Column(Boolean, default=True)
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UUID())
     approved_at = Column(DateTime)
 
     # Signature
@@ -1189,8 +1191,8 @@ class ContractAmendment(Base):
     signed_at = Column(DateTime)
 
     # Document
-    document_id = Column(UUID(as_uuid=True))
-    signed_document_id = Column(UUID(as_uuid=True))
+    document_id = Column(UUID())
+    signed_document_id = Column(UUID())
 
     # Parties
     signing_parties = Column(JSON, default=list)  # [{party_id, signed, signed_at}]
@@ -1201,11 +1203,11 @@ class ContractAmendment(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="amendments")
@@ -1222,9 +1224,9 @@ class ContractRenewal(Base):
     """Historique et suivi des renouvellements."""
     __tablename__ = "contract_renewals"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Identification
     renewal_number = Column(Integer, nullable=False)
@@ -1260,10 +1262,10 @@ class ContractRenewal(Base):
     status = Column(String(30), default="pending")  # pending, confirmed, cancelled, declined
 
     # Document
-    amendment_id = Column(UUID(as_uuid=True), ForeignKey("contract_amendments.id"))
+    amendment_id = Column(UUID(), ForeignKey("contract_amendments.id"))
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UUID())
     approved_at = Column(DateTime)
 
     notes = Column(Text)
@@ -1271,11 +1273,11 @@ class ContractRenewal(Base):
     # Audit
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="renewals")
@@ -1292,10 +1294,10 @@ class ContractDocument(Base):
     """Document attache au contrat."""
     __tablename__ = "contract_documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
-    amendment_id = Column(UUID(as_uuid=True), ForeignKey("contract_amendments.id"))
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
+    amendment_id = Column(UUID(), ForeignKey("contract_amendments.id"))
 
     # Identification
     name = Column(String(255), nullable=False)
@@ -1312,7 +1314,7 @@ class ContractDocument(Base):
     # Version
     version_number = Column(Integer, default=1)
     is_latest_version = Column(Boolean, default=True)
-    previous_version_id = Column(UUID(as_uuid=True), ForeignKey("contract_documents.id"))
+    previous_version_id = Column(UUID(), ForeignKey("contract_documents.id"))
 
     # Signature
     is_signed = Column(Boolean, default=False)
@@ -1338,11 +1340,11 @@ class ContractDocument(Base):
     # Audit
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="documents")
@@ -1360,9 +1362,9 @@ class ContractAlert(Base):
     """Alerte contrat."""
     __tablename__ = "contract_alerts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Type et priorite
     alert_type = Column(String(30), nullable=False)
@@ -1374,7 +1376,7 @@ class ContractAlert(Base):
 
     # Reference
     reference_type = Column(String(50))  # obligation, milestone, renewal, etc.
-    reference_id = Column(UUID(as_uuid=True))
+    reference_id = Column(UUID())
 
     # Date
     due_date = Column(Date, nullable=False)
@@ -1400,7 +1402,7 @@ class ContractAlert(Base):
     # Acquittement
     is_acknowledged = Column(Boolean, default=False)
     acknowledged_at = Column(DateTime)
-    acknowledged_by = Column(UUID(as_uuid=True))
+    acknowledged_by = Column(UUID())
     acknowledgement_notes = Column(Text)
 
     # Action
@@ -1418,11 +1420,11 @@ class ContractAlert(Base):
     # Audit
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="alerts")
@@ -1439,23 +1441,23 @@ class ContractApproval(Base):
     """Approbation de contrat - workflow multi-niveaux."""
     __tablename__ = "contract_approvals"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
-    amendment_id = Column(UUID(as_uuid=True), ForeignKey("contract_amendments.id"))
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
+    amendment_id = Column(UUID(), ForeignKey("contract_amendments.id"))
 
     # Niveau approbation
     level = Column(Integer, nullable=False)
     level_name = Column(String(100))
 
     # Approbateur
-    approver_id = Column(UUID(as_uuid=True), nullable=False)
+    approver_id = Column(UUID(), nullable=False)
     approver_name = Column(String(255))
     approver_email = Column(String(255))
     approver_role = Column(String(100))
 
     # Delegation
-    delegated_from_id = Column(UUID(as_uuid=True))
+    delegated_from_id = Column(UUID())
     delegation_reason = Column(Text)
 
     # Statut
@@ -1478,7 +1480,7 @@ class ContractApproval(Base):
 
     # Escalade
     escalated = Column(Boolean, default=False)
-    escalated_to_id = Column(UUID(as_uuid=True))
+    escalated_to_id = Column(UUID())
     escalation_reason = Column(Text)
     escalation_date = Column(DateTime)
 
@@ -1491,11 +1493,11 @@ class ContractApproval(Base):
     # Audit
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     contract = relationship("Contract", back_populates="approvals")
@@ -1512,9 +1514,9 @@ class ContractHistory(Base):
     """Historique des modifications du contrat."""
     __tablename__ = "contract_history"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    contract_id = Column(UUID(), ForeignKey("contracts.id"), nullable=False)
 
     # Version
     version_number = Column(Integer, nullable=False)
@@ -1532,7 +1534,7 @@ class ContractHistory(Base):
     contract_snapshot = Column(JSON)  # Snapshot complet du contrat a ce moment
 
     # Utilisateur
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(), nullable=False)
     user_name = Column(String(255))
     user_email = Column(String(255))
     user_ip = Column(String(50))
@@ -1562,7 +1564,7 @@ class ContractMetrics(Base):
     """Metriques agregees des contrats - snapshot periodique."""
     __tablename__ = "contract_metrics"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Periode

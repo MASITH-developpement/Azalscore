@@ -15,6 +15,8 @@ Gestion complete de flotte de vehicules:
 
 Multi-tenant, Soft delete, Audit complet.
 """
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, date
 from decimal import Decimal
@@ -25,7 +27,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint, CheckConstraint,
     Numeric, Enum as SQLEnum, event
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UniversalUUID as UUID, JSONB
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -177,8 +179,8 @@ class FleetVehicle(Base):
     """Vehicule de la flotte."""
     __tablename__ = "fleet_vehicles"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     # Identification
     code = Column(String(50), nullable=False)
@@ -225,10 +227,10 @@ class FleetVehicle(Base):
     monthly_cost = Column(Numeric(10, 2))  # TCO mensuel estime
 
     # Affectation
-    assigned_driver_id = Column(UUID(as_uuid=True), ForeignKey("fleet_drivers.id"))
+    assigned_driver_id = Column(UUID(), ForeignKey("fleet_drivers.id"))
     department = Column(String(100))
     cost_center = Column(String(50))
-    project_id = Column(UUID(as_uuid=True))
+    project_id = Column(UUID())
 
     # Geolocalisation
     location_lat = Column(Numeric(10, 8))
@@ -255,13 +257,13 @@ class FleetVehicle(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
-    updated_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
+    updated_by = Column(UUID())
 
     # Soft Delete
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -321,13 +323,13 @@ class FleetDriver(Base):
     """Conducteur de la flotte."""
     __tablename__ = "fleet_drivers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     # Identification
     code = Column(String(50), nullable=False)
-    employee_id = Column(UUID(as_uuid=True))  # Lien module RH
-    user_id = Column(UUID(as_uuid=True))  # Lien compte utilisateur
+    employee_id = Column(UUID())  # Lien module RH
+    user_id = Column(UUID())  # Lien compte utilisateur
 
     # Informations personnelles
     first_name = Column(String(100), nullable=False)
@@ -373,13 +375,13 @@ class FleetDriver(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
-    updated_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
+    updated_by = Column(UUID())
 
     # Soft Delete
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -425,12 +427,12 @@ class FleetContract(Base):
     """Contrat vehicule (leasing, assurance, entretien)."""
     __tablename__ = "fleet_contracts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     # Identification
     code = Column(String(50), nullable=False)
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"), nullable=False)
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"), nullable=False)
     contract_type = Column(SQLEnum(ContractType), nullable=False)
     status = Column(SQLEnum(ContractStatus), default=ContractStatus.ACTIVE, nullable=False)
 
@@ -482,13 +484,13 @@ class FleetContract(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
-    updated_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
+    updated_by = Column(UUID())
 
     # Soft Delete
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -532,11 +534,11 @@ class FleetMileageLog(Base):
     """Releve kilometrique."""
     __tablename__ = "fleet_mileage_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"), nullable=False)
-    driver_id = Column(UUID(as_uuid=True))
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"), nullable=False)
+    driver_id = Column(UUID())
 
     log_date = Column(Date, nullable=False)
     mileage = Column(Integer, nullable=False)
@@ -548,7 +550,7 @@ class FleetMileageLog(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
 
     __table_args__ = (
         Index('ix_fleet_mileage_tenant', 'tenant_id'),
@@ -567,11 +569,11 @@ class FleetFuelEntry(Base):
     """Entree de carburant."""
     __tablename__ = "fleet_fuel_entries"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"), nullable=False)
-    driver_id = Column(UUID(as_uuid=True), ForeignKey("fleet_drivers.id"))
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"), nullable=False)
+    driver_id = Column(UUID(), ForeignKey("fleet_drivers.id"))
 
     # Date et lieu
     fill_date = Column(Date, nullable=False)
@@ -603,7 +605,7 @@ class FleetFuelEntry(Base):
 
     # Validation
     is_validated = Column(Boolean, default=False)
-    validated_by = Column(UUID(as_uuid=True))
+    validated_by = Column(UUID())
     validated_at = Column(DateTime)
     anomaly_detected = Column(Boolean, default=False)
     anomaly_reason = Column(String(200))
@@ -612,7 +614,7 @@ class FleetFuelEntry(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
@@ -634,12 +636,12 @@ class FleetMaintenance(Base):
     """Entretien et reparation."""
     __tablename__ = "fleet_maintenances"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     # Identification
     code = Column(String(50), nullable=False)
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"), nullable=False)
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"), nullable=False)
     maintenance_type = Column(SQLEnum(MaintenanceType), nullable=False)
     status = Column(SQLEnum(MaintenanceStatus), default=MaintenanceStatus.SCHEDULED, nullable=False)
 
@@ -696,13 +698,13 @@ class FleetMaintenance(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
-    updated_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
+    updated_by = Column(UUID())
 
     # Soft Delete
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -746,12 +748,12 @@ class FleetDocument(Base):
     """Document vehicule ou conducteur."""
     __tablename__ = "fleet_documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     # Reference
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"))
-    driver_id = Column(UUID(as_uuid=True))
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"))
+    driver_id = Column(UUID())
 
     # Document
     document_type = Column(SQLEnum(DocumentType), nullable=False)
@@ -780,13 +782,13 @@ class FleetDocument(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
-    updated_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
+    updated_by = Column(UUID())
 
     # Soft Delete
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
 
     __table_args__ = (
         Index('ix_fleet_doc_tenant', 'tenant_id'),
@@ -823,13 +825,13 @@ class FleetIncident(Base):
     """Incident, sinistre ou amende."""
     __tablename__ = "fleet_incidents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     # Identification
     code = Column(String(50), nullable=False)
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"), nullable=False)
-    driver_id = Column(UUID(as_uuid=True), ForeignKey("fleet_drivers.id"))
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"), nullable=False)
+    driver_id = Column(UUID(), ForeignKey("fleet_drivers.id"))
     incident_type = Column(SQLEnum(IncidentType), nullable=False)
     status = Column(SQLEnum(IncidentStatus), default=IncidentStatus.REPORTED, nullable=False)
 
@@ -885,13 +887,13 @@ class FleetIncident(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
-    updated_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
+    updated_by = Column(UUID())
 
     # Soft Delete
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -929,10 +931,10 @@ class FleetCost(Base):
     """Cout vehicule pour calcul TCO."""
     __tablename__ = "fleet_costs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"), nullable=False)
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"), nullable=False)
 
     # Categorie
     category = Column(String(50), nullable=False)  # fuel, maintenance, insurance, tax, toll, parking, fine, other
@@ -947,7 +949,7 @@ class FleetCost(Base):
 
     # Reference
     reference_type = Column(String(50))  # fuel_entry, maintenance, incident, contract
-    reference_id = Column(UUID(as_uuid=True))
+    reference_id = Column(UUID())
 
     # Kilometrage
     mileage_at_cost = Column(Integer)
@@ -960,7 +962,7 @@ class FleetCost(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
 
     __table_args__ = (
         Index('ix_fleet_cost_tenant', 'tenant_id'),
@@ -980,15 +982,15 @@ class FleetAlert(Base):
     """Alerte de la flotte."""
     __tablename__ = "fleet_alerts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     # Reference
-    vehicle_id = Column(UUID(as_uuid=True), ForeignKey("fleet_vehicles.id"))
-    driver_id = Column(UUID(as_uuid=True))
-    contract_id = Column(UUID(as_uuid=True))
-    document_id = Column(UUID(as_uuid=True))
-    maintenance_id = Column(UUID(as_uuid=True))
+    vehicle_id = Column(UUID(), ForeignKey("fleet_vehicles.id"))
+    driver_id = Column(UUID())
+    contract_id = Column(UUID())
+    document_id = Column(UUID())
+    maintenance_id = Column(UUID())
 
     # Alerte
     alert_type = Column(SQLEnum(AlertType), nullable=False)
@@ -1007,10 +1009,10 @@ class FleetAlert(Base):
     # Statut
     is_read = Column(Boolean, default=False)
     read_at = Column(DateTime)
-    read_by = Column(UUID(as_uuid=True))
+    read_by = Column(UUID())
     is_resolved = Column(Boolean, default=False)
     resolved_at = Column(DateTime)
-    resolved_by = Column(UUID(as_uuid=True))
+    resolved_by = Column(UUID())
     resolution_notes = Column(Text)
 
     # Notifications

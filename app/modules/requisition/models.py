@@ -11,7 +11,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint, CheckConstraint,
     Numeric, Enum as SQLEnum
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from app.core.types import UniversalUUID as UUID, JSONB, ARRAY
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from decimal import Decimal
@@ -109,13 +109,13 @@ class CatalogCategory(Base):
     """Catégorie du catalogue interne"""
     __tablename__ = "requisition_catalog_categories"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(Text, default="")
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("requisition_catalog_categories.id"), nullable=True)
+    parent_id = Column(UUID(), ForeignKey("requisition_catalog_categories.id"), nullable=True)
 
     gl_account = Column(String(50), default="")
     requires_approval = Column(Boolean, default=False)
@@ -125,14 +125,14 @@ class CatalogCategory(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -152,14 +152,14 @@ class CatalogItem(Base):
     """Article du catalogue interne"""
     __tablename__ = "requisition_catalog_items"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(Text, default="")
 
-    category_id = Column(UUID(as_uuid=True), ForeignKey("requisition_catalog_categories.id"), nullable=True)
+    category_id = Column(UUID(), ForeignKey("requisition_catalog_categories.id"), nullable=True)
     category_name = Column(String(200), default="")
 
     # Prix
@@ -168,7 +168,7 @@ class CatalogItem(Base):
     unit_of_measure = Column(String(20), default="EA")
 
     # Fournisseur préféré
-    preferred_vendor_id = Column(UUID(as_uuid=True), nullable=True)
+    preferred_vendor_id = Column(UUID(), nullable=True)
     preferred_vendor_name = Column(String(200), default="")
     vendor_item_code = Column(String(50), default="")
     lead_time_days = Column(Integer, default=0)
@@ -188,14 +188,14 @@ class CatalogItem(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -215,16 +215,16 @@ class PreferredVendor(Base):
     """Fournisseur préféré pour catégories"""
     __tablename__ = "requisition_preferred_vendors"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    vendor_id = Column(UUID(as_uuid=True), nullable=False)
+    vendor_id = Column(UUID(), nullable=False)
     vendor_code = Column(String(50), nullable=False)
     vendor_name = Column(String(200), nullable=False)
 
-    category_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    category_ids = Column(ARRAY(UUID()), default=list)
 
-    contract_id = Column(UUID(as_uuid=True), nullable=True)
+    contract_id = Column(UUID(), nullable=True)
     contract_end_date = Column(Date, nullable=True)
 
     discount_percentage = Column(Numeric(5, 2), default=Decimal("0"))
@@ -238,14 +238,14 @@ class PreferredVendor(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -261,15 +261,15 @@ class BudgetAllocation(Base):
     """Allocation budgétaire pour demandes"""
     __tablename__ = "requisition_budget_allocations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    budget_id = Column(UUID(as_uuid=True), nullable=False)
+    budget_id = Column(UUID(), nullable=False)
     budget_name = Column(String(200), nullable=False)
 
-    department_id = Column(UUID(as_uuid=True), nullable=False)
+    department_id = Column(UUID(), nullable=False)
     department_name = Column(String(200), nullable=False)
-    cost_center_id = Column(UUID(as_uuid=True), nullable=True)
+    cost_center_id = Column(UUID(), nullable=True)
 
     fiscal_year = Column(Integer, nullable=False)
 
@@ -283,14 +283,14 @@ class BudgetAllocation(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -307,8 +307,8 @@ class Requisition(Base):
     """Demande d'achat"""
     __tablename__ = "requisitions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     requisition_number = Column(String(50), nullable=False)
     requisition_type = Column(SQLEnum(RequisitionType), default=RequisitionType.GOODS, nullable=False)
@@ -316,10 +316,10 @@ class Requisition(Base):
     priority = Column(SQLEnum(Priority), default=Priority.MEDIUM, nullable=False)
 
     # Demandeur
-    requester_id = Column(UUID(as_uuid=True), nullable=False)
+    requester_id = Column(UUID(), nullable=False)
     requester_name = Column(String(200), nullable=False)
     requester_email = Column(String(200), default="")
-    department_id = Column(UUID(as_uuid=True), nullable=True)
+    department_id = Column(UUID(), nullable=True)
     department_name = Column(String(200), default="")
 
     # Description
@@ -338,17 +338,17 @@ class Requisition(Base):
     closed_at = Column(DateTime, nullable=True)
 
     # Approbation
-    current_approver_id = Column(UUID(as_uuid=True), nullable=True)
+    current_approver_id = Column(UUID(), nullable=True)
     current_approver_name = Column(String(200), default="")
 
     # Budget
-    budget_id = Column(UUID(as_uuid=True), nullable=True)
+    budget_id = Column(UUID(), nullable=True)
     budget_name = Column(String(200), default="")
     budget_check_passed = Column(Boolean, default=True)
     budget_check_message = Column(Text, default="")
 
     # Commandes générées
-    po_ids = Column(ARRAY(UUID(as_uuid=True)), default=list)
+    po_ids = Column(ARRAY(UUID()), default=list)
 
     # Métadonnées
     tags = Column(ARRAY(String), default=list)
@@ -357,14 +357,14 @@ class Requisition(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)
@@ -391,17 +391,17 @@ class RequisitionLine(Base):
     """Ligne de demande d'achat"""
     __tablename__ = "requisition_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    requisition_id = Column(UUID(as_uuid=True), ForeignKey("requisitions.id"), nullable=False)
+    requisition_id = Column(UUID(), ForeignKey("requisitions.id"), nullable=False)
     line_number = Column(Integer, nullable=False)
 
-    item_id = Column(UUID(as_uuid=True), nullable=True)
+    item_id = Column(UUID(), nullable=True)
     item_code = Column(String(50), default="")
     description = Column(Text, nullable=False)
 
-    category_id = Column(UUID(as_uuid=True), nullable=True)
+    category_id = Column(UUID(), nullable=True)
     category_name = Column(String(200), default="")
 
     # Quantités
@@ -412,22 +412,22 @@ class RequisitionLine(Base):
     currency = Column(String(3), default="EUR")
 
     # Fournisseur suggéré
-    suggested_vendor_id = Column(UUID(as_uuid=True), nullable=True)
+    suggested_vendor_id = Column(UUID(), nullable=True)
     suggested_vendor_name = Column(String(200), default="")
 
     # Statut
     status = Column(SQLEnum(LineStatus), default=LineStatus.PENDING, nullable=False)
 
     # Commande
-    po_id = Column(UUID(as_uuid=True), nullable=True)
+    po_id = Column(UUID(), nullable=True)
     po_number = Column(String(50), default="")
-    po_line_id = Column(UUID(as_uuid=True), nullable=True)
+    po_line_id = Column(UUID(), nullable=True)
     ordered_quantity = Column(Numeric(15, 4), default=Decimal("0"))
     received_quantity = Column(Numeric(15, 4), default=Decimal("0"))
 
     # Budget
-    budget_id = Column(UUID(as_uuid=True), nullable=True)
-    cost_center_id = Column(UUID(as_uuid=True), nullable=True)
+    budget_id = Column(UUID(), nullable=True)
+    cost_center_id = Column(UUID(), nullable=True)
     gl_account = Column(String(50), default="")
 
     # Métadonnées
@@ -451,13 +451,13 @@ class ApprovalStep(Base):
     """Étape d'approbation"""
     __tablename__ = "requisition_approval_steps"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    requisition_id = Column(UUID(as_uuid=True), ForeignKey("requisitions.id"), nullable=False)
+    requisition_id = Column(UUID(), ForeignKey("requisitions.id"), nullable=False)
     step_number = Column(Integer, nullable=False)
 
-    approver_id = Column(UUID(as_uuid=True), nullable=False)
+    approver_id = Column(UUID(), nullable=False)
     approver_name = Column(String(200), nullable=False)
 
     status = Column(SQLEnum(ApprovalStatus), default=ApprovalStatus.PENDING, nullable=False)
@@ -480,12 +480,12 @@ class RequisitionComment(Base):
     """Commentaire sur demande"""
     __tablename__ = "requisition_comments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    requisition_id = Column(UUID(as_uuid=True), ForeignKey("requisitions.id"), nullable=False)
+    requisition_id = Column(UUID(), ForeignKey("requisitions.id"), nullable=False)
 
-    author_id = Column(UUID(as_uuid=True), nullable=False)
+    author_id = Column(UUID(), nullable=False)
     author_name = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
 
@@ -506,8 +506,8 @@ class RequisitionTemplate(Base):
     """Modèle de demande réutilisable"""
     __tablename__ = "requisition_templates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
@@ -520,14 +520,14 @@ class RequisitionTemplate(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     # Version
     version = Column(Integer, default=1, nullable=False)

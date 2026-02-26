@@ -4,6 +4,8 @@ Modèles SQLAlchemy - Module Field Service (GAP-081)
 Gestion des interventions terrain.
 Multi-tenant, Soft delete, Audit complet.
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
@@ -14,7 +16,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint, CheckConstraint,
     Numeric, Enum as SQLEnum, event
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UniversalUUID as UUID, JSONB
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -90,10 +92,10 @@ class FSTechnician(Base):
     """Technicien terrain."""
     __tablename__ = "technicians"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
-    employee_id = Column(UUID(as_uuid=True), nullable=True)
+    employee_id = Column(UUID(), nullable=True)
 
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
@@ -108,8 +110,8 @@ class FSTechnician(Base):
     last_location_update = Column(DateTime, nullable=True)
 
     # Configuration
-    home_zone_id = Column(UUID(as_uuid=True), ForeignKey('service_zones.id'), nullable=True)
-    vehicle_id = Column(UUID(as_uuid=True), nullable=True)
+    home_zone_id = Column(UUID(), ForeignKey('service_zones.id'), nullable=True)
+    vehicle_id = Column(UUID(), nullable=True)
     max_daily_work_orders = Column(Integer, default=8)
 
     # Tarification
@@ -124,13 +126,13 @@ class FSTechnician(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     # Soft Delete
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -165,8 +167,8 @@ class FSServiceZone(Base):
     """Zone de service."""
     __tablename__ = "service_zones"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -185,12 +187,12 @@ class FSServiceZone(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -214,12 +216,12 @@ class FSCustomerSite(Base):
     """Site client pour intervention."""
     __tablename__ = "customer_sites"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
 
-    customer_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    customer_id = Column(UUID(), nullable=False, index=True)
     customer_name = Column(String(255), nullable=True)
 
     # Adresse
@@ -243,19 +245,19 @@ class FSCustomerSite(Base):
     special_requirements = Column(Text, nullable=True)
 
     equipment_list = Column(JSONB, default=list)
-    zone_id = Column(UUID(as_uuid=True), ForeignKey('service_zones.id'), nullable=True)
+    zone_id = Column(UUID(), ForeignKey('service_zones.id'), nullable=True)
 
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -283,8 +285,8 @@ class FSWorkOrder(Base):
     """Ordre de travail / Intervention."""
     __tablename__ = "work_orders"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -295,10 +297,10 @@ class FSWorkOrder(Base):
     priority = Column(SQLEnum(Priority), default=Priority.MEDIUM, nullable=False)
 
     # Relations
-    customer_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    customer_id = Column(UUID(), nullable=False, index=True)
     customer_name = Column(String(255), nullable=True)
-    site_id = Column(UUID(as_uuid=True), ForeignKey('customer_sites.id'), nullable=True)
-    technician_id = Column(UUID(as_uuid=True), ForeignKey('technicians.id'), nullable=True)
+    site_id = Column(UUID(), ForeignKey('customer_sites.id'), nullable=True)
+    technician_id = Column(UUID(), ForeignKey('technicians.id'), nullable=True)
 
     # Planification
     scheduled_date = Column(Date, nullable=True)
@@ -327,7 +329,7 @@ class FSWorkOrder(Base):
     labor_total = Column(Numeric(12, 2), default=Decimal("0"))
     parts_total = Column(Numeric(12, 2), default=Decimal("0"))
     total_amount = Column(Numeric(12, 2), default=Decimal("0"))
-    invoice_id = Column(UUID(as_uuid=True), nullable=True)
+    invoice_id = Column(UUID(), nullable=True)
 
     # SLA
     sla_due_date = Column(DateTime, nullable=True)
@@ -338,12 +340,12 @@ class FSWorkOrder(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     version = Column(Integer, default=1, nullable=False)
 
@@ -397,8 +399,8 @@ class FSSkill(Base):
     """Compétence technique."""
     __tablename__ = "skills"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -412,12 +414,12 @@ class FSSkill(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(), nullable=True)
+    updated_by = Column(UUID(), nullable=True)
 
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
-    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    deleted_by = Column(UUID(), nullable=True)
 
     version = Column(Integer, default=1, nullable=False)
 

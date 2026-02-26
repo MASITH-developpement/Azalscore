@@ -6,8 +6,11 @@ Rate limiting strict sur tous les endpoints auth.
 
 SÉCURITÉ P1-4: Rate limiting distribué via Redis en production.
 """
+from __future__ import annotations
+
 
 from datetime import timedelta
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -186,7 +189,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """Schema de reponse utilisateur."""
-    id: int
+    id: UUID
     email: str
     tenant_id: str
     role: str

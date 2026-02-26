@@ -2,6 +2,8 @@
 Modèles SQLAlchemy Risk Management - GAP-075
 =============================================
 """
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
@@ -168,10 +170,10 @@ class RiskMatrix(Base):
     __tablename__ = "risk_matrices"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -203,13 +205,13 @@ class RiskMatrix(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     __table_args__ = (
@@ -223,10 +225,10 @@ class Risk(Base):
     __tablename__ = "risks"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     code: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -244,7 +246,7 @@ class Risk(Base):
 
     # Matrice de référence
     matrix_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("risk_matrices.id"), nullable=True
+        UUID(), ForeignKey("risk_matrices.id"), nullable=True
     )
 
     # Évaluation inhérente (avant contrôles)
@@ -303,9 +305,9 @@ class Risk(Base):
     )
 
     # Propriétaire et responsables
-    owner_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    reviewer_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    department_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    owner_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
+    reviewer_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
+    department_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Dates
     identified_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -320,9 +322,9 @@ class Risk(Base):
     affected_processes: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
 
     # Relations
-    related_risk_ids: Mapped[List[UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    related_risk_ids: Mapped[List[UUID]] = mapped_column(ARRAY(UUID()), default=list)
     parent_risk_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("risks.id"), nullable=True
+        UUID(), ForeignKey("risks.id"), nullable=True
     )
 
     # Stratégie
@@ -338,13 +340,13 @@ class Risk(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -370,14 +372,14 @@ class Control(Base):
     __tablename__ = "risk_controls"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     risk_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("risks.id"), nullable=False
+        UUID(), ForeignKey("risks.id"), nullable=False
     )
 
     code: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -397,8 +399,8 @@ class Control(Base):
     cost: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=Decimal("0"))
 
     # Responsables
-    owner_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    operator_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    owner_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
+    operator_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Fréquence d'exécution
     frequency: Mapped[str] = mapped_column(String(50), default="")
@@ -417,13 +419,13 @@ class Control(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -441,14 +443,14 @@ class MitigationAction(Base):
     __tablename__ = "risk_mitigation_actions"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     risk_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("risks.id"), nullable=False
+        UUID(), ForeignKey("risks.id"), nullable=False
     )
 
     code: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -461,7 +463,7 @@ class MitigationAction(Base):
     )
 
     # Responsable
-    assignee_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    assignee_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Planification
     planned_start: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -490,13 +492,13 @@ class MitigationAction(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -516,14 +518,14 @@ class RiskIndicator(Base):
     __tablename__ = "risk_indicators"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     risk_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("risks.id"), nullable=False
+        UUID(), ForeignKey("risks.id"), nullable=False
     )
 
     code: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -565,13 +567,13 @@ class RiskIndicator(Base):
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations
@@ -589,18 +591,18 @@ class RiskAssessment(Base):
     __tablename__ = "risk_assessments"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     risk_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("risks.id"), nullable=False
+        UUID(), ForeignKey("risks.id"), nullable=False
     )
 
     assessment_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    assessor_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    assessor_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Évaluation
     probability: Mapped[Probability] = mapped_column(
@@ -627,17 +629,17 @@ class RiskAssessment(Base):
     supporting_evidence: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
 
     # Contrôles évalués
-    controls_evaluated: Mapped[List[UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    controls_evaluated: Mapped[List[UUID]] = mapped_column(ARRAY(UUID()), default=list)
     control_effectiveness_summary: Mapped[str] = mapped_column(Text, default="")
 
     # Validation
     is_validated: Mapped[bool] = mapped_column(Boolean, default=False)
-    validated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    validated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     validated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Relations
     risk = relationship("Risk", back_populates="assessments")
@@ -654,14 +656,14 @@ class RiskIncident(Base):
     __tablename__ = "risk_incidents"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(), primary_key=True, default=uuid4
     )
     tenant_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        UUID(), nullable=False, index=True
     )
 
     risk_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("risks.id"), nullable=True
+        UUID(), ForeignKey("risks.id"), nullable=True
     )
 
     code: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -691,28 +693,28 @@ class RiskIncident(Base):
     # Analyse
     root_cause: Mapped[str] = mapped_column(Text, default="")
     contributing_factors: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
-    control_failures: Mapped[List[UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    control_failures: Mapped[List[UUID]] = mapped_column(ARRAY(UUID()), default=list)
 
     # Actions correctives
-    corrective_action_ids: Mapped[List[UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    corrective_action_ids: Mapped[List[UUID]] = mapped_column(ARRAY(UUID()), default=list)
 
     # Leçons apprises
     lessons_learned: Mapped[str] = mapped_column(Text, default="")
 
     # Responsable
-    reporter_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    owner_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    reporter_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
+    owner_id: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Soft delete
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    deleted_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    updated_by: Mapped[Optional[UUID]] = mapped_column(UUID(), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # Relations

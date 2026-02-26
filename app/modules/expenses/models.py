@@ -3,6 +3,8 @@ Models SQLAlchemy - Module Expenses (GAP-084)
 
 CRITIQUE: Tous les modèles ont tenant_id pour isolation multi-tenant.
 """
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, date
 from decimal import Decimal
@@ -13,7 +15,7 @@ from sqlalchemy import (
     Column, String, Text, Boolean, Integer, DateTime, Numeric,
     ForeignKey, Index, JSON, Date
 )
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UniversalUUID as UUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -104,17 +106,17 @@ class ExpenseReport(Base):
     """Note de frais."""
     __tablename__ = "expense_reports"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text)
 
     # Employé
-    employee_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    employee_id = Column(UUID(), nullable=False, index=True)
     employee_name = Column(String(255))
-    department_id = Column(UUID(as_uuid=True))
+    department_id = Column(UUID())
 
     # Période
     period_start = Column(Date)
@@ -131,7 +133,7 @@ class ExpenseReport(Base):
     currency = Column(String(3), default="EUR")
 
     # Workflow
-    current_approver_id = Column(UUID(as_uuid=True))
+    current_approver_id = Column(UUID())
     approval_history = Column(JSON, default=list)
 
     # Dates workflow
@@ -141,18 +143,18 @@ class ExpenseReport(Base):
 
     # Export comptable
     exported_to_accounting = Column(Boolean, default=False)
-    accounting_entry_id = Column(UUID(as_uuid=True))
+    accounting_entry_id = Column(UUID())
     accounting_export_date = Column(DateTime)
 
     # Audit
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     lines = relationship("ExpenseLine", back_populates="report", cascade="all, delete-orphan")
@@ -169,9 +171,9 @@ class ExpenseLine(Base):
     """Ligne de dépense."""
     __tablename__ = "expense_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    report_id = Column(UUID(as_uuid=True), ForeignKey("expense_reports.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    report_id = Column(UUID(), ForeignKey("expense_reports.id"), nullable=False)
 
     category = Column(String(50), nullable=False)
     description = Column(Text, nullable=False)
@@ -189,7 +191,7 @@ class ExpenseLine(Base):
     payment_method = Column(String(30), default=PaymentMethod.PERSONAL_CARD.value)
 
     # Justificatif
-    receipt_id = Column(UUID(as_uuid=True))
+    receipt_id = Column(UUID())
     receipt_file_path = Column(String(500))
     receipt_required = Column(Boolean, default=True)
 
@@ -207,8 +209,8 @@ class ExpenseLine(Base):
     guest_count = Column(Integer, default=0)
 
     # Projet/Client
-    project_id = Column(UUID(as_uuid=True))
-    client_id = Column(UUID(as_uuid=True))
+    project_id = Column(UUID())
+    client_id = Column(UUID())
     billable = Column(Boolean, default=False)
 
     # Conformité
@@ -226,7 +228,7 @@ class ExpenseLine(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
 
     # Relation
@@ -242,8 +244,8 @@ class ExpensePolicy(Base):
     """Politique de dépenses."""
     __tablename__ = "expense_policies"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
@@ -286,9 +288,9 @@ class ExpensePolicy(Base):
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     __table_args__ = (
         Index("ix_expense_policies_tenant_code", "tenant_id", "code", unique=True),
@@ -300,8 +302,8 @@ class MileageRate(Base):
     """Barème kilométrique."""
     __tablename__ = "expense_mileage_rates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     year = Column(Integer, nullable=False)
     vehicle_type = Column(String(30), nullable=False)
@@ -319,7 +321,7 @@ class MileageRate(Base):
     source = Column(String(100))  # URSSAF, custom, etc.
 
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
 
     __table_args__ = (
         Index("ix_mileage_rates_tenant_year", "tenant_id", "year", "vehicle_type", unique=True),
@@ -330,9 +332,9 @@ class EmployeeVehicle(Base):
     """Véhicule employé pour kilométrique."""
     __tablename__ = "expense_employee_vehicles"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    employee_id = Column(UUID(), nullable=False)
 
     vehicle_type = Column(String(30), nullable=False)
     registration_number = Column(String(20))
@@ -346,7 +348,7 @@ class EmployeeVehicle(Base):
     annual_mileage = Column(JSON, default=dict)  # {year: total_km}
 
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
 
     __table_args__ = (

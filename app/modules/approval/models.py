@@ -3,6 +3,8 @@ Models SQLAlchemy - Module Approval Workflow (GAP-083)
 
 CRITIQUE: Tous les modèles ont tenant_id pour isolation multi-tenant.
 """
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -13,7 +15,7 @@ from sqlalchemy import (
     Column, String, Text, Boolean, Integer, DateTime, Numeric,
     ForeignKey, Index, JSON, Date
 )
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UniversalUUID as UUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -114,8 +116,8 @@ class Workflow(Base):
     """Workflow d'approbation"""
     __tablename__ = "approval_workflows"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
@@ -147,14 +149,14 @@ class Workflow(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
-    steps = relationship("WorkflowStep", back_populates="workflow", cascade="all, delete-orphan")
+    steps = relationship("ApprovalWorkflowStep", back_populates="workflow", cascade="all, delete-orphan")
     requests = relationship("ApprovalRequest", back_populates="workflow")
 
     __table_args__ = (
@@ -164,13 +166,13 @@ class Workflow(Base):
     )
 
 
-class WorkflowStep(Base):
+class ApprovalWorkflowStep(Base):
     """Étape de workflow"""
     __tablename__ = "approval_workflow_steps"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    workflow_id = Column(UUID(as_uuid=True), ForeignKey("approval_workflows.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    workflow_id = Column(UUID(), ForeignKey("approval_workflows.id"), nullable=False)
 
     name = Column(String(255), nullable=False)
     description = Column(Text)
@@ -196,7 +198,7 @@ class WorkflowStep(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
 
     # Relations
     workflow = relationship("Workflow", back_populates="steps")
@@ -210,22 +212,22 @@ class ApprovalRequest(Base):
     """Demande d'approbation"""
     __tablename__ = "approval_requests"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    workflow_id = Column(UUID(as_uuid=True), ForeignKey("approval_workflows.id"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    workflow_id = Column(UUID(), ForeignKey("approval_workflows.id"), nullable=False)
 
     request_number = Column(String(50), nullable=False)
     status = Column(String(20), default=RequestStatus.DRAFT.value)
 
     # Demandeur
-    requester_id = Column(UUID(as_uuid=True), nullable=False)
+    requester_id = Column(UUID(), nullable=False)
     requester_name = Column(String(255))
     requester_email = Column(String(255))
-    department_id = Column(UUID(as_uuid=True))
+    department_id = Column(UUID())
 
     # Objet de la demande
     entity_type = Column(String(100), nullable=False)
-    entity_id = Column(UUID(as_uuid=True), nullable=False)
+    entity_id = Column(UUID(), nullable=False)
     entity_number = Column(String(50))
     entity_description = Column(Text)
     amount = Column(Numeric(18, 4))
@@ -250,11 +252,11 @@ class ApprovalRequest(Base):
     version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime)
-    deleted_by = Column(UUID(as_uuid=True))
+    deleted_by = Column(UUID())
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    updated_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID())
 
     # Relations
     workflow = relationship("Workflow", back_populates="requests")
@@ -272,18 +274,18 @@ class ApprovalAction(Base):
     """Action d'approbation"""
     __tablename__ = "approval_actions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    request_id = Column(UUID(as_uuid=True), ForeignKey("approval_requests.id"), nullable=False)
-    step_id = Column(UUID(as_uuid=True))
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
+    request_id = Column(UUID(), ForeignKey("approval_requests.id"), nullable=False)
+    step_id = Column(UUID())
 
-    approver_id = Column(UUID(as_uuid=True), nullable=False)
+    approver_id = Column(UUID(), nullable=False)
     approver_name = Column(String(255))
     action_type = Column(String(20), nullable=False)
     comments = Column(Text)
 
     # Délégation
-    delegated_to_id = Column(UUID(as_uuid=True))
+    delegated_to_id = Column(UUID())
     delegated_to_name = Column(String(255))
 
     # Métadonnées
@@ -304,12 +306,12 @@ class Delegation(Base):
     """Délégation d'approbation"""
     __tablename__ = "approval_delegations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(), nullable=False, index=True)
 
-    delegator_id = Column(UUID(as_uuid=True), nullable=False)
+    delegator_id = Column(UUID(), nullable=False)
     delegator_name = Column(String(255))
-    delegate_id = Column(UUID(as_uuid=True), nullable=False)
+    delegate_id = Column(UUID(), nullable=False)
     delegate_name = Column(String(255))
 
     start_date = Column(Date, nullable=False)
@@ -324,9 +326,9 @@ class Delegation(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UUID())
     revoked_at = Column(DateTime)
-    revoked_by = Column(UUID(as_uuid=True))
+    revoked_by = Column(UUID())
 
     __table_args__ = (
         Index("ix_approval_delegations_delegator", "tenant_id", "delegator_id", "is_active"),

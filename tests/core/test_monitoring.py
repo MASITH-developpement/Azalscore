@@ -429,7 +429,8 @@ class TestCICDWorkflow:
         # Vérifier les jobs essentiels
         jobs = content["jobs"]
         assert "test" in jobs
-        assert "security" in jobs
+        # Security jobs ont été séparés en security-sast et security-sca
+        assert "security-sast" in jobs or "security-sca" in jobs or "security" in jobs
         assert "build" in jobs
 
 

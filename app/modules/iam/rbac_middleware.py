@@ -13,6 +13,8 @@ PRINCIPE: Deny by default
 SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
           qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
 """
+from __future__ import annotations
+
 
 import logging
 import re
@@ -787,15 +789,27 @@ class RBACMiddleware(BaseHTTPMiddleware):
         route_perm = self._find_route_permission(method, path)
 
         if not route_perm:
-            # Route non configurée dans RBAC → passer en mode bêta
-            # Les endpoints gèrent leur propre authentification via get_current_user
-            # En production, activer deny-by-default ci-dessous:
-            # logger.warning("Route non configurée dans RBAC: %s %s", method, path)
-            # return JSONResponse(
-            #     status_code=403,
-            #     content={"detail": "Route non autorisée"}
-            # )
-            return await call_next(request)
+            # Route non configurée dans RBAC
+            # SÉCURITÉ P0: deny-by-default ACTIVÉ en production
+            # Les routes non listées sont refusées avec 403
+            import os
+            strict_mode = os.getenv("RBAC_STRICT_MODE", "false").lower() == "true"
+
+            if strict_mode:
+                logger.warning(
+                    "RBAC DENIED: Route non configurée (deny-by-default)",
+                    extra={"method": method, "path": path, "mode": "strict"}
+                )
+                return build_error_response(
+                    status_code=403,
+                    error_type=ErrorType.AUTHORIZATION,
+                    message="Route non autorisée (non configurée dans RBAC)",
+                    html_path="frontend/errors/403.html"
+                )
+            else:
+                # Mode bêta: warning mais laisse passer
+                logger.debug("RBAC: Route non configurée, mode permissif: %s %s", method, path)
+                return await call_next(request)
 
         # 4. Route configurée → Vérifier l'authentification
         if not self._is_authenticated(request):

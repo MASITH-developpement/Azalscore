@@ -34,7 +34,7 @@ from .service import (
 # Models SQLAlchemy
 from .models import (
     Workflow,
-    WorkflowStep,
+    ApprovalWorkflowStep as WorkflowStep,  # Renamed to avoid conflict with core.workflow.WorkflowStep
     ApprovalRequest,
     ApprovalAction,
     Delegation,
