@@ -1,62 +1,428 @@
 /**
- * AZALSCORE UI Standards - CSS Variables
- * Variables CSS pour les composants standardisés avec support dual-mode
+ * AZALSCORE - Variables CSS Centralisées
+ * =======================================
+ * SOURCE UNIQUE DE VERITE pour toutes les variables CSS
  *
- * Mode AZALSCORE: Interface simplifiée, IA proéminente
- * Mode ERP: Interface dense, tous champs visibles
+ * Structure:
+ * 1. DESIGN TOKENS (couleurs, spacing, typography, etc.)
+ * 2. THEMES (light/dark)
+ * 3. MODES UI (AZALSCORE/ERP)
+ * 4. COMPOSANTS (Guardian, Theo, Layout, etc.)
+ * 5. PAGES (Landing, Blog)
+ *
+ * REGLE: Aucun autre fichier ne doit définir de :root
  */
 
 /* ============================================================
-   VARIABLES DE BASE (communes aux deux modes)
+   1. DESIGN TOKENS - Base
    ============================================================ */
 
 :root {
-  /* Layout Standards */
-  --azals-std-header-height: 64px;
-  --azals-std-sidebar-width: 320px;
-  --azals-std-footer-height: 64px;
-  --azals-std-content-max-width: 1400px;
+  /* --------------------------------------------------------
+     COULEURS - Palette Primaire (Charte AZALSCORE: #1E6EFF)
+     -------------------------------------------------------- */
+  --azals-primary-50: #EFF6FF;
+  --azals-primary-100: #DBEAFE;
+  --azals-primary-200: #BFDBFE;
+  --azals-primary-300: #7DB4FF;
+  --azals-primary-400: #4D94FF;
+  --azals-primary-500: #1E6EFF;
+  --azals-primary-600: #1E6EFF;
+  --azals-primary-700: #1A5FDB;
+  --azals-primary-800: #1650B8;
+  --azals-primary-900: #123F94;
+  --azals-primary: var(--azals-primary-500);
 
-  /* Spacing Standards */
+  /* --------------------------------------------------------
+     COULEURS - Sémantiques
+     -------------------------------------------------------- */
+  --azals-success: #10b981;
+  --azals-warning: #f59e0b;
+  --azals-danger: #ef4444;
+  --azals-info: #1E6EFF;
+
+  /* --------------------------------------------------------
+     COULEURS - Neutres (Grayscale)
+     -------------------------------------------------------- */
+  --azals-gray-50: #f9fafb;
+  --azals-gray-100: #f3f4f6;
+  --azals-gray-200: #e5e7eb;
+  --azals-gray-300: #d1d5db;
+  --azals-gray-400: #9ca3af;
+  --azals-gray-500: #6b7280;
+  --azals-gray-600: #4b5563;
+  --azals-gray-700: #374151;
+  --azals-gray-800: #1f2937;
+  --azals-gray-900: #111827;
+  --azals-white: #ffffff;
+
+  /* --------------------------------------------------------
+     COULEURS - Alertes
+     -------------------------------------------------------- */
+  --azals-red: #dc2626;
+  --azals-red-light: #fef2f2;
+  --azals-red-800: #991b1b;
+  --azals-orange: #ea580c;
+  --azals-orange-light: #fff7ed;
+  --azals-green: #16a34a;
+  --azals-green-light: #f0fdf4;
+  --azals-green-100: #d1fae5;
+
+  /* --------------------------------------------------------
+     COULEURS - Palette Étendue
+     -------------------------------------------------------- */
+  --azals-violet-500: #8b5cf6;
+  --azals-violet-600: #7c3aed;
+  --azals-violet-700: #4f46e5;
+  --azals-indigo-500: #6366f1;
+  --azals-purple: #7c3aed;
+  --azals-purple-light: #f3e8ff;
+  --azals-yellow: #ca8a04;
+  --azals-yellow-light: #fef9c3;
+  --azals-pink-50: #fce7f3;
+  --azals-pink-500: #ec4899;
+  --azals-pink-600: #db2777;
+  --azals-pink-800: #9d174d;
+  --azals-amber-100: #fef3c7;
+  --azals-amber-600: #d97706;
+  --azals-amber-700: #b45309;
+  --azals-amber-800: #92400e;
+  --azals-amber-900: #713f12;
+
+  /* --------------------------------------------------------
+     COULEURS - Brand Orange (Design Premium)
+     -------------------------------------------------------- */
+  --azals-brand-50: #fff7ed;
+  --azals-brand-100: #ffedd5;
+  --azals-brand-200: #fed7aa;
+  --azals-brand-300: #fdba74;
+  --azals-brand-400: #fb923c;
+  --azals-brand-500: #f97316;
+  --azals-brand-600: #ea580c;
+  --azals-brand-700: #c2410c;
+  --azals-brand-800: #9a3412;
+  --azals-brand-900: #7c2d12;
+
+  /* --------------------------------------------------------
+     COULEURS - Accents
+     -------------------------------------------------------- */
+  --azals-accent-blue: #3b82f6;
+  --azals-accent-cyan: #06b6d4;
+  --azals-accent-emerald: #10b981;
+  --azals-accent-amber: #f59e0b;
+  --azals-accent-rose: #f43f5e;
+  --azals-accent-orange: #f97316;
+
+  /* --------------------------------------------------------
+     COULEURS - Demo Mode
+     -------------------------------------------------------- */
+  --azals-demo-red: #8B0000;
+  --azals-demo-red-dark: #660000;
+
+  /* --------------------------------------------------------
+     SPACING
+     -------------------------------------------------------- */
+  --azals-spacing-3xs: 0.125rem;   /* 2px */
+  --azals-spacing-2xs: 0.375rem;   /* 6px */
+  --azals-spacing-xs: 0.25rem;     /* 4px */
+  --azals-spacing-sm: 0.5rem;      /* 8px */
+  --azals-spacing-md: 1rem;        /* 16px */
+  --azals-spacing-lg: 1.5rem;      /* 24px */
+  --azals-spacing-xl: 2rem;        /* 32px */
+  --azals-spacing-2xl: 3rem;       /* 48px */
+  --azals-spacing-10: 0.625rem;    /* 10px */
+  --azals-spacing-12: 0.75rem;     /* 12px */
+  --azals-spacing-14: 0.875rem;    /* 14px */
+  --azals-spacing-20: 1.25rem;     /* 20px */
+  --azals-spacing-40: 2.5rem;      /* 40px */
+
+  /* --------------------------------------------------------
+     TYPOGRAPHY
+     -------------------------------------------------------- */
+  --azals-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --azals-font-mono: 'SF Mono', 'Fira Code', 'Monaco', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  --azals-font-serif: Georgia, 'Times New Roman', Times, serif;
+  --azals-font-size-xs: 0.75rem;   /* 12px */
+  --azals-font-size-sm: 0.875rem;  /* 14px */
+  --azals-font-size-md: 1rem;      /* 16px */
+  --azals-font-size-lg: 1.125rem;  /* 18px */
+  --azals-font-size-xl: 1.25rem;   /* 20px */
+  --azals-font-size-2xl: 1.5rem;   /* 24px */
+  --azals-font-size-3xl: 1.875rem; /* 30px */
+
+  /* --------------------------------------------------------
+     BORDER RADIUS
+     -------------------------------------------------------- */
+  --azals-radius-sm: 0.25rem;      /* 4px */
+  --azals-radius-md: 0.375rem;     /* 6px */
+  --azals-radius-lg: 0.5rem;       /* 8px */
+  --azals-radius-xl: 0.75rem;      /* 12px */
+  --azals-radius-2xl: 1rem;        /* 16px */
+  --azals-radius-3xl: 1.5rem;      /* 24px */
+  --azals-radius-full: 9999px;
+
+  /* --------------------------------------------------------
+     SHADOWS
+     -------------------------------------------------------- */
+  --azals-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --azals-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --azals-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --azals-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --azals-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --azals-shadow-glow-orange: 0 0 40px -10px rgba(249, 115, 22, 0.5);
+  --azals-shadow-glow-blue: 0 0 40px -10px rgba(59, 130, 246, 0.5);
+  --azals-shadow-glow-emerald: 0 0 40px -10px rgba(16, 185, 129, 0.5);
+
+  /* --------------------------------------------------------
+     TRANSITIONS
+     -------------------------------------------------------- */
+  --azals-transition-instant: 100ms ease;
+  --azals-transition-fast: 150ms ease;
+  --azals-transition-normal: 200ms ease;
+  --azals-transition-slow: 300ms ease;
+
+  /* --------------------------------------------------------
+     BACKDROP BLUR
+     -------------------------------------------------------- */
+  --azals-blur-sm: 4px;
+  --azals-blur-md: 8px;
+  --azals-blur-lg: 16px;
+  --azals-blur-xl: 24px;
+
+  /* --------------------------------------------------------
+     Z-INDEX
+     -------------------------------------------------------- */
+  --azals-z-sidebar-overlay: 40;
+  --azals-z-sidebar: 50;
+  --azals-z-banner: 99;
+  --azals-z-header: 100;
+  --azals-z-popover: 200;
+  --azals-z-dropdown: 1000;
+  --azals-z-modal: 1100;
+  --azals-z-toast: 1200;
+  --azals-z-quick-create: 2000;
+  --azals-z-palette: 9998;
+  --azals-z-guardian: 9999;
+
+  /* --------------------------------------------------------
+     GRADIENTS
+     -------------------------------------------------------- */
+  --azals-gradient-brand: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fbbf24 100%);
+  --azals-gradient-hero: linear-gradient(135deg, #c2410c 0%, #ea580c 30%, #f97316 60%, #fbbf24 100%);
+  --azals-gradient-dark: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  --azals-gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+
+  /* ============================================================
+     2. THEME - Light (Default)
+     ============================================================ */
+  --azals-bg: #ffffff;
+  --azals-bg-secondary: var(--azals-gray-50);
+  --azals-bg-primary: #ffffff;
+  --azals-bg-hover: var(--azals-gray-50);
+  --azals-text: var(--azals-gray-900);
+  --azals-text-primary: var(--azals-gray-900);
+  --azals-text-secondary: var(--azals-gray-500);
+  --azals-border: var(--azals-gray-200);
+  --azals-surface: #ffffff;
+
+  /* Aliases pour compatibilité */
+  --azals-border-light: var(--azals-gray-100);
+  --azals-text-muted: var(--azals-text-secondary);
+  --azals-text-light: var(--azals-gray-400);
+  --azals-primary-hover: var(--azals-primary-700);
+  --azals-primary-light: var(--azals-primary-50);
+  --azals-success-light: var(--azals-green-light);
+  --azals-danger-light: var(--azals-red-light);
+  --azals-danger-100: var(--azals-red-light);
+  --azals-danger-600: var(--azals-danger);
+  --azals-warning-light: #fffbeb;
+  --action-color: var(--azals-primary);
+
+  /* ============================================================
+     3. LAYOUT STANDARDS
+     ============================================================ */
+  --azals-header-height: 3.5rem;   /* 56px */
+  --azals-std-header-height: 4rem; /* 64px */
+  --azals-std-sidebar-width: 20rem; /* 320px */
+  --azals-std-footer-height: 4rem; /* 64px */
+  --azals-std-content-max-width: 87.5rem; /* 1400px */
+
+  /* Unified Layout */
+  --unified-header-height: 3.5rem; /* 56px */
+  --unified-sidebar-width: 16.25rem; /* 260px */
+  --unified-demo-banner-height: 2rem; /* 32px */
+
+  /* Tabs Standards */
+  --azals-std-tab-height: 2.75rem; /* 44px */
+  --azals-std-tab-padding: 0 1rem;
+  --azals-std-tab-gap: 0.25rem;
+
+  /* Info Bar Standards */
+  --azals-std-infobar-height: 5rem; /* 80px */
+  --azals-std-kpi-min-width: 8.75rem; /* 140px */
+
+  /* Sidebar Summary */
+  --azals-std-sidebar-padding: 1.5rem;
+
+  /* Footer Actions */
+  --azals-std-footer-padding: 1rem 1.5rem;
+
+  /* Standard Gaps */
   --azals-std-gap-xs: 0.25rem;
   --azals-std-gap-sm: 0.5rem;
   --azals-std-gap-md: 1rem;
   --azals-std-gap-lg: 1.5rem;
   --azals-std-gap-xl: 2rem;
 
-  /* Border Radius Standards */
+  /* Standard Border Radius */
   --azals-std-radius-sm: 0.25rem;
   --azals-std-radius-md: 0.5rem;
   --azals-std-radius-lg: 0.75rem;
   --azals-std-radius-xl: 1rem;
 
-  /* Tabs Standards */
-  --azals-std-tab-height: 44px;
-  --azals-std-tab-padding: 0 1rem;
-  --azals-std-tab-gap: 0.25rem;
-
-  /* Info Bar Standards */
-  --azals-std-infobar-height: 80px;
-  --azals-std-kpi-min-width: 140px;
-
-  /* Sidebar Summary Standards */
-  --azals-std-sidebar-padding: 1.5rem;
-
-  /* Footer Actions Standards */
-  --azals-std-footer-padding: 1rem 1.5rem;
-
-  /* Animation Standards */
+  /* Standard Transitions */
   --azals-std-transition: 200ms ease;
   --azals-std-transition-fast: 150ms ease;
 
-  /* Z-Index Standards */
+  /* Standard Z-Index */
   --azals-std-z-tabs: 10;
   --azals-std-z-sidebar: 20;
   --azals-std-z-footer: 30;
+
+  /* ============================================================
+     4. COMPOSANT - Theo AI Panel
+     ============================================================ */
+  --azals-theo-ai-accent: var(--azals-violet-600);
+  --azals-theo-ai-accent-light: var(--azals-purple-light);
+  --azals-theo-gradient: linear-gradient(135deg, var(--azals-primary-500) 0%, var(--azals-violet-500) 100%);
+  --azals-theo-panel-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --azals-theo-z-index: var(--azals-z-palette);
+
+  /* Theo Voice - Companions */
+  --azals-theo-voice-companion-theo: var(--azals-primary-500);
+  --azals-theo-voice-companion-lea: var(--azals-pink-500);
+  --azals-theo-voice-companion-alex: var(--azals-success);
+
+  /* Theo Voice - State Rings */
+  --azals-theo-voice-ring-idle: var(--azals-gray-300);
+  --azals-theo-voice-ring-listening: var(--azals-success);
+  --azals-theo-voice-ring-processing: var(--azals-primary-500);
+  --azals-theo-voice-ring-speaking: var(--azals-violet-500);
+  --azals-theo-voice-ring-awaiting: var(--azals-warning);
+  --azals-theo-voice-ring-paused: var(--azals-gray-400);
+  --azals-theo-voice-ring-error: var(--azals-danger);
+
+  /* ============================================================
+     5. COMPOSANT - Guardian Panel
+     ============================================================ */
+  /* Severity: info */
+  --azals-guardian-info-color: var(--azals-primary-600);
+  --azals-guardian-info-bg: var(--azals-primary-50);
+  --azals-guardian-info-border: var(--azals-primary-200);
+  --azals-guardian-info-badge-bg: var(--azals-primary-100);
+  --azals-guardian-info-badge-color: var(--azals-primary-800);
+
+  /* Severity: warning */
+  --azals-guardian-warning-color: var(--azals-yellow);
+  --azals-guardian-warning-bg: var(--azals-yellow-light);
+  --azals-guardian-warning-border: #fde68a;
+  --azals-guardian-warning-badge-bg: var(--azals-yellow-light);
+  --azals-guardian-warning-badge-color: var(--azals-amber-800);
+
+  /* Severity: error */
+  --azals-guardian-error-color: var(--azals-danger);
+  --azals-guardian-error-bg: var(--azals-red-light);
+  --azals-guardian-error-border: #fecaca;
+  --azals-guardian-error-badge-bg: #fee2e2;
+  --azals-guardian-error-badge-color: var(--azals-red-800);
+
+  /* Severity: critical */
+  --azals-guardian-critical-color: #b91c1c;
+  --azals-guardian-critical-bg: #fee2e2;
+  --azals-guardian-critical-border: #fca5a5;
+  --azals-guardian-critical-badge-bg: #fecaca;
+  --azals-guardian-critical-badge-color: #7f1d1d;
+
+  /* Guardian Action Buttons */
+  --azals-guardian-action-blue-bg: var(--azals-primary-100);
+  --azals-guardian-action-blue-hover: var(--azals-primary-200);
+  --azals-guardian-action-blue-color: var(--azals-primary-800);
+  --azals-guardian-action-orange-bg: #ffedd5;
+  --azals-guardian-action-orange-hover: #fed7aa;
+  --azals-guardian-action-orange-color: #9a3412;
+  --azals-guardian-action-purple-bg: var(--azals-purple-light);
+  --azals-guardian-action-purple-hover: #e9d5ff;
+  --azals-guardian-action-purple-color: #6b21a8;
+  --azals-guardian-action-green-bg: #dcfce7;
+  --azals-guardian-action-green-hover: #bbf7d0;
+  --azals-guardian-action-green-color: #166534;
+  --azals-guardian-action-red-bg: #fee2e2;
+  --azals-guardian-action-red-hover: #fecaca;
+  --azals-guardian-action-red-color: var(--azals-red-800);
+  --azals-guardian-action-gray-bg: var(--azals-gray-100);
+  --azals-guardian-action-gray-hover: var(--azals-gray-200);
+
+  /* ============================================================
+     6. PAGE - Landing
+     ============================================================ */
+  --landing-primary: var(--azals-primary-500);
+  --landing-primary-dark: var(--azals-primary-700);
+  --landing-primary-darker: #003D99;
+  --landing-text: var(--azals-gray-900);
+  --landing-text-muted: var(--azals-gray-600);
+  --landing-text-light: var(--azals-gray-500);
+  --landing-bg: var(--azals-bg);
+  --landing-bg-light: #f8faff;
+  --landing-bg-dark: var(--azals-gray-900);
+  --landing-success: var(--azals-success);
+  --landing-border: var(--azals-gray-200);
+  --landing-font: var(--azals-font-family);
+
+  /* ============================================================
+     7. PAGE - Blog
+     ============================================================ */
+  --blog-primary: var(--azals-primary-500);
+  --blog-primary-dark: var(--azals-primary-700);
+  --blog-text: var(--azals-gray-900);
+  --blog-text-light: var(--azals-gray-600);
+  --blog-text-muted: var(--azals-gray-500);
+  --blog-bg: var(--azals-bg);
+  --blog-bg-alt: #f8faff;
+  --blog-border: var(--azals-gray-200);
+  --blog-success: var(--azals-success);
+  --blog-warning: var(--azals-warning);
+  --blog-info: var(--azals-accent-blue);
 }
 
 /* ============================================================
-   MODE AZALSCORE - Interface simplifiée
+   2. THEME - Dark
+   ============================================================ */
+
+[data-theme='dark'] {
+  --azals-bg: var(--azals-gray-900);
+  --azals-bg-secondary: var(--azals-gray-800);
+  --azals-bg-primary: var(--azals-gray-900);
+  --azals-bg-hover: var(--azals-gray-800);
+  --azals-text: var(--azals-gray-100);
+  --azals-text-primary: var(--azals-gray-100);
+  --azals-text-secondary: var(--azals-gray-400);
+  --azals-border: var(--azals-gray-700);
+  --azals-surface: var(--azals-gray-800);
+}
+
+[data-theme='light'] {
+  --azals-bg: #ffffff;
+  --azals-bg-secondary: var(--azals-gray-50);
+  --azals-bg-primary: #ffffff;
+  --azals-bg-hover: var(--azals-gray-50);
+  --azals-text: var(--azals-gray-900);
+  --azals-text-primary: var(--azals-gray-900);
+  --azals-text-secondary: var(--azals-gray-500);
+  --azals-border: var(--azals-gray-200);
+}
+
+/* ============================================================
+   3. MODE AZALSCORE - Interface simplifiée (default)
    ============================================================ */
 
 [data-ui-mode="azalscore"],
@@ -78,7 +444,7 @@
 
   /* Tabs */
   --azals-std-tab-font-size: var(--azals-font-size-md);
-  --azals-std-tab-icon-size: 20px;
+  --azals-std-tab-icon-size: 1.25rem;
 
   /* KPI Cards */
   --azals-std-kpi-padding: 1.25rem;
@@ -102,7 +468,7 @@
 }
 
 /* ============================================================
-   MODE ERP - Interface dense
+   4. MODE ERP - Interface dense
    ============================================================ */
 
 [data-ui-mode="erp"] {
@@ -123,7 +489,7 @@
 
   /* Tabs - Plus compacts */
   --azals-std-tab-font-size: var(--azals-font-size-sm);
-  --azals-std-tab-icon-size: 16px;
+  --azals-std-tab-icon-size: 1rem;
 
   /* KPI Cards - Plus compacts */
   --azals-std-kpi-padding: 1rem;

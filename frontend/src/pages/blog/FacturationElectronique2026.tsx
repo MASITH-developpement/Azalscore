@@ -7,6 +7,8 @@ import React from 'react';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Share2, Bookmark, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { Footer } from '../../components/Footer';
+import { AzalscoreLogo } from '../../components/Logo';
 
 // Composant pour les callouts
 const Callout: React.FC<{ type: 'info' | 'warning' | 'success'; title: string; children: React.ReactNode }> = ({
@@ -95,6 +97,16 @@ export const FacturationElectronique2026: React.FC = () => {
         <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
       </Helmet>
 
+      {/* Logo Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
+          <Link to="/" className="text-gray-500 hover:text-blue-600 text-sm">← Accueil</Link>
+          <Link to="/">
+            <AzalscoreLogo size={40} />
+          </Link>
+        </div>
+      </div>
+
       <article className="blog-article" itemScope itemType="https://schema.org/Article">
         {/* Header */}
         <header className="blog-article-header">
@@ -154,6 +166,7 @@ export const FacturationElectronique2026: React.FC = () => {
             width={1200}
             height={600}
             itemProp="image"
+            loading="eager"
           />
           <figcaption>Interface de facturation électronique Azalscore - Conforme 2026</figcaption>
         </figure>
@@ -484,6 +497,8 @@ export const FacturationElectronique2026: React.FC = () => {
           </div>
         </nav>
       </article>
+
+      <Footer />
     </>
   );
 };

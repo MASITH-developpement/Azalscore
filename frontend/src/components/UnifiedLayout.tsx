@@ -16,8 +16,141 @@ import { clsx } from 'clsx';
 import {
   Menu, X, Bell, User, LogOut, Settings, ChevronDown,
   LayoutList, LayoutGrid, Database, AlertTriangle,
-  Sparkles
+  Sparkles, Box, Shield, Hexagon
 } from 'lucide-react';
+
+// ============================================================
+// LOGO ICONS
+// ============================================================
+
+type LogoIconType = 'text' | 'letter-a' | 'cube' | 'spark' | 'shield' | 'hexagon';
+
+const LogoIcons: Record<LogoIconType, React.ReactNode> = {
+  'text': null, // Just text
+  'letter-a': (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L2 22h20L12 2z" fill="none"/>
+      <path d="M7 16h10"/>
+    </svg>
+  ),
+  'cube': <Box size={26} />,
+  'spark': <Sparkles size={26} />,
+  'shield': <Shield size={26} />,
+  'hexagon': <Hexagon size={26} />,
+};
+
+const LogoDisplay: React.FC = () => {
+  const [iconType, setIconType] = useState<LogoIconType>('text');
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updateLogo = () => {
+      const iconAttr = document.documentElement.getAttribute('data-logo-icon');
+      const customLogoAttr = document.documentElement.getAttribute('data-custom-logo');
+      setIconType((iconAttr as LogoIconType) || 'text');
+      setCustomLogo(customLogoAttr);
+    };
+    updateLogo();
+
+    // Observer for attribute changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-logo-icon' || mutation.attributeName === 'data-custom-logo') {
+          updateLogo();
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Custom logo takes priority
+  if (customLogo) {
+    return (
+      <div className="azals-unified-header__logo azals-unified-header__logo--custom">
+        <img
+          src={customLogo}
+          alt="Logo"
+          className="azals-unified-header__logo-img"
+        />
+      </div>
+    );
+  }
+
+  const icon = LogoIcons[iconType];
+
+  if (icon) {
+    return (
+      <div className="azals-unified-header__logo azals-unified-header__logo--with-icon">
+        <img src="/logo.png" alt="Azalscore" className="azals-unified-header__logo-img" style={{ height: '32px' }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="azals-unified-header__logo azals-unified-header__logo--custom">
+      <img src="/logo.png" alt="Azalscore" className="azals-unified-header__logo-img" />
+    </div>
+  );
+};
+
+// ============================================================
+// USER AVATAR
+// ============================================================
+
+const UserAvatar: React.FC<{ size?: number }> = ({ size = 20 }) => {
+  const [photo, setPhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadPhoto = async () => {
+      try {
+        const token = sessionStorage.getItem('azals_access_token');
+        const tenantId = sessionStorage.getItem('azals_tenant_id');
+        if (!token || !tenantId) return;
+
+        const response = await fetch('/web/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'X-Tenant-ID': tenantId,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.photo) {
+            setPhoto(data.photo);
+          }
+        }
+      } catch {
+        // Silently fail - show default icon
+      }
+    };
+    loadPhoto();
+
+    // Listen for profile updates
+    const handleProfileUpdate = () => loadPhoto();
+    window.addEventListener('azals:profile:updated', handleProfileUpdate);
+    return () => window.removeEventListener('azals:profile:updated', handleProfileUpdate);
+  }, []);
+
+  if (photo) {
+    return (
+      <img
+        src={photo}
+        alt="Photo de profil"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          objectFit: 'cover',
+        }}
+      />
+    );
+  }
+
+  return <User size={size} />;
+};
+
 import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
 import { useTheo } from '@core/theo';
@@ -272,7 +405,7 @@ const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        <div className="azals-unified-header__logo">AZALSCORE</div>
+        <LogoDisplay />
 
         {/* Module selector (Azalscore mode) */}
         {mode === 'azalscore' && (
@@ -334,7 +467,7 @@ const Header: React.FC<HeaderProps> = ({
             className="azals-unified-header__user-btn"
             onClick={() => setUserMenuOpen(!userMenuOpen)}
           >
-            <User size={20} />
+            <UserAvatar size={28} />
             {user?.name && <span className="azals-unified-header__user-name">{user.name}</span>}
             <ChevronDown size={14} className={userMenuOpen ? 'rotate' : ''} />
           </button>

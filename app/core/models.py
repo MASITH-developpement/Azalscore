@@ -71,6 +71,10 @@ class User(Base, TenantMixin):
     tenant_id = Column(String(255), nullable=False, index=True)
     # SÉCURITÉ P1-5: unique=False car l'unicité est par (tenant_id, email)
     email = Column(String(255), nullable=False, index=True)
+    name = Column(String(200), nullable=True)  # Nom complet de l'utilisateur
+    phone = Column(String(50), nullable=True)  # Numéro de téléphone
+    photo = Column(Text, nullable=True)  # Photo de profil (URL ou base64)
+    api_token = Column(String(255), nullable=True, index=True)  # Token API personnel
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.DIRIGEANT)
     is_active = Column(Integer, default=1, nullable=False)

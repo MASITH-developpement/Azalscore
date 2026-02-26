@@ -16,6 +16,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
+import { initTenantTheme } from '@core/css-theme';
 import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
 import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import LandingPage from './pages/LandingPage';
@@ -80,9 +81,11 @@ const BlogCrm = lazy(() => import('./pages/blog/CrmRelationClient'));
 const BlogStock = lazy(() => import('./pages/blog/GestionStockOptimisation'));
 
 // Comparatif pages (SEO)
+const ComparatifIndex = lazy(() => import('./pages/comparatif/ComparatifIndex'));
 const VsOdoo = lazy(() => import('./pages/comparatif/VsOdoo'));
 const VsSage = lazy(() => import('./pages/comparatif/VsSage'));
 const VsEbp = lazy(() => import('./pages/comparatif/VsEbp'));
+const VsPennylane = lazy(() => import('./pages/comparatif/VsPennylane'));
 
 // Secteurs pages (SEO)
 const SecteurCommerce = lazy(() => import('./pages/secteurs/Commerce'));
@@ -739,6 +742,9 @@ const AppContent: React.FC = () => {
 
   // Charger les capabilities au montage (production : appel API /auth/capabilities)
   useEffect(() => {
+    // Appliquer le theme CSS personnalise du tenant
+    initTenantTheme();
+
     if (capStatus === 'idle') {
       loadCapabilities();
     }
@@ -826,9 +832,15 @@ const UnifiedApp: React.FC = () => {
             <Route path="/blog/gestion-stock-optimisation" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><BlogStock /></Suspense>} />
 
             {/* Comparatif pages */}
+            <Route path="/comparatif" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><ComparatifIndex /></Suspense>} />
+            <Route path="/comparatif/odoo" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsOdoo /></Suspense>} />
+            <Route path="/comparatif/sage" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsSage /></Suspense>} />
+            <Route path="/comparatif/ebp" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsEbp /></Suspense>} />
+            <Route path="/comparatif/pennylane" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsPennylane /></Suspense>} />
             <Route path="/comparatif/azalscore-vs-odoo" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsOdoo /></Suspense>} />
             <Route path="/comparatif/azalscore-vs-sage" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsSage /></Suspense>} />
             <Route path="/comparatif/azalscore-vs-ebp" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsEbp /></Suspense>} />
+            <Route path="/comparatif/azalscore-vs-pennylane" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><VsPennylane /></Suspense>} />
 
             {/* Secteurs pages */}
             <Route path="/secteurs/commerce" element={<Suspense fallback={<div className="azals-loading">Chargement...</div>}><SecteurCommerce /></Suspense>} />

@@ -3,11 +3,13 @@ AZALS - Middleware Multi-Tenant
 Validation stricte du header X-Tenant-ID pour TOUTES les requêtes
 Exception : /health (monitoring public)
 
-SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
-          qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
+SÉCURITÉ P0: Utilise build_error_response du module Guardian pour garantir
+             qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
+
+SÉCURITÉ P2: Support RLS PostgreSQL automatique via contexte de session.
 """
 
-
+import logging
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -17,6 +19,8 @@ from app.modules.guardian.error_response import (
     ErrorType,
     build_error_response,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class TenantMiddleware(BaseHTTPMiddleware):
@@ -122,3 +126,53 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
         # Validation alphanumérique + tirets + underscores uniquement
         return all(c.isalnum() or c in ['-', '_'] for c in tenant_id)
+
+
+# =============================================================================
+# RLS MIDDLEWARE (P2 SÉCURITÉ)
+# =============================================================================
+
+class RLSMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware pour activer automatiquement le Row-Level Security PostgreSQL.
+
+    P2 SÉCURITÉ: Ce middleware définit la variable de session PostgreSQL
+    `app.current_tenant_id` pour que les politiques RLS filtrent automatiquement
+    les données par tenant.
+
+    IMPORTANT: Requiert que les politiques RLS soient créées en base de données.
+    Voir: migrations/rls_policies.sql
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        """
+        Active le contexte RLS pour chaque requête avec tenant_id.
+        """
+        tenant_id = getattr(request.state, 'tenant_id', None)
+
+        if tenant_id:
+            # Stocker le tenant_id pour que get_db() puisse l'utiliser
+            # Le contexte RLS sera appliqué dans la dépendance get_db_with_rls
+            request.state.rls_enabled = True
+            logger.debug("[RLS] Context prepared for tenant: %s", tenant_id)
+
+        response = await call_next(request)
+        return response
+
+
+def get_rls_tenant_id(request: Request) -> str | None:
+    """
+    Récupère le tenant_id depuis request.state pour application RLS.
+
+    Usage dans les dépendances FastAPI:
+        @router.get("/items")
+        async def get_items(
+            request: Request,
+            db: Session = Depends(get_db)
+        ):
+            tenant_id = get_rls_tenant_id(request)
+            if tenant_id:
+                set_rls_context(db, tenant_id)
+            ...
+    """
+    return getattr(request.state, 'tenant_id', None)

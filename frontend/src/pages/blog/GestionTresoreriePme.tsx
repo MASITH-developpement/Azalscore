@@ -7,6 +7,8 @@ import React from 'react';
 import { Calendar, Clock, User, ArrowLeft, ArrowRight, Share2, Bookmark, TrendingUp, AlertTriangle, CheckCircle, Target } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { Footer } from '../../components/Footer';
+import { AzalscoreLogo } from '../../components/Logo';
 
 const GestionTresoreriePme: React.FC = () => {
   const publishDate = '2026-01-28';
@@ -64,6 +66,16 @@ const GestionTresoreriePme: React.FC = () => {
           })}
         </script>
       </Helmet>
+
+      {/* Logo Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
+          <Link to="/" className="text-gray-500 hover:text-blue-600 text-sm">← Accueil</Link>
+          <Link to="/">
+            <AzalscoreLogo size={40} />
+          </Link>
+        </div>
+      </div>
 
       <article className="blog-article" itemScope itemType="https://schema.org/Article">
         {/* Header */}
@@ -459,6 +471,8 @@ const GestionTresoreriePme: React.FC = () => {
           </div>
         </footer>
       </article>
+
+      <Footer />
     </>
   );
 };

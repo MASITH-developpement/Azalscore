@@ -81,6 +81,7 @@ export const companyInfoSchema = z.object({
 });
 
 // Validation Schema (Step 4)
+// Note: captchaToken is generated automatically by reCAPTCHA v3 on submit
 export const validationSchema = z.object({
   cgvAccepted: z
     .boolean()
@@ -90,7 +91,7 @@ export const validationSchema = z.object({
     .refine((val) => val === true, 'Vous devez accepter les CGU'),
   captchaToken: z
     .string()
-    .min(1, 'Veuillez completer le CAPTCHA'),
+    .optional(), // reCAPTCHA v3 token is generated on submit, not required in form
 });
 
 // Combined schema for full form

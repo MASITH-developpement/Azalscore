@@ -6,7 +6,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 import { COLORS } from '@core/design-tokens';
+
+// reCAPTCHA v3 site key from environment
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
 import { useVerifyEmail } from './api';
 import { ProgressBar } from './components/ProgressBar';
 import { StepCompanyInfo } from './components/StepCompanyInfo';
@@ -247,7 +251,7 @@ export const TrialRegistration: React.FC = () => {
     }
   };
 
-  return (
+  const content = (
     <>
       <Helmet>
         <title>Essai Gratuit 30 Jours | Azalscore ERP - Sans Engagement</title>
@@ -324,6 +328,24 @@ export const TrialRegistration: React.FC = () => {
     </div>
     </>
   );
+
+  // Wrap with reCAPTCHA provider if site key is configured
+  if (RECAPTCHA_SITE_KEY) {
+    return (
+      <GoogleReCaptchaProvider
+        reCaptchaKey={RECAPTCHA_SITE_KEY}
+        language="fr"
+        scriptProps={{
+          async: true,
+          defer: true,
+        }}
+      >
+        {content}
+      </GoogleReCaptchaProvider>
+    );
+  }
+
+  return content;
 };
 
 export default TrialRegistration;

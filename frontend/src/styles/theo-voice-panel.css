@@ -6,23 +6,8 @@
  */
 
 /* ============================================================
-   THEO VOICE - CUSTOM PROPERTIES
+   THEO VOICE - Variables centralisées dans _variables.css
    ============================================================ */
-
-:root {
-  --azals-theo-voice-companion-theo: var(--azals-primary-500);
-  --azals-theo-voice-companion-lea: var(--azals-pink-500);
-  --azals-theo-voice-companion-alex: var(--azals-success);
-
-  /* State ring colors */
-  --azals-theo-voice-ring-idle: var(--azals-gray-300);
-  --azals-theo-voice-ring-listening: var(--azals-success);
-  --azals-theo-voice-ring-processing: var(--azals-primary-500);
-  --azals-theo-voice-ring-speaking: var(--azals-violet-500);
-  --azals-theo-voice-ring-awaiting: var(--azals-warning);
-  --azals-theo-voice-ring-paused: var(--azals-gray-400);
-  --azals-theo-voice-ring-error: var(--azals-danger);
-}
 
 /* ============================================================
    OVERLAY (modal backdrop)

@@ -129,14 +129,18 @@ export const StructuredData = () => {
           {
             "@type": "ContactPoint",
             "contactType": "sales",
+            "telephone": "+33675788758",
             "email": "contact@azalscore.com",
             "availableLanguage": ["French"]
           }
         ],
+        "telephone": "+33675788758",
         "address": {
           "@type": "PostalAddress",
-          "addressCountry": "FR",
-          "addressLocality": "France"
+          "streetAddress": "3972 route de Manosque",
+          "postalCode": "04210",
+          "addressLocality": "Valensole",
+          "addressCountry": "FR"
         },
         "sameAs": [
           "https://www.linkedin.com/company/azalscore",
@@ -294,6 +298,42 @@ export const StructuredData = () => {
           "url": "https://azalscore.com/pricing",
           "seller": {
             "@id": "https://azalscore.com/#organization"
+          },
+          "shippingDetails": {
+            "@type": "OfferShippingDetails",
+            "shippingRate": {
+              "@type": "MonetaryAmount",
+              "value": "0",
+              "currency": "EUR"
+            },
+            "shippingDestination": {
+              "@type": "DefinedRegion",
+              "addressCountry": "FR"
+            },
+            "deliveryTime": {
+              "@type": "ShippingDeliveryTime",
+              "handlingTime": {
+                "@type": "QuantitativeValue",
+                "minValue": 0,
+                "maxValue": 0,
+                "unitCode": "d"
+              },
+              "transitTime": {
+                "@type": "QuantitativeValue",
+                "minValue": 0,
+                "maxValue": 0,
+                "unitCode": "d"
+              }
+            }
+          },
+          "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": "FR",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 30,
+            "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/FreeReturn",
+            "refundType": "https://schema.org/FullRefund"
           }
         },
         "aggregateRating": {
@@ -301,6 +341,49 @@ export const StructuredData = () => {
           "ratingValue": "4.8",
           "reviewCount": "4"
         }
+      },
+
+      // LocalBusiness (for Google Maps and local search visibility)
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://azalscore.com/#localbusiness",
+        "name": "Azalscore - MASITH Developpement",
+        "description": "Editeur de logiciel ERP SaaS francais pour PME. CRM, Facturation electronique 2026, Comptabilite, Stock, RH.",
+        "url": "https://azalscore.com",
+        "logo": "https://azalscore.com/pwa-512x512.png",
+        "image": "https://azalscore.com/og-image.png",
+        "email": "contact@azalscore.com",
+        "telephone": "+33675788758",
+        "priceRange": "$$",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "3972 route de Manosque",
+          "postalCode": "04210",
+          "addressLocality": "Valensole",
+          "addressRegion": "Alpes-de-Haute-Provence",
+          "addressCountry": "FR"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "43.837",
+          "longitude": "5.982"
+        },
+        "areaServed": [
+          { "@type": "Country", "name": "France" },
+          { "@type": "Country", "name": "Belgique" },
+          { "@type": "Country", "name": "Suisse" },
+          { "@type": "Country", "name": "Luxembourg" }
+        ],
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "09:00",
+          "closes": "18:00"
+        },
+        "sameAs": [
+          "https://www.linkedin.com/company/azalscore",
+          "https://twitter.com/azalscore"
+        ]
       }
     ]
   };

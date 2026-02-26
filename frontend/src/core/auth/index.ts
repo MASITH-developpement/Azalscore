@@ -425,9 +425,99 @@ if (typeof window !== 'undefined') {
 }
 
 // ============================================================
+// SESSION TIMEOUT (P1 SÉCURITÉ)
+// Auto-logout après inactivité
+// ============================================================
+
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes d'inactivité
+const SESSION_WARNING_MS = 25 * 60 * 1000; // Warning à 25 minutes
+let sessionTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let sessionWarningId: ReturnType<typeof setTimeout> | null = null;
+let lastActivityTime = Date.now();
+
+/**
+ * Réinitialise le timer de session
+ * Appelé à chaque interaction utilisateur
+ */
+export const resetSessionTimeout = (): void => {
+  lastActivityTime = Date.now();
+
+  // Annuler les timers précédents
+  if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
+  if (sessionWarningId) clearTimeout(sessionWarningId);
+
+  const store = useAuthStore.getState();
+  if (!store.isAuthenticated) return;
+
+  // Timer d'avertissement (5 minutes avant expiration)
+  sessionWarningId = setTimeout(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('azals:session:warning', {
+        detail: { remainingMs: SESSION_TIMEOUT_MS - SESSION_WARNING_MS }
+      }));
+    }
+  }, SESSION_WARNING_MS);
+
+  // Timer d'expiration
+  sessionTimeoutId = setTimeout(() => {
+    console.warn('[SESSION] Session expirée par inactivité');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('azals:session:expired'));
+    }
+    store.logout();
+  }, SESSION_TIMEOUT_MS);
+};
+
+/**
+ * Initialise le suivi d'activité utilisateur
+ */
+export const initSessionTracking = (): void => {
+  if (typeof window === 'undefined') return;
+
+  const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+
+  const handleActivity = (): void => {
+    // Throttle: ne reset que si plus de 30s depuis la dernière activité
+    if (Date.now() - lastActivityTime > 30000) {
+      resetSessionTimeout();
+    }
+  };
+
+  activityEvents.forEach((event) => {
+    window.addEventListener(event, handleActivity, { passive: true });
+  });
+
+  // Démarrer le timer initial si authentifié
+  const store = useAuthStore.getState();
+  if (store.isAuthenticated) {
+    resetSessionTimeout();
+  }
+
+  // Écouter les événements d'auth
+  window.addEventListener('azals:auth:login', () => {
+    resetSessionTimeout();
+  });
+
+  window.addEventListener('azals:auth:logout', () => {
+    if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
+    if (sessionWarningId) clearTimeout(sessionWarningId);
+  });
+};
+
+/**
+ * Retourne le temps restant avant expiration de session (en secondes)
+ */
+export const getSessionRemainingTime = (): number => {
+  const elapsed = Date.now() - lastActivityTime;
+  const remaining = Math.max(0, SESSION_TIMEOUT_MS - elapsed);
+  return Math.floor(remaining / 1000);
+};
+
+// ============================================================
 // INITIALISATION
 // ============================================================
 
 export const initAuth = async (): Promise<void> => {
   await useAuthStore.getState().refreshUser();
+  initSessionTracking();
 };

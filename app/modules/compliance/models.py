@@ -430,7 +430,7 @@ class ComplianceAction(Base):
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'number', name='uq_compliance_action_number'),
-        Index('ix_action_tenant_status', 'tenant_id', 'status'),
+        Index('ix_compliance_action_tenant_status', 'tenant_id', 'status'),
     )
 
 
@@ -687,7 +687,7 @@ class ComplianceDocument(Base):
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', 'version', name='uq_document_version'),
-        Index('ix_document_tenant_type', 'tenant_id', 'type'),
+        Index('ix_compliance_document_tenant_type', 'tenant_id', 'type'),
     )
 
 
@@ -873,7 +873,7 @@ class ComplianceRisk(Base):
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_risk_code'),
-        Index('ix_risk_tenant_level', 'tenant_id', 'risk_level'),
+        Index('ix_compliance_risk_tenant_level', 'tenant_id', 'risk_level'),
     )
 
 
@@ -932,7 +932,7 @@ class ComplianceIncident(Base):
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'number', name='uq_incident_number'),
-        Index('ix_incident_tenant_status', 'tenant_id', 'status'),
+        Index('ix_compliance_incident_tenant_status', 'tenant_id', 'status'),
     )
 
 

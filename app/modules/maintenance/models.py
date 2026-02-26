@@ -325,8 +325,8 @@ class AssetDocument(Base):
     """Document associé à un actif"""
     __tablename__ = "maintenance_asset_documents"
     __table_args__ = (
-        Index("idx_asset_doc_tenant", "tenant_id"),
-        Index("idx_asset_doc_asset", "asset_id"),
+        Index("idx_maint_asset_doc_tenant", "tenant_id"),
+        Index("idx_maint_asset_doc_asset", "asset_id"),
         {"schema": None},
     )
 

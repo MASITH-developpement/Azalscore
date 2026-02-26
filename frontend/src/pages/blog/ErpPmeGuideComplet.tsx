@@ -7,6 +7,8 @@ import React from 'react';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Share2, Bookmark, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { Footer } from '../../components/Footer';
+import { AzalscoreLogo } from '../../components/Logo';
 
 export const ErpPmeGuideComplet: React.FC = () => {
   const articleData = {
@@ -48,6 +50,16 @@ export const ErpPmeGuideComplet: React.FC = () => {
         <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
       </Helmet>
 
+      {/* Logo Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
+          <Link to="/" className="text-gray-500 hover:text-blue-600 text-sm">← Accueil</Link>
+          <Link to="/">
+            <AzalscoreLogo size={40} />
+          </Link>
+        </div>
+      </div>
+
       <article className="blog-article">
         <header className="blog-article-header">
           <div className="blog-container">
@@ -88,7 +100,7 @@ export const ErpPmeGuideComplet: React.FC = () => {
         </header>
 
         <figure className="blog-article-hero">
-          <img src="/screenshots/mockup-dashboard.png" alt="Tableau de bord ERP Azalscore" width={1200} height={600} />
+          <img src="/screenshots/mockup-dashboard.png" alt="Tableau de bord ERP Azalscore" width={1200} height={600} loading="eager" />
           <figcaption>Exemple de tableau de bord ERP moderne pour PME</figcaption>
         </figure>
 
@@ -399,6 +411,8 @@ export const ErpPmeGuideComplet: React.FC = () => {
           </div>
         </nav>
       </article>
+
+      <Footer />
     </>
   );
 };

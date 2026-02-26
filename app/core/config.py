@@ -98,9 +98,13 @@ class Settings(BaseSettings):
     STRIPE_API_KEY_TEST: str | None = Field(default=None, description="Clé API Stripe Test")
     STRIPE_LIVE_MODE: bool = Field(default=False, description="Mode production Stripe")
 
-    # hCaptcha Configuration (anti-bot)
-    HCAPTCHA_SECRET_KEY: str | None = Field(default=None, description="Clé secrète hCaptcha")
-    HCAPTCHA_SITE_KEY: str | None = Field(default=None, description="Clé site hCaptcha")
+    # reCAPTCHA v3 Configuration (anti-bot)
+    RECAPTCHA_SECRET_KEY: str | None = Field(default=None, description="Clé secrète reCAPTCHA v3")
+    RECAPTCHA_SITE_KEY: str | None = Field(default=None, description="Clé site reCAPTCHA v3")
+
+    # hCaptcha Configuration (legacy, deprecated)
+    HCAPTCHA_SECRET_KEY: str | None = Field(default=None, description="Clé secrète hCaptcha (deprecated)")
+    HCAPTCHA_SITE_KEY: str | None = Field(default=None, description="Clé site hCaptcha (deprecated)")
 
     # Resend Configuration (email alternatif)
     RESEND_API_KEY: str | None = Field(default=None, description="Clé API Resend pour emails")

@@ -161,15 +161,14 @@ class ReplicationTarget:
 @dataclass
 class RecoveryObjective:
     """Objectifs de récupération (RPO/RTO)."""
+    # Champs obligatoires (sans défaut) en premier
     tenant_id: str
     tier: str  # standard, premium, enterprise
-
-    # RPO (Recovery Point Objective) - perte de données max acceptable
     rpo_minutes: int  # Max minutes de données pouvant être perdues
-    rpo_target: timedelta = field(default_factory=lambda: timedelta(minutes=15))
-
-    # RTO (Recovery Time Objective) - temps max de récupération
     rto_minutes: int  # Max minutes pour restaurer le service
+
+    # Champs avec défauts
+    rpo_target: timedelta = field(default_factory=lambda: timedelta(minutes=15))
     rto_target: timedelta = field(default_factory=lambda: timedelta(hours=4))
 
     # Fréquence de backup

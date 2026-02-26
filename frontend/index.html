@@ -85,8 +85,8 @@
     <meta name="p:domain_verify" content="VOTRE_CODE_PINTEREST" />
     -->
 
-    <!-- IndexNow pour indexation instantanee -->
-    <meta name="indexnow-key" content="azalscore-indexnow-2026-key" />
+    <!-- IndexNow pour indexation instantanee Bing/Yandex -->
+    <meta name="indexnow-key" content="6c7e3e03e14ef7815789c4cf34120d98" />
 
     <!-- Google Tag Manager - Remplacez GTM-XXXXXXX par votre ID -->
     <!--
@@ -105,6 +105,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <!-- Preload critical font weights for faster LCP -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2" as="font" type="font/woff2" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- Favicon - Compatible tous navigateurs -->
@@ -241,46 +243,7 @@
       }
     }
     </script>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Qu'est-ce qu'Azalscore ERP ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Azalscore est un ERP Cloud francais tout-en-un pour les PME. Il integre la facturation electronique (Factur-X), la comptabilite (FEC), le CRM, la gestion des interventions, le stock, la paie et le POS. Heberge en France et conforme RGPD."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Azalscore est-il conforme a la facturation electronique 2026 ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Oui, Azalscore est conforme aux obligations de facturation electronique 2026 en France. Il genere des factures au format Factur-X et permet l'export FEC pour la comptabilite."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Peut-on essayer Azalscore gratuitement ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Oui, Azalscore offre un essai gratuit de 30 jours sans engagement et sans carte bancaire. Toutes les fonctionnalites sont accessibles pendant la periode d'essai."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Les donnees sont-elles hebergees en France ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Oui, toutes les donnees Azalscore sont hebergees en France sur des serveurs securises. La solution est 100% conforme au RGPD."
-          }
-        }
-      ]
-    }
-    </script>
+    <!-- FAQPage schema is in StructuredData.tsx (more complete, 8 questions) -->
   </head>
   <body>
     <!-- Google Tag Manager (noscript) - Remplacez GTM-XXXXXXX par votre ID -->

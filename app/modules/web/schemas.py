@@ -418,6 +418,41 @@ class UserPreferenceResponse(BaseModel):
 
 
 # ============================================================================
+# PROFIL UTILISATEUR
+# ============================================================================
+
+class UserProfileUpdate(BaseModel):
+    """Schema pour la mise à jour du profil utilisateur."""
+    name: str | None = Field(None, min_length=1, max_length=200)
+    email: str | None = Field(None, max_length=255)
+    phone: str | None = Field(None, max_length=50)
+    photo: str | None = Field(None, description="Photo de profil (URL ou base64)")
+
+
+class UserProfileResponse(BaseModel):
+    """Schema pour la réponse du profil utilisateur."""
+    id: str  # UUID as string
+    name: str
+    email: str
+    phone: str | None = None
+    photo: str | None = None
+    api_token: str | None = None
+    role: str = "Utilisateur"
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Convertit les UUIDs en strings."""
+        if v is None:
+            return None
+        return str(v)
+
+
+# ============================================================================
 # RACCOURCIS
 # ============================================================================
 

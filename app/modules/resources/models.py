@@ -179,7 +179,7 @@ class Resource(Base):
     __tablename__ = "resources"
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(), nullable=False, index=True)
+    tenant_id = Column(UUID(), nullable=False)  # Index défini explicitement dans __table_args__
 
     name = Column(String(200), nullable=False)
     code = Column(String(50), nullable=False)
@@ -258,6 +258,7 @@ class Resource(Base):
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "code", name="uq_resource_tenant_code"),
+        Index("ix_resource_tenant_id", "tenant_id"),
         Index("ix_resource_tenant_type", "tenant_id", "resource_type"),
         Index("ix_resource_tenant_status", "tenant_id", "status"),
         Index("ix_resource_location", "location_id"),

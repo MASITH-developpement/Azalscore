@@ -125,9 +125,9 @@ def _load_module_models() -> None:
     models_to_load = []
     for root, _dirs, files in os.walk(modules_path):
         if 'models.py' in files:
-            # Convertir le chemin en nom de module
+            # Convertir le chemin en nom de module avec préfixe 'app.'
             rel_path = os.path.relpath(root, os.path.dirname(modules_path))
-            module_name = rel_path.replace(os.sep, '.') + '.models'
+            module_name = 'app.' + rel_path.replace(os.sep, '.') + '.models'
             models_to_load.append(module_name)
 
     # Charger chaque module models.py

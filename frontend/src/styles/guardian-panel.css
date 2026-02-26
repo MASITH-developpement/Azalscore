@@ -6,62 +6,8 @@
  */
 
 /* ============================================================
-   GUARDIAN - CUSTOM PROPERTIES
+   GUARDIAN - Variables centralisées dans _variables.css
    ============================================================ */
-
-:root {
-  /* Severity: info */
-  --azals-guardian-info-color: var(--azals-primary-600);
-  --azals-guardian-info-bg: var(--azals-primary-50);
-  --azals-guardian-info-border: var(--azals-primary-200);
-  --azals-guardian-info-badge-bg: var(--azals-primary-100);
-  --azals-guardian-info-badge-color: var(--azals-primary-800, #1e40af);
-
-  /* Severity: warning */
-  --azals-guardian-warning-color: #ca8a04;
-  --azals-guardian-warning-bg: #fefce8;
-  --azals-guardian-warning-border: #fde68a;
-  --azals-guardian-warning-badge-bg: #fef9c3;
-  --azals-guardian-warning-badge-color: #854d0e;
-
-  /* Severity: error */
-  --azals-guardian-error-color: var(--azals-danger);
-  --azals-guardian-error-bg: var(--azals-red-light);
-  --azals-guardian-error-border: #fecaca;
-  --azals-guardian-error-badge-bg: #fee2e2;
-  --azals-guardian-error-badge-color: #991b1b;
-
-  /* Severity: critical */
-  --azals-guardian-critical-color: #b91c1c;
-  --azals-guardian-critical-bg: #fee2e2;
-  --azals-guardian-critical-border: #fca5a5;
-  --azals-guardian-critical-badge-bg: #fecaca;
-  --azals-guardian-critical-badge-color: #7f1d1d;
-
-  /* Action button colors */
-  --azals-guardian-action-blue-bg: var(--azals-primary-100);
-  --azals-guardian-action-blue-hover: var(--azals-primary-200);
-  --azals-guardian-action-blue-color: var(--azals-primary-800, #1e40af);
-
-  --azals-guardian-action-orange-bg: #ffedd5;
-  --azals-guardian-action-orange-hover: #fed7aa;
-  --azals-guardian-action-orange-color: #9a3412;
-
-  --azals-guardian-action-purple-bg: #f3e8ff;
-  --azals-guardian-action-purple-hover: #e9d5ff;
-  --azals-guardian-action-purple-color: #6b21a8;
-
-  --azals-guardian-action-green-bg: #dcfce7;
-  --azals-guardian-action-green-hover: #bbf7d0;
-  --azals-guardian-action-green-color: #166534;
-
-  --azals-guardian-action-red-bg: #fee2e2;
-  --azals-guardian-action-red-hover: #fecaca;
-  --azals-guardian-action-red-color: #991b1b;
-
-  --azals-guardian-action-gray-bg: var(--azals-gray-100);
-  --azals-guardian-action-gray-hover: var(--azals-gray-200);
-}
 
 /* ============================================================
    MINIMIZED BADGE

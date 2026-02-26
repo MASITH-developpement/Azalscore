@@ -52,6 +52,10 @@ def _generate_test_fernet_key() -> str:
 
 # Configure test environment BEFORE any imports that use encryption
 os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+# Générer une clé aléatoire pour les tests (ne pas utiliser le mot "secret")
+import secrets as _secrets
+os.environ.setdefault("SECRET_KEY", _secrets.token_urlsafe(64))
 
 # SÉCURITÉ: Générer une clé unique pour cette session de test
 # Note: Cette clé est éphémère et différente à chaque exécution de pytest

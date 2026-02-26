@@ -7,6 +7,8 @@ import React from 'react';
 import { Calendar, Clock, ArrowRight, Tag, User } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { Footer } from '../../components/Footer';
+import { AzalscoreLogo } from '../../components/Logo';
 
 // Types
 interface BlogArticle {
@@ -24,6 +26,48 @@ interface BlogArticle {
 // Articles du blog
 const articles: BlogArticle[] = [
   {
+    slug: 'erp-vs-excel-pourquoi-migrer',
+    title: 'ERP vs Excel : Pourquoi Migrer ? Comparatif Complet 2026',
+    excerpt: 'Excel pour gérer votre PME ? Découvrez pourquoi et quand migrer vers un ERP. Comparatif objectif, limites d\'Excel, avantages ERP, et guide de transition.',
+    date: '2026-02-25',
+    readTime: '15 min',
+    category: 'Comparatif',
+    author: 'Équipe Azalscore',
+    image: '/screenshots/mockup-dashboard.png',
+    featured: true,
+  },
+  {
+    slug: 'gestion-devis-factures',
+    title: 'Gestion des Devis et Factures : Bonnes Pratiques pour PME',
+    excerpt: 'Comment optimiser votre processus de devis et facturation ? Modèles, automatisation, relances et conformité 2026. Guide complet pour améliorer votre cycle commercial.',
+    date: '2026-02-24',
+    readTime: '13 min',
+    category: 'Commercial',
+    author: 'Équipe Azalscore',
+    image: '/screenshots/real-facturation.png',
+    featured: true,
+  },
+  {
+    slug: 'digitalisation-pme-guide',
+    title: 'Digitalisation PME : Par Où Commencer ? Guide Transformation Digitale 2026',
+    excerpt: 'Comment réussir la transformation digitale de votre PME ? Étapes clés, outils essentiels, erreurs à éviter et retours sur investissement.',
+    date: '2026-02-22',
+    readTime: '16 min',
+    category: 'Transformation',
+    author: 'Équipe Azalscore',
+    image: '/screenshots/mockup-dashboard.png',
+  },
+  {
+    slug: 'choix-logiciel-comptabilite-pme',
+    title: 'Choisir son Logiciel de Comptabilité PME : Guide Comparatif 2026',
+    excerpt: 'Comment choisir le meilleur logiciel de comptabilité pour votre PME ? Critères de sélection, comparatif des solutions françaises, et conseils pour réussir votre choix.',
+    date: '2026-02-20',
+    readTime: '14 min',
+    category: 'Guide',
+    author: 'Équipe Azalscore',
+    image: '/screenshots/real-comptabilite.png',
+  },
+  {
     slug: 'facturation-electronique-2026',
     title: 'Facturation Électronique 2026 : Guide Complet pour les PME',
     excerpt: 'Tout ce que vous devez savoir sur les obligations de facturation électronique en France. Calendrier, formats Factur-X, PPF/PDP, et comment vous préparer.',
@@ -32,7 +76,6 @@ const articles: BlogArticle[] = [
     category: 'Conformité',
     author: 'Équipe Azalscore',
     image: '/screenshots/real-facturation.png',
-    featured: true,
   },
   {
     slug: 'erp-pme-guide-complet',
@@ -43,7 +86,6 @@ const articles: BlogArticle[] = [
     category: 'Guide',
     author: 'Équipe Azalscore',
     image: '/screenshots/mockup-dashboard.png',
-    featured: true,
   },
   {
     slug: 'conformite-rgpd-erp',
@@ -182,6 +224,16 @@ export const BlogIndex: React.FC = () => {
       </Helmet>
 
       <div className="blog-page">
+        {/* Logo Header */}
+        <div className="bg-white border-b">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
+            <Link to="/" className="text-gray-500 hover:text-blue-600 text-sm">← Accueil</Link>
+            <Link to="/">
+              <AzalscoreLogo size={40} />
+            </Link>
+          </div>
+        </div>
+
         {/* Header */}
         <header className="blog-header">
           <div className="blog-container">
@@ -257,6 +309,9 @@ export const BlogIndex: React.FC = () => {
             </Link>
           </div>
         </section>
+
+        {/* Footer */}
+        <Footer />
       </div>
     </>
   );

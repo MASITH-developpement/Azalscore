@@ -1,20 +1,20 @@
 /**
  * AZALSCORE - Step 4: Validation
- * Acceptation CGV/CGU + CAPTCHA hCaptcha
+ * Acceptation CGV/CGU + reCAPTCHA v3 (invisible)
  */
 
 import React, { useCallback, useState } from 'react';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, ArrowLeft, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, FileText, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { useCreateRegistration } from '../api';
 import { validationSchema, type ValidationValues } from '../schemas';
 import type { ValidationInfo, TrialFormData, TrialRegistrationRequest } from '../types';
 
-// hCaptcha site key from environment
-const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
+// Check if reCAPTCHA is configured
+const RECAPTCHA_ENABLED = !!import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 interface StepValidationProps {
   data: ValidationInfo;
@@ -29,31 +29,43 @@ export const StepValidation: React.FC<StepValidationProps> = ({
   onNext,
   onBack,
 }) => {
-  const [captchaRef, setCaptchaRef] = useState<HCaptcha | null>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
+  const [recaptchaError, setRecaptchaError] = useState<string | null>(null);
   const createRegistration = useCreateRegistration();
 
   const {
     control,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<ValidationValues>({
     resolver: zodResolver(validationSchema),
-    defaultValues: data,
+    defaultValues: {
+      cgvAccepted: data.cgvAccepted,
+      cguAccepted: data.cguAccepted,
+      captchaToken: '', // Will be filled on submit
+    },
   });
 
-  const onCaptchaVerify = useCallback(
-    (token: string) => {
-      setValue('captchaToken', token, { shouldValidate: true });
-    },
-    [setValue]
-  );
+  const onSubmit = useCallback(async (values: ValidationValues) => {
+    setRecaptchaError(null);
 
-  const onCaptchaExpire = useCallback(() => {
-    setValue('captchaToken', '', { shouldValidate: true });
-  }, [setValue]);
+    // Get reCAPTCHA token
+    let captchaToken = '';
+    if (RECAPTCHA_ENABLED) {
+      if (!executeRecaptcha) {
+        setRecaptchaError('reCAPTCHA non disponible. Veuillez rafraichir la page.');
+        return;
+      }
 
-  const onSubmit = async (values: ValidationValues) => {
+      try {
+        captchaToken = await executeRecaptcha('trial_registration');
+      } catch (error) {
+        console.error('reCAPTCHA error:', error);
+        setRecaptchaError('Erreur de verification. Veuillez reessayer.');
+        return;
+      }
+    }
+
     // Build the full registration request
     const request: TrialRegistrationRequest = {
       first_name: formData.personal.firstName,
@@ -75,31 +87,29 @@ export const StepValidation: React.FC<StepValidationProps> = ({
       selected_plan: formData.pricing.selectedPlan,
       cgv_accepted: values.cgvAccepted,
       cgu_accepted: values.cguAccepted,
-      captcha_token: values.captchaToken,
+      captcha_token: captchaToken,
     };
 
     try {
       const response = await createRegistration.mutateAsync(request);
       onNext(response.registration_id);
     } catch (error) {
-      // Reset captcha on error
-      captchaRef?.resetCaptcha();
-      setValue('captchaToken', '');
+      // Error is handled by the mutation
     }
-  };
+  }, [executeRecaptcha, formData, createRegistration, onNext]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="trial-form">
       <div className="trial-form-header">
         <h2>Validation de votre inscription</h2>
-        <p>Veuillez accepter les conditions et verifier que vous n'etes pas un robot.</p>
+        <p>Veuillez accepter les conditions pour finaliser votre inscription.</p>
       </div>
 
       {/* Error display */}
-      {createRegistration.error && (
+      {(createRegistration.error || recaptchaError) && (
         <div className="trial-form-error-banner">
           <AlertCircle size={20} />
-          <span>{createRegistration.error.message}</span>
+          <span>{recaptchaError || createRegistration.error?.message}</span>
         </div>
       )}
 
@@ -178,21 +188,20 @@ export const StepValidation: React.FC<StepValidationProps> = ({
         )}
       </div>
 
-      {/* hCaptcha */}
-      <div className="trial-form-field trial-form-field--captcha">
-        <label>Verification anti-robot <span className="required">*</span></label>
-        <div className="trial-captcha-container">
-          <HCaptcha
-            ref={(ref) => setCaptchaRef(ref)}
-            sitekey={HCAPTCHA_SITE_KEY}
-            onVerify={onCaptchaVerify}
-            onExpire={onCaptchaExpire}
-            languageOverride="fr"
-          />
-        </div>
-        {errors.captchaToken && (
-          <span className="trial-form-error">{errors.captchaToken.message}</span>
-        )}
+      {/* reCAPTCHA info (invisible protection) */}
+      <div className="trial-recaptcha-info">
+        <Shield size={16} />
+        <span>
+          Ce site est protege par reCAPTCHA.{' '}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+            Confidentialite
+          </a>{' '}
+          et{' '}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">
+            Conditions
+          </a>{' '}
+          Google.
+        </span>
       </div>
 
       <div className="trial-form-actions">

@@ -21,6 +21,7 @@ settings = get_settings()
 SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7  # P1: Refresh token valide 7 jours
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -95,11 +96,177 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     to_encode.update({
         "exp": expire,
         "jti": jti,
-        "iat": datetime.utcnow()
+        "iat": datetime.utcnow(),
+        "type": "access"  # P1: Identifier le type de token
     })
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
+
+
+def create_refresh_token(
+    data: dict,
+    expires_delta: timedelta | None = None,
+    device_fingerprint: str | None = None
+) -> str:
+    """
+    Crée un JWT refresh token avec JTI unique pour révocation.
+    P1 SÉCURITÉ: Refresh Token Rotation (RTR) + Device Binding
+
+    Args:
+        data: Données à encoder (sub, tenant_id)
+        expires_delta: Durée de validité personnalisée (défaut: 7 jours)
+        device_fingerprint: Hash du device (IP + User-Agent) pour binding
+
+    Returns:
+        JWT refresh token signé
+
+    SÉCURITÉ:
+    - Durée de vie plus longue que l'access token
+    - JTI unique pour révocation individuelle
+    - Type "refresh" pour éviter confusion avec access token
+    - Doit être révoqué à chaque utilisation (rotation)
+    - Device binding pour détecter vol de token (P1 SÉCURITÉ)
+    """
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+
+    # JTI unique pour la révocation
+    jti = str(uuid.uuid4())
+
+    to_encode.update({
+        "exp": expire,
+        "jti": jti,
+        "iat": datetime.utcnow(),
+        "type": "refresh"  # Identifier comme refresh token
+    })
+
+    # P1 SÉCURITÉ: Device Binding - ajouter fingerprint si fourni
+    if device_fingerprint:
+        to_encode["dfp"] = device_fingerprint
+
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def compute_device_fingerprint(client_ip: str, user_agent: str) -> str:
+    """
+    Calcule un fingerprint de device pour le binding des refresh tokens.
+    P1 SÉCURITÉ: Détection de vol de token si utilisé depuis un autre device.
+
+    Args:
+        client_ip: Adresse IP du client
+        user_agent: User-Agent du navigateur
+
+    Returns:
+        Hash SHA-256 tronqué (16 chars) du fingerprint
+
+    Note:
+        Le fingerprint est un hash pour préserver la confidentialité.
+        On utilise seulement les 16 premiers caractères pour réduire la taille du token.
+    """
+    import hashlib
+    # Normaliser les entrées
+    ip = client_ip.strip() if client_ip else "unknown"
+    ua = user_agent.strip()[:200] if user_agent else "unknown"  # Tronquer UA trop long
+
+    # Hash combiné IP + User-Agent
+    fingerprint_data = f"{ip}:{ua}:azals_dfp_salt"
+    fingerprint_hash = hashlib.sha256(fingerprint_data.encode()).hexdigest()
+
+    # Retourner les 16 premiers caractères (suffisant pour détecter les changements)
+    return fingerprint_hash[:16]
+
+
+def verify_device_fingerprint(
+    token_fingerprint: str | None,
+    current_fingerprint: str,
+    strict: bool = False
+) -> tuple[bool, str]:
+    """
+    Vérifie si le device fingerprint correspond.
+    P1 SÉCURITÉ: Détection de tentative d'utilisation depuis un autre device.
+
+    Args:
+        token_fingerprint: Fingerprint stocké dans le token (peut être None pour tokens legacy)
+        current_fingerprint: Fingerprint du device actuel
+        strict: Si True, rejette les tokens sans fingerprint
+
+    Returns:
+        Tuple (is_valid, reason)
+
+    Note:
+        En mode non-strict, les tokens legacy sans fingerprint sont acceptés
+        pour permettre une migration progressive.
+    """
+    # Token legacy sans fingerprint
+    if token_fingerprint is None:
+        if strict:
+            return False, "Token sans device binding - renouvellement requis"
+        return True, "Token legacy accepté (pas de fingerprint)"
+
+    # Comparaison du fingerprint
+    if token_fingerprint == current_fingerprint:
+        return True, "Device vérifié"
+
+    # Fingerprint différent - possible vol de token
+    return False, "Device mismatch - possible token theft"
+
+
+def refresh_access_token(refresh_token: str) -> tuple[str, str] | None:
+    """
+    Utilise un refresh token pour obtenir une nouvelle paire access/refresh.
+    P1 SÉCURITÉ: Rotation des refresh tokens.
+
+    Args:
+        refresh_token: Le refresh token actuel
+
+    Returns:
+        Tuple (new_access_token, new_refresh_token) ou None si invalide
+
+    SÉCURITÉ:
+    - Vérifie que le token est de type "refresh"
+    - Révoque l'ancien refresh token (rotation)
+    - Génère une nouvelle paire de tokens
+    - Empêche la réutilisation d'un refresh token compromis
+    """
+    try:
+        # Décoder le refresh token
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        # Vérifier que c'est bien un refresh token
+        if payload.get("type") != "refresh":
+            return None
+
+        # Vérifier si blacklisté
+        jti = payload.get("jti")
+        if jti:
+            from app.core.token_blacklist import is_token_blacklisted
+            if is_token_blacklisted(jti):
+                return None
+
+        # Révoquer l'ancien refresh token (ROTATION)
+        revoke_token(refresh_token)
+
+        # Extraire les données utilisateur
+        user_data = {
+            "sub": payload.get("sub"),
+            "tenant_id": payload.get("tenant_id"),
+            "role": payload.get("role"),
+        }
+
+        # Générer nouvelle paire de tokens
+        new_access = create_access_token(user_data)
+        new_refresh = create_refresh_token(user_data)
+
+        return (new_access, new_refresh)
+
+    except JWTError:
+        return None
 
 
 def decode_access_token(token: str, check_blacklist: bool = True) -> dict | None:

@@ -5,15 +5,23 @@
 
 # Global headers for all pages
 /*
-  # Security headers
-  X-Frame-Options: SAMEORIGIN
+  # Security headers - SÉCURITÉ P0
+  X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 
-  # CORS for AI bots and crawlers
-  Access-Control-Allow-Origin: *
+  # HSTS - Force HTTPS (P0 CRITIQUE)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+  # Content Security Policy (P0 CRITIQUE)
+  # Protège contre XSS, injection de scripts, clickjacking
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://api.azalscore.com https://hcaptcha.com https://*.hcaptcha.com wss:; frame-src https://hcaptcha.com https://*.hcaptcha.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+
+  # CORS restreint (P0 - remplacer * par domaines autorisés en production)
+  # En développement: Access-Control-Allow-Origin: *
+  # En production: configurer via reverse proxy pour domaines spécifiques
 
   # Cache control
   Cache-Control: public, max-age=3600, s-maxage=86400

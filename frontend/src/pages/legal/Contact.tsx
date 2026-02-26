@@ -115,17 +115,19 @@ const Contact: React.FC = () => {
               "url": "https://azalscore.com",
               "logo": "https://azalscore.com/pwa-512x512.png",
               "email": "contact@azalscore.com",
-              "telephone": "+33123456789",
+              "telephone": "+33675788758",
               "address": {
                 "@type": "PostalAddress",
-                "addressLocality": "Paris",
+                "streetAddress": "3972 route de Manosque",
+                "postalCode": "04210",
+                "addressLocality": "Valensole",
                 "addressCountry": "FR"
               },
               "contactPoint": {
                 "@type": "ContactPoint",
                 "contactType": "customer service",
                 "email": "contact@azalscore.com",
-                "telephone": "+33123456789",
+                "telephone": "+33675788758",
                 "availableLanguage": ["French", "English"],
                 "hoursAvailable": {
                   "@type": "OpeningHoursSpecification",
@@ -342,7 +344,7 @@ const Contact: React.FC = () => {
               <div className="contact-info-content">
                 <h3>Téléphone</h3>
                 <p>
-                  <a href="tel:+33123456789">+33 1 23 45 67 89</a>
+                  <a href="tel:+33675788758">+33 6 75 78 87 58</a>
                 </p>
                 <p className="contact-info-note">Lun-Ven : 9h-18h (CET)</p>
               </div>
@@ -356,7 +358,8 @@ const Contact: React.FC = () => {
                 <h3>Adresse</h3>
                 <address>
                   MASITH Développement<br />
-                  Paris, France
+                  3972 route de Manosque<br />
+                  04210 Valensole, France
                 </address>
               </div>
             </div>

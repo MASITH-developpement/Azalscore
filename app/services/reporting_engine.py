@@ -909,9 +909,12 @@ class ReportingEngine:
 
     def __init__(
         self,
-        storage_path: str = "/var/azals/reports",
+        storage_path: str = None,
         db_session_factory = None
     ):
+        # Use environment variable or fallback to local directory
+        if storage_path is None:
+            storage_path = os.getenv("REPORTS_STORAGE_PATH", "./reports")
         self.storage_path = storage_path
         os.makedirs(storage_path, exist_ok=True)
 

@@ -6,16 +6,8 @@
  */
 
 /* ============================================================
-   THEO-SPECIFIC CUSTOM PROPERTIES
+   THEO - Variables centralisées dans _variables.css
    ============================================================ */
-
-:root {
-  --azals-theo-ai-accent: #9333ea;
-  --azals-theo-ai-accent-light: #f3e8ff;
-  --azals-theo-gradient: linear-gradient(135deg, var(--azals-primary-500) 0%, #8b5cf6 100%);
-  --azals-theo-panel-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  --azals-theo-z-index: var(--azals-z-palette);
-}
 
 /* ============================================================
    PANEL - Root container

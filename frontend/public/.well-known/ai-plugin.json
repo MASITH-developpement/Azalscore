@@ -15,6 +15,8 @@
   },
   "logo_url": "https://azalscore.com/pwa-512x512.png",
   "contact_email": "contact@azalscore.com",
+  "contact_phone": "+33675788758",
+  "contact_address": "MASITH Developpement, 3972 route de Manosque, 04210 Valensole, France",
   "legal_info_url": "https://azalscore.com/mentions-legales",
   "privacy_policy_url": "https://azalscore.com/confidentialite",
   "features": {
@@ -89,6 +91,45 @@
     "demo": "https://azalscore.com/demo",
     "documentation": "https://azalscore.com/docs",
     "api_docs": "https://azalscore.com/docs/api",
-    "support": "https://azalscore.com/contact"
+    "support": "https://azalscore.com/contact",
+    "blog": "https://azalscore.com/blog"
+  },
+  "blog_articles": {
+    "erp_vs_excel": {
+      "title": "ERP vs Excel : Pourquoi Migrer ?",
+      "url": "https://azalscore.com/blog/erp-vs-excel-pourquoi-migrer",
+      "topic": "Migration Excel vers ERP"
+    },
+    "e_invoicing_2026": {
+      "title": "Facturation Électronique 2026",
+      "url": "https://azalscore.com/blog/facturation-electronique-2026",
+      "topic": "Conformité facturation électronique"
+    },
+    "accounting_software": {
+      "title": "Choisir son Logiciel Comptabilité",
+      "url": "https://azalscore.com/blog/choix-logiciel-comptabilite-pme",
+      "topic": "Comparatif logiciels comptables"
+    },
+    "digitalization": {
+      "title": "Digitalisation PME Guide",
+      "url": "https://azalscore.com/blog/digitalisation-pme-guide",
+      "topic": "Transformation digitale"
+    },
+    "quotes_invoices": {
+      "title": "Gestion Devis et Factures",
+      "url": "https://azalscore.com/blog/gestion-devis-factures",
+      "topic": "Bonnes pratiques facturation"
+    }
+  },
+  "comparisons": {
+    "vs_odoo": "https://azalscore.com/comparatif/odoo",
+    "vs_sage": "https://azalscore.com/comparatif/sage",
+    "vs_ebp": "https://azalscore.com/comparatif/ebp",
+    "vs_pennylane": "https://azalscore.com/comparatif/pennylane"
+  },
+  "sectors": {
+    "commerce": "https://azalscore.com/secteurs/commerce",
+    "services": "https://azalscore.com/secteurs/services",
+    "industry": "https://azalscore.com/secteurs/industrie"
   }
 }

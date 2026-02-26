@@ -21,7 +21,15 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User, UserRole
 from app.core.rate_limiter import auth_rate_limiter  # P1-4: Redis-backed rate limiter
-from app.core.security import create_access_token, get_password_hash, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    compute_device_fingerprint,
+    verify_device_fingerprint,
+    get_password_hash,
+    verify_password,
+    revoke_token,
+)
 from app.core.two_factor import TwoFactorService
 from app.core.metrics import record_auth_attempt, TENANTS_ACTIVE
 
@@ -165,7 +173,19 @@ def get_bootstrap_secret() -> str:
 class UserRegister(BaseModel):
     """Schéma pour l'inscription d'un nouveau DIRIGEANT."""
     email: EmailStr
-    password: str
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Mot de passe sécurisé (8-128 caractères)"
+    )
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_complexity(cls, v: str) -> str:
+        """Valide la complexité du mot de passe avec les règles AZALS."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 class UserLogin(BaseModel):
@@ -383,15 +403,18 @@ def login(
         }
     )
 
-    # Creer un refresh token (meme payload, duree plus longue)
-    refresh_token = create_access_token(
+    # P1 SÉCURITÉ: Device Binding - calculer le fingerprint du device
+    user_agent = request.headers.get("User-Agent", "")
+    device_fingerprint = compute_device_fingerprint(client_ip, user_agent)
+
+    # P1 SÉCURITÉ: Créer un refresh token avec device binding
+    refresh_token = create_refresh_token(
         data={
             "sub": str(user.id),
             "tenant_id": user.tenant_id,
             "role": user.role.value,
-            "type": "refresh"
         },
-        expires_delta=timedelta(days=7)
+        device_fingerprint=device_fingerprint
     )
 
     # Enregistrer le succes (reset du compteur d'echecs)
@@ -433,7 +456,23 @@ class BootstrapRequest(BaseModel):
     tenant_id: str = "masith"
     tenant_name: str = "SAS MASITH"
     admin_email: EmailStr
-    admin_password: str
+    admin_password: str = Field(
+        ...,
+        min_length=12,
+        max_length=128,
+        description="Mot de passe admin (12+ caractères requis pour bootstrap)"
+    )
+
+    @field_validator('admin_password')
+    @classmethod
+    def validate_admin_password_complexity(cls, v: str) -> str:
+        """Valide la complexité du mot de passe admin avec règles renforcées."""
+        from app.core.password_validator import validate_password_or_raise
+        # Validation standard + vérification longueur minimale renforcée
+        validated = validate_password_or_raise(v)
+        if len(validated) < 12:
+            raise ValueError("Le mot de passe admin doit contenir au moins 12 caractères")
+        return validated
 
 
 class BootstrapResponse(BaseModel):
@@ -768,13 +807,18 @@ class RefreshTokenRequest(BaseModel):
 
 
 @router.post("/refresh")
-def refresh_access_token(
+def refresh_tokens_endpoint(
     request: Request,
     data: RefreshTokenRequest,
     db: Session = Depends(get_db)
 ):
     """
     Rafraichit le token d'acces avec un refresh token valide.
+    P1 SÉCURITÉ: Implémente Refresh Token Rotation (RTR).
+
+    Le refresh token actuel est RÉVOQUÉ après utilisation et une nouvelle
+    paire (access_token, refresh_token) est générée. Cela empêche la
+    réutilisation d'un refresh token compromis.
 
     GUARDIAN: Cet endpoint ne doit JAMAIS retourner 500.
     Toute erreur doit être traitée comme 401 (auth invalide).
@@ -880,9 +924,54 @@ def refresh_access_token(
                 detail="Account is inactive - contact administrator"
             )
 
+        # P1 SÉCURITÉ: Device Binding - vérifier le fingerprint
+        token_fingerprint = payload.get("dfp")
+        user_agent = request.headers.get("User-Agent", "")
+        current_fingerprint = compute_device_fingerprint(client_ip, user_agent)
+
+        # Vérifier le fingerprint (non-strict pour compatibilité tokens existants)
+        dfp_valid, dfp_reason = verify_device_fingerprint(
+            token_fingerprint, current_fingerprint, strict=False
+        )
+
+        if not dfp_valid:
+            logger.warning(
+                "[SECURITY] Device fingerprint mismatch on refresh - possible token theft",
+                extra={
+                    "client_ip": client_ip,
+                    "user_id": user_id,
+                    "reason": dfp_reason,
+                    "path": "/auth/refresh"
+                }
+            )
+            # Révoquer le token suspect immédiatement
+            try:
+                revoke_token(data.refresh_token)
+            except Exception:
+                pass
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session invalide - veuillez vous reconnecter"
+            )
+
+        # P1 SÉCURITÉ: RÉVOQUER l'ancien refresh token (Rotation)
+        # Cela empêche la réutilisation d'un token compromis
+        try:
+            revoke_token(data.refresh_token)
+            logger.debug(
+                "[SECURITY] Refresh token revoked for rotation",
+                extra={"client_ip": client_ip, "user_id": str(user.id)}
+            )
+        except Exception as revoke_error:
+            # Log mais continuer - la révocation est best-effort
+            logger.warning(
+                "[SECURITY] Failed to revoke old refresh token: %s", revoke_error,
+                extra={"client_ip": client_ip, "user_id": str(user.id)}
+            )
+
         # Creer les nouveaux tokens avec gestion d'erreur
         try:
-            access_token = create_access_token(
+            new_access_token = create_access_token(
                 data={
                     "sub": str(user.id),
                     "tenant_id": user.tenant_id,
@@ -890,14 +979,14 @@ def refresh_access_token(
                 }
             )
 
-            refresh_token = create_access_token(
+            # P1 SÉCURITÉ: Utiliser create_refresh_token dédié avec device binding
+            new_refresh_token = create_refresh_token(
                 data={
                     "sub": str(user.id),
                     "tenant_id": user.tenant_id,
                     "role": user.role.value,
-                    "type": "refresh"
                 },
-                expires_delta=timedelta(days=7)
+                device_fingerprint=current_fingerprint
             )
         except Exception as token_error:
             logger.error(
@@ -916,13 +1005,13 @@ def refresh_access_token(
             )
 
         logger.info(
-            "[GUARDIAN] Token refreshed successfully for user: %s", user.id,
+            "[GUARDIAN] Token refreshed with rotation for user: %s", user.id,
             extra={"client_ip": client_ip, "user_id": str(user.id)}
         )
 
         return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
             "token_type": "bearer"
         }
 

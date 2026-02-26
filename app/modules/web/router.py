@@ -52,6 +52,9 @@ from .schemas import (
     # Préférences
     UserPreferenceCreate,
     UserPreferenceResponse,
+    # Profil
+    UserProfileUpdate,
+    UserProfileResponse,
     # Widgets
     WidgetCreate,
     WidgetResponse,
@@ -482,6 +485,70 @@ async def get_ui_config(
     """Récupérer la configuration UI complète."""
     service = get_web_service(db, current_user.tenant_id)
     return service.get_ui_config(current_user.id)
+
+
+# ============================================================================
+# PROFIL UTILISATEUR
+# ============================================================================
+
+@router.get("/profile", response_model=UserProfileResponse)
+async def get_my_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Récupérer mon profil utilisateur."""
+    # Récupérer le rôle depuis les capabilities ou un champ role
+    role = "Utilisateur"
+    if hasattr(current_user, 'role') and current_user.role:
+        role = current_user.role
+    elif hasattr(current_user, 'is_superuser') and current_user.is_superuser:
+        role = "Super Admin"
+
+    return UserProfileResponse(
+        id=str(current_user.id),
+        name=current_user.name or "Utilisateur",
+        email=current_user.email or "",
+        phone=getattr(current_user, 'phone', None),
+        role=role,
+        created_at=getattr(current_user, 'created_at', None),
+        updated_at=getattr(current_user, 'updated_at', None),
+    )
+
+
+@router.put("/profile", response_model=UserProfileResponse)
+async def update_my_profile(
+    profile: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mettre à jour mon profil utilisateur."""
+    # Mettre à jour les champs fournis
+    if profile.name is not None:
+        current_user.name = profile.name
+    if profile.email is not None:
+        current_user.email = profile.email
+    if profile.phone is not None and hasattr(current_user, 'phone'):
+        current_user.phone = profile.phone
+
+    db.commit()
+    db.refresh(current_user)
+
+    # Récupérer le rôle
+    role = "Utilisateur"
+    if hasattr(current_user, 'role') and current_user.role:
+        role = current_user.role
+    elif hasattr(current_user, 'is_superuser') and current_user.is_superuser:
+        role = "Super Admin"
+
+    return UserProfileResponse(
+        id=str(current_user.id),
+        name=current_user.name or "Utilisateur",
+        email=current_user.email or "",
+        phone=getattr(current_user, 'phone', None),
+        role=role,
+        created_at=getattr(current_user, 'created_at', None),
+        updated_at=getattr(current_user, 'updated_at', None),
+    )
 
 
 # ============================================================================

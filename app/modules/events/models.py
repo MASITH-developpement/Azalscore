@@ -681,10 +681,10 @@ class EventSession(Base):
     attendances = relationship("SessionAttendance", back_populates="session", cascade="all, delete-orphan")
 
     __table_args__ = (
-        Index('idx_sessions_tenant', 'tenant_id'),
-        Index('idx_sessions_event', 'event_id'),
-        Index('idx_sessions_date_time', 'event_id', 'session_date', 'start_time'),
-        Index('idx_sessions_track', 'event_id', 'track'),
+        Index('idx_event_sessions_tenant', 'tenant_id'),
+        Index('idx_event_sessions_event', 'event_id'),
+        Index('idx_event_sessions_date_time', 'event_id', 'session_date', 'start_time'),
+        Index('idx_event_sessions_track', 'event_id', 'track'),
     )
 
 

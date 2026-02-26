@@ -87,6 +87,23 @@ const getTenantId = (): string | null => {
   return sessionStorage.getItem('azals_tenant_id');
 };
 
+/**
+ * Hash simple pour pseudo-anonymisation des IDs
+ * P1 SÉCURITÉ: Ne pas envoyer d'ID en clair dans les logs
+ */
+const hashForPrivacy = async (value: string): Promise<string> => {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(value + '_azals_salt');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.slice(0, 16).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    // Fallback si crypto non disponible
+    return btoa(value).slice(0, 32);
+  }
+};
+
 const getUserId = (): string | null => {
   const authData = sessionStorage.getItem('azals_user');
   if (authData) {
@@ -102,10 +119,86 @@ const getUserId = (): string | null => {
 };
 
 /**
+ * Retourne un user_id hashé pour les incidents (pseudo-anonymisation)
+ */
+const getHashedUserId = async (): Promise<string | null> => {
+  const userId = getUserId();
+  if (!userId) return null;
+  return await hashForPrivacy(userId);
+};
+
+/**
+ * Liste des sélecteurs CSS pour les éléments sensibles à masquer dans les screenshots
+ * P2 SÉCURITÉ: Protège les données métier sensibles
+ */
+const SENSITIVE_SELECTORS = [
+  // Inputs sensibles
+  'input[type="password"]',
+  'input[name*="password"]',
+  'input[name*="secret"]',
+  'input[name*="token"]',
+  'input[name*="api_key"]',
+  'input[name*="iban"]',
+  'input[name*="bic"]',
+  'input[name*="card"]',
+  'input[name*="cvv"]',
+  'input[name*="ssn"]',
+  // Données financières
+  '[data-sensitive]',
+  '[data-pii]',
+  '.sensitive-data',
+  '.pii-data',
+  '.financial-data',
+  // Composants AZALS spécifiques
+  '.azals-iban-field',
+  '.azals-bank-details',
+  '.azals-salary-field',
+  '.azals-payment-info',
+  // Guardian panel
+  '.guardian-panel',
+];
+
+/**
+ * Masque les éléments sensibles avant capture
+ */
+const maskSensitiveElements = (): Map<HTMLElement, { text: string; bg: string }> => {
+  const originalStyles = new Map<HTMLElement, { text: string; bg: string }>();
+
+  SENSITIVE_SELECTORS.forEach((selector) => {
+    document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+      originalStyles.set(el, {
+        text: el.style.color,
+        bg: el.style.backgroundColor,
+      });
+      el.style.color = 'transparent';
+      el.style.backgroundColor = '#808080';
+    });
+  });
+
+  return originalStyles;
+};
+
+/**
+ * Restaure les éléments masqués après capture
+ */
+const restoreSensitiveElements = (
+  originalStyles: Map<HTMLElement, { text: string; bg: string }>
+): void => {
+  originalStyles.forEach((styles, el) => {
+    el.style.color = styles.text;
+    el.style.backgroundColor = styles.bg;
+  });
+};
+
+/**
  * Capture l'écran actuel (avec chargement dynamique de html2canvas)
+ * P2 SÉCURITÉ: Masque automatiquement les données sensibles
  */
 export const captureScreenshot = async (): Promise<string | null> => {
   try {
+    // P2 SÉCURITÉ: Masquer les éléments sensibles avant capture
+    const originalStyles = maskSensitiveElements();
+
     // Import dynamique de html2canvas
     const html2canvas = (await import('html2canvas')).default;
 
@@ -115,18 +208,30 @@ export const captureScreenshot = async (): Promise<string | null> => {
       allowTaint: true,
       scale: 0.5,
       ignoreElements: (element) => {
-        return element.classList?.contains('guardian-panel') ||
-               (element.tagName === 'INPUT' && (element as HTMLInputElement).type === 'password');
-      }
+        // Ignorer complètement certains éléments
+        if (element.classList?.contains('guardian-panel')) return true;
+        if (element.tagName === 'INPUT' && (element as HTMLInputElement).type === 'password') return true;
+        // Ignorer les éléments marqués comme à ne pas capturer
+        if (element.hasAttribute('data-no-screenshot')) return true;
+        return false;
+      },
     });
+
+    // P2 SÉCURITÉ: Restaurer les éléments après capture
+    restoreSensitiveElements(originalStyles);
+
     return canvas.toDataURL('image/jpeg', 0.7);
-  } catch (error) {
+  } catch {
     return null;
   }
 };
 
 /**
  * Envoie l'incident au backend
+ */
+/**
+ * Envoie l'incident au backend
+ * P1 SÉCURITÉ: Les user_id sont hashés pour pseudo-anonymisation
  */
 const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolean> => {
   try {
@@ -136,6 +241,9 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
     if (!accessToken || !tenantId) {
       return false;
     }
+
+    // P1 SÉCURITÉ: Hash user_id pour pseudo-anonymisation
+    const hashedUserId = incident.user_id ? await hashForPrivacy(incident.user_id) : null;
 
     const apiUrl = import.meta.env.VITE_API_URL || '';
 
@@ -149,6 +257,8 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
       body: JSON.stringify({
         type: incident.type,
         severity: incident.severity,
+        // P1: Envoyer user_id hashé pour traçabilité sans exposition
+        user_id_hash: hashedUserId,
         page: incident.page,
         route: incident.route,
         endpoint: incident.endpoint,
@@ -156,14 +266,16 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
         http_status: incident.http_status,
         message: incident.message,
         details: incident.details,
-        stack_trace: incident.stack_trace,
-        screenshot_data: incident.screenshot_data,
+        // P1: Ne pas envoyer stack_trace complet en production (peut contenir infos sensibles)
+        stack_trace: incident.stack_trace?.slice(0, 1000) || null,
+        // P1: Limiter la taille du screenshot pour éviter DOS
+        screenshot_data: incident.screenshot_data?.slice(0, 500000) || null,
         frontend_timestamp: incident.timestamp.toISOString(),
       }),
     });
 
     return response.ok;
-  } catch (error) {
+  } catch {
     return false;
   }
 };

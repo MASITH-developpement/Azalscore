@@ -758,6 +758,100 @@ class WebService:
         }
 
 
+    # ========================================================================
+    # PROFIL UTILISATEUR
+    # ========================================================================
+
+    def get_user_profile(self, user_id) -> dict[str, Any] | None:
+        """Récupérer le profil d'un utilisateur."""
+        from app.core.models import User
+
+        user = self.db.query(User).filter(
+            and_(
+                User.tenant_id == self.tenant_id,
+                User.id == user_id
+            )
+        ).first()
+
+        if not user:
+            return None
+
+        return {
+            "id": str(user.id),
+            "name": user.name or user.email.split("@")[0].title(),
+            "email": user.email,
+            "phone": getattr(user, 'phone', None),
+            "photo": getattr(user, 'photo', None),
+            "api_token": getattr(user, 'api_token', None),
+            "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+        }
+
+    def update_user_profile(self, user_id, **kwargs) -> dict[str, Any]:
+        """Mettre à jour le profil d'un utilisateur."""
+        from app.core.models import User
+
+        user = self.db.query(User).filter(
+            and_(
+                User.tenant_id == self.tenant_id,
+                User.id == user_id
+            )
+        ).first()
+
+        if not user:
+            raise ValueError("Utilisateur non trouvé")
+
+        # Mettre à jour les champs fournis
+        if "name" in kwargs and kwargs["name"]:
+            user.name = kwargs["name"]
+        if "email" in kwargs and kwargs["email"]:
+            user.email = kwargs["email"]
+        if "phone" in kwargs:
+            user.phone = kwargs["phone"]
+        if "photo" in kwargs:
+            user.photo = kwargs["photo"]
+
+        self.db.commit()
+        self.db.refresh(user)
+
+        return {
+            "id": str(user.id),
+            "name": user.name or user.email.split("@")[0].title(),
+            "email": user.email,
+            "phone": getattr(user, 'phone', None),
+            "photo": getattr(user, 'photo', None),
+            "api_token": getattr(user, 'api_token', None),
+            "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+        }
+
+    def generate_api_token(self, user_id) -> str:
+        """Générer un nouveau token API pour un utilisateur."""
+        import secrets
+        from app.core.models import User
+
+        user = self.db.query(User).filter(
+            and_(
+                User.tenant_id == self.tenant_id,
+                User.id == user_id
+            )
+        ).first()
+
+        if not user:
+            raise ValueError("Utilisateur non trouvé")
+
+        # Générer un token sécurisé
+        token = f"azl_{secrets.token_urlsafe(32)}"
+        user.api_token = token
+
+        self.db.commit()
+        self.db.refresh(user)
+
+        return token
+
+
 def get_web_service(db: Session, tenant_id: str) -> WebService:
     """Factory pour créer une instance du service."""
     return WebService(db, tenant_id)

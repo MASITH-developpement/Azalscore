@@ -177,7 +177,7 @@ export const trackError = (
  * Track un événement d'authentification
  */
 export const trackAuthEvent = (
-  action: 'login' | 'logout' | '2fa_verify' | 'session_refresh',
+  action: 'login' | 'logout' | '2fa_verify' | 'session_refresh' | 'rate_limit_exceeded',
   success: boolean
 ): void => {
   trackUIEvent({

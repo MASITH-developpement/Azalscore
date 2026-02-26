@@ -977,9 +977,9 @@ class ComplaintAutomationRule(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     __table_args__ = (
-        Index("idx_automation_tenant", "tenant_id"),
-        Index("idx_automation_trigger", "tenant_id", "trigger_event"),
-        Index("idx_automation_active", "tenant_id", "is_active"),
+        Index("idx_complaints_automation_tenant", "tenant_id"),
+        Index("idx_complaints_automation_trigger", "tenant_id", "trigger_event"),
+        Index("idx_complaints_automation_active", "tenant_id", "is_active"),
     )
 
 

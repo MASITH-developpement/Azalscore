@@ -268,10 +268,10 @@ class TriggerEvent(Base):
     notifications = relationship("Notification", back_populates="event", cascade="all, delete-orphan")
 
     __table_args__ = (
-        Index('idx_events_tenant', 'tenant_id'),
-        Index('idx_events_trigger', 'trigger_id'),
-        Index('idx_events_triggered_at', 'triggered_at'),
-        Index('idx_events_resolved', 'resolved'),
+        Index('idx_trigger_events_tenant', 'tenant_id'),
+        Index('idx_trigger_events_trigger', 'trigger_id'),
+        Index('idx_trigger_events_triggered_at', 'triggered_at'),
+        Index('idx_trigger_events_resolved', 'resolved'),
     )
 
 

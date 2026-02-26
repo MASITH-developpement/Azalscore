@@ -239,7 +239,14 @@ export const CapabilityGuard: React.FC<CapabilityGuardProps> = ({
         ? store.hasAllCapabilities(capabilities)
         : store.hasAnyCapability(capabilities);
   } else {
-    hasAccess = true;
+    // SÉCURITÉ P0: Si aucune capability n'est spécifiée, REFUSER par défaut
+    // Empêche les fuites d'information si CapabilityGuard est mal utilisé
+    // Pour autoriser sans condition, utiliser capability="*" ou un fallback explicite
+    hasAccess = false;
+    console.warn(
+      '[CapabilityGuard] Aucune capability spécifiée - accès refusé par défaut. ' +
+      'Spécifiez une capability ou utilisez capabilities={[]} pour un accès conditionnel.'
+    );
   }
 
   return hasAccess ? <>{children}</> : <>{fallback}</>;

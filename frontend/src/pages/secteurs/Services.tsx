@@ -6,6 +6,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Wrench, Calendar, Clock, FileText, MapPin, Users, ArrowRight, Check } from 'lucide-react';
+import { Footer } from '../../components/Footer';
+import { AzalscoreLogo } from '../../components/Logo';
 
 const features = [
   {
@@ -106,10 +108,18 @@ const Services: React.FC = () => {
         {/* Header */}
         <header className="bg-white border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <Link to="/" className="text-2xl font-bold text-blue-600">AZALSCORE</Link>
+            <div className="flex items-center gap-6">
+              <Link to="/" className="text-gray-500 hover:text-blue-600 text-sm flex items-center gap-1">
+                ← Accueil
+              </Link>
+              <Link to="/" className="flex items-center gap-2">
+                <AzalscoreLogo size={40} />
+              </Link>
+            </div>
             <nav className="hidden md:flex gap-6">
               <Link to="/features" className="text-gray-600 hover:text-gray-900">Fonctionnalités</Link>
               <Link to="/pricing" className="text-gray-600 hover:text-gray-900">Tarifs</Link>
+              <Link to="/comparatif" className="text-gray-600 hover:text-gray-900">Comparatifs</Link>
               <Link to="/blog" className="text-gray-600 hover:text-gray-900">Blog</Link>
             </nav>
             <Link to="/essai-gratuit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
@@ -206,13 +216,7 @@ const Services: React.FC = () => {
         </section>
 
         {/* Footer */}
-        <footer className="bg-gray-900 text-white py-12">
-          <div className="max-w-6xl mx-auto px-4 text-center">
-            <p className="text-gray-400 text-sm">
-              © 2026 AZALSCORE - MASITH Développement. Tous droits réservés.
-            </p>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );

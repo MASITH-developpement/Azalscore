@@ -1,230 +1,246 @@
-# AZALSCORE API MAP
-**Version 3.1.0 | Derniere mise a jour: 2026-02-16**
+# AZALSCORE - API MAP
 
----
+**Généré le:** 2026-02-26
+**Version:** 1.1
 
 ## Vue d'ensemble
 
-Ce document reference tous les modules API v3 et leurs endpoints.
-Source unique de verite: `/app/api/v3/__init__.py`
+| Métrique | Valeur |
+|----------|--------|
+| **Modules Backend** | 96 |
+| **Modules Frontend** | 82 |
+| **Endpoints API** | ~2,100 |
+| **Lignes Backend** | 672,000 |
+| **Lignes Frontend** | 236,396 |
+| **Fichiers api.ts** | 80 |
+| **Lignes api.ts** | 42,124 |
 
 ---
 
-## Architecture des Routes
+## Modules Principaux - Correspondance Backend ↔ Frontend
 
-```
-/api/v1/       # Routes legacy (deprecated)
-/api/v2/       # Routes v2 (transition)
-/api/v3/       # Routes v3 unifiees (actif)
-  ├─ /{module}/           # Prefix du module
-  │   ├─ /status          # Statut du module
-  │   ├─ /                # Liste (GET) / Creation (POST)
-  │   ├─ /{id}            # Detail (GET) / Mise a jour (PUT) / Suppression (DELETE)
-  │   └─ /{id}/{action}   # Actions sur une ressource
-```
-
----
-
-## Modules par Priorite
-
-### CRITICAL (P0) - Requis pour le fonctionnement de base
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `commercial` | `app.modules.commercial.router_crud` | `/commercial` | Clients, documents, devis, factures |
-| `contacts` | `app.modules.contacts.router_crud` | `/contacts` | Personnes, adresses, coordonnees |
-| `hr` | `app.modules.hr.router_crud` | `/hr` | Employes, departements, conges |
-| `interventions` | `app.modules.interventions.router_crud` | `/interventions` | Ordres de service, planification terrain |
-| `inventory` | `app.modules.inventory.router_crud` | `/inventory` | Produits, stocks, mouvements |
-
-### IMPORTANT (P1) - Fonctionnalites metier principales
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `accounting` | `app.modules.accounting.router_unified` | `/accounting` | Comptabilite, ecritures, rapprochement |
-| `treasury` | `app.modules.treasury.router_crud` | `/treasury` | Tresorerie, comptes bancaires |
-| `purchases` | `app.modules.purchases.router_crud` | `/purchases` | Achats, fournisseurs, commandes |
-| `production` | `app.modules.production.router_crud` | `/production` | Ordres de fabrication, centres de travail |
-| `projects` | `app.modules.projects.router_crud` | `/projects` | Projets, taches, temps |
-| `maintenance` | `app.modules.maintenance.router_crud` | `/maintenance` | Equipements, ordres de maintenance |
-| `finance` | `app.modules.finance.router_crud` | `/finance` | Journaux, ecritures comptables |
-| `helpdesk` | `app.modules.helpdesk.router_crud` | `/helpdesk` | Tickets, categories, SLA |
-
-### IMPORTANT (P1) - Securite & Administration
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `iam` | `app.modules.iam.router_crud` | `/iam` | Users, roles, permissions |
-| `tenants` | `app.modules.tenants.router_crud` | `/tenants` | Multi-tenant management |
-| `audit` | `app.modules.audit.router_crud` | `/audit` | Logs, tracabilite, conformite |
-| `compliance` | `app.modules.compliance.router_crud` | `/compliance` | Conformite, RGPD |
-| `subscriptions` | `app.modules.subscriptions.router_crud` | `/subscriptions` | Abonnements, plans, facturation |
-| `backup` | `app.modules.backup.router_crud` | `/backup` | Sauvegardes, restauration |
-
-### STANDARD (P2) - Interface & UX
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `cockpit` | `app.api.cockpit` | `/cockpit` | Dashboard principal |
-| `pos` | `app.modules.pos.router_crud` | `/pos` | Point de vente |
-| `mobile` | `app.modules.mobile.router_crud` | `/mobile` | App mobile, preferences |
-| `web` | `app.modules.web.router_crud` | `/web` | Pages, themes, widgets |
-| `website` | `app.modules.website.router_crud` | `/website` | Site web, CMS |
-
-### STANDARD (P2) - IA & Enrichissement
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `enrichment` | `app.modules.enrichment.router` | `/enrichment` | Enrichissement donnees, APIs externes |
-| `marceau` | `app.modules.marceau.router_crud` | `/marceau` | Assistant IA, memoire, knowledge |
-| `ai_assistant` | `app.modules.ai_assistant.router_crud` | `/ai-assistant` | Assistant IA generique |
-| `guardian` | `app.modules.guardian.router_crud` | `/guardian` | Monitoring, alertes, incidents |
-
-### OPTIONAL (P3) - Qualite & Analytique
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `quality` | `app.modules.quality.router_crud` | `/quality` | Controle qualite, non-conformites |
-| `qc` | `app.modules.qc.router_crud` | `/qc` | Quality Control |
-| `bi` | `app.modules.bi.router_crud` | `/bi` | Business Intelligence, rapports |
-| `field_service` | `app.modules.field_service.router_crud` | `/field-service` | Interventions terrain avancees |
-| `procurement` | `app.modules.procurement.router_crud` | `/procurement` | Approvisionnement |
-
-### OPTIONAL (P3) - Automatisation & Integration
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `triggers` | `app.modules.triggers.router_crud` | `/triggers` | Automatisations, workflows |
-| `autoconfig` | `app.modules.autoconfig.router_crud` | `/autoconfig` | Configuration automatique |
-| `broadcast` | `app.modules.broadcast.router_crud` | `/broadcast` | Diffusion, notifications |
-| `email` | `app.modules.email.router_crud` | `/email` | Gestion emails |
-
-### OPTIONAL (P3) - E-Commerce & Paiements
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `ecommerce` | `app.modules.ecommerce.router_crud` | `/ecommerce` | Boutique en ligne |
-| `marketplace` | `app.modules.marketplace.router_crud` | `/marketplace` | Extensions, modules tiers |
-| `stripe_integration` | `app.modules.stripe_integration.router_crud` | `/stripe` | Paiements Stripe |
-
-### OPTIONAL (P3) - Localisation & Import
-
-| Module | Import Path | Prefix | Description |
-|--------|-------------|--------|-------------|
-| `country_packs` | `app.modules.country_packs.router_crud` | `/country-packs` | Localisations fiscales |
-| `odoo_import` | `app.modules.odoo_import.router_crud` | `/odoo-import` | Import depuis Odoo |
-| `automated_accounting` | `app.modules.automated_accounting.router_crud` | `/automated-accounting` | Comptabilite automatisee |
+| Module | Endpoints | api.ts | Lignes Backend | Statut |
+|--------|-----------|--------|----------------|--------|
+| **finance** | 287 | ✅ | 27,200 | Production |
+| **commercial** | 136 | ✅ | - | Production |
+| **hr** | 147 | ✅ | 5,964 | Production |
+| **interventions** | 85 | ✅ | - | Production |
+| **projects** | 153 | ✅ | - | Production |
+| **inventory** | 127 | ✅ | 5,516 | Production |
+| **accounting** | 61 | ✅ | - | Production |
+| **treasury** | 42 | ✅ | - | Production |
+| **audit** | 90 | ✅ | 5,445 | Production |
+| **guardian** | 109 | ✅ | 9,117 | Production |
+| **ai_assistant** | 83 | ✅ | 5,011 | Production |
+| **compliance** | 190 | ✅ | 10,617 | Production |
+| **helpdesk** | 184 | ✅ | - | Production |
+| **maintenance** | 104 | ✅ | 5,278 | Production |
+| **ecommerce** | 186 | ✅ | 9,832 | Production |
+| **pos** | 130 | ✅ | 5,943 | Production |
+| **expenses** | 45 | ✅ | 3,200 | Production |
+| **assets** | 52 | ✅ | 4,100 | Production |
+| **contracts** | 58 | ✅ | 4,800 | Production |
+| **esignature** | 42 | ✅ | 3,900 | Production |
+| **broadcast** | 35 | ✅ | 2,800 | Production |
+| **email** | 38 | ✅ | 2,600 | Production |
+| **timesheet** | 48 | ✅ | 1,260 | Production |
+| **warranty** | 40 | ✅ | 1,333 | Production |
+| **commissions** | 32 | ✅ | 1,886 | Production |
+| **budget** | 30 | ✅ | 1,859 | Production |
+| **gamification** | 28 | ✅ | 1,820 | Production |
+| **subscriptions** | 35 | ✅ | 1,512 | Production |
+| **loyalty** | 30 | ✅ | 1,528 | Production |
+| **shipping** | 32 | ✅ | 1,646 | Production |
+| **workflows** | 28 | ✅ | 1,410 | Production |
 
 ---
 
-## Patterns d'Endpoints Standards
+## Finance Suite - Sous-modules
 
-### CRUD Operations
-
-| Methode | Pattern | Description |
-|---------|---------|-------------|
-| `POST` | `/{module}` | Creer une ressource |
-| `GET` | `/{module}` | Lister avec pagination |
-| `GET` | `/{module}/{id}` | Recuperer par ID |
-| `PUT` | `/{module}/{id}` | Mettre a jour |
-| `DELETE` | `/{module}/{id}` | Supprimer |
-
-### Actions sur Ressources
-
-| Pattern | Exemples |
-|---------|----------|
-| `POST /{module}/{id}/{action}` | `/journal/{id}/post`, `/journal/{id}/validate` |
-| `POST /{module}/{id}/close` | `/fiscal-years/{id}/close` |
-| `POST /{module}/{id}/approve` | `/leave-requests/{id}/approve` |
-
-### Ressources Imbriquees
-
-| Pattern | Exemples |
-|---------|----------|
-| `GET /{parent}/{id}/{child}` | `/employees/{id}/contracts`, `/customers/{id}/contacts` |
-| `POST /{parent}/{id}/{child}` | Creer un enfant lie au parent |
-
-### Dashboard & Monitoring
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /{module}/status` | Statut du module |
-| `GET /{module}/summary` | Resume / Dashboard |
-| `GET /{module}/monitoring` | Metriques de monitoring |
+| Sous-module | Endpoints | Description |
+|-------------|-----------|-------------|
+| **bank-accounts** | 15 | Comptes bancaires, soldes |
+| **transactions** | 12 | Mouvements bancaires |
+| **reconciliation** | 10 | Rapprochement bancaire IA |
+| **cash-forecast** | 8 | Prévisions trésorerie |
+| **virtual-cards** | 14 | Cartes virtuelles |
+| **providers/swan** | 8 | Banking-as-a-Service |
+| **providers/nmi** | 10 | Paiements |
+| **providers/defacto** | 8 | Affacturage |
+| **providers/solaris** | 8 | Crédit entreprise |
+| **dunning** | 20 | Relances impayés |
+| **invoice-ocr** | 8 | OCR factures |
+| **currency** | 10 | Taux de change |
+| **approval** | 18 | Workflows approbation |
+| **webhooks** | 6 | Notifications providers |
 
 ---
 
-## Parametres de Pagination Standards
+## Conformité France
 
-| Parametre | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `page` | int | 1 | Numero de page (1-based) |
-| `page_size` | int | 20 | Nombre d'elements par page |
-| `search` | string | null | Recherche textuelle |
-
-Note: Certains modules utilisent `per_page` avec alias `page_size` pour compatibilite.
+| Module | Endpoints | Statut | Deadline |
+|--------|-----------|--------|----------|
+| **einvoicing** | 67 | ✅ Production | 09/2026 |
+| **fec** | 15 | ✅ Production | - |
+| **liasses** | 12 | ✅ Production | - |
+| **dsn** | 8 | ✅ Production | - |
+| **pcg** | 10 | ✅ Production | - |
+| **nf525** | 5 | ✅ Production | - |
 
 ---
 
-## Reponse Paginee Standard
+## API Versioning
 
-```json
+/v3/{module}/{resource}           # Standard CRUD
+/v3/{module}/{resource}/{id}      # Single resource
+/v3/{module}/{resource}/{id}/{action}  # Actions
+
+### Exemples
+
+# Finance
+GET  /v3/finance/bank-accounts
+POST /v3/finance/reconciliation/auto
+GET  /v3/finance/cash-forecast?days=30
+
+# Commercial
+GET  /v3/commercial/customers?type=CLIENT
+POST /v3/commercial/documents
+POST /v3/commercial/documents/{id}/send
+
+# Interventions
+GET  /v3/interventions?statut=EN_COURS
+POST /v3/interventions/{id}/transition
+
+---
+
+## Authentification
+
+| Header | Description |
+|--------|-------------|
+| Authorization | Bearer {jwt_token} |
+| X-Tenant-ID | ID du tenant (obligatoire) |
+| X-CSRF-Token | Token CSRF (POST/PUT/DELETE) |
+
+---
+
+## Pagination Standard
+
 {
   "items": [...],
   "total": 150,
   "page": 1,
-  "page_size": 20,
-  "total_pages": 8
+  "per_page": 20,
+  "pages": 8
 }
-```
+
+### Query Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| page | int | Page courante (défaut: 1) |
+| per_page | int | Items par page (défaut: 20, max: 100) |
+| sort | string | Champ de tri |
+| order | string | asc ou desc |
 
 ---
 
-## Codes HTTP Standards
+## Codes HTTP
 
 | Code | Signification |
 |------|---------------|
-| `200` | OK - Succes |
-| `201` | Created - Ressource creee |
-| `204` | No Content - Suppression reussie |
-| `400` | Bad Request - Validation echouee |
-| `401` | Unauthorized - Non authentifie |
-| `403` | Forbidden - Non autorise |
-| `404` | Not Found - Ressource inexistante |
-| `409` | Conflict - Doublon (code unique) |
-| `422` | Unprocessable Entity - Donnees invalides |
-| `500` | Internal Server Error |
+| 200 | Succès |
+| 201 | Créé |
+| 204 | Supprimé |
+| 400 | Erreur validation |
+| 401 | Non authentifié |
+| 403 | Non autorisé (RBAC) |
+| 404 | Non trouvé |
+| 409 | Conflit (doublon) |
+| 422 | Erreur Pydantic |
+| 429 | Rate limit |
+| 500 | Erreur serveur |
 
 ---
 
-## Endpoint de Statut API
+## Rate Limits
 
-```
-GET /api/v3/api/status
-```
-
-Retourne:
-- Nombre total de modules
-- Modules charges
-- Modules en echec
-- Temps de chargement
-- Details par priorite
+| Scope | Limite |
+|-------|--------|
+| Par IP | 1000 req/min |
+| Par Tenant | 5000 req/min |
+| Global | 50000 req/min |
 
 ---
 
-## Conformite Normative
+## Modules Métier Additionnels
 
-Ce mapping respecte:
-- **AZA-NF-003**: Modules subordonnes au noyau
-- **AZA-BE-003**: Contrat backend obligatoire
-- **AZA-API-003**: Versioning explicite
-- **AZA-FE-007**: Auditabilite permanente
+### Expenses (Notes de frais)
+- Reports, lignes, justificatifs OCR
+- Kilométrage barème fiscal
+- Workflows approbation
+- Politiques de dépenses
+
+### Assets (Immobilisations)
+- Catégories, amortissements
+- Maintenance préventive
+- Inventaire physique
+- Assurances
+
+### Contracts (Gestion contractuelle)
+- Types: vente, achat, service, NDA...
+- Parties, avenants, obligations
+- Calendrier échéances
+- Génération depuis templates
+
+### E-Signature
+- Providers: YouSign, DocuSign, HelloSign
+- Niveaux: simple, avancé, qualifié
+- Audit trail certifié
+- Templates de signature
+
+### Broadcast (Diffusion périodique)
+- Templates contenu
+- Listes destinataires dynamiques
+- Planification CRON
+- Tracking ouvertures/clics
+
+### Email (Transactionnel)
+- Config SMTP/API (Brevo, SendGrid)
+- Templates multilingues
+- Queue & retry
+- Statistiques
+
+### Timesheet (Temps & Activités)
+- Saisie temps projet/tâche
+- Chronomètre temps réel
+- Feuilles hebdo/mensuelles
+- Heures sup Code du travail
+
+### Warranty (Garanties)
+- Légale conformité (2 ans)
+- Extensions commerciales
+- Réclamations SAV
+- Provisions comptables
 
 ---
 
-## Notes de Version
+## Modules Backend Complets (96 total)
 
-| Version | Date | Changements |
-|---------|------|-------------|
-| 3.1.0 | 2026-02-16 | 43 modules enregistres, registre declaratif |
-| 3.0.0 | 2026-02-01 | Migration vers architecture unifiee |
+### Tier 1 - Core Business (12)
+accounting, commercial, crm, finance, hr, interventions, inventory, pos, procurement, projects, purchases, treasury
+
+### Tier 2 - Operations (14)
+assets, contracts, ecommerce, esignature, expenses, field_service, helpdesk, maintenance, manufacturing, production, shipping, subscriptions, timesheet, warranty
+
+### Tier 3 - Support (18)
+ai_assistant, audit, backup, bi, broadcast, budget, cache, commissions, compliance, consolidation, dashboards, email, gamification, guardian, loyalty, notifications, workflows, webhooks
+
+### Tier 4 - Integration (10)
+dataexchange, gateway, integration, integrations, marketplace, mobile, odoo_import, stripe_integration, web, website
+
+### Tier 5 - Administration (12)
+autoconfig, country_packs, currency, i18n, iam, resources, scheduler, search, storage, templates, tenants, triggers
+
+### Tier 6 - Specialized (20)
+appointments, approval, automated_accounting, complaints, contacts, documents, enrichment, events, fleet, forecasting, knowledge, quality, qc, referral, rental, requisition, rfq, risk, sla, social_networks, survey, surveys, training, visitor
+

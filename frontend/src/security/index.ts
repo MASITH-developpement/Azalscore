@@ -59,25 +59,68 @@ export const isValidEmail = (email: string): boolean => {
 };
 
 /**
- * Valide un mot de passe (règles minimales)
+ * Valide un mot de passe (règles renforcées P1)
+ * Conforme aux recommandations OWASP et NIST SP 800-63B
  */
-export const isValidPassword = (password: string): { valid: boolean; errors: string[] } => {
+export const isValidPassword = (password: string): { valid: boolean; errors: string[]; strength: number } => {
   const errors: string[] = [];
+  let strength = 0;
 
+  // Longueur minimale
   if (password.length < 8) {
     errors.push('Le mot de passe doit contenir au moins 8 caractères');
-  }
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Le mot de passe doit contenir au moins une majuscule');
-  }
-  if (!/[a-z]/.test(password)) {
-    errors.push('Le mot de passe doit contenir au moins une minuscule');
-  }
-  if (!/[0-9]/.test(password)) {
-    errors.push('Le mot de passe doit contenir au moins un chiffre');
+  } else {
+    strength += 20;
+    if (password.length >= 12) strength += 10;
+    if (password.length >= 16) strength += 10;
   }
 
-  return { valid: errors.length === 0, errors };
+  // Majuscule
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins une majuscule');
+  } else {
+    strength += 15;
+  }
+
+  // Minuscule
+  if (!/[a-z]/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins une minuscule');
+  } else {
+    strength += 15;
+  }
+
+  // Chiffre
+  if (!/[0-9]/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins un chiffre');
+  } else {
+    strength += 15;
+  }
+
+  // Caractère spécial (P1 - NOUVEAU)
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins un caractère spécial (!@#$%^&*...)');
+  } else {
+    strength += 15;
+  }
+
+  // Patterns faibles (P1 - NOUVEAU)
+  const weakPatterns = [
+    'password', 'azerty', 'qwerty', '123456', 'motdepasse',
+    'admin', 'root', 'user', 'test', 'demo', 'azalscore'
+  ];
+  const lowerPassword = password.toLowerCase();
+  if (weakPatterns.some(pattern => lowerPassword.includes(pattern))) {
+    errors.push('Le mot de passe contient un pattern trop courant');
+    strength = Math.max(0, strength - 30);
+  }
+
+  // Séquences répétitives (aaa, 111, etc.)
+  if (/(.)\1{2,}/.test(password)) {
+    errors.push('Le mot de passe ne doit pas contenir de caractères répétitifs (aaa, 111...)');
+    strength = Math.max(0, strength - 10);
+  }
+
+  return { valid: errors.length === 0, errors, strength: Math.min(100, strength) };
 };
 
 /**

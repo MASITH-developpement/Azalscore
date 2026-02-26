@@ -269,3 +269,99 @@ def get_modules_list(
     SÉCURITÉ: Authentification requise.
     """
     return {"items": get_all_modules()}
+
+
+# ============================================================================
+# CSS CUSTOMIZATION (Apparence du tenant)
+# ============================================================================
+
+class TenantCSSConfig(BaseModel):
+    """Configuration CSS du tenant."""
+    tenant_id: str = ""
+    variables: dict[str, str] = {}
+    custom_css: str = ""
+    updated_at: str | None = None
+
+
+class TenantCSSUpdate(BaseModel):
+    """Mise à jour de la configuration CSS."""
+    variables: dict[str, str] = {}
+    custom_css: str = ""
+
+
+@router.get("/tenant/css", response_model=TenantCSSConfig)
+def get_tenant_css(
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Récupère la configuration CSS du tenant.
+
+    SÉCURITÉ: Authentification requise + isolation tenant.
+    """
+    from app.modules.tenants.models import TenantSettings
+
+    settings = db.query(TenantSettings).filter(
+        TenantSettings.tenant_id == tenant_id
+    ).first()
+
+    if not settings or not settings.custom_settings:
+        return TenantCSSConfig(tenant_id=tenant_id)
+
+    css_config = settings.custom_settings.get("css", {})
+    return TenantCSSConfig(
+        tenant_id=tenant_id,
+        variables=css_config.get("variables", {}),
+        custom_css=css_config.get("custom_css", ""),
+        updated_at=settings.updated_at.isoformat() if settings.updated_at else None
+    )
+
+
+@router.put("/tenant/css", response_model=TenantCSSConfig)
+def update_tenant_css(
+    data: TenantCSSUpdate,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Met à jour la configuration CSS du tenant.
+
+    SÉCURITÉ: Authentification requise + isolation tenant.
+    """
+    from app.modules.tenants.models import TenantSettings
+
+    settings = db.query(TenantSettings).filter(
+        TenantSettings.tenant_id == tenant_id
+    ).first()
+
+    if not settings:
+        # Créer les settings si inexistants
+        settings = TenantSettings(tenant_id=tenant_id, custom_settings={})
+        db.add(settings)
+
+    # Mettre à jour la configuration CSS
+    if settings.custom_settings is None:
+        settings.custom_settings = {}
+
+    settings.custom_settings["css"] = {
+        "variables": data.variables,
+        "custom_css": data.custom_css
+    }
+
+    # Forcer la détection du changement par SQLAlchemy
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(settings, "custom_settings")
+
+    db.commit()
+    db.refresh(settings)
+
+    logger.info(f"CSS configuration updated for tenant {tenant_id}")
+
+    return TenantCSSConfig(
+        tenant_id=tenant_id,
+        variables=data.variables,
+        custom_css=data.custom_css,
+        updated_at=settings.updated_at.isoformat() if settings.updated_at else None
+    )

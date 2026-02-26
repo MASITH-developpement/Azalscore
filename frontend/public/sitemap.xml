@@ -196,9 +196,9 @@
   <!-- BLOG / ARTICLES (important pour SEO) -->
   <url>
     <loc>https://azalscore.com/blog</loc>
-    <lastmod>2026-02-25</lastmod>
+    <lastmod>2026-02-26</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
 
   <url>
@@ -243,7 +243,42 @@
     <priority>0.75</priority>
   </url>
 
+  <url>
+    <loc>https://azalscore.com/blog/erp-vs-excel-pourquoi-migrer</loc>
+    <lastmod>2026-02-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://azalscore.com/blog/gestion-devis-factures</loc>
+    <lastmod>2026-02-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://azalscore.com/blog/digitalisation-pme-guide</loc>
+    <lastmod>2026-02-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://azalscore.com/blog/choix-logiciel-comptabilite-pme</loc>
+    <lastmod>2026-02-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- COMPARATIFS -->
+  <url>
+    <loc>https://azalscore.com/comparatif</loc>
+    <lastmod>2026-02-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <url>
     <loc>https://azalscore.com/comparatif/odoo</loc>
     <lastmod>2026-02-25</lastmod>
@@ -275,6 +310,13 @@
       <image:loc>https://azalscore.com/screenshots/comparatif-ebp.png</image:loc>
       <image:title>Comparatif Azalscore vs EBP - Solution ERP</image:title>
     </image:image>
+  </url>
+
+  <url>
+    <loc>https://azalscore.com/comparatif/pennylane</loc>
+    <lastmod>2026-02-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 
   <!-- CAS D'USAGE PAR SECTEUR -->

@@ -7,6 +7,8 @@ import React from 'react';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Share2, Bookmark, CheckCircle, Shield, Lock, Eye, Trash2, Download } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { Footer } from '../../components/Footer';
+import { AzalscoreLogo } from '../../components/Logo';
 
 export const ConformiteRgpdErp: React.FC = () => {
   const articleData = {
@@ -45,6 +47,16 @@ export const ConformiteRgpdErp: React.FC = () => {
         <meta property="og:type" content="article" />
         <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
       </Helmet>
+
+      {/* Logo Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
+          <Link to="/" className="text-gray-500 hover:text-blue-600 text-sm">← Accueil</Link>
+          <Link to="/">
+            <AzalscoreLogo size={40} />
+          </Link>
+        </div>
+      </div>
 
       <article className="blog-article">
         <header className="blog-article-header">
@@ -86,7 +98,7 @@ export const ConformiteRgpdErp: React.FC = () => {
         </header>
 
         <figure className="blog-article-hero">
-          <img src="/screenshots/real-security.png" alt="Sécurité des données dans Azalscore" width={1200} height={600} />
+          <img src="/screenshots/real-security.png" alt="Sécurité des données dans Azalscore" width={1200} height={600} loading="eager" />
           <figcaption>Protection des données et conformité RGPD dans Azalscore ERP</figcaption>
         </figure>
 
@@ -375,6 +387,8 @@ export const ConformiteRgpdErp: React.FC = () => {
           </div>
         </nav>
       </article>
+
+      <Footer />
     </>
   );
 };

@@ -873,7 +873,7 @@ class BudgetLine(Base):
     children = relationship("BudgetLine", backref="parent", remote_side=[id])
 
     __table_args__ = (
-        Index("ix_budget_lines_budget", "budget_id"),
+        Index("ix_project_budget_lines_budget", "budget_id"),
     )
 
 

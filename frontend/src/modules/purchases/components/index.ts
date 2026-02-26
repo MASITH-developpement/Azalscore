@@ -1,9 +1,20 @@
 /**
  * AZALSCORE Module - Purchases - Components Index
- * Re-exports all tab components
+ * Re-exports all components
  */
 
-// Supplier tabs
+// ============================================================================
+// Shared Components
+// ============================================================================
+
+export { OrderStatusBadge, InvoiceStatusBadge, SupplierStatusBadge } from './StatusBadges';
+export { LineEditor, type LineFormData } from './LineEditor';
+export { FilterBar, type FilterState } from './FilterBar';
+
+// ============================================================================
+// Supplier Tabs
+// ============================================================================
+
 export { SupplierInfoTab } from './SupplierInfoTab';
 export { SupplierOrdersTab } from './SupplierOrdersTab';
 export { SupplierInvoicesTab } from './SupplierInvoicesTab';
@@ -12,7 +23,10 @@ export { SupplierHistoryTab } from './SupplierHistoryTab';
 export { SupplierRiskTab } from './SupplierRiskTab';
 export { SupplierIATab } from './SupplierIATab';
 
-// Order tabs
+// ============================================================================
+// Order Tabs
+// ============================================================================
+
 export { OrderInfoTab } from './OrderInfoTab';
 export { OrderLinesTab } from './OrderLinesTab';
 export { OrderFinancialTab } from './OrderFinancialTab';
@@ -20,7 +34,10 @@ export { OrderDocumentsTab } from './OrderDocumentsTab';
 export { OrderHistoryTab } from './OrderHistoryTab';
 export { OrderIATab } from './OrderIATab';
 
-// Invoice tabs
+// ============================================================================
+// Invoice Tabs
+// ============================================================================
+
 export { InvoiceInfoTab } from './InvoiceInfoTab';
 export { InvoiceLinesTab } from './InvoiceLinesTab';
 export { InvoiceFinancialTab } from './InvoiceFinancialTab';

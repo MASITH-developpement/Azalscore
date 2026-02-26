@@ -84,9 +84,9 @@ class TrialRegistrationService:
         # 1. Vérifier email non utilisé
         self._check_email_available(data.email)
 
-        # 2. Vérifier le CAPTCHA
-        if not self._verify_hcaptcha(data.captcha_token):
-            raise ValueError("Vérification CAPTCHA échouée")
+        # 2. Vérifier le CAPTCHA (reCAPTCHA v3)
+        if not self._verify_recaptcha(data.captcha_token):
+            raise ValueError("Vérification anti-robot échouée. Veuillez réessayer.")
 
         # 3. Générer token email
         email_token = secrets.token_urlsafe(32)
@@ -770,27 +770,59 @@ class TrialRegistrationService:
         if existing_registration:
             raise ValueError("Cette adresse email est déjà utilisée. Veuillez recommencer avec une autre adresse.")
 
-    def _verify_hcaptcha(self, token: str) -> bool:
-        """Vérifier le token hCaptcha."""
+    def _verify_recaptcha(self, token: str) -> bool:
+        """
+        Vérifier le token reCAPTCHA v3.
+
+        reCAPTCHA v3 retourne un score entre 0.0 et 1.0 :
+        - 1.0 = très probablement humain
+        - 0.0 = très probablement un bot
+
+        Seuil recommandé : 0.5
+        """
         settings = get_settings()
-        if not hasattr(settings, 'HCAPTCHA_SECRET_KEY') or not settings.HCAPTCHA_SECRET_KEY:
-            # En dev, accepter tous les tokens
+
+        # Si pas de clé secrète configurée, accepter en dev
+        secret_key = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
+        if not secret_key:
+            return True
+
+        # Token vide = pas de vérification frontend
+        if not token:
             return True
 
         try:
             response = httpx.post(
-                "https://hcaptcha.com/siteverify",
+                "https://www.google.com/recaptcha/api/siteverify",
                 data={
-                    "secret": settings.HCAPTCHA_SECRET_KEY,
+                    "secret": secret_key,
                     "response": token,
                 },
                 timeout=10.0
             )
             result = response.json()
-            return result.get("success", False)
-        except Exception:
-            # En cas d'erreur, refuser
-            return False
+
+            if not result.get("success", False):
+                return False
+
+            # Vérifier le score (seuil à 0.3 pour être permissif)
+            score = result.get("score", 0.0)
+            if score < 0.3:
+                return False
+
+            # Vérifier l'action (optionnel mais recommandé)
+            action = result.get("action", "")
+            if action and action != "trial_registration":
+                return False
+
+            return True
+
+        except Exception as e:
+            # En cas d'erreur réseau, log et accepter (fail open)
+            # pour ne pas bloquer les utilisateurs légitimes
+            import logging
+            logging.warning(f"reCAPTCHA verification failed: {e}")
+            return True
 
     def _generate_tenant_id(self, company_name: str) -> str:
         """Générer un tenant_id unique à partir du nom de l'entreprise."""

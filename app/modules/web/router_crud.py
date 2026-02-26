@@ -41,6 +41,8 @@ from .schemas import (
     UIConfigResponse,
     UserPreferenceCreate,
     UserPreferenceResponse,
+    UserProfileUpdate,
+    UserProfileResponse,
     WidgetCreate,
     WidgetResponse,
 )
@@ -524,6 +526,70 @@ async def get_ui_config(
     service = get_web_service(db, context.tenant_id, context.user_id)
     config = service.get_ui_config()
     return config
+
+# ============================================================================
+# PROFILE
+# ============================================================================
+
+@router.get("/profile", response_model=UserProfileResponse)
+async def get_user_profile(
+    context: SaaSContext = Depends(get_context),
+    db: Session = Depends(get_db)
+):
+    """Récupère le profil de l'utilisateur courant."""
+    if not context.user_id:
+        raise HTTPException(status_code=401, detail="Utilisateur non authentifié")
+
+    service = get_web_service(db, context.tenant_id, context.user_id)
+    profile = service.get_user_profile(context.user_id)
+
+    if not profile:
+        # Retourner un profil par défaut basé sur le contexte
+        return UserProfileResponse(
+            id=str(context.user_id),
+            name="Utilisateur",
+            email="",
+            phone=None,
+            role="Utilisateur"
+        )
+
+    return profile
+
+@router.put("/profile", response_model=UserProfileResponse)
+async def update_user_profile(
+    data: UserProfileUpdate,
+    context: SaaSContext = Depends(get_context),
+    db: Session = Depends(get_db)
+):
+    """Met à jour le profil de l'utilisateur courant."""
+    if not context.user_id:
+        raise HTTPException(status_code=401, detail="Utilisateur non authentifié")
+
+    service = get_web_service(db, context.tenant_id, context.user_id)
+
+    try:
+        update_data = data.model_dump(exclude_unset=True)
+        profile = service.update_user_profile(context.user_id, **update_data)
+        return profile
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/profile/generate-token", response_model=dict)
+async def generate_api_token(
+    context: SaaSContext = Depends(get_context),
+    db: Session = Depends(get_db)
+):
+    """Génère un nouveau token API pour l'utilisateur courant."""
+    if not context.user_id:
+        raise HTTPException(status_code=401, detail="Utilisateur non authentifié")
+
+    service = get_web_service(db, context.tenant_id, context.user_id)
+
+    try:
+        token = service.generate_api_token(context.user_id)
+        return {"api_token": token}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # ============================================================================
 # SHORTCUTS

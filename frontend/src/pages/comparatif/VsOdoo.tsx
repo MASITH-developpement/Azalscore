@@ -11,6 +11,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Check, X, Minus, ArrowRight, Shield, Server, Euro, Users } from 'lucide-react';
+import { Footer } from '../../components/Footer';
+import { AzalscoreLogo } from '../../components/Logo';
 
 interface ComparisonRow {
   feature: string;
@@ -76,7 +78,14 @@ const VsOdoo: React.FC = () => {
         {/* Header */}
         <header className="bg-white border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <Link to="/" className="text-2xl font-bold text-blue-600">AZALSCORE</Link>
+            <div className="flex items-center gap-6">
+              <Link to="/" className="text-gray-500 hover:text-blue-600 text-sm flex items-center gap-1">
+                ← Accueil
+              </Link>
+              <Link to="/" className="flex items-center">
+                <AzalscoreLogo size={40} />
+              </Link>
+            </div>
             <nav className="hidden md:flex gap-6">
               <Link to="/features" className="text-gray-600 hover:text-gray-900">Fonctionnalités</Link>
               <Link to="/pricing" className="text-gray-600 hover:text-gray-900">Tarifs</Link>
@@ -263,43 +272,7 @@ const VsOdoo: React.FC = () => {
         </section>
 
         {/* Footer */}
-        <footer className="bg-gray-900 text-white py-12">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="grid md:grid-cols-4 gap-8">
-              <div>
-                <h4 className="font-bold mb-4">Azalscore</h4>
-                <p className="text-gray-400 text-sm">ERP SaaS français pour PME</p>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4">Produit</h4>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li><Link to="/features" className="hover:text-white">Fonctionnalités</Link></li>
-                  <li><Link to="/pricing" className="hover:text-white">Tarifs</Link></li>
-                  <li><Link to="/demo" className="hover:text-white">Démo</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4">Comparatifs</h4>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li><Link to="/comparatif/azalscore-vs-odoo" className="hover:text-white">vs Odoo</Link></li>
-                  <li><Link to="/comparatif/azalscore-vs-sage" className="hover:text-white">vs Sage</Link></li>
-                  <li><Link to="/comparatif/azalscore-vs-ebp" className="hover:text-white">vs EBP</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4">Légal</h4>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li><Link to="/mentions-legales" className="hover:text-white">Mentions légales</Link></li>
-                  <li><Link to="/confidentialite" className="hover:text-white">Confidentialité</Link></li>
-                  <li><Link to="/cgv" className="hover:text-white">CGV</Link></li>
-                </ul>
-              </div>
-            </div>
-            <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-              © 2026 AZALSCORE - MASITH Développement. Tous droits réservés.
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );

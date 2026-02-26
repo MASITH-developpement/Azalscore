@@ -22,6 +22,10 @@ import {
   Lock,
   Server,
   CheckCircle,
+  Factory,
+  ShoppingBag,
+  Wrench,
+  BookOpen,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { COLORS } from '@core/design-tokens';
@@ -259,10 +263,57 @@ export const LandingPage: React.FC = () => {
           {/* Navigation Desktop */}
           <nav className="landing-nav" aria-label="Navigation principale">
             <a href="#modules">Modules</a>
-            <a href="#features">Fonctionnalités</a>
             <a href="#pricing">Tarifs</a>
-            <a href="#faq">FAQ</a>
-            <Link to="/blog">Blog</Link>
+
+            {/* Dropdown Ressources */}
+            <div className="landing-nav-dropdown">
+              <button className="landing-nav-dropdown-trigger">
+                Ressources <ChevronDown size={14} />
+              </button>
+              <div className="landing-nav-dropdown-menu">
+                <div className="landing-nav-dropdown-section">
+                  <span className="landing-nav-dropdown-label">Guides</span>
+                  <Link to="/blog/erp-pme-guide-complet">Guide ERP PME</Link>
+                  <Link to="/blog/facturation-electronique-2026">Facturation 2026</Link>
+                  <Link to="/blog/digitalisation-pme-guide">Digitalisation PME</Link>
+                  <Link to="/blog/choix-logiciel-comptabilite-pme">Choisir son logiciel compta</Link>
+                </div>
+                <div className="landing-nav-dropdown-section">
+                  <span className="landing-nav-dropdown-label">Articles</span>
+                  <Link to="/blog/erp-vs-excel-pourquoi-migrer">ERP vs Excel</Link>
+                  <Link to="/blog/gestion-devis-factures">Gestion Devis & Factures</Link>
+                  <Link to="/blog/gestion-tresorerie-pme">Gestion Trésorerie</Link>
+                  <Link to="/blog">Tous les articles →</Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Dropdown Comparatifs */}
+            <div className="landing-nav-dropdown">
+              <button className="landing-nav-dropdown-trigger">
+                Comparatifs <ChevronDown size={14} />
+              </button>
+              <div className="landing-nav-dropdown-menu landing-nav-dropdown-menu--small">
+                <Link to="/comparatif/pennylane">vs Pennylane</Link>
+                <Link to="/comparatif/odoo">vs Odoo</Link>
+                <Link to="/comparatif/sage">vs Sage</Link>
+                <Link to="/comparatif/ebp">vs EBP</Link>
+                <Link to="/comparatif" className="landing-nav-dropdown-all">Tous les comparatifs →</Link>
+              </div>
+            </div>
+
+            {/* Dropdown Secteurs */}
+            <div className="landing-nav-dropdown">
+              <button className="landing-nav-dropdown-trigger">
+                Secteurs <ChevronDown size={14} />
+              </button>
+              <div className="landing-nav-dropdown-menu landing-nav-dropdown-menu--small">
+                <Link to="/secteurs/commerce">Commerce & Retail</Link>
+                <Link to="/secteurs/services">Services & Consulting</Link>
+                <Link to="/secteurs/industrie">Industrie & Production</Link>
+              </div>
+            </div>
+
             <Link to="/login" className="landing-btn landing-btn-outline">
               Connexion
             </Link>
@@ -293,10 +344,32 @@ export const LandingPage: React.FC = () => {
           aria-label="Navigation mobile"
         >
           <a href="#modules" onClick={() => setMobileMenuOpen(false)}>Modules</a>
-          <a href="#features" onClick={() => setMobileMenuOpen(false)}>Fonctionnalités</a>
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Tarifs</a>
-          <a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
-          <Link to="/blog" onClick={() => setMobileMenuOpen(false)}>Blog</Link>
+
+          <div className="landing-mobile-section">
+            <span className="landing-mobile-section-title">Ressources</span>
+            <Link to="/blog/erp-pme-guide-complet" onClick={() => setMobileMenuOpen(false)}>Guide ERP PME</Link>
+            <Link to="/blog/facturation-electronique-2026" onClick={() => setMobileMenuOpen(false)}>Facturation 2026</Link>
+            <Link to="/blog/digitalisation-pme-guide" onClick={() => setMobileMenuOpen(false)}>Digitalisation PME</Link>
+            <Link to="/blog/erp-vs-excel-pourquoi-migrer" onClick={() => setMobileMenuOpen(false)}>ERP vs Excel</Link>
+            <Link to="/blog" onClick={() => setMobileMenuOpen(false)}>Tous les articles →</Link>
+          </div>
+
+          <div className="landing-mobile-section">
+            <span className="landing-mobile-section-title">Comparatifs</span>
+            <Link to="/comparatif/pennylane" onClick={() => setMobileMenuOpen(false)}>vs Pennylane</Link>
+            <Link to="/comparatif/odoo" onClick={() => setMobileMenuOpen(false)}>vs Odoo</Link>
+            <Link to="/comparatif/sage" onClick={() => setMobileMenuOpen(false)}>vs Sage</Link>
+            <Link to="/comparatif/ebp" onClick={() => setMobileMenuOpen(false)}>vs EBP</Link>
+          </div>
+
+          <div className="landing-mobile-section">
+            <span className="landing-mobile-section-title">Secteurs</span>
+            <Link to="/secteurs/commerce" onClick={() => setMobileMenuOpen(false)}>Commerce & Retail</Link>
+            <Link to="/secteurs/services" onClick={() => setMobileMenuOpen(false)}>Services</Link>
+            <Link to="/secteurs/industrie" onClick={() => setMobileMenuOpen(false)}>Industrie</Link>
+          </div>
+
           <Link
             to="/login"
             className="landing-btn landing-btn-outline"
@@ -602,6 +675,72 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Secteurs Section - Internal Linking */}
+      <section className="landing-section landing-secteurs" aria-labelledby="secteurs-title">
+        <div className="landing-container">
+          <h2 id="secteurs-title" className="landing-section-title">Solutions par secteur d'activité</h2>
+          <p className="landing-section-subtitle">
+            AZALSCORE s'adapte à votre métier avec des fonctionnalités dédiées
+          </p>
+          <div className="landing-secteurs-grid">
+            <Link to="/secteurs/commerce" className="landing-secteur-card">
+              <ShoppingBag size={32} className="landing-secteur-icon" />
+              <h3>Commerce & Retail</h3>
+              <p>Caisse, stock, fidélité client, e-commerce intégré</p>
+              <span className="landing-secteur-link">Découvrir <ArrowRight size={14} /></span>
+            </Link>
+            <Link to="/secteurs/industrie" className="landing-secteur-card">
+              <Factory size={32} className="landing-secteur-icon" />
+              <h3>Industrie & Production</h3>
+              <p>GPAO, qualité, maintenance GMAO, traçabilité</p>
+              <span className="landing-secteur-link">Découvrir <ArrowRight size={14} /></span>
+            </Link>
+            <Link to="/secteurs/services" className="landing-secteur-card">
+              <Wrench size={32} className="landing-secteur-icon" />
+              <h3>Services & Interventions</h3>
+              <p>Planning terrain, devis, facturation, suivi GPS</p>
+              <span className="landing-secteur-link">Découvrir <ArrowRight size={14} /></span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Blog Section - Internal Linking */}
+      <section className="landing-section landing-blog" aria-labelledby="blog-title">
+        <div className="landing-container">
+          <h2 id="blog-title" className="landing-section-title">Derniers articles</h2>
+          <p className="landing-section-subtitle">
+            Conseils et actualités pour optimiser votre gestion d'entreprise
+          </p>
+          <div className="landing-blog-grid">
+            <Link to="/blog/erp-vs-excel-pourquoi-migrer" className="landing-blog-card">
+              <div className="landing-blog-card-icon"><BarChart3 size={24} /></div>
+              <h3>ERP vs Excel : Pourquoi Migrer ?</h3>
+              <p>Comparatif complet et guide de transition pour les PME</p>
+              <span className="landing-blog-meta">15 min de lecture</span>
+            </Link>
+            <Link to="/blog/facturation-electronique-2026" className="landing-blog-card">
+              <div className="landing-blog-card-icon"><FileText size={24} /></div>
+              <h3>Facturation Électronique 2026</h3>
+              <p>Guide complet sur les obligations et comment s'y préparer</p>
+              <span className="landing-blog-meta">12 min de lecture</span>
+            </Link>
+            <Link to="/blog/gestion-devis-factures" className="landing-blog-card">
+              <div className="landing-blog-card-icon"><CreditCard size={24} /></div>
+              <h3>Gestion Devis et Factures</h3>
+              <p>Bonnes pratiques pour optimiser votre cycle commercial</p>
+              <span className="landing-blog-meta">13 min de lecture</span>
+            </Link>
+          </div>
+          <div className="landing-blog-cta">
+            <Link to="/blog" className="landing-btn landing-btn-outline">
+              Voir tous les articles
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section id="faq" className="landing-section landing-faq" aria-labelledby="faq-title">
         <div className="landing-container">
@@ -668,21 +807,61 @@ export const LandingPage: React.FC = () => {
       {/* Footer */}
       <footer className="landing-footer" role="contentinfo">
         <div className="landing-container">
-          <div className="landing-footer-content">
+          <div className="landing-footer-grid">
             <div className="landing-footer-brand">
               <AzalscoreLogo size={32} />
               <span>AZALSCORE</span>
+              <p className="landing-footer-tagline">
+                L'ERP français pour les PME modernes
+              </p>
             </div>
-            <nav className="landing-footer-links" aria-label="Liens légaux">
-              <Link to="/mentions-legales">Mentions légales</Link>
-              <Link to="/confidentialite">Confidentialité</Link>
-              <Link to="/cgv">CGV</Link>
-              <Link to="/contact">Contact</Link>
-            </nav>
+
+            <div className="landing-footer-col">
+              <h4>Produit</h4>
+              <nav aria-label="Liens produit">
+                <Link to="/features">Fonctionnalités</Link>
+                <Link to="/pricing">Tarifs</Link>
+                <Link to="/essai-gratuit">Essai gratuit</Link>
+                <Link to="/demo">Demander une démo</Link>
+              </nav>
+            </div>
+
+            <div className="landing-footer-col">
+              <h4>Secteurs</h4>
+              <nav aria-label="Liens secteurs">
+                <Link to="/secteurs/commerce">Commerce & Retail</Link>
+                <Link to="/secteurs/industrie">Industrie</Link>
+                <Link to="/secteurs/services">Services</Link>
+              </nav>
+            </div>
+
+            <div className="landing-footer-col">
+              <h4>Ressources</h4>
+              <nav aria-label="Liens ressources">
+                <Link to="/blog">Blog</Link>
+                <Link to="/blog/facturation-electronique-2026">Facturation 2026</Link>
+                <Link to="/blog/erp-pme-guide-complet">Guide ERP</Link>
+                <Link to="/comparatif">Comparatif ERP</Link>
+              </nav>
+            </div>
+
+            <div className="landing-footer-col">
+              <h4>Entreprise</h4>
+              <nav aria-label="Liens légaux">
+                <Link to="/contact">Contact</Link>
+                <Link to="/mentions-legales">Mentions légales</Link>
+                <Link to="/confidentialite">Confidentialité</Link>
+                <Link to="/cgv">CGV</Link>
+              </nav>
+            </div>
+          </div>
+
+          <div className="landing-footer-bottom">
             <p className="landing-footer-copy">
               &copy; 2026 AZALSCORE - MASITH Développement. Tous droits réservés.
-              <br />
-              ERP SaaS français - Hébergé en France - Conforme RGPD
+            </p>
+            <p className="landing-footer-badges">
+              ERP SaaS français • Hébergé en France • Conforme RGPD • Facturation 2026
             </p>
           </div>
         </div>

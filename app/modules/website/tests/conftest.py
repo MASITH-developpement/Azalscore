@@ -47,7 +47,7 @@ def mock_website_service(monkeypatch, tenant_id, user_id):
         def __init__(self, db, tenant_id, user_id=None):
             self.db = db
             self.tenant_id = tenant_id
-            self.user_id = int(user_id) if user_id else None
+            self.user_id = user_id  # Garder comme string/UUID
 
         # Pages
         def create_page(self, **kwargs):

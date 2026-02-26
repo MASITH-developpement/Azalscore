@@ -4,22 +4,8 @@
  */
 
 /* ==========================================================================
-   VARIABLES
+   BLOG - Variables centralisées dans _variables.css
    ========================================================================== */
-
-:root {
-  --blog-primary: #1E6EFF;
-  --blog-primary-dark: #0052CC;
-  --blog-text: #1a1a2e;
-  --blog-text-light: #4a5568;
-  --blog-text-muted: #718096;
-  --blog-bg: #ffffff;
-  --blog-bg-alt: #f8faff;
-  --blog-border: #e5e7eb;
-  --blog-success: #10b981;
-  --blog-warning: #f59e0b;
-  --blog-info: #3b82f6;
-}
 
 /* ==========================================================================
    LAYOUT

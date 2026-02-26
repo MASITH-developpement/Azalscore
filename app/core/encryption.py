@@ -334,6 +334,107 @@ def decrypt_value(value: str) -> str:
 
 
 # ============================================================================
+# AES-256-GCM (P1 SÉCURITÉ - Chiffrement renforcé)
+# ============================================================================
+
+def encrypt_aes256_gcm(plaintext: bytes, key: bytes, aad: bytes | None = None) -> bytes:
+    """
+    Chiffre des données avec AES-256-GCM (authenticated encryption).
+
+    P1 SÉCURITÉ: Utiliser cette fonction pour les données hautement sensibles.
+    AES-256-GCM fournit:
+    - Confidentialité (chiffrement 256-bit)
+    - Intégrité (GHASH)
+    - Authentification (tag)
+
+    Args:
+        plaintext: Données à chiffrer
+        key: Clé de 32 bytes (256 bits)
+        aad: Additional Authenticated Data (optionnel)
+
+    Returns:
+        IV (12 bytes) + Tag (16 bytes) + Ciphertext
+
+    Raises:
+        ValueError: Si la clé n'est pas de 32 bytes
+    """
+    if len(key) != 32:
+        raise ValueError("AES-256 requires a 32-byte key")
+
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.backends import default_backend
+
+    iv = os.urandom(12)  # 96-bit IV recommandé pour GCM
+
+    cipher = Cipher(
+        algorithms.AES(key),
+        modes.GCM(iv),
+        backend=default_backend()
+    )
+    encryptor = cipher.encryptor()
+
+    if aad:
+        encryptor.authenticate_additional_data(aad)
+
+    ciphertext = encryptor.update(plaintext) + encryptor.finalize()
+
+    # Format: IV (12) + Tag (16) + Ciphertext
+    return iv + encryptor.tag + ciphertext
+
+
+def decrypt_aes256_gcm(ciphertext: bytes, key: bytes, aad: bytes | None = None) -> bytes:
+    """
+    Déchiffre des données chiffrées avec AES-256-GCM.
+
+    Args:
+        ciphertext: IV (12 bytes) + Tag (16 bytes) + Ciphertext
+        key: Clé de 32 bytes (256 bits)
+        aad: Additional Authenticated Data (doit correspondre au chiffrement)
+
+    Returns:
+        Données déchiffrées
+
+    Raises:
+        ValueError: Si la clé ou le format est invalide
+        cryptography.exceptions.InvalidTag: Si l'authentification échoue
+    """
+    if len(key) != 32:
+        raise ValueError("AES-256 requires a 32-byte key")
+
+    if len(ciphertext) < 28:  # 12 (IV) + 16 (Tag) minimum
+        raise ValueError("Ciphertext too short")
+
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.backends import default_backend
+
+    iv = ciphertext[:12]
+    tag = ciphertext[12:28]
+    ct = ciphertext[28:]
+
+    cipher = Cipher(
+        algorithms.AES(key),
+        modes.GCM(iv, tag),
+        backend=default_backend()
+    )
+    decryptor = cipher.decryptor()
+
+    if aad:
+        decryptor.authenticate_additional_data(aad)
+
+    return decryptor.update(ct) + decryptor.finalize()
+
+
+def generate_aes256_key() -> bytes:
+    """
+    Génère une clé AES-256 sécurisée (32 bytes).
+
+    Returns:
+        Clé de 32 bytes générée avec os.urandom()
+    """
+    return os.urandom(32)
+
+
+# ============================================================================
 # EXPORT
 # ============================================================================
 
@@ -347,4 +448,8 @@ __all__ = [
     'hash_sensitive_for_search',
     'encrypt_value',
     'decrypt_value',
+    # P1 SÉCURITÉ: AES-256-GCM
+    'encrypt_aes256_gcm',
+    'decrypt_aes256_gcm',
+    'generate_aes256_key',
 ]

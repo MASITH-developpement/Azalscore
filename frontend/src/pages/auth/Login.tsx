@@ -1,8 +1,9 @@
 /**
  * AZALSCORE - Page de connexion
+ * SÉCURITÉ: Rate limiting côté client + validation renforcée
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
@@ -11,6 +12,15 @@ import { trackAuthEvent } from '@core/audit-ui';
 import { useAuth } from '@core/auth';
 import { useCapabilitiesStore } from '@core/capabilities';
 import { Button } from '@ui/actions';
+import { checkRateLimit } from '@/security';
+
+// ============================================================
+// CONSTANTES SÉCURITÉ (P0)
+// ============================================================
+const LOGIN_RATE_LIMIT_KEY = 'login_attempts';
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 const loginSchema = z.object({
   tenant: z.string().min(1, 'Société requise'),
@@ -30,6 +40,59 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
+  // SÉCURITÉ P0: Rate limiting state
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
+  const [remainingTime, setRemainingTime] = useState(0);
+
+  // Vérifier le lockout au chargement
+  useEffect(() => {
+    const storedLockout = sessionStorage.getItem('azals_login_lockout');
+    if (storedLockout) {
+      const endTime = parseInt(storedLockout, 10);
+      if (Date.now() < endTime) {
+        setIsRateLimited(true);
+        setLockoutEndTime(endTime);
+      } else {
+        sessionStorage.removeItem('azals_login_lockout');
+      }
+    }
+  }, []);
+
+  // Countdown timer pour le lockout
+  useEffect(() => {
+    if (!lockoutEndTime) return;
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, lockoutEndTime - Date.now());
+      setRemainingTime(Math.ceil(remaining / 1000));
+
+      if (remaining <= 0) {
+        setIsRateLimited(false);
+        setLockoutEndTime(null);
+        sessionStorage.removeItem('azals_login_lockout');
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lockoutEndTime]);
+
+  // Vérifier le rate limit avant soumission
+  const checkLoginRateLimit = useCallback((): boolean => {
+    const allowed = checkRateLimit(LOGIN_RATE_LIMIT_KEY, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MS);
+
+    if (!allowed) {
+      const endTime = Date.now() + LOCKOUT_DURATION_MS;
+      setIsRateLimited(true);
+      setLockoutEndTime(endTime);
+      sessionStorage.setItem('azals_login_lockout', endTime.toString());
+      trackAuthEvent('rate_limit_exceeded', false);
+      return false;
+    }
+
+    return true;
+  }, []);
+
   // Update tenant in sessionStorage when it changes
   useEffect(() => {
     if (tenant) {
@@ -40,6 +103,21 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationErrors({});
+
+    // SÉCURITÉ P0: Vérifier rate limit
+    if (isRateLimited) {
+      setValidationErrors({
+        general: `Trop de tentatives. Réessayez dans ${Math.ceil(remainingTime / 60)} minute(s).`
+      });
+      return;
+    }
+
+    if (!checkLoginRateLimit()) {
+      setValidationErrors({
+        general: 'Trop de tentatives de connexion. Veuillez patienter 15 minutes.'
+      });
+      return;
+    }
 
     try {
       const data = loginSchema.parse({ tenant, email, password });
@@ -54,6 +132,8 @@ const LoginPage: React.FC = () => {
         navigate('/2fa');
       } else {
         trackAuthEvent('login', true);
+        // Réinitialiser le rate limit après succès
+        sessionStorage.removeItem('azals_login_lockout');
         await loadCapabilities();
         navigate('/cockpit');
       }
@@ -81,7 +161,20 @@ const LoginPage: React.FC = () => {
     <div className="azals-login">
       <h1 className="azals-login__title">Connexion</h1>
 
-      {error && (
+      {/* SÉCURITÉ P0: Affichage rate limit */}
+      {isRateLimited && (
+        <div className="azals-login__error azals-login__error--rate-limit">
+          Trop de tentatives de connexion. Veuillez patienter {Math.ceil(remainingTime / 60)} minute(s) ({remainingTime}s).
+        </div>
+      )}
+
+      {validationErrors.general && (
+        <div className="azals-login__error">
+          {validationErrors.general}
+        </div>
+      )}
+
+      {error && !isRateLimited && (
         <div className="azals-login__error">
           {error}
         </div>
@@ -154,8 +247,9 @@ const LoginPage: React.FC = () => {
           variant="primary"
           fullWidth
           isLoading={isLoading}
+          disabled={isRateLimited}
         >
-          Se connecter
+          {isRateLimited ? `Verrouillé (${remainingTime}s)` : 'Se connecter'}
         </Button>
       </form>
     </div>
