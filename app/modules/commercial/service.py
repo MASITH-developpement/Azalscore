@@ -74,7 +74,7 @@ class CommercialService:
 
         logger.info(
             "Creating customer | tenant=%s user=%s name=%s type=%s",
-            self.tenant_id, user_id, data.name, data.type
+            self.tenant_id, user_id, data.name, data.customer_type
         )
 
         data_dict = data.model_dump(by_alias=True, exclude_unset=False)
@@ -855,7 +855,7 @@ class CommercialService:
         payment = Payment(
             tenant_id=self.tenant_id,
             created_by=user_id,
-            **data.model_dump()
+            **data.model_dump(by_alias=True)
         )
         self.db.add(payment)
 
