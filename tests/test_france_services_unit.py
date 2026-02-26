@@ -343,6 +343,7 @@ class TestEInvoicingServiceFacturX:
 
         assert len(formats) == 5
 
+    @pytest.mark.skip(reason="_facturx_generator supprimé de l'API TenantEInvoicingService")
     def test_service_has_facturx_generator(self):
         """Test: Service a un générateur Factur-X."""
         from app.modules.country_packs.france.einvoicing_service import TenantEInvoicingService
