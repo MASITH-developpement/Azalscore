@@ -1187,6 +1187,10 @@ def get_user_capabilities(
         "warranty.view", "warranty.create", "warranty.claim",
         "website.view", "website.edit", "website.publish",
         "field_service.view", "field_service.create", "field_service.dispatch",
+        # Réseaux Sociaux
+        "social_networks.view", "social_networks.post", "social_networks.config",
+        # Publications & Leads (Marketing)
+        "social_publications.view", "social_publications.create", "social_publications.leads", "social_publications.campaigns",
     ]
 
     # Capacites basees sur le role

@@ -1,15 +1,10 @@
 /**
  * AZALSCORE - Module Publications Réseaux Sociaux
  * ================================================
- *
- * Module de création et gestion des publications sur les réseaux sociaux
- * pour générer des leads vers azalscore.com.
- *
- * Conformité: AZA-FE-002, AZA-FE-003, AZA-FE-004
  */
 
 import React, { useState } from 'react';
-import { BaseViewStandard } from '@/ui-engine/standards/BaseViewStandard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Composants
 import { Dashboard } from './components/Dashboard';
@@ -18,47 +13,37 @@ import { LeadsList } from './components/LeadsList';
 
 /**
  * Module Principal - Publications & Leads Réseaux Sociaux
- *
- * Fonctionnalités:
- * - Tableau de bord avec KPIs
- * - Création et programmation de publications
- * - Gestion des leads générés
- * - Tracking UTM automatique
  */
 export default function SocialPublicationsModule() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const handleNavigate = (tab: string) => {
-    setActiveTab(tab);
-  };
-
   return (
-    <BaseViewStandard
-      title="Publications & Leads"
-      data={{}}
-      view="list"
-      defaultTab={activeTab}
-      onTabChange={setActiveTab}
-      tabs={[
-        {
-          id: 'dashboard',
-          label: 'Tableau de bord',
-          content: <Dashboard onNavigate={handleNavigate} />,
-        },
-        {
-          id: 'posts',
-          label: 'Publications',
-          content: <PostsList />,
-        },
-        {
-          id: 'leads',
-          label: 'Leads',
-          content: <LeadsList />,
-        },
-      ]}
-    />
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Publications & Leads</h1>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList>
+          <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
+          <TabsTrigger value="posts">Publications</TabsTrigger>
+          <TabsTrigger value="leads">Leads</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="mt-4">
+          <Dashboard onNavigate={setActiveTab} />
+        </TabsContent>
+
+        <TabsContent value="posts" className="mt-4">
+          <PostsList />
+        </TabsContent>
+
+        <TabsContent value="leads" className="mt-4">
+          <LeadsList />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
 
-// Export nommé pour compatibilité
 export { SocialPublicationsModule };

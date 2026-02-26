@@ -61,6 +61,7 @@ const ProfileModule = lazy(() => import('./modules/profile'));
 const SettingsModule = lazy(() => import('./modules/settings'));
 const MarceauModule = lazy(() => import('./modules/marceau'));
 const SaisieModule = lazy(() => import('./modules/saisie'));
+const SocialPublicationsModule = lazy(() => import('./modules/social-publications'));
 
 // Import modules
 const OdooImport = lazy(() => import('./modules/import').then(m => ({ default: m.OdooImportModule })));
@@ -128,6 +129,7 @@ const VIEW_CAPABILITY_MAP: Partial<Record<ViewKey, string>> = {
   'compliance': 'compliance.view',
   'broadcast': 'broadcast.view',
   'social-networks': 'social_networks.view',
+  'social-publications': 'social_publications.view',
   'accounting': 'accounting.view',
   'treasury': 'treasury.view',
   'assets': 'assets.view',
@@ -437,6 +439,9 @@ const VIEW_BASE_PATH: Partial<Record<ViewKey, string>> = {
   'broadcast': '/broadcast',
   'social-networks': '/social-networks',
 
+  // Marketing
+  'social-publications': '/social-publications',
+
   // Communication
   'esignature': '/esignature',
   'email': '/email',
@@ -624,6 +629,8 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
       case 'broadcast':
       case 'social-networks':
         return <PlaceholderModule name={viewKey} />;
+      case 'social-publications':
+        return <SocialPublicationsModule />;
 
       // Communication
       case 'esignature':

@@ -83,6 +83,7 @@ const RfqRoutes = lazy(() => import('@modules/rfq'));
 const SaisieRoutes = lazy(() => import('@modules/saisie'));
 const SettingsRoutes = lazy(() => import('@modules/settings'));
 const SocialNetworksRoutes = lazy(() => import('@modules/social-networks'));
+const SocialPublicationsRoutes = lazy(() => import('@modules/social-publications'));
 const StripeIntegrationRoutes = lazy(() => import('@modules/stripe-integration'));
 const TenantsRoutes = lazy(() => import('@modules/tenants'));
 const TimesheetRoutes = lazy(() => import('@modules/timesheet'));
@@ -676,6 +677,13 @@ export const AppRouter: React.FC = () => {
             <Route path="/social-networks/*" element={
               <CapabilityRoute capability="social_networks.view">
                 <SocialNetworksRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Publications & Leads Réseaux Sociaux */}
+            <Route path="/social-publications/*" element={
+              <CapabilityRoute capability="social_publications.view">
+                <SocialPublicationsRoutes />
               </CapabilityRoute>
             } />
 

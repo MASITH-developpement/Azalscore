@@ -1413,6 +1413,16 @@ def _get_custom_capabilities() -> dict:
             {"code": "social_networks.config", "name": "Configurer", "description": "Paramètres des réseaux"},
         ]
     },
+    "social_publications": {
+        "name": "Publications & Leads",
+        "icon": "Megaphone",
+        "capabilities": [
+            {"code": "social_publications.view", "name": "Voir les publications", "description": "Accès aux publications et leads"},
+            {"code": "social_publications.create", "name": "Créer des publications", "description": "Créer et programmer des publications"},
+            {"code": "social_publications.leads", "name": "Gérer les leads", "description": "Qualification et conversion des leads"},
+            {"code": "social_publications.campaigns", "name": "Gérer les campagnes", "description": "Création et suivi des campagnes"},
+        ]
+    },
     "stripe_integration": {
         "name": "Intégration Stripe",
         "icon": "CreditCard",

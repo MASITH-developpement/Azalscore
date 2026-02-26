@@ -78,6 +78,7 @@ export type ViewKey =
   | 'qc'
   | 'automated-accounting'
   | 'social-networks'
+  | 'social-publications'
   | 'marceau'
   | 'cockpit'
   | 'admin'
@@ -155,6 +156,7 @@ const MENU_ITEMS: MenuItem[] = [
   { key: 'web', label: 'Site Web', group: 'Digital', capability: 'web.view' },
   { key: 'website', label: 'Site Web Builder', group: 'Digital', capability: 'website.view' },
   { key: 'social-networks', label: 'Réseaux Sociaux', group: 'Digital', capability: 'social_networks.view' },
+  { key: 'social-publications', label: 'Publications & Leads', group: 'Digital', capability: 'social_publications.view' },
   { key: 'esignature', label: 'Signature Électronique', group: 'Communication', capability: 'esignature.view' },
   { key: 'email', label: 'Emails', group: 'Communication', capability: 'email.view' },
   { key: 'accounting', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },

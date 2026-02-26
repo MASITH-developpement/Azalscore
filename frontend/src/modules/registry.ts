@@ -73,6 +73,7 @@ import { moduleMeta as rfq } from './rfq/meta';
 import { moduleMeta as saisie } from './saisie/meta';
 import { moduleMeta as settings } from './settings/meta';
 import { moduleMeta as social_networks } from './social-networks/meta';
+import { moduleMeta as social_publications } from './social-publications/meta';
 import { moduleMeta as stripe_integration } from './stripe-integration/meta';
 import { moduleMeta as subscriptions } from './subscriptions/meta';
 import { moduleMeta as tenants } from './tenants/meta';
@@ -176,6 +177,7 @@ export const moduleRegistry: Record<string, ModuleMeta> = {
   'saisie': saisie,
   'settings': settings,
   'social-networks': social_networks,
+  'social-publications': social_publications,
   'stripe-integration': stripe_integration,
   'subscriptions': subscriptions,
   'tenants': tenants,

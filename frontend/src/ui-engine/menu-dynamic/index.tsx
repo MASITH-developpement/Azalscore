@@ -481,7 +481,8 @@ const MENU_SECTIONS: MenuSection[] = [
         children: [
           { id: 'terminal', label: 'Terminal', path: '/pos/terminal' },
           { id: 'sessions', label: 'Sessions', path: '/pos/sessions' },
-        
+        ],
+      },
       {
         id: 'commercial',
         label: 'Commercial',
@@ -518,6 +519,13 @@ const MENU_SECTIONS: MenuSection[] = [
         capability: 'social_networks.view',
       },
       {
+        id: 'social-publications',
+        label: 'Publications & Leads',
+        icon: 'campaign',
+        path: '/social-publications',
+        capability: 'social_publications.view',
+      },
+      {
         id: 'stripe-integration',
         label: 'Intégration Stripe',
         icon: 'payments',
@@ -525,7 +533,11 @@ const MENU_SECTIONS: MenuSection[] = [
         capability: 'stripe_integration.view',
       },
     ],
-      },
+  },
+  {
+    id: 'commerce',
+    title: 'Commerce',
+    items: [
       {
         id: 'ecommerce',
         label: 'E-commerce',

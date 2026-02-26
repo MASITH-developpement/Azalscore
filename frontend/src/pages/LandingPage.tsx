@@ -161,28 +161,22 @@ const faqData = [
   }
 ];
 
-// Données Témoignages
-const testimonialData = [
+// Données Avantages Utilisateurs (cas d'usage typiques)
+const benefitsData = [
   {
-    text: "Depuis que nous utilisons Azalscore, notre gestion administrative a été divisée par deux. L'interface est intuitive et le support est très réactif. Je recommande vivement.",
-    name: "Marie Dupont",
-    role: "Dirigeante",
-    company: "Dupont Services",
-    rating: 5
+    text: "Simplifiez votre gestion administrative et gagnez du temps au quotidien grâce à une interface intuitive et un support réactif.",
+    icon: "clock",
+    title: "Gain de temps",
   },
   {
-    text: "La conformité à la facturation électronique 2026 était notre priorité. Azalscore nous a permis d'être prêts bien avant l'échéance. Le module comptabilité est très complet.",
-    name: "Pierre Martin",
-    role: "Expert-Comptable",
-    company: "Cabinet Martin & Associés",
-    rating: 5
+    text: "Soyez prêt pour la facturation électronique 2026 avec un module comptabilité complet et conforme aux normes françaises.",
+    icon: "check",
+    title: "Conformité 2026",
   },
   {
-    text: "Nous avons migré depuis un ERP complexe et coûteux. Azalscore offre les mêmes fonctionnalités à une fraction du prix. L'équipe nous a accompagnés tout au long de la migration.",
-    name: "Sophie Bernard",
-    role: "DAF",
-    company: "TechPro Industries",
-    rating: 5
+    text: "Migrez facilement depuis votre solution actuelle avec un accompagnement personnalisé et des outils d'import de données.",
+    icon: "upload",
+    title: "Migration simple",
   }
 ];
 
@@ -497,13 +491,19 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="landing-section landing-testimonials">
+      {/* Benefits Section */}
+      <section id="benefits" className="landing-section landing-testimonials">
         <div className="landing-container">
-          <h2 className="landing-section-title">Ce que nos clients disent</h2>
+          <h2 className="landing-section-title">Ce qu'AZALSCORE vous apporte</h2>
           <div className="landing-testimonials-grid">
-            {testimonialData.map((testimonial, idx) => (
-              <TestimonialCard key={idx} {...testimonial} />
+            {benefitsData.map((benefit, idx) => (
+              <div key={idx} className="landing-testimonial-card">
+                <div className="landing-testimonial-rating">
+                  <CheckCircle size={24} className="text-green-500" />
+                </div>
+                <h3 className="landing-testimonial-name" style={{ marginBottom: '0.5rem', fontSize: '1.1rem' }}>{benefit.title}</h3>
+                <p className="landing-testimonial-text">{benefit.text}</p>
+              </div>
             ))}
           </div>
         </div>
