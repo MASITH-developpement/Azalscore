@@ -790,10 +790,10 @@ class AccountingAlert(Base):
     document = relationship("AccountingDocument", back_populates="alerts")
 
     __table_args__ = (
-        Index("idx_alert_tenant", "tenant_id"),
-        Index("idx_alert_tenant_type", "tenant_id", "alert_type"),
-        Index("idx_alert_tenant_unresolved", "tenant_id", "is_resolved"),
-        Index("idx_alert_entity", "entity_type", "entity_id"),
+        Index("idx_accounting_alert_tenant", "tenant_id"),
+        Index("idx_accounting_alert_tenant_type", "tenant_id", "alert_type"),
+        Index("idx_accounting_alert_tenant_unresolved", "tenant_id", "is_resolved"),
+        Index("idx_accounting_alert_entity", "entity_type", "entity_id"),
     )
 
 
