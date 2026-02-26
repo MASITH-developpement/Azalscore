@@ -185,7 +185,8 @@ class TestModels:
             name="Template Test",
             content_type=ContentType.NEWSLETTER,
             subject_template="Subject {{var}}",
-            default_channel=DeliveryChannel.EMAIL
+            default_channel=DeliveryChannel.EMAIL,
+            is_active=True  # Explicite pour test unitaire
         )
         assert template.code == "TEST_TEMPLATE"
         assert template.content_type == ContentType.NEWSLETTER
@@ -197,7 +198,9 @@ class TestModels:
             tenant_id="tenant-001",
             code="VIP_CLIENTS",
             name="Clients VIP",
-            is_dynamic=False
+            is_dynamic=False,
+            total_recipients=0,  # Explicite pour test unitaire
+            is_active=True  # Explicite pour test unitaire
         )
         assert rl.code == "VIP_CLIENTS"
         assert rl.total_recipients == 0
@@ -211,7 +214,8 @@ class TestModels:
             name="Alerte Quotidienne",
             content_type=ContentType.ALERT,
             frequency=BroadcastFrequency.DAILY,
-            delivery_channel=DeliveryChannel.EMAIL
+            delivery_channel=DeliveryChannel.EMAIL,
+            status=BroadcastStatus.DRAFT  # Explicite pour test unitaire
         )
         assert sb.code == "DAILY_ALERT"
         assert sb.frequency == BroadcastFrequency.DAILY
@@ -222,7 +226,9 @@ class TestModels:
         execution = BroadcastExecution(
             tenant_id="tenant-001",
             scheduled_broadcast_id=1,
-            execution_number=5
+            execution_number=5,
+            status=DeliveryStatus.PENDING,  # Explicite pour test unitaire
+            total_recipients=0  # Explicite pour test unitaire
         )
         assert execution.execution_number == 5
         assert execution.status == DeliveryStatus.PENDING
@@ -236,7 +242,8 @@ class TestModels:
             recipient_type=RecipientType.USER,
             user_id=42,
             email="user@example.com",
-            channel=DeliveryChannel.EMAIL
+            channel=DeliveryChannel.EMAIL,
+            status=DeliveryStatus.PENDING  # Explicite pour test unitaire
         )
         assert detail.user_id == 42
         assert detail.channel == DeliveryChannel.EMAIL
@@ -356,8 +363,12 @@ class TestServiceTemplates:
 
     def test_list_templates(self, broadcast_service, mock_db, sample_template):
         """Tester le listing des templates."""
-        mock_db.query.return_value.filter.return_value.count.return_value = 1
-        mock_db.query.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [sample_template]
+        # Configurer mock pour chaînes de filtres
+        mock_query = MagicMock()
+        mock_query.filter.return_value = mock_query
+        mock_query.count.return_value = 1
+        mock_query.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [sample_template]
+        mock_db.query.return_value = mock_query
 
         items, total = broadcast_service.list_templates()
 
@@ -418,8 +429,12 @@ class TestServiceRecipientLists:
         mock_member.user_id = 42
         mock_member.is_active = True
 
-        mock_db.query.return_value.filter.return_value.count.return_value = 1
-        mock_db.query.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = [mock_member]
+        # Configurer mock pour chaînes de filtres
+        mock_query = MagicMock()
+        mock_query.filter.return_value = mock_query
+        mock_query.count.return_value = 1
+        mock_query.offset.return_value.limit.return_value.all.return_value = [mock_member]
+        mock_db.query.return_value = mock_query
 
         items, total = broadcast_service.get_list_members(1)
 
