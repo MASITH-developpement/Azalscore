@@ -1166,10 +1166,59 @@ class AuditTrailService:
         self._buffer_max_age = timedelta(seconds=5)
         self._buffer_last_flush = datetime.utcnow()
 
+        # Stockage in-memory pour recherche (en test/dev)
+        self._all_events: list[AuditEvent] = []
+
     def add_siem_exporter(self, exporter: SIEMExporter) -> None:
         """Ajoute un exporteur SIEM."""
         self._siem_exporters.append(exporter)
         logger.info(f"SIEM exporter added: {type(exporter).__name__}")
+
+    async def search_events(
+        self,
+        tenant_id: str,
+        categories: Optional[list[str]] = None,
+        actions: Optional[list[str]] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> list[AuditEvent]:
+        """
+        Recherche des événements d'audit.
+
+        Args:
+            tenant_id: ID du tenant
+            categories: Liste des catégories à filtrer
+            actions: Liste des actions à filtrer
+            start_date: Date de début
+            end_date: Date de fin
+            limit: Nombre maximum de résultats
+            offset: Décalage pour pagination
+
+        Returns:
+            Liste des événements correspondants
+        """
+        # Filtrer les événements in-memory
+        results = []
+        for event in self._all_events:
+            if event.tenant_id != tenant_id:
+                continue
+            if categories:
+                event_cat = event.category.value if hasattr(event.category, 'value') else str(event.category)
+                if event_cat not in categories:
+                    continue
+            if actions and event.action not in actions:
+                continue
+            if start_date and event.timestamp < start_date:
+                continue
+            if end_date and event.timestamp > end_date:
+                continue
+            results.append(event)
+
+        # Tri par timestamp décroissant et pagination
+        results.sort(key=lambda e: e.timestamp, reverse=True)
+        return results[offset:offset + limit]
 
     async def log_event(
         self,
@@ -1264,10 +1313,11 @@ class AuditTrailService:
         # Calculer et assigner le hash
         event.event_hash = event.compute_hash(self._secret_key)
 
-        # Mettre à jour la chaîne
+        # Mettre à jour la chaîne et stocker l'événement
         with self._lock:
             self._sequence_counters[chain_key] = sequence_number
             self._last_hashes[chain_key] = event.event_hash
+            self._all_events.append(event)
 
         # Logger localement
         sev_val = severity.value if hasattr(severity, 'value') else str(severity)
