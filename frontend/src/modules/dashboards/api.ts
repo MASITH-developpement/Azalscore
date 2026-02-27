@@ -3,7 +3,8 @@
  * Client API pour le module de tableaux de bord
  */
 
-import { api } from '@/core/api-client';
+import { api } from '@core/api-client';
+import { unwrapApiResponse } from '@/types';
 import type {
   Dashboard, DashboardCreate, DashboardUpdate, DashboardListResponse, DashboardFilters,
   Widget, WidgetCreate, WidgetUpdate, WidgetLayoutUpdate,
@@ -34,35 +35,43 @@ export const dashboardApi = {
     if (filters?.search) params.set('search', filters.search);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<DashboardListResponse>(url);
+    return unwrapApiResponse(response) as DashboardListResponse;
   },
 
   get: async (id: string): Promise<Dashboard> => {
-    return api.get(`${BASE_URL}/${id}`);
+    const response = await api.get<Dashboard>(`${BASE_URL}/${id}`);
+    return response as unknown as Dashboard;
   },
 
   create: async (data: DashboardCreate): Promise<Dashboard> => {
-    return api.post(BASE_URL, data);
+    const response = await api.post<Dashboard>(BASE_URL, data);
+    return response as unknown as Dashboard;
   },
 
   update: async (id: string, data: DashboardUpdate): Promise<Dashboard> => {
-    return api.put(`${BASE_URL}/${id}`, data);
+    const response = await api.put<Dashboard>(`${BASE_URL}/${id}`, data);
+    return response as unknown as Dashboard;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/${id}`);
+    await api.delete(`${BASE_URL}/${id}`);
   },
 
   duplicate: async (id: string, name?: string): Promise<Dashboard> => {
-    return api.post(`${BASE_URL}/${id}/duplicate`, { name });
+    const response = await api.post<Dashboard>(`${BASE_URL}/${id}/duplicate`, { name });
+    return response as unknown as Dashboard;
   },
 
   export: async (id: string, request: ExportRequest): Promise<ExportResponse> => {
-    return api.post(`${BASE_URL}/${id}/export`, request);
+    const response = await api.post<ExportResponse>(`${BASE_URL}/${id}/export`, request);
+    return response as unknown as ExportResponse;
   },
 
   refresh: async (id: string): Promise<void> => {
-    return api.post(`${BASE_URL}/${id}/refresh`);
+    await api.post(`${BASE_URL}/${id}/refresh`);
   },
 };
 
@@ -72,35 +81,42 @@ export const dashboardApi = {
 
 export const widgetApi = {
   list: async (dashboardId: string): Promise<Widget[]> => {
-    return api.get(`${BASE_URL}/${dashboardId}/widgets`);
+    const response = await api.get<Widget[]>(`${BASE_URL}/${dashboardId}/widgets`);
+    return response as unknown as Widget[];
   },
 
   get: async (dashboardId: string, widgetId: string): Promise<Widget> => {
-    return api.get(`${BASE_URL}/${dashboardId}/widgets/${widgetId}`);
+    const response = await api.get<Widget>(`${BASE_URL}/${dashboardId}/widgets/${widgetId}`);
+    return response as unknown as Widget;
   },
 
   create: async (dashboardId: string, data: WidgetCreate): Promise<Widget> => {
-    return api.post(`${BASE_URL}/${dashboardId}/widgets`, data);
+    const response = await api.post<Widget>(`${BASE_URL}/${dashboardId}/widgets`, data);
+    return response as unknown as Widget;
   },
 
   update: async (dashboardId: string, widgetId: string, data: WidgetUpdate): Promise<Widget> => {
-    return api.put(`${BASE_URL}/${dashboardId}/widgets/${widgetId}`, data);
+    const response = await api.put<Widget>(`${BASE_URL}/${dashboardId}/widgets/${widgetId}`, data);
+    return response as unknown as Widget;
   },
 
   delete: async (dashboardId: string, widgetId: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/${dashboardId}/widgets/${widgetId}`);
+    await api.delete(`${BASE_URL}/${dashboardId}/widgets/${widgetId}`);
   },
 
   updateLayout: async (dashboardId: string, layouts: WidgetLayoutUpdate[]): Promise<void> => {
-    return api.put(`${BASE_URL}/${dashboardId}/widgets/layout`, { layouts });
+    await api.put(`${BASE_URL}/${dashboardId}/widgets/layout`, { layouts });
   },
 
   getData: async (dashboardId: string, widgetId: string, params?: Record<string, unknown>): Promise<unknown> => {
-    return api.get(`${BASE_URL}/${dashboardId}/widgets/${widgetId}/data`, { params });
+    const queryString = params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '';
+    const response = await api.get<unknown>(`${BASE_URL}/${dashboardId}/widgets/${widgetId}/data${queryString}`);
+    return response as unknown;
   },
 
   refreshData: async (dashboardId: string, widgetId: string): Promise<unknown> => {
-    return api.post(`${BASE_URL}/${dashboardId}/widgets/${widgetId}/refresh`);
+    const response = await api.post<unknown>(`${BASE_URL}/${dashboardId}/widgets/${widgetId}/refresh`);
+    return response as unknown;
   },
 };
 
@@ -110,27 +126,32 @@ export const widgetApi = {
 
 export const dataSourceApi = {
   list: async (): Promise<DataSource[]> => {
-    return api.get(`${BASE_URL}/data-sources`);
+    const response = await api.get<DataSource[]>(`${BASE_URL}/data-sources`);
+    return response as unknown as DataSource[];
   },
 
   get: async (id: string): Promise<DataSource> => {
-    return api.get(`${BASE_URL}/data-sources/${id}`);
+    const response = await api.get<DataSource>(`${BASE_URL}/data-sources/${id}`);
+    return response as unknown as DataSource;
   },
 
   create: async (data: DataSourceCreate): Promise<DataSource> => {
-    return api.post(`${BASE_URL}/data-sources`, data);
+    const response = await api.post<DataSource>(`${BASE_URL}/data-sources`, data);
+    return response as unknown as DataSource;
   },
 
   update: async (id: string, data: DataSourceUpdate): Promise<DataSource> => {
-    return api.put(`${BASE_URL}/data-sources/${id}`, data);
+    const response = await api.put<DataSource>(`${BASE_URL}/data-sources/${id}`, data);
+    return response as unknown as DataSource;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/data-sources/${id}`);
+    await api.delete(`${BASE_URL}/data-sources/${id}`);
   },
 
   test: async (id: string): Promise<{ success: boolean; message: string }> => {
-    return api.post(`${BASE_URL}/data-sources/${id}/test`);
+    const response = await api.post<{ success: boolean; message: string }>(`${BASE_URL}/data-sources/${id}/test`);
+    return response as unknown as { success: boolean; message: string };
   },
 };
 
@@ -141,27 +162,32 @@ export const dataSourceApi = {
 export const dataQueryApi = {
   list: async (dataSourceId?: string): Promise<DataQuery[]> => {
     const params = dataSourceId ? `?data_source_id=${dataSourceId}` : '';
-    return api.get(`${BASE_URL}/queries${params}`);
+    const response = await api.get<DataQuery[]>(`${BASE_URL}/queries${params}`);
+    return response as unknown as DataQuery[];
   },
 
   get: async (id: string): Promise<DataQuery> => {
-    return api.get(`${BASE_URL}/queries/${id}`);
+    const response = await api.get<DataQuery>(`${BASE_URL}/queries/${id}`);
+    return response as unknown as DataQuery;
   },
 
   create: async (data: DataQueryCreate): Promise<DataQuery> => {
-    return api.post(`${BASE_URL}/queries`, data);
+    const response = await api.post<DataQuery>(`${BASE_URL}/queries`, data);
+    return response as unknown as DataQuery;
   },
 
   update: async (id: string, data: DataQueryUpdate): Promise<DataQuery> => {
-    return api.put(`${BASE_URL}/queries/${id}`, data);
+    const response = await api.put<DataQuery>(`${BASE_URL}/queries/${id}`, data);
+    return response as unknown as DataQuery;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/queries/${id}`);
+    await api.delete(`${BASE_URL}/queries/${id}`);
   },
 
   execute: async (id: string, params?: Record<string, unknown>): Promise<unknown> => {
-    return api.post(`${BASE_URL}/queries/${id}/execute`, params);
+    const response = await api.post<unknown>(`${BASE_URL}/queries/${id}/execute`, params);
+    return response as unknown;
   },
 };
 
@@ -171,19 +197,22 @@ export const dataQueryApi = {
 
 export const shareApi = {
   list: async (dashboardId: string): Promise<DashboardShare[]> => {
-    return api.get(`${BASE_URL}/${dashboardId}/shares`);
+    const response = await api.get<DashboardShare[]>(`${BASE_URL}/${dashboardId}/shares`);
+    return response as unknown as DashboardShare[];
   },
 
   create: async (dashboardId: string, data: ShareCreate): Promise<DashboardShare> => {
-    return api.post(`${BASE_URL}/${dashboardId}/shares`, data);
+    const response = await api.post<DashboardShare>(`${BASE_URL}/${dashboardId}/shares`, data);
+    return response as unknown as DashboardShare;
   },
 
   update: async (dashboardId: string, shareId: string, data: ShareUpdate): Promise<DashboardShare> => {
-    return api.put(`${BASE_URL}/${dashboardId}/shares/${shareId}`, data);
+    const response = await api.put<DashboardShare>(`${BASE_URL}/${dashboardId}/shares/${shareId}`, data);
+    return response as unknown as DashboardShare;
   },
 
   delete: async (dashboardId: string, shareId: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/${dashboardId}/shares/${shareId}`);
+    await api.delete(`${BASE_URL}/${dashboardId}/shares/${shareId}`);
   },
 };
 
@@ -194,23 +223,27 @@ export const shareApi = {
 export const alertRuleApi = {
   list: async (dashboardId?: string): Promise<AlertRule[]> => {
     const params = dashboardId ? `?dashboard_id=${dashboardId}` : '';
-    return api.get(`${BASE_URL}/alert-rules${params}`);
+    const response = await api.get<AlertRule[]>(`${BASE_URL}/alert-rules${params}`);
+    return response as unknown as AlertRule[];
   },
 
   get: async (id: string): Promise<AlertRule> => {
-    return api.get(`${BASE_URL}/alert-rules/${id}`);
+    const response = await api.get<AlertRule>(`${BASE_URL}/alert-rules/${id}`);
+    return response as unknown as AlertRule;
   },
 
   create: async (data: AlertRuleCreate): Promise<AlertRule> => {
-    return api.post(`${BASE_URL}/alert-rules`, data);
+    const response = await api.post<AlertRule>(`${BASE_URL}/alert-rules`, data);
+    return response as unknown as AlertRule;
   },
 
   update: async (id: string, data: AlertRuleUpdate): Promise<AlertRule> => {
-    return api.put(`${BASE_URL}/alert-rules/${id}`, data);
+    const response = await api.put<AlertRule>(`${BASE_URL}/alert-rules/${id}`, data);
+    return response as unknown as AlertRule;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/alert-rules/${id}`);
+    await api.delete(`${BASE_URL}/alert-rules/${id}`);
   },
 };
 
@@ -225,23 +258,30 @@ export const alertApi = {
     if (filters?.is_resolved !== undefined) params.set('is_resolved', String(filters.is_resolved));
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/alerts?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/alerts${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<AlertListResponse>(url);
+    return unwrapApiResponse(response) as AlertListResponse;
   },
 
   get: async (id: string): Promise<Alert> => {
-    return api.get(`${BASE_URL}/alerts/${id}`);
+    const response = await api.get<Alert>(`${BASE_URL}/alerts/${id}`);
+    return response as unknown as Alert;
   },
 
   acknowledge: async (id: string, note?: string): Promise<Alert> => {
-    return api.post(`${BASE_URL}/alerts/${id}/acknowledge`, { note });
+    const response = await api.post<Alert>(`${BASE_URL}/alerts/${id}/acknowledge`, { note });
+    return response as unknown as Alert;
   },
 
   resolve: async (id: string, resolution_note?: string): Promise<Alert> => {
-    return api.post(`${BASE_URL}/alerts/${id}/resolve`, { resolution_note });
+    const response = await api.post<Alert>(`${BASE_URL}/alerts/${id}/resolve`, { resolution_note });
+    return response as unknown as Alert;
   },
 
   snooze: async (id: string, snooze_until: string): Promise<Alert> => {
-    return api.post(`${BASE_URL}/alerts/${id}/snooze`, { snooze_until });
+    const response = await api.post<Alert>(`${BASE_URL}/alerts/${id}/snooze`, { snooze_until });
+    return response as unknown as Alert;
   },
 };
 
@@ -252,27 +292,31 @@ export const alertApi = {
 export const scheduledReportApi = {
   list: async (dashboardId?: string): Promise<ScheduledReport[]> => {
     const params = dashboardId ? `?dashboard_id=${dashboardId}` : '';
-    return api.get(`${BASE_URL}/scheduled-reports${params}`);
+    const response = await api.get<ScheduledReport[]>(`${BASE_URL}/scheduled-reports${params}`);
+    return response as unknown as ScheduledReport[];
   },
 
   get: async (id: string): Promise<ScheduledReport> => {
-    return api.get(`${BASE_URL}/scheduled-reports/${id}`);
+    const response = await api.get<ScheduledReport>(`${BASE_URL}/scheduled-reports/${id}`);
+    return response as unknown as ScheduledReport;
   },
 
   create: async (data: ScheduledReportCreate): Promise<ScheduledReport> => {
-    return api.post(`${BASE_URL}/scheduled-reports`, data);
+    const response = await api.post<ScheduledReport>(`${BASE_URL}/scheduled-reports`, data);
+    return response as unknown as ScheduledReport;
   },
 
   update: async (id: string, data: ScheduledReportUpdate): Promise<ScheduledReport> => {
-    return api.put(`${BASE_URL}/scheduled-reports/${id}`, data);
+    const response = await api.put<ScheduledReport>(`${BASE_URL}/scheduled-reports/${id}`, data);
+    return response as unknown as ScheduledReport;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/scheduled-reports/${id}`);
+    await api.delete(`${BASE_URL}/scheduled-reports/${id}`);
   },
 
   runNow: async (id: string): Promise<void> => {
-    return api.post(`${BASE_URL}/scheduled-reports/${id}/run`);
+    await api.post(`${BASE_URL}/scheduled-reports/${id}/run`);
   },
 };
 
@@ -283,31 +327,37 @@ export const scheduledReportApi = {
 export const templateApi = {
   list: async (category?: string): Promise<TemplateListResponse> => {
     const params = category ? `?category=${category}` : '';
-    return api.get(`${BASE_URL}/templates${params}`);
+    const response = await api.get<TemplateListResponse>(`${BASE_URL}/templates${params}`);
+    return unwrapApiResponse(response) as TemplateListResponse;
   },
 
   get: async (id: string): Promise<DashboardTemplate> => {
-    return api.get(`${BASE_URL}/templates/${id}`);
+    const response = await api.get<DashboardTemplate>(`${BASE_URL}/templates/${id}`);
+    return response as unknown as DashboardTemplate;
   },
 
   create: async (data: TemplateCreate): Promise<DashboardTemplate> => {
-    return api.post(`${BASE_URL}/templates`, data);
+    const response = await api.post<DashboardTemplate>(`${BASE_URL}/templates`, data);
+    return response as unknown as DashboardTemplate;
   },
 
   update: async (id: string, data: TemplateUpdate): Promise<DashboardTemplate> => {
-    return api.put(`${BASE_URL}/templates/${id}`, data);
+    const response = await api.put<DashboardTemplate>(`${BASE_URL}/templates/${id}`, data);
+    return response as unknown as DashboardTemplate;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/templates/${id}`);
+    await api.delete(`${BASE_URL}/templates/${id}`);
   },
 
   createFromDashboard: async (dashboardId: string, data: TemplateCreate): Promise<DashboardTemplate> => {
-    return api.post(`${BASE_URL}/${dashboardId}/create-template`, data);
+    const response = await api.post<DashboardTemplate>(`${BASE_URL}/${dashboardId}/create-template`, data);
+    return response as unknown as DashboardTemplate;
   },
 
   instantiate: async (templateId: string, name: string): Promise<Dashboard> => {
-    return api.post(`${BASE_URL}/templates/${templateId}/instantiate`, { name });
+    const response = await api.post<Dashboard>(`${BASE_URL}/templates/${templateId}/instantiate`, { name });
+    return response as unknown as Dashboard;
   },
 };
 
@@ -317,19 +367,21 @@ export const templateApi = {
 
 export const favoriteApi = {
   list: async (): Promise<Favorite[]> => {
-    return api.get(`${BASE_URL}/favorites`);
+    const response = await api.get<Favorite[]>(`${BASE_URL}/favorites`);
+    return response as unknown as Favorite[];
   },
 
   add: async (data: FavoriteCreate): Promise<Favorite> => {
-    return api.post(`${BASE_URL}/favorites`, data);
+    const response = await api.post<Favorite>(`${BASE_URL}/favorites`, data);
+    return response as unknown as Favorite;
   },
 
   remove: async (dashboardId: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/favorites/${dashboardId}`);
+    await api.delete(`${BASE_URL}/favorites/${dashboardId}`);
   },
 
   reorder: async (favorites: { dashboard_id: string; display_order: number }[]): Promise<void> => {
-    return api.put(`${BASE_URL}/favorites/reorder`, { favorites });
+    await api.put(`${BASE_URL}/favorites/reorder`, { favorites });
   },
 };
 
@@ -339,14 +391,17 @@ export const favoriteApi = {
 
 export const preferenceApi = {
   get: async (): Promise<UserPreference> => {
-    return api.get(`${BASE_URL}/preferences`);
+    const response = await api.get<UserPreference>(`${BASE_URL}/preferences`);
+    return response as unknown as UserPreference;
   },
 
   create: async (data: UserPreferenceCreate): Promise<UserPreference> => {
-    return api.post(`${BASE_URL}/preferences`, data);
+    const response = await api.post<UserPreference>(`${BASE_URL}/preferences`, data);
+    return response as unknown as UserPreference;
   },
 
   update: async (data: UserPreferenceUpdate): Promise<UserPreference> => {
-    return api.put(`${BASE_URL}/preferences`, data);
+    const response = await api.put<UserPreference>(`${BASE_URL}/preferences`, data);
+    return response as unknown as UserPreference;
   },
 };

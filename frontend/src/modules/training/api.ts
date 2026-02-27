@@ -3,7 +3,7 @@
  * Client API pour le module de formation
  */
 
-import { api } from '@/core/api-client';
+import { api } from '@core/api-client';
 import type {
   TrainingCourse, TrainingCourseCreate, TrainingCourseUpdate, CourseListResponse, CourseFilters,
   TrainingSession, TrainingSessionCreate, TrainingSessionUpdate, SessionListResponse, SessionFilters,
@@ -32,27 +32,34 @@ export const courseApi = {
     if (filters?.search) params.set('search', filters.search);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/courses?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/courses${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<CourseListResponse>(url);
+    return response as unknown as CourseListResponse;
   },
 
   get: async (id: string): Promise<TrainingCourse> => {
-    return api.get(`${BASE_URL}/courses/${id}`);
+    const response = await api.get<TrainingCourse>(`${BASE_URL}/courses/${id}`);
+    return response as unknown as TrainingCourse;
   },
 
   create: async (data: TrainingCourseCreate): Promise<TrainingCourse> => {
-    return api.post(`${BASE_URL}/courses`, data);
+    const response = await api.post<TrainingCourse>(`${BASE_URL}/courses`, data);
+    return response as unknown as TrainingCourse;
   },
 
   update: async (id: string, data: TrainingCourseUpdate): Promise<TrainingCourse> => {
-    return api.put(`${BASE_URL}/courses/${id}`, data);
+    const response = await api.put<TrainingCourse>(`${BASE_URL}/courses/${id}`, data);
+    return response as unknown as TrainingCourse;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/courses/${id}`);
+    await api.delete(`${BASE_URL}/courses/${id}`);
   },
 
   getSessions: async (courseId: string): Promise<TrainingSession[]> => {
-    return api.get(`${BASE_URL}/courses/${courseId}/sessions`);
+    const response = await api.get<TrainingSession[]>(`${BASE_URL}/courses/${courseId}/sessions`);
+    return response as unknown as TrainingSession[];
   },
 };
 
@@ -70,45 +77,56 @@ export const sessionApi = {
     if (filters?.to_date) params.set('to_date', filters.to_date);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/sessions?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/sessions${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<SessionListResponse>(url);
+    return response as unknown as SessionListResponse;
   },
 
   get: async (id: string): Promise<TrainingSession> => {
-    return api.get(`${BASE_URL}/sessions/${id}`);
+    const response = await api.get<TrainingSession>(`${BASE_URL}/sessions/${id}`);
+    return response as unknown as TrainingSession;
   },
 
   create: async (data: TrainingSessionCreate): Promise<TrainingSession> => {
-    return api.post(`${BASE_URL}/sessions`, data);
+    const response = await api.post<TrainingSession>(`${BASE_URL}/sessions`, data);
+    return response as unknown as TrainingSession;
   },
 
   update: async (id: string, data: TrainingSessionUpdate): Promise<TrainingSession> => {
-    return api.put(`${BASE_URL}/sessions/${id}`, data);
+    const response = await api.put<TrainingSession>(`${BASE_URL}/sessions/${id}`, data);
+    return response as unknown as TrainingSession;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/sessions/${id}`);
+    await api.delete(`${BASE_URL}/sessions/${id}`);
   },
 
   // Status transitions
   open: async (id: string): Promise<TrainingSession> => {
-    return api.post(`${BASE_URL}/sessions/${id}/open`);
+    const response = await api.post<TrainingSession>(`${BASE_URL}/sessions/${id}/open`);
+    return response as unknown as TrainingSession;
   },
 
   start: async (id: string): Promise<TrainingSession> => {
-    return api.post(`${BASE_URL}/sessions/${id}/start`);
+    const response = await api.post<TrainingSession>(`${BASE_URL}/sessions/${id}/start`);
+    return response as unknown as TrainingSession;
   },
 
   complete: async (id: string): Promise<TrainingSession> => {
-    return api.post(`${BASE_URL}/sessions/${id}/complete`);
+    const response = await api.post<TrainingSession>(`${BASE_URL}/sessions/${id}/complete`);
+    return response as unknown as TrainingSession;
   },
 
   cancel: async (id: string, reason?: string): Promise<TrainingSession> => {
-    return api.post(`${BASE_URL}/sessions/${id}/cancel`, { reason });
+    const response = await api.post<TrainingSession>(`${BASE_URL}/sessions/${id}/cancel`, { reason });
+    return response as unknown as TrainingSession;
   },
 
   // Enrollments
   getEnrollments: async (sessionId: string): Promise<Enrollment[]> => {
-    return api.get(`${BASE_URL}/sessions/${sessionId}/enrollments`);
+    const response = await api.get<Enrollment[]>(`${BASE_URL}/sessions/${sessionId}/enrollments`);
+    return response as unknown as Enrollment[];
   },
 };
 
@@ -122,27 +140,34 @@ export const trainerApi = {
     if (filters?.specialization) params.set('specialization', filters.specialization);
     if (filters?.is_internal !== undefined) params.set('is_internal', String(filters.is_internal));
     if (filters?.is_active !== undefined) params.set('is_active', String(filters.is_active));
-    return api.get(`${BASE_URL}/trainers?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/trainers${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<TrainerListResponse>(url);
+    return response as unknown as TrainerListResponse;
   },
 
   get: async (id: string): Promise<Trainer> => {
-    return api.get(`${BASE_URL}/trainers/${id}`);
+    const response = await api.get<Trainer>(`${BASE_URL}/trainers/${id}`);
+    return response as unknown as Trainer;
   },
 
   create: async (data: TrainerCreate): Promise<Trainer> => {
-    return api.post(`${BASE_URL}/trainers`, data);
+    const response = await api.post<Trainer>(`${BASE_URL}/trainers`, data);
+    return response as unknown as Trainer;
   },
 
   update: async (id: string, data: TrainerUpdate): Promise<Trainer> => {
-    return api.put(`${BASE_URL}/trainers/${id}`, data);
+    const response = await api.put<Trainer>(`${BASE_URL}/trainers/${id}`, data);
+    return response as unknown as Trainer;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/trainers/${id}`);
+    await api.delete(`${BASE_URL}/trainers/${id}`);
   },
 
   getSessions: async (trainerId: string): Promise<TrainingSession[]> => {
-    return api.get(`${BASE_URL}/trainers/${trainerId}/sessions`);
+    const response = await api.get<TrainingSession[]>(`${BASE_URL}/trainers/${trainerId}/sessions`);
+    return response as unknown as TrainingSession[];
   },
 };
 
@@ -158,35 +183,44 @@ export const enrollmentApi = {
     if (filters?.status) params.set('status', filters.status);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/enrollments?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/enrollments${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<EnrollmentListResponse>(url);
+    return response as unknown as EnrollmentListResponse;
   },
 
   get: async (id: string): Promise<Enrollment> => {
-    return api.get(`${BASE_URL}/enrollments/${id}`);
+    const response = await api.get<Enrollment>(`${BASE_URL}/enrollments/${id}`);
+    return response as unknown as Enrollment;
   },
 
   enroll: async (data: EnrollmentCreate): Promise<Enrollment> => {
-    return api.post(`${BASE_URL}/enrollments`, data);
+    const response = await api.post<Enrollment>(`${BASE_URL}/enrollments`, data);
+    return response as unknown as Enrollment;
   },
 
   confirm: async (id: string): Promise<Enrollment> => {
-    return api.post(`${BASE_URL}/enrollments/${id}/confirm`);
+    const response = await api.post<Enrollment>(`${BASE_URL}/enrollments/${id}/confirm`);
+    return response as unknown as Enrollment;
   },
 
   cancel: async (id: string): Promise<Enrollment> => {
-    return api.post(`${BASE_URL}/enrollments/${id}/cancel`);
+    const response = await api.post<Enrollment>(`${BASE_URL}/enrollments/${id}/cancel`);
+    return response as unknown as Enrollment;
   },
 
   recordAttendance: async (id: string, date: string, isPresent: boolean): Promise<void> => {
-    return api.post(`${BASE_URL}/enrollments/${id}/attendance`, { date, is_present: isPresent });
+    await api.post(`${BASE_URL}/enrollments/${id}/attendance`, { date, is_present: isPresent });
   },
 
   complete: async (id: string, score?: number): Promise<Enrollment> => {
-    return api.post(`${BASE_URL}/enrollments/${id}/complete`, { score });
+    const response = await api.post<Enrollment>(`${BASE_URL}/enrollments/${id}/complete`, { score });
+    return response as unknown as Enrollment;
   },
 
   getMyEnrollments: async (): Promise<Enrollment[]> => {
-    return api.get(`${BASE_URL}/enrollments/my`);
+    const response = await api.get<Enrollment[]>(`${BASE_URL}/enrollments/my`);
+    return response as unknown as Enrollment[];
   },
 };
 
@@ -200,27 +234,35 @@ export const certificateApi = {
     if (filters?.participant_id) params.set('participant_id', filters.participant_id);
     if (filters?.course_id) params.set('course_id', filters.course_id);
     if (filters?.status) params.set('status', filters.status);
-    return api.get(`${BASE_URL}/certificates?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/certificates${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<CertificateListResponse>(url);
+    return response as unknown as CertificateListResponse;
   },
 
   get: async (id: string): Promise<Certificate> => {
-    return api.get(`${BASE_URL}/certificates/${id}`);
+    const response = await api.get<Certificate>(`${BASE_URL}/certificates/${id}`);
+    return response as unknown as Certificate;
   },
 
   issue: async (enrollmentId: string): Promise<Certificate> => {
-    return api.post(`${BASE_URL}/certificates`, { enrollment_id: enrollmentId });
+    const response = await api.post<Certificate>(`${BASE_URL}/certificates`, { enrollment_id: enrollmentId });
+    return response as unknown as Certificate;
   },
 
   verify: async (certificateNumber: string): Promise<Certificate> => {
-    return api.get(`${BASE_URL}/certificates/verify/${certificateNumber}`);
+    const response = await api.get<Certificate>(`${BASE_URL}/certificates/verify/${certificateNumber}`);
+    return response as unknown as Certificate;
   },
 
   download: async (id: string): Promise<Blob> => {
-    return api.get(`${BASE_URL}/certificates/${id}/download`, { responseType: 'blob' });
+    const response = await api.get<Blob>(`${BASE_URL}/certificates/${id}/download`, { responseType: 'blob' });
+    return response as unknown as Blob;
   },
 
   getMyCertificates: async (): Promise<Certificate[]> => {
-    return api.get(`${BASE_URL}/certificates/my`);
+    const response = await api.get<Certificate[]>(`${BASE_URL}/certificates/my`);
+    return response as unknown as Certificate[];
   },
 };
 
@@ -230,34 +272,40 @@ export const certificateApi = {
 
 export const elearningApi = {
   getModules: async (courseId: string): Promise<ELearningModule[]> => {
-    return api.get(`${BASE_URL}/courses/${courseId}/modules`);
+    const response = await api.get<ELearningModule[]>(`${BASE_URL}/courses/${courseId}/modules`);
+    return response as unknown as ELearningModule[];
   },
 
   getModule: async (moduleId: string): Promise<ELearningModule> => {
-    return api.get(`${BASE_URL}/modules/${moduleId}`);
+    const response = await api.get<ELearningModule>(`${BASE_URL}/modules/${moduleId}`);
+    return response as unknown as ELearningModule;
   },
 
   createModule: async (courseId: string, data: Partial<ELearningModule>): Promise<ELearningModule> => {
-    return api.post(`${BASE_URL}/courses/${courseId}/modules`, data);
+    const response = await api.post<ELearningModule>(`${BASE_URL}/courses/${courseId}/modules`, data);
+    return response as unknown as ELearningModule;
   },
 
   updateModule: async (moduleId: string, data: Partial<ELearningModule>): Promise<ELearningModule> => {
-    return api.put(`${BASE_URL}/modules/${moduleId}`, data);
+    const response = await api.put<ELearningModule>(`${BASE_URL}/modules/${moduleId}`, data);
+    return response as unknown as ELearningModule;
   },
 
   deleteModule: async (moduleId: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/modules/${moduleId}`);
+    await api.delete(`${BASE_URL}/modules/${moduleId}`);
   },
 
   getProgress: async (moduleId: string): Promise<ModuleProgress> => {
-    return api.get(`${BASE_URL}/modules/${moduleId}/progress`);
+    const response = await api.get<ModuleProgress>(`${BASE_URL}/modules/${moduleId}/progress`);
+    return response as unknown as ModuleProgress;
   },
 
   updateProgress: async (moduleId: string, progressPercent: number, timeSpentMinutes: number): Promise<ModuleProgress> => {
-    return api.post(`${BASE_URL}/modules/${moduleId}/progress`, {
+    const response = await api.post<ModuleProgress>(`${BASE_URL}/modules/${moduleId}/progress`, {
       progress_percent: progressPercent,
       time_spent_minutes: timeSpentMinutes,
     });
+    return response as unknown as ModuleProgress;
   },
 };
 
@@ -267,11 +315,13 @@ export const elearningApi = {
 
 export const feedbackApi = {
   list: async (sessionId: string): Promise<SessionFeedback[]> => {
-    return api.get(`${BASE_URL}/sessions/${sessionId}/feedback`);
+    const response = await api.get<SessionFeedback[]>(`${BASE_URL}/sessions/${sessionId}/feedback`);
+    return response as unknown as SessionFeedback[];
   },
 
   submit: async (data: FeedbackCreate): Promise<SessionFeedback> => {
-    return api.post(`${BASE_URL}/feedback`, data);
+    const response = await api.post<SessionFeedback>(`${BASE_URL}/feedback`, data);
+    return response as unknown as SessionFeedback;
   },
 };
 
@@ -281,23 +331,27 @@ export const feedbackApi = {
 
 export const categoryApi = {
   list: async (): Promise<TrainingCategory[]> => {
-    return api.get(`${BASE_URL}/categories`);
+    const response = await api.get<TrainingCategory[]>(`${BASE_URL}/categories`);
+    return response as unknown as TrainingCategory[];
   },
 
   get: async (id: string): Promise<TrainingCategory> => {
-    return api.get(`${BASE_URL}/categories/${id}`);
+    const response = await api.get<TrainingCategory>(`${BASE_URL}/categories/${id}`);
+    return response as unknown as TrainingCategory;
   },
 
   create: async (data: Partial<TrainingCategory>): Promise<TrainingCategory> => {
-    return api.post(`${BASE_URL}/categories`, data);
+    const response = await api.post<TrainingCategory>(`${BASE_URL}/categories`, data);
+    return response as unknown as TrainingCategory;
   },
 
   update: async (id: string, data: Partial<TrainingCategory>): Promise<TrainingCategory> => {
-    return api.put(`${BASE_URL}/categories/${id}`, data);
+    const response = await api.put<TrainingCategory>(`${BASE_URL}/categories/${id}`, data);
+    return response as unknown as TrainingCategory;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/categories/${id}`);
+    await api.delete(`${BASE_URL}/categories/${id}`);
   },
 };
 
@@ -307,10 +361,12 @@ export const categoryApi = {
 
 export const statsApi = {
   getStats: async (periodStart: string, periodEnd: string): Promise<TrainingStats> => {
-    return api.get(`${BASE_URL}/stats?period_start=${periodStart}&period_end=${periodEnd}`);
+    const response = await api.get<TrainingStats>(`${BASE_URL}/stats?period_start=${periodStart}&period_end=${periodEnd}`);
+    return response as unknown as TrainingStats;
   },
 
   getDashboard: async (): Promise<TrainingDashboard> => {
-    return api.get(`${BASE_URL}/dashboard`);
+    const response = await api.get<TrainingDashboard>(`${BASE_URL}/dashboard`);
+    return response as unknown as TrainingDashboard;
   },
 };

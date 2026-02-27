@@ -3,7 +3,7 @@
  * Client API pour le module BPM/Workflows
  */
 
-import { api } from '@/core/api-client';
+import { api } from '@core/api-client';
 import type {
   WorkflowDefinition, WorkflowCreate, WorkflowUpdate, WorkflowListResponse, WorkflowFilters,
   WorkflowInstance, InstanceCreate, InstanceListResponse, InstanceFilters,
@@ -25,61 +25,74 @@ export const workflowApi = {
     if (filters?.search) params.set('search', filters.search);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/definitions?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/definitions${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<WorkflowListResponse>(url);
+    return response as unknown as WorkflowListResponse;
   },
 
   get: async (id: string): Promise<WorkflowDefinition> => {
-    return api.get(`${BASE_URL}/definitions/${id}`);
+    const response = await api.get<WorkflowDefinition>(`${BASE_URL}/definitions/${id}`);
+    return response as unknown as WorkflowDefinition;
   },
 
   create: async (data: WorkflowCreate): Promise<WorkflowDefinition> => {
-    return api.post(`${BASE_URL}/definitions`, data);
+    const response = await api.post<WorkflowDefinition>(`${BASE_URL}/definitions`, data);
+    return response as unknown as WorkflowDefinition;
   },
 
   update: async (id: string, data: WorkflowUpdate): Promise<WorkflowDefinition> => {
-    return api.put(`${BASE_URL}/definitions/${id}`, data);
+    const response = await api.put<WorkflowDefinition>(`${BASE_URL}/definitions/${id}`, data);
+    return response as unknown as WorkflowDefinition;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/definitions/${id}`);
+    await api.delete(`${BASE_URL}/definitions/${id}`);
   },
 
   activate: async (id: string): Promise<WorkflowDefinition> => {
-    return api.post(`${BASE_URL}/definitions/${id}/activate`);
+    const response = await api.post<WorkflowDefinition>(`${BASE_URL}/definitions/${id}/activate`);
+    return response as unknown as WorkflowDefinition;
   },
 
   suspend: async (id: string): Promise<WorkflowDefinition> => {
-    return api.post(`${BASE_URL}/definitions/${id}/suspend`);
+    const response = await api.post<WorkflowDefinition>(`${BASE_URL}/definitions/${id}/suspend`);
+    return response as unknown as WorkflowDefinition;
   },
 
   archive: async (id: string): Promise<WorkflowDefinition> => {
-    return api.post(`${BASE_URL}/definitions/${id}/archive`);
+    const response = await api.post<WorkflowDefinition>(`${BASE_URL}/definitions/${id}/archive`);
+    return response as unknown as WorkflowDefinition;
   },
 
   createVersion: async (id: string): Promise<WorkflowDefinition> => {
-    return api.post(`${BASE_URL}/definitions/${id}/new-version`);
+    const response = await api.post<WorkflowDefinition>(`${BASE_URL}/definitions/${id}/new-version`);
+    return response as unknown as WorkflowDefinition;
   },
 
   // Steps
   addStep: async (workflowId: string, data: Partial<Step>): Promise<Step> => {
-    return api.post(`${BASE_URL}/definitions/${workflowId}/steps`, data);
+    const response = await api.post<Step>(`${BASE_URL}/definitions/${workflowId}/steps`, data);
+    return response as unknown as Step;
   },
 
   updateStep: async (workflowId: string, stepId: string, data: Partial<Step>): Promise<Step> => {
-    return api.put(`${BASE_URL}/definitions/${workflowId}/steps/${stepId}`, data);
+    const response = await api.put<Step>(`${BASE_URL}/definitions/${workflowId}/steps/${stepId}`, data);
+    return response as unknown as Step;
   },
 
   deleteStep: async (workflowId: string, stepId: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/definitions/${workflowId}/steps/${stepId}`);
+    await api.delete(`${BASE_URL}/definitions/${workflowId}/steps/${stepId}`);
   },
 
   // Transitions
   addTransition: async (workflowId: string, data: { from_step_id: string; to_step_id: string; name?: string; conditions?: Condition[]; is_default?: boolean }): Promise<Transition> => {
-    return api.post(`${BASE_URL}/definitions/${workflowId}/transitions`, data);
+    const response = await api.post<Transition>(`${BASE_URL}/definitions/${workflowId}/transitions`, data);
+    return response as unknown as Transition;
   },
 
   deleteTransition: async (workflowId: string, transitionId: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/definitions/${workflowId}/transitions/${transitionId}`);
+    await api.delete(`${BASE_URL}/definitions/${workflowId}/transitions/${transitionId}`);
   },
 };
 
@@ -99,36 +112,46 @@ export const instanceApi = {
     if (filters?.to_date) params.set('to_date', filters.to_date);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/instances?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/instances${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<InstanceListResponse>(url);
+    return response as unknown as InstanceListResponse;
   },
 
   get: async (id: string): Promise<WorkflowInstance> => {
-    return api.get(`${BASE_URL}/instances/${id}`);
+    const response = await api.get<WorkflowInstance>(`${BASE_URL}/instances/${id}`);
+    return response as unknown as WorkflowInstance;
   },
 
   start: async (data: InstanceCreate): Promise<WorkflowInstance> => {
-    return api.post(`${BASE_URL}/instances`, data);
+    const response = await api.post<WorkflowInstance>(`${BASE_URL}/instances`, data);
+    return response as unknown as WorkflowInstance;
   },
 
   cancel: async (id: string, reason?: string): Promise<WorkflowInstance> => {
-    return api.post(`${BASE_URL}/instances/${id}/cancel`, { reason });
+    const response = await api.post<WorkflowInstance>(`${BASE_URL}/instances/${id}/cancel`, { reason });
+    return response as unknown as WorkflowInstance;
   },
 
   suspend: async (id: string, reason?: string): Promise<WorkflowInstance> => {
-    return api.post(`${BASE_URL}/instances/${id}/suspend`, { reason });
+    const response = await api.post<WorkflowInstance>(`${BASE_URL}/instances/${id}/suspend`, { reason });
+    return response as unknown as WorkflowInstance;
   },
 
   resume: async (id: string): Promise<WorkflowInstance> => {
-    return api.post(`${BASE_URL}/instances/${id}/resume`);
+    const response = await api.post<WorkflowInstance>(`${BASE_URL}/instances/${id}/resume`);
+    return response as unknown as WorkflowInstance;
   },
 
   getHistory: async (id: string): Promise<WorkflowHistory[]> => {
-    return api.get(`${BASE_URL}/instances/${id}/history`);
+    const response = await api.get<WorkflowHistory[]>(`${BASE_URL}/instances/${id}/history`);
+    return response as unknown as WorkflowHistory[];
   },
 
   // Timeline view
   getTimeline: async (id: string): Promise<{ steps: unknown[]; current: string[] }> => {
-    return api.get(`${BASE_URL}/instances/${id}/timeline`);
+    const response = await api.get<{ steps: unknown[]; current: string[] }>(`${BASE_URL}/instances/${id}/timeline`);
+    return response as unknown as { steps: unknown[]; current: string[] };
   },
 };
 
@@ -144,36 +167,46 @@ export const taskApi = {
     if (filters?.workflow_id) params.set('workflow_id', filters.workflow_id);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/tasks?${params}`);
+    const queryString = params.toString();
+    const url = `${BASE_URL}/tasks${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get<TaskListResponse>(url);
+    return response as unknown as TaskListResponse;
   },
 
   getMyTasks: async (status?: string): Promise<TaskInstance[]> => {
     const params = status ? `?status=${status}` : '';
-    return api.get(`${BASE_URL}/tasks/my${params}`);
+    const response = await api.get<TaskInstance[]>(`${BASE_URL}/tasks/my${params}`);
+    return response as unknown as TaskInstance[];
   },
 
   get: async (id: string): Promise<TaskInstance> => {
-    return api.get(`${BASE_URL}/tasks/${id}`);
+    const response = await api.get<TaskInstance>(`${BASE_URL}/tasks/${id}`);
+    return response as unknown as TaskInstance;
   },
 
   start: async (id: string): Promise<TaskInstance> => {
-    return api.post(`${BASE_URL}/tasks/${id}/start`);
+    const response = await api.post<TaskInstance>(`${BASE_URL}/tasks/${id}/start`);
+    return response as unknown as TaskInstance;
   },
 
   complete: async (id: string, data: TaskCompleteData): Promise<TaskInstance> => {
-    return api.post(`${BASE_URL}/tasks/${id}/complete`, data);
+    const response = await api.post<TaskInstance>(`${BASE_URL}/tasks/${id}/complete`, data);
+    return response as unknown as TaskInstance;
   },
 
   reject: async (id: string, reason?: string): Promise<TaskInstance> => {
-    return api.post(`${BASE_URL}/tasks/${id}/reject`, { reason });
+    const response = await api.post<TaskInstance>(`${BASE_URL}/tasks/${id}/reject`, { reason });
+    return response as unknown as TaskInstance;
   },
 
   delegate: async (id: string, data: TaskDelegateData): Promise<TaskInstance> => {
-    return api.post(`${BASE_URL}/tasks/${id}/delegate`, data);
+    const response = await api.post<TaskInstance>(`${BASE_URL}/tasks/${id}/delegate`, data);
+    return response as unknown as TaskInstance;
   },
 
   escalate: async (id: string, escalate_to: string, reason: string): Promise<TaskInstance> => {
-    return api.post(`${BASE_URL}/tasks/${id}/escalate`, { escalate_to, reason });
+    const response = await api.post<TaskInstance>(`${BASE_URL}/tasks/${id}/escalate`, { escalate_to, reason });
+    return response as unknown as TaskInstance;
   },
 };
 
@@ -183,10 +216,12 @@ export const taskApi = {
 
 export const statsApi = {
   getStats: async (): Promise<WorkflowStats> => {
-    return api.get(`${BASE_URL}/stats`);
+    const response = await api.get<WorkflowStats>(`${BASE_URL}/stats`);
+    return response as unknown as WorkflowStats;
   },
 
   getDashboard: async (): Promise<{ stats: WorkflowStats; recent_instances: WorkflowInstance[]; pending_tasks: TaskInstance[] }> => {
-    return api.get(`${BASE_URL}/dashboard`);
+    const response = await api.get<{ stats: WorkflowStats; recent_instances: WorkflowInstance[]; pending_tasks: TaskInstance[] }>(`${BASE_URL}/dashboard`);
+    return response as unknown as { stats: WorkflowStats; recent_instances: WorkflowInstance[]; pending_tasks: TaskInstance[] };
   },
 };
