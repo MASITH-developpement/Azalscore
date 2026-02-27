@@ -4,47 +4,86 @@
  */
 
 import React, { useState, useRef } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Button,
-  Badge,
-  DataTable,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Input,
-  Select,
-  Skeleton,
-  EmptyState,
-  Progress,
-} from '@/ui-engine';
+import { Button } from '@ui/actions';
+import { Card } from '@ui/layout';
+import { DataTable } from '@ui/tables';
+import { LoadingState, EmptyState } from '@ui/components/StateViews';
+
+// Local UI components
+const Badge: React.FC<{ variant?: string; className?: string; children: React.ReactNode }> = ({ className = '', children }) => (
+  <span className={`azals-badge ${className}`}>{children}</span>
+);
+
+const CardHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="azals-card__header">{children}</div>
+);
+
+const CardTitle: React.FC<{ className?: string; children: React.ReactNode }> = ({ className = '', children }) => (
+  <h3 className={`azals-card__title ${className}`}>{children}</h3>
+);
+
+const CardContent: React.FC<{ className?: string; children: React.ReactNode }> = ({ className = '', children }) => (
+  <div className={`azals-card__body ${className}`}>{children}</div>
+);
+
+const Tabs: React.FC<{ defaultValue: string; children: React.ReactNode }> = ({ children }) => {
+  const [activeTab, setActiveTab] = React.useState('');
+  return (
+    <div className="azals-tabs" data-active={activeTab}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as React.ReactElement<{ activeTab?: string; setActiveTab?: (v: string) => void }>, { activeTab, setActiveTab });
+        }
+        return child;
+      })}
+    </div>
+  );
+};
+
+const TabsList: React.FC<{ children: React.ReactNode; activeTab?: string; setActiveTab?: (v: string) => void }> = ({ children, activeTab, setActiveTab }) => (
+  <div className="azals-tabs__list flex gap-2 border-b mb-4" role="tablist">
+    {React.Children.map(children, (child) => {
+      if (React.isValidElement(child)) {
+        return React.cloneElement(child as React.ReactElement<{ activeTab?: string; setActiveTab?: (v: string) => void }>, { activeTab, setActiveTab });
+      }
+      return child;
+    })}
+  </div>
+);
+
+const TabsTrigger: React.FC<{ value: string; children: React.ReactNode; activeTab?: string; setActiveTab?: (v: string) => void }> = ({ value, children, activeTab, setActiveTab }) => (
+  <button
+    type="button"
+    role="tab"
+    className={`px-4 py-2 border-b-2 transition-colors ${activeTab === value ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+    aria-selected={activeTab === value}
+    onClick={() => setActiveTab?.(value)}
+  >
+    <span className="flex items-center gap-2">{children}</span>
+  </button>
+);
+
+const TabsContent: React.FC<{ value: string; children: React.ReactNode; className?: string; activeTab?: string }> = ({ value, children, className = '', activeTab }) => {
+  if (activeTab !== value) return null;
+  return <div className={className} role="tabpanel">{children}</div>;
+};
 import {
   Sparkles,
   FileText,
   Landmark,
   GitMerge,
   Bell,
-  Settings,
   Upload,
   RefreshCw,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Clock,
   Eye,
   Zap,
   TrendingUp,
   TrendingDown,
-  Wallet,
-  Search,
   Plus,
-  Mail,
   Link2,
-  Unlink,
 } from 'lucide-react';
 import {
   useM2ADashboard,
@@ -56,7 +95,6 @@ import {
   useValidateDocument,
   useRejectDocument,
   useSyncBankConnection,
-  useReconcile,
   useResolveAlert,
   useAutoReconcile,
 } from './hooks';
@@ -67,7 +105,6 @@ import type {
   Alert,
   DocumentStatus,
   DocumentType,
-  ReconciliationStatus,
   AlertSeverity,
   ConfidenceLevel,
 } from './types';
@@ -98,14 +135,6 @@ const DOCUMENT_TYPE_CONFIG: Record<DocumentType, { label: string }> = {
   DELIVERY_NOTE: { label: 'Bon de livraison' },
   BANK_STATEMENT: { label: 'Releve bancaire' },
   OTHER: { label: 'Autre' },
-};
-
-const RECONCILIATION_STATUS_CONFIG: Record<ReconciliationStatus, { label: string; color: string }> = {
-  PENDING: { label: 'En attente', color: 'gray' },
-  MATCHED: { label: 'Rapproche', color: 'green' },
-  PARTIAL: { label: 'Partiel', color: 'orange' },
-  MANUAL: { label: 'Manuel', color: 'blue' },
-  UNMATCHED: { label: 'Non rapproche', color: 'red' },
 };
 
 const ALERT_SEVERITY_CONFIG: Record<AlertSeverity, { label: string; color: string }> = {
@@ -209,9 +238,6 @@ interface StatsCardsProps {
   stats: {
     documents_total: number;
     documents_pending: number;
-    documents_processed: number;
-    documents_error: number;
-    bank_connections: number;
     unreconciled_transactions: number;
     alerts_unread: number;
     alerts_critical: number;
@@ -321,11 +347,12 @@ function DocumentsTab() {
     }
   };
 
-  const columns = [
+  const columns: import('@/types').TableColumn<Document>[] = [
     {
+      id: 'original_filename',
       header: 'Document',
-      accessorKey: 'original_filename' as const,
-      cell: (row: Document) => (
+      accessor: 'original_filename',
+      render: (_value, row) => (
         <div>
           <p className="font-medium">{row.original_filename || 'Sans nom'}</p>
           <p className="text-sm text-muted-foreground">
@@ -335,36 +362,42 @@ function DocumentsTab() {
       ),
     },
     {
+      id: 'vendor_name',
       header: 'Fournisseur',
-      accessorKey: 'vendor_name' as const,
-      cell: (row: Document) => row.vendor_name || '-',
+      accessor: 'vendor_name',
+      render: (_value, row) => row.vendor_name || '-',
     },
     {
+      id: 'total_ttc',
       header: 'Montant TTC',
-      accessorKey: 'total_ttc' as const,
-      cell: (row: Document) => formatCurrency(row.total_ttc),
+      accessor: 'total_ttc',
+      render: (_value, row) => formatCurrency(row.total_ttc),
     },
     {
+      id: 'invoice_date',
       header: 'Date',
-      accessorKey: 'invoice_date' as const,
-      cell: (row: Document) => formatDate(row.invoice_date),
+      accessor: 'invoice_date',
+      render: (_value, row) => formatDate(row.invoice_date),
     },
     {
+      id: 'confidence_level',
       header: 'Confiance',
-      accessorKey: 'confidence_level' as const,
-      cell: (row: Document) => (
+      accessor: 'confidence_level',
+      render: (_value, row) => (
         <ConfidenceBadge level={row.confidence_level} score={row.confidence_score} />
       ),
     },
     {
+      id: 'status',
       header: 'Statut',
-      accessorKey: 'status' as const,
-      cell: (row: Document) => <DocumentStatusBadge status={row.status} />,
+      accessor: 'status',
+      render: (_value, row) => <DocumentStatusBadge status={row.status} />,
     },
     {
+      id: 'actions',
       header: 'Actions',
-      accessorKey: 'id' as const,
-      cell: (row: Document) => (
+      accessor: 'id',
+      render: (_value, row) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm">
             <Eye className="h-4 w-4" />
@@ -393,32 +426,34 @@ function DocumentsTab() {
   ];
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <LoadingState message="Chargement des documents..." />;
   }
+
+  const items = (data as unknown as { items: Document[] } | undefined)?.items || [];
 
   return (
     <div className="space-y-4">
       <div className="flex gap-4">
-        <Select
+        <select
           value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as DocumentStatus | '')}
-          className="w-40"
+          onChange={(e) => setStatusFilter(e.target.value as DocumentStatus | '')}
+          className="border rounded-md px-3 py-2"
         >
           <option value="">Tous statuts</option>
           {Object.entries(DOCUMENT_STATUS_CONFIG).map(([key, { label }]) => (
             <option key={key} value={key}>{label}</option>
           ))}
-        </Select>
-        <Select
+        </select>
+        <select
           value={typeFilter}
-          onValueChange={(value) => setTypeFilter(value as DocumentType | '')}
-          className="w-48"
+          onChange={(e) => setTypeFilter(e.target.value as DocumentType | '')}
+          className="border rounded-md px-3 py-2"
         >
           <option value="">Tous types</option>
           {Object.entries(DOCUMENT_TYPE_CONFIG).map(([key, { label }]) => (
             <option key={key} value={key}>{label}</option>
           ))}
-        </Select>
+        </select>
         <div className="ml-auto">
           <input
             ref={fileInputRef}
@@ -434,9 +469,9 @@ function DocumentsTab() {
         </div>
       </div>
 
-      {data?.items && data.items.length > 0 ? (
+      {items.length > 0 ? (
         <DataTable
-          data={data.items}
+          data={items}
           columns={columns}
           keyField="id"
         />
@@ -444,13 +479,12 @@ function DocumentsTab() {
         <EmptyState
           icon={<FileText className="h-12 w-12" />}
           title="Aucun document"
-          description="Importez vos factures et justificatifs pour demarrer."
-          action={
-            <Button onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-4 w-4 mr-2" />
-              Importer un document
-            </Button>
-          }
+          message="Importez vos factures et justificatifs pour demarrer."
+          action={{
+            label: "Importer un document",
+            onClick: () => fileInputRef.current?.click(),
+            icon: <Upload className="h-4 w-4 mr-2" />,
+          }}
         />
       )}
     </div>
@@ -462,8 +496,8 @@ function DocumentsTab() {
 // ============================================================================
 
 function BankTab() {
-  const { data: connections, isLoading: loadingConnections } = useBankConnections();
-  const { data: transactions, isLoading: loadingTransactions } = useBankTransactionList({
+  const { data: connectionsData, isLoading: loadingConnections } = useBankConnections();
+  const { data: transactionsData, isLoading: loadingTransactions } = useBankTransactionList({
     reconciliation_status: 'PENDING',
   });
 
@@ -471,8 +505,11 @@ function BankTab() {
   const autoReconcile = useAutoReconcile();
 
   if (loadingConnections) {
-    return <Skeleton className="h-64 w-full" />;
+    return <LoadingState message="Chargement des connexions bancaires..." />;
   }
+
+  const connections = (connectionsData as unknown as BankConnection[]) || [];
+  const transactions = (transactionsData as unknown as { items: BankTransaction[] } | undefined)?.items || [];
 
   return (
     <div className="space-y-6">
@@ -491,9 +528,9 @@ function BankTab() {
           </div>
         </CardHeader>
         <CardContent>
-          {connections && connections.length > 0 ? (
+          {connections.length > 0 ? (
             <div className="space-y-4">
-              {connections.map((conn) => (
+              {connections.map((conn: BankConnection) => (
                 <div
                   key={conn.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
@@ -519,7 +556,7 @@ function BankTab() {
                       </p>
                     </div>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       onClick={() => syncBank.mutate(conn.id)}
                       disabled={syncBank.isPending}
@@ -534,13 +571,12 @@ function BankTab() {
             <EmptyState
               icon={<Landmark className="h-12 w-12" />}
               title="Aucune banque connectee"
-              description="Connectez votre banque pour synchroniser automatiquement vos transactions."
-              action={
-                <Button>
-                  <Link2 className="h-4 w-4 mr-2" />
-                  Connecter une banque
-                </Button>
-              }
+              message="Connectez votre banque pour synchroniser automatiquement vos transactions."
+              action={{
+                label: "Connecter une banque",
+                onClick: () => {},
+                icon: <Link2 className="h-4 w-4 mr-2" />,
+              }}
             />
           )}
         </CardContent>
@@ -555,7 +591,7 @@ function BankTab() {
               Transactions a rapprocher
             </CardTitle>
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => autoReconcile.mutate()}
               disabled={autoReconcile.isPending}
             >
@@ -566,10 +602,10 @@ function BankTab() {
         </CardHeader>
         <CardContent>
           {loadingTransactions ? (
-            <Skeleton className="h-32 w-full" />
-          ) : transactions?.items && transactions.items.length > 0 ? (
+            <LoadingState message="Chargement..." />
+          ) : transactions.length > 0 ? (
             <div className="space-y-2">
-              {transactions.items.slice(0, 10).map((tx) => (
+              {transactions.slice(0, 10).map((tx: BankTransaction) => (
                 <div
                   key={tx.id}
                   className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
@@ -613,11 +649,12 @@ function AlertsTab() {
   const { data, isLoading } = useAlertList({ is_resolved: false });
   const resolveAlert = useResolveAlert();
 
-  const columns = [
+  const columns: import('@/types').TableColumn<Alert>[] = [
     {
+      id: 'title',
       header: 'Alerte',
-      accessorKey: 'title' as const,
-      cell: (row: Alert) => (
+      accessor: 'title',
+      render: (_value, row) => (
         <div>
           <p className="font-medium">{row.title}</p>
           <p className="text-sm text-muted-foreground line-clamp-1">{row.message}</p>
@@ -625,19 +662,22 @@ function AlertsTab() {
       ),
     },
     {
+      id: 'severity',
       header: 'Severite',
-      accessorKey: 'severity' as const,
-      cell: (row: Alert) => <AlertSeverityBadge severity={row.severity} />,
+      accessor: 'severity',
+      render: (_value, row) => <AlertSeverityBadge severity={row.severity} />,
     },
     {
+      id: 'created_at',
       header: 'Date',
-      accessorKey: 'created_at' as const,
-      cell: (row: Alert) => formatDateTime(row.created_at),
+      accessor: 'created_at',
+      render: (_value, row) => formatDateTime(row.created_at),
     },
     {
+      id: 'actions',
       header: 'Actions',
-      accessorKey: 'id' as const,
-      cell: (row: Alert) => (
+      accessor: 'id',
+      render: (_value, row) => (
         <div className="flex gap-1">
           {row.document_id && (
             <Button variant="ghost" size="sm">
@@ -657,22 +697,24 @@ function AlertsTab() {
   ];
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <LoadingState message="Chargement des alertes..." />;
   }
 
-  if (!data?.items || data.items.length === 0) {
+  const items = (data as unknown as { items: Alert[] } | undefined)?.items || [];
+
+  if (items.length === 0) {
     return (
       <EmptyState
         icon={<Bell className="h-12 w-12" />}
         title="Aucune alerte"
-        description="Tout est en ordre, aucune alerte a traiter."
+        message="Tout est en ordre, aucune alerte a traiter."
       />
     );
   }
 
   return (
     <DataTable
-      data={data.items}
+      data={items}
       columns={columns}
       keyField="id"
     />
@@ -688,19 +730,14 @@ export default function AutomatedAccountingModule() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-96" />
+      <div className="p-6">
+        <LoadingState message="Chargement du module..." />
       </div>
     );
   }
 
-  const stats = dashboard?.stats || {
+  const dashboardData = dashboard as unknown as { stats: StatsCardsProps['stats'] } | undefined;
+  const stats = dashboardData?.stats || {
     documents_total: 0,
     documents_pending: 0,
     documents_processed: 0,

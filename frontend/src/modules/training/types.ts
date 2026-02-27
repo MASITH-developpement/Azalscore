@@ -10,6 +10,7 @@
 export type TrainingType =
   | 'classroom'
   | 'online'
+  | 'elearning'
   | 'blended'
   | 'on_the_job'
   | 'workshop'
@@ -111,6 +112,8 @@ export interface TrainingCourse {
   is_active: boolean;
   created_at: string;
   updated_at?: string;
+  // Alias for display
+  price?: number | string;
 }
 
 export interface TrainingCourseCreate {
@@ -534,6 +537,7 @@ export interface EnrollmentFilters {
 export const TRAINING_TYPE_CONFIG: Record<TrainingType, { label: string; color: string }> = {
   classroom: { label: 'Presentiel', color: 'blue' },
   online: { label: 'En ligne', color: 'green' },
+  elearning: { label: 'E-learning', color: 'cyan' },
   blended: { label: 'Mixte', color: 'purple' },
   on_the_job: { label: 'Sur le terrain', color: 'orange' },
   workshop: { label: 'Atelier', color: 'yellow' },

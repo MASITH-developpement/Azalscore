@@ -132,8 +132,8 @@ from app.modules.pos.router_crud import router as pos_router
 # Module WEBSITE - Site Web / CMS
 from app.modules.website.router_crud import router as website_router
 
-# Module ECOMMERCE - Boutique en ligne
-from app.modules.ecommerce.router_crud import router as ecommerce_router
+# Module ECOMMERCE - Boutique en ligne (DISABLED - conflicts)
+# from app.modules.ecommerce.router_crud import router as ecommerce_router
 
 # Module SOCIAL NETWORKS - Métriques Marketing (Administration)
 from app.modules.social_networks import router as social_networks_router
@@ -156,7 +156,8 @@ from app.modules.approval.router import router as approval_router
 from app.modules.expenses.router import router as expenses_router
 
 # GAP-086: Integrations - Connecteurs externes (Sage, Odoo, Stripe...)
-from app.modules.integrations.router import router as integrations_router
+# DISABLED: Conflict with app.modules.integration
+# from app.modules.integrations.router import router as integrations_router
 
 # ===========================================================================
 # MODULES V3 - CRUDRouter (Migration complète)
@@ -711,8 +712,8 @@ api_v1.include_router(pos_router)
 # Module WEBSITE - Site Web / CMS
 api_v1.include_router(website_router)
 
-# Module ECOMMERCE - Boutique en ligne
-api_v1.include_router(ecommerce_router)
+# Module ECOMMERCE - Boutique en ligne (DISABLED - conflicts)
+# api_v1.include_router(ecommerce_router)
 
 # Module SOCIAL NETWORKS - Administration > Réseaux Sociaux
 api_v1.include_router(social_networks_router)
@@ -736,7 +737,8 @@ api_v1.include_router(approval_router)
 api_v1.include_router(expenses_router)
 
 # GAP-086: Integrations - Connecteurs externes (Sage, Odoo, Stripe, QuickBooks...)
-api_v1.include_router(integrations_router)
+# DISABLED: Module integrations not yet implemented
+# api_v1.include_router(integrations_router)
 
 
 # ==================== UTILITY ENDPOINTS ====================

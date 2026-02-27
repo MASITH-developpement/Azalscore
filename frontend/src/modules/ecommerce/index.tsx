@@ -4,14 +4,11 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Package, ShoppingCart, Truck, Tag, Euro, TrendingUp, AlertTriangle,
   ArrowLeft, Edit, Printer, Clock, FileText, Sparkles
 } from 'lucide-react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button } from '@ui/actions';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
@@ -31,6 +28,18 @@ import type { TableColumn } from '@/types';
 // Types et helpers
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
 
+// Hooks
+import {
+  ecommerceKeys,
+  useEcommerceStats,
+  useProducts,
+  useProduct,
+  useOrders,
+  useOrder,
+  useCategories,
+  useShippings
+} from './hooks';
+
 // Composants tabs
 import {
   ProductInfoTab, ProductStockTab, ProductDocumentsTab, ProductHistoryTab, ProductIATab,
@@ -41,21 +50,6 @@ import {
   isLowStock, isOutOfStock, calculateMargin
 } from './types';
 import type { Product, Order, Category, Shipping, OrderItem } from './types';
-
-// ============================================================================
-// TYPES LOCAUX (extensions pour compatibilite)
-// ============================================================================
-
-interface EcommerceStats {
-  total_products: number;
-  active_products: number;
-  pending_orders: number;
-  orders_today: number;
-  orders_this_month: number;
-  revenue_today: number;
-  revenue_this_month: number;
-  low_stock_count: number;
-}
 
 // ============================================================================
 // CONSTANTES LOCALES
@@ -117,105 +111,6 @@ const TabNav: React.FC<{
     ))}
   </div>
 );
-
-// ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useEcommerceStats = () => {
-  return useQuery({
-    queryKey: ['ecommerce', 'stats'],
-    queryFn: async () => {
-      const response = await api.get<EcommerceStats>('/ecommerce/summary');
-      return response.data;
-    }
-  });
-};
-
-const useProducts = (filters?: { status?: string; category_id?: string }) => {
-  return useQuery({
-    queryKey: ['ecommerce', 'products', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.category_id) params.append('category_id', filters.category_id);
-      const response = await api.get<{ items: Product[] } | Product[]>(`/ecommerce/products?${params}`);
-      const data = response.data;
-      return Array.isArray(data) ? data : data.items || [];
-    }
-  });
-};
-
-const useProduct = (id: string) => {
-  return useQuery({
-    queryKey: ['ecommerce', 'product', id],
-    queryFn: async () => {
-      const response = await api.get<Product>(`/ecommerce/products/${id}`);
-      return response.data;
-    },
-    enabled: !!id
-  });
-};
-
-const useOrders = (filters?: { status?: string; payment_status?: string }) => {
-  return useQuery({
-    queryKey: ['ecommerce', 'orders', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.payment_status) params.append('payment_status', filters.payment_status);
-      const response = await api.get<{ items: Order[] } | Order[]>(`/ecommerce/orders?${params}`);
-      const data = response.data;
-      return Array.isArray(data) ? data : data.items || [];
-    }
-  });
-};
-
-const useOrder = (id: string) => {
-  return useQuery({
-    queryKey: ['ecommerce', 'order', id],
-    queryFn: async () => {
-      const response = await api.get<Order>(`/ecommerce/orders/${id}`);
-      return response.data;
-    },
-    enabled: !!id
-  });
-};
-
-const useCategories = () => {
-  return useQuery({
-    queryKey: ['ecommerce', 'categories'],
-    queryFn: async () => {
-      const response = await api.get<Category[]>('/ecommerce/categories');
-      return response.data;
-    }
-  });
-};
-
-const useShippings = (filters?: { status?: string }) => {
-  return useQuery({
-    queryKey: ['ecommerce', 'shippings', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      const response = await api.get<Shipping[]>(`/ecommerce/shippings?${params}`);
-      return response.data;
-    }
-  });
-};
-
-const _useUpdateOrderStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/ecommerce/orders/${id}/status`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ecommerce', 'orders'] });
-      queryClient.invalidateQueries({ queryKey: ['ecommerce', 'stats'] });
-    }
-  });
-};
 
 // ============================================================================
 // DETAIL VIEWS (BaseViewStandard)
@@ -671,3 +566,15 @@ const EcommerceRoutes: React.FC = () => (
 );
 
 export default EcommerceRoutes;
+
+// Re-export hooks for external use
+export {
+  ecommerceKeys,
+  useEcommerceStats,
+  useProducts,
+  useProduct,
+  useOrders,
+  useOrder,
+  useCategories,
+  useShippings
+} from './hooks';

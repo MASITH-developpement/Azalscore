@@ -3,9 +3,7 @@
  * Metadonnees du module de comptabilite automatisee (M2A)
  */
 
-import type { ModuleMeta } from '@/core/types';
-
-export const automatedAccountingMeta: ModuleMeta = {
+export const automatedAccountingMeta = {
   id: 'automated-accounting',
   name: 'Compta Auto',
   description: 'Comptabilite automatisee avec OCR, IA et synchronisation bancaire',

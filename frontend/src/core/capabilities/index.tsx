@@ -7,6 +7,7 @@
 import React from 'react';
 import { create } from 'zustand';
 import { api } from '@core/api-client';
+import { logger } from '@core/logger';
 import type { Capability, CapabilitiesState } from '@/types';
 import { LoadingState } from '../../ui-engine/components/StateViews';
 
@@ -99,7 +100,7 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
         status: 'ready',
       });
     } catch (error) {
-      console.error('[Capabilities] Error loading capabilities:', error);
+      logger.error('Error loading capabilities:', error);
 
       // En mode démo, récupérer les capabilities depuis le module auth
       const { getDemoCapabilities } = await import('@core/auth');
@@ -243,8 +244,8 @@ export const CapabilityGuard: React.FC<CapabilityGuardProps> = ({
     // Empêche les fuites d'information si CapabilityGuard est mal utilisé
     // Pour autoriser sans condition, utiliser capability="*" ou un fallback explicite
     hasAccess = false;
-    console.warn(
-      '[CapabilityGuard] Aucune capability spécifiée - accès refusé par défaut. ' +
+    logger.warn(
+      'CapabilityGuard: Aucune capability spécifiée - accès refusé par défaut. ' +
       'Spécifiez une capability ou utilisez capabilities={[]} pour un accès conditionnel.'
     );
   }

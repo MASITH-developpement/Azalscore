@@ -30,7 +30,7 @@ from app.modules.projects.models import (
     ProjectExpense,
     ProjectDocument,
     ProjectBudget,
-    BudgetLine,
+    ProjectProjectBudgetLine,
     ProjectTemplate,
     ProjectComment,
     ProjectKPI,
@@ -38,8 +38,8 @@ from app.modules.projects.models import (
 from app.modules.projects.schemas import (
     BudgetBase,
     BudgetCreate,
-    BudgetLineCreate,
-    BudgetLineResponse,
+    ProjectBudgetLineCreate,
+    ProjectBudgetLineResponse,
     BudgetResponse,
     BudgetUpdate,
     CommentBase,
@@ -286,17 +286,17 @@ class ProjectBudgetService(BaseService[ProjectBudget, Any, Any]):
     # Ajouter ici les méthodes métier spécifiques
 
 
-class BudgetLineService(BaseService[BudgetLine, Any, Any]):
+class ProjectBudgetLineService(BaseService[ProjectBudgetLine, Any, Any]):
     """Service CRUD pour budgetline."""
 
-    model = BudgetLine
+    model = ProjectBudgetLine
 
     # Les méthodes CRUD sont héritées de BaseService:
-    # - get(id) -> Optional[BudgetLine]
-    # - get_or_fail(id) -> Result[BudgetLine]
+    # - get(id) -> Optional[ProjectBudgetLine]
+    # - get_or_fail(id) -> Result[ProjectBudgetLine]
     # - list(page, page_size, filters) -> PaginatedResponse
-    # - create(data) -> Result[BudgetLine]
-    # - update(id, data) -> Result[BudgetLine]
+    # - create(data) -> Result[ProjectBudgetLine]
+    # - update(id, data) -> Result[ProjectBudgetLine]
     # - delete(id, soft) -> Result[bool]
 
     # Ajouter ici les méthodes métier spécifiques

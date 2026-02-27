@@ -289,8 +289,12 @@ def register(
 
     # SÉCURITÉ P0-3: Vérifier si l'email existe déjà DANS CE TENANT UNIQUEMENT
     # Correction: ajout du filtre tenant_id pour isolation multi-tenant
+    # P1 SÉCURITÉ: Normalisation email (lowercase) pour éviter contournement
+    # Ex: "Test@Example.com" et "test@example.com" sont le même email
+    from sqlalchemy import func
+    normalized_email = user_data.email.lower().strip()
     existing_user = db.query(User).filter(
-        User.email == user_data.email,
+        func.lower(User.email) == normalized_email,
         User.tenant_id == tenant_id
     ).first()
     if existing_user:
@@ -305,8 +309,9 @@ def register(
     password_hash = get_password_hash(user_data.password)
 
     # Création de l'utilisateur
+    # P1 SÉCURITÉ: Stocker email normalisé (lowercase)
     db_user = User(
-        email=user_data.email,
+        email=normalized_email,
         password_hash=password_hash,
         tenant_id=tenant_id,
         role=UserRole.DIRIGEANT,
@@ -497,12 +502,15 @@ def bootstrap(
     la variable d'environnement BOOTSTRAP_SECRET et ne peut être
     utilisé qu'une seule fois (si aucun utilisateur n'existe).
     """
-    # SÉCURITÉ: Rate limiting très strict (1 par 20 minutes)
-    get_client_ip(request)  # Conservé pour logging futur
+    # P0 SÉCURITÉ: Rate limiting très strict (3 par heure par IP)
+    client_ip = get_client_ip(request)
+    auth_rate_limiter.check_bootstrap_rate(client_ip)
 
     # Vérifier le secret depuis la configuration sécurisée
     expected_secret = get_bootstrap_secret()
     if data.bootstrap_secret != expected_secret:
+        # P0 SÉCURITÉ: Enregistrer l'échec pour rate limiting
+        auth_rate_limiter.record_bootstrap_attempt(client_ip)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid bootstrap secret"
@@ -814,7 +822,7 @@ def refresh_tokens_endpoint(
 ):
     """
     Rafraichit le token d'acces avec un refresh token valide.
-    P1 SÉCURITÉ: Implémente Refresh Token Rotation (RTR).
+    P1 SÉCURITÉ: Implémente Refresh Token Rotation (RTR) + Rate Limiting.
 
     Le refresh token actuel est RÉVOQUÉ après utilisation et une nouvelle
     paire (access_token, refresh_token) est générée. Cela empêche la
@@ -828,6 +836,10 @@ def refresh_tokens_endpoint(
 
     logger = get_logger(__name__)
     client_ip = get_client_ip(request)
+
+    # P1 SÉCURITÉ: Rate limiting sur refresh (30 req/min par IP)
+    auth_rate_limiter.check_refresh_rate(client_ip)
+    auth_rate_limiter.record_refresh_attempt(client_ip)
 
     try:
         # Decoder le refresh token
@@ -929,9 +941,19 @@ def refresh_tokens_endpoint(
         user_agent = request.headers.get("User-Agent", "")
         current_fingerprint = compute_device_fingerprint(client_ip, user_agent)
 
-        # Vérifier le fingerprint (non-strict pour compatibilité tokens existants)
+        # P1 SÉCURITÉ: Mode strict ACTIVÉ PAR DÉFAUT en production
+        # En mode strict, les tokens legacy sans fingerprint sont rejetés
+        # Désactiver explicitement avec DEVICE_BINDING_STRICT=false si nécessaire
+        import os
+        from app.core.config import get_settings
+        _settings = get_settings()
+        # En production: strict par défaut, sinon configurable
+        dfp_strict_default = "true" if _settings.is_production else "false"
+        dfp_strict = os.getenv("DEVICE_BINDING_STRICT", dfp_strict_default).lower() == "true"
+
+        # Vérifier le fingerprint
         dfp_valid, dfp_reason = verify_device_fingerprint(
-            token_fingerprint, current_fingerprint, strict=False
+            token_fingerprint, current_fingerprint, strict=dfp_strict
         )
 
         if not dfp_valid:

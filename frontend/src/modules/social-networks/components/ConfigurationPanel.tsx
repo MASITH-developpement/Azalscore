@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AZALS MODULE - Réseaux Sociaux - Panneau de Configuration
  * =========================================================

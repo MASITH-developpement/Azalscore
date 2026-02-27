@@ -823,15 +823,15 @@ class ProjectBudget(Base):
 
     # Relations
     project = relationship("Project", back_populates="budgets")
-    lines = relationship("BudgetLine", back_populates="budget", cascade="all, delete-orphan")
+    lines = relationship("ProjectBudgetLine", back_populates="budget", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_project_budgets_project", "project_id"),
     )
 
 
-class BudgetLine(Base):
-    """Ligne de budget."""
+class ProjectBudgetLine(Base):
+    """Ligne de budget projet."""
     __tablename__ = "project_budget_lines"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
@@ -870,7 +870,7 @@ class BudgetLine(Base):
 
     # Relations
     budget = relationship("ProjectBudget", back_populates="lines")
-    children = relationship("BudgetLine", backref="parent", remote_side=[id])
+    children = relationship("ProjectBudgetLine", backref="parent", remote_side=[id])
 
     __table_args__ = (
         Index("ix_project_budget_lines_budget", "budget_id"),

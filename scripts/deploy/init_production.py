@@ -158,7 +158,14 @@ def seed_masith_tenant(session):
 
     tenant_id = os.environ.get("MASITH_TENANT_ID", "masith")
     admin_email = os.environ.get("MASITH_ADMIN_EMAIL", "contact@masith.fr")
-    admin_password = os.environ.get("MASITH_ADMIN_PASSWORD", "Gobelet2026!")
+    # P0 SÉCURITÉ: Password OBLIGATOIRE via variable d'environnement - jamais de fallback
+    admin_password = os.environ.get("MASITH_ADMIN_PASSWORD")
+    if not admin_password:
+        logger.warning(
+            "MASITH_ADMIN_PASSWORD non définie - création admin MASITH ignorée. "
+            "Définir cette variable pour créer l'administrateur."
+        )
+        return
 
     # Vérifier si le tenant existe
     result = session.execute(text(

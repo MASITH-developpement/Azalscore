@@ -51,7 +51,7 @@ def create_test_user(db_session):
     def _create_user(email: str, tenant_id: str):
         user = User(
             email=email,
-            password_hash=get_password_hash("TestPass123"),
+            password_hash=get_password_hash("TestPass123!"),
             tenant_id=tenant_id,
             role=UserRole.DIRIGEANT,
             is_active=1
@@ -72,7 +72,7 @@ def auth_headers(client, create_test_user):
         # Login
         response = client.post(
             "/auth/login",
-            json={"email": user.email, "password": "TestPass123"},
+            json={"email": user.email, "password": "TestPass123!"},
             headers={"X-Tenant-ID": tenant_id}
         )
         token = response.json()["access_token"]

@@ -133,6 +133,16 @@ export default defineConfig({
     }
   },
   build: {
+    // P1 SÉCURITÉ: Désactiver source maps en production pour éviter reverse engineering
+    sourcemap: false,
+    // P1 SÉCURITÉ: Suppression console.* en production pour éviter leak d'informations
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    },
     rollupOptions: {
       output: {
         manualChunks: {

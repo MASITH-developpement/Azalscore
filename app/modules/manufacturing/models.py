@@ -202,10 +202,10 @@ class BOM(Base):
 
     # === Relations ===
     lines = relationship(
-        "BOMLine",
+        "ManufacturingBOMLine",
         back_populates="bom",
         cascade="all, delete-orphan",
-        order_by="BOMLine.sequence"
+        order_by="ManufacturingBOMLine.sequence"
     )
 
     # === Contraintes ===
@@ -266,9 +266,10 @@ class BOM(Base):
         return f"<BOM {self.code}: {self.name}>"
 
 
-class BOMLine(Base):
+class ManufacturingBOMLine(Base):
     """
-    Ligne de nomenclature (composant).
+    Ligne de nomenclature (composant) - Manufacturing.
+    Renommé pour éviter conflit avec production.BOMLine.
     """
     __tablename__ = "manufacturing_bom_lines"
 

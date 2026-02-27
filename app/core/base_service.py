@@ -392,3 +392,188 @@ class CRUDService(BaseService[T, CreateSchema, UpdateSchema]):
             result.items = self.to_response_list(result.items)
 
         return result
+
+
+# =============================================================================
+# Migration Adapter - Compatibilité legacy → BaseService
+# =============================================================================
+
+def create_context_from_legacy(
+    tenant_id: str,
+    user_id: UUID,
+    role: "UserRole" = None,
+    permissions: set[str] | None = None
+) -> SaaSContext:
+    """
+    Crée un SaaSContext à partir des paramètres legacy.
+
+    Permet aux services utilisant l'ancien pattern (db, tenant_id, user_id)
+    de migrer vers BaseService sans breaking change.
+
+    Args:
+        tenant_id: ID du tenant
+        user_id: ID de l'utilisateur
+        role: Rôle utilisateur (optionnel, défaut EMPLOYE)
+        permissions: Set de permissions (optionnel)
+
+    Returns:
+        SaaSContext immuable
+
+    Example:
+        # Migration progressive d'un service legacy
+        class MyService(LegacyServiceAdapter[MyModel, MyCreate, MyUpdate]):
+            model = MyModel
+
+            def __init__(self, db: Session, tenant_id: str, user_id: UUID = None):
+                context = create_context_from_legacy(tenant_id, user_id or UUID(int=0))
+                super().__init__(db, context)
+    """
+    from app.core.models import UserRole
+
+    return SaaSContext(
+        tenant_id=tenant_id,
+        user_id=user_id,
+        role=role or UserRole.EMPLOYE,
+        permissions=permissions or set()
+    )
+
+
+class LegacyServiceAdapter(BaseService[T, CreateSchema, UpdateSchema]):
+    """
+    Adaptateur pour migration progressive des services legacy.
+
+    Permet aux services existants utilisant l'ancien pattern:
+        __init__(self, db, tenant_id, user_id)
+
+    De migrer vers BaseService sans breaking change:
+        __init__(self, db, context: SaaSContext)
+
+    Usage:
+        # AVANT (legacy)
+        class MyService:
+            def __init__(self, db: Session, tenant_id: str, user_id: UUID):
+                self.db = db
+                self.tenant_id = tenant_id
+                self.user_id = user_id
+
+        # APRÈS (migration)
+        class MyService(LegacyServiceAdapter[MyModel, MyCreate, MyUpdate]):
+            model = MyModel
+
+            def __init__(self, db: Session, tenant_id: str, user_id: UUID = None):
+                context = create_context_from_legacy(tenant_id, user_id or UUID(int=0))
+                super().__init__(db, context)
+
+    Note:
+        Cette classe est un pont temporaire. Une fois tous les services migrés,
+        ils devraient hériter directement de BaseService.
+    """
+
+    # Conserver compatibilité avec les appels legacy
+    @classmethod
+    def from_legacy(
+        cls,
+        db: Session,
+        tenant_id: str,
+        user_id: UUID = None
+    ) -> "LegacyServiceAdapter":
+        """
+        Factory method pour créer une instance depuis les paramètres legacy.
+
+        Args:
+            db: Session SQLAlchemy
+            tenant_id: ID du tenant
+            user_id: ID utilisateur (optionnel)
+
+        Returns:
+            Instance du service configurée
+
+        Example:
+            service = MyService.from_legacy(db, tenant_id, user_id)
+        """
+        context = create_context_from_legacy(
+            tenant_id,
+            user_id or UUID(int=0)
+        )
+        return cls(db, context)
+
+
+# =============================================================================
+# Service Factory améliorée avec support BaseService
+# =============================================================================
+
+class UnifiedServiceFactory:
+    """
+    Factory unifiée pour injection de services.
+
+    Détecte automatiquement si le service utilise:
+    - Pattern legacy: __init__(db, tenant_id, user_id)
+    - Pattern BaseService: __init__(db, context: SaaSContext)
+
+    Example:
+        # Pour un service legacy
+        factory = UnifiedServiceFactory(CommercialService)
+
+        # Pour un BaseService
+        factory = UnifiedServiceFactory(AccountingService, use_context=True)
+
+        @router.get("/items")
+        def list_items(service = Depends(factory)):
+            return service.list()
+    """
+
+    def __init__(
+        self,
+        service_class: Type[T],
+        use_context: bool = False,
+        require_user: bool = True
+    ):
+        """
+        Configure la factory.
+
+        Args:
+            service_class: Classe du service
+            use_context: Si True, utilise SaaSContext (BaseService pattern)
+            require_user: Si True, injecte user_id/user (défaut True)
+        """
+        self.service_class = service_class
+        self.use_context = use_context
+        self.require_user = require_user
+
+    def __call__(self, request, db: Session) -> T:
+        """
+        Crée une instance du service.
+
+        Détecte automatiquement le pattern à utiliser.
+        """
+        from fastapi import HTTPException
+
+        tenant_id = getattr(request.state, "tenant_id", None)
+        if not tenant_id:
+            raise HTTPException(status_code=401, detail="Tenant ID requis")
+
+        user = getattr(request.state, "user", None)
+        user_id = user.id if user else None
+
+        if self.use_context:
+            # Pattern BaseService avec SaaSContext
+            from app.core.models import UserRole
+
+            role = getattr(user, "role", UserRole.EMPLOYE) if user else UserRole.EMPLOYE
+            permissions = getattr(request.state, "permissions", set())
+
+            context = SaaSContext(
+                tenant_id=tenant_id,
+                user_id=user_id or UUID(int=0),
+                role=role,
+                permissions=permissions,
+                ip_address=request.client.host if request.client else "",
+                user_agent=request.headers.get("user-agent", "")[:200],
+            )
+            return self.service_class(db, context)
+        else:
+            # Pattern legacy
+            kwargs = {"db": db, "tenant_id": tenant_id}
+            if self.require_user and user_id:
+                kwargs["user_id"] = user_id
+            return self.service_class(**kwargs)

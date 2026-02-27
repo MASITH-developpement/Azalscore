@@ -285,9 +285,18 @@ class TestQualityServiceNC:
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
+        mock_db.flush = MagicMock()
         mock_db.query.return_value.filter.return_value.scalar.return_value = 0
+        # Mock the sequence config query - returns None to trigger default config creation
+        mock_db.query.return_value.filter.return_value.with_for_update.return_value.first.return_value = None
 
-        result = service.create_non_conformance(data)
+        # Mock the created NC object
+        mock_nc = MagicMock()
+        mock_nc.nc_number = "NC-2026-0001"
+
+        # Patch the _generate_nc_number to return a mock value
+        with patch.object(service, '_generate_nc_number', return_value="NC-2026-0001"):
+            result = service.create_non_conformance(data)
 
         mock_db.add.assert_called()
 
@@ -438,10 +447,10 @@ class TestFactory:
     def test_get_quality_service(self):
         """Tester la factory."""
         mock_db = MagicMock()
-        service = get_quality_service(mock_db, tenant_id=1, user_id=1)
+        service = get_quality_service(mock_db, tenant_id="1", user_id=1)
 
         assert isinstance(service, QualityService)
-        assert service.tenant_id == 1
+        assert service.tenant_id == "1"
 
 
 # =============================================================================

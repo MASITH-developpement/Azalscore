@@ -3,7 +3,7 @@
  * Client API pour le module GPAO/Production
  */
 
-import { api } from '@/core/api-client';
+import { api } from '@core/api-client';
 import type {
   BOM, BOMCreate, BOMUpdate, BOMListResponse, BOMFilters,
   WorkOrder, WorkOrderCreate, WorkOrderUpdate, WorkOrderListResponse, WorkOrderFilters,
@@ -29,49 +29,58 @@ export const bomApi = {
     if (filters?.search) params.set('search', filters.search);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/boms?${params}`);
+    const response = await api.get<BOMListResponse>(`${BASE_URL}/boms?${params}`);
+    return response.data;
   },
 
   get: async (id: string): Promise<BOM> => {
-    return api.get(`${BASE_URL}/boms/${id}`);
+    const response = await api.get<BOM>(`${BASE_URL}/boms/${id}`);
+    return response.data;
   },
 
   create: async (data: BOMCreate): Promise<BOM> => {
-    return api.post(`${BASE_URL}/boms`, data);
+    const response = await api.post<BOM>(`${BASE_URL}/boms`, data);
+    return response.data;
   },
 
   update: async (id: string, data: BOMUpdate): Promise<BOM> => {
-    return api.put(`${BASE_URL}/boms/${id}`, data);
+    const response = await api.put<BOM>(`${BASE_URL}/boms/${id}`, data);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/boms/${id}`);
+    await api.delete(`${BASE_URL}/boms/${id}`);
   },
 
   activate: async (id: string): Promise<BOM> => {
-    return api.post(`${BASE_URL}/boms/${id}/activate`);
+    const response = await api.post<BOM>(`${BASE_URL}/boms/${id}/activate`);
+    return response.data;
   },
 
   duplicate: async (id: string): Promise<BOM> => {
-    return api.post(`${BASE_URL}/boms/${id}/duplicate`);
+    const response = await api.post<BOM>(`${BASE_URL}/boms/${id}/duplicate`);
+    return response.data;
   },
 
   // BOM Lines
   addLine: async (bomId: string, data: BOMLineCreate): Promise<BOMLine> => {
-    return api.post(`${BASE_URL}/boms/${bomId}/lines`, data);
+    const response = await api.post<BOMLine>(`${BASE_URL}/boms/${bomId}/lines`, data);
+    return response.data;
   },
 
   updateLine: async (bomId: string, lineId: string, data: BOMLineUpdate): Promise<BOMLine> => {
-    return api.put(`${BASE_URL}/boms/${bomId}/lines/${lineId}`, data);
+    const response = await api.put<BOMLine>(`${BASE_URL}/boms/${bomId}/lines/${lineId}`, data);
+    return response.data;
   },
 
   deleteLine: async (bomId: string, lineId: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/boms/${bomId}/lines/${lineId}`);
+    await api.delete(`${BASE_URL}/boms/${bomId}/lines/${lineId}`);
   },
 
   // Cost calculation
   calculateCost: async (id: string): Promise<{ material_cost: number; labor_cost: number; overhead_cost: number; total_cost: number }> => {
-    return api.get(`${BASE_URL}/boms/${id}/cost`);
+    const response = await api.get<{ material_cost: number; labor_cost: number; overhead_cost: number; total_cost: number }>(`${BASE_URL}/boms/${id}/cost`);
+    return response.data;
   },
 };
 
@@ -91,66 +100,77 @@ export const workOrderApi = {
     if (filters?.search) params.set('search', filters.search);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/work-orders?${params}`);
+    const response = await api.get<WorkOrderListResponse>(`${BASE_URL}/work-orders?${params}`);
+    return response.data;
   },
 
   get: async (id: string): Promise<WorkOrder> => {
-    return api.get(`${BASE_URL}/work-orders/${id}`);
+    const response = await api.get<WorkOrder>(`${BASE_URL}/work-orders/${id}`);
+    return response.data;
   },
 
   create: async (data: WorkOrderCreate): Promise<WorkOrder> => {
-    return api.post(`${BASE_URL}/work-orders`, data);
+    const response = await api.post<WorkOrder>(`${BASE_URL}/work-orders`, data);
+    return response.data;
   },
 
   update: async (id: string, data: WorkOrderUpdate): Promise<WorkOrder> => {
-    return api.put(`${BASE_URL}/work-orders/${id}`, data);
+    const response = await api.put<WorkOrder>(`${BASE_URL}/work-orders/${id}`, data);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/work-orders/${id}`);
+    await api.delete(`${BASE_URL}/work-orders/${id}`);
   },
 
   // Status transitions
   confirm: async (id: string): Promise<WorkOrder> => {
-    return api.post(`${BASE_URL}/work-orders/${id}/confirm`);
+    const response = await api.post<WorkOrder>(`${BASE_URL}/work-orders/${id}/confirm`);
+    return response.data;
   },
 
   start: async (id: string): Promise<WorkOrder> => {
-    return api.post(`${BASE_URL}/work-orders/${id}/start`);
+    const response = await api.post<WorkOrder>(`${BASE_URL}/work-orders/${id}/start`);
+    return response.data;
   },
 
   pause: async (id: string, reason?: string): Promise<WorkOrder> => {
-    return api.post(`${BASE_URL}/work-orders/${id}/pause`, { reason });
+    const response = await api.post<WorkOrder>(`${BASE_URL}/work-orders/${id}/pause`, { reason });
+    return response.data;
   },
 
   resume: async (id: string): Promise<WorkOrder> => {
-    return api.post(`${BASE_URL}/work-orders/${id}/resume`);
+    const response = await api.post<WorkOrder>(`${BASE_URL}/work-orders/${id}/resume`);
+    return response.data;
   },
 
   complete: async (id: string, data?: { quantity_produced: number; quantity_scrapped?: number }): Promise<WorkOrder> => {
-    return api.post(`${BASE_URL}/work-orders/${id}/complete`, data);
+    const response = await api.post<WorkOrder>(`${BASE_URL}/work-orders/${id}/complete`, data);
+    return response.data;
   },
 
   cancel: async (id: string, reason?: string): Promise<WorkOrder> => {
-    return api.post(`${BASE_URL}/work-orders/${id}/cancel`, { reason });
+    const response = await api.post<WorkOrder>(`${BASE_URL}/work-orders/${id}/cancel`, { reason });
+    return response.data;
   },
 
   // Operations
   startOperation: async (workOrderId: string, operationId: string): Promise<void> => {
-    return api.post(`${BASE_URL}/work-orders/${workOrderId}/operations/${operationId}/start`);
+    await api.post(`${BASE_URL}/work-orders/${workOrderId}/operations/${operationId}/start`);
   },
 
   completeOperation: async (workOrderId: string, operationId: string, data?: { actual_duration_minutes?: number; notes?: string }): Promise<void> => {
-    return api.post(`${BASE_URL}/work-orders/${workOrderId}/operations/${operationId}/complete`, data);
+    await api.post(`${BASE_URL}/work-orders/${workOrderId}/operations/${operationId}/complete`, data);
   },
 
   // Material consumption
   consumeMaterial: async (workOrderId: string, data: { component_id: string; quantity: number; lot_number?: string }): Promise<void> => {
-    return api.post(`${BASE_URL}/work-orders/${workOrderId}/consume`, data);
+    await api.post(`${BASE_URL}/work-orders/${workOrderId}/consume`, data);
   },
 
   getConsumption: async (workOrderId: string): Promise<{ items: unknown[]; total: number }> => {
-    return api.get(`${BASE_URL}/work-orders/${workOrderId}/consumption`);
+    const response = await api.get<{ items: unknown[]; total: number }>(`${BASE_URL}/work-orders/${workOrderId}/consumption`);
+    return response.data;
   },
 };
 
@@ -167,41 +187,49 @@ export const workcenterApi = {
     if (filters?.search) params.set('search', filters.search);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/workcenters?${params}`);
+    const response = await api.get<WorkcenterListResponse>(`${BASE_URL}/workcenters?${params}`);
+    return response.data;
   },
 
   get: async (id: string): Promise<Workcenter> => {
-    return api.get(`${BASE_URL}/workcenters/${id}`);
+    const response = await api.get<Workcenter>(`${BASE_URL}/workcenters/${id}`);
+    return response.data;
   },
 
   create: async (data: WorkcenterCreate): Promise<Workcenter> => {
-    return api.post(`${BASE_URL}/workcenters`, data);
+    const response = await api.post<Workcenter>(`${BASE_URL}/workcenters`, data);
+    return response.data;
   },
 
   update: async (id: string, data: WorkcenterUpdate): Promise<Workcenter> => {
-    return api.put(`${BASE_URL}/workcenters/${id}`, data);
+    const response = await api.put<Workcenter>(`${BASE_URL}/workcenters/${id}`, data);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/workcenters/${id}`);
+    await api.delete(`${BASE_URL}/workcenters/${id}`);
   },
 
   // State management
   setAvailable: async (id: string): Promise<Workcenter> => {
-    return api.post(`${BASE_URL}/workcenters/${id}/available`);
+    const response = await api.post<Workcenter>(`${BASE_URL}/workcenters/${id}/available`);
+    return response.data;
   },
 
   setMaintenance: async (id: string, data?: { reason?: string; expected_end?: string }): Promise<Workcenter> => {
-    return api.post(`${BASE_URL}/workcenters/${id}/maintenance`, data);
+    const response = await api.post<Workcenter>(`${BASE_URL}/workcenters/${id}/maintenance`, data);
+    return response.data;
   },
 
   setOffline: async (id: string, reason?: string): Promise<Workcenter> => {
-    return api.post(`${BASE_URL}/workcenters/${id}/offline`, { reason });
+    const response = await api.post<Workcenter>(`${BASE_URL}/workcenters/${id}/offline`, { reason });
+    return response.data;
   },
 
   // Capacity planning
   getSchedule: async (id: string, from: string, to: string): Promise<{ slots: unknown[] }> => {
-    return api.get(`${BASE_URL}/workcenters/${id}/schedule?from=${from}&to=${to}`);
+    const response = await api.get<{ slots: unknown[] }>(`${BASE_URL}/workcenters/${id}/schedule?from=${from}&to=${to}`);
+    return response.data;
   },
 };
 
@@ -217,23 +245,27 @@ export const routingApi = {
     if (filters?.search) params.set('search', filters.search);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/routings?${params}`);
+    const response = await api.get<RoutingListResponse>(`${BASE_URL}/routings?${params}`);
+    return response.data;
   },
 
   get: async (id: string): Promise<Routing> => {
-    return api.get(`${BASE_URL}/routings/${id}`);
+    const response = await api.get<Routing>(`${BASE_URL}/routings/${id}`);
+    return response.data;
   },
 
   create: async (data: RoutingCreate): Promise<Routing> => {
-    return api.post(`${BASE_URL}/routings`, data);
+    const response = await api.post<Routing>(`${BASE_URL}/routings`, data);
+    return response.data;
   },
 
   update: async (id: string, data: Partial<RoutingCreate>): Promise<Routing> => {
-    return api.put(`${BASE_URL}/routings/${id}`, data);
+    const response = await api.put<Routing>(`${BASE_URL}/routings/${id}`, data);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    return api.delete(`${BASE_URL}/routings/${id}`);
+    await api.delete(`${BASE_URL}/routings/${id}`);
   },
 };
 
@@ -251,15 +283,18 @@ export const qualityApi = {
     if (filters?.to_date) params.set('to_date', filters.to_date);
     if (filters?.page) params.set('page', String(filters.page));
     if (filters?.page_size) params.set('page_size', String(filters.page_size));
-    return api.get(`${BASE_URL}/quality-checks?${params}`);
+    const response = await api.get<QualityCheckListResponse>(`${BASE_URL}/quality-checks?${params}`);
+    return response.data;
   },
 
   get: async (id: string): Promise<QualityCheck> => {
-    return api.get(`${BASE_URL}/quality-checks/${id}`);
+    const response = await api.get<QualityCheck>(`${BASE_URL}/quality-checks/${id}`);
+    return response.data;
   },
 
   create: async (data: QualityCheckCreate): Promise<QualityCheck> => {
-    return api.post(`${BASE_URL}/quality-checks`, data);
+    const response = await api.post<QualityCheck>(`${BASE_URL}/quality-checks`, data);
+    return response.data;
   },
 };
 
@@ -269,11 +304,13 @@ export const qualityApi = {
 
 export const statsApi = {
   getStats: async (): Promise<ManufacturingStats> => {
-    return api.get(`${BASE_URL}/stats`);
+    const response = await api.get<ManufacturingStats>(`${BASE_URL}/stats`);
+    return response.data;
   },
 
   getDashboard: async (): Promise<ManufacturingDashboard> => {
-    return api.get(`${BASE_URL}/dashboard`);
+    const response = await api.get<ManufacturingDashboard>(`${BASE_URL}/dashboard`);
+    return response.data;
   },
 
   getOEE: async (workcenter_id?: string, from?: string, to?: string): Promise<{ oee: number; availability: number; performance: number; quality: number }> => {
@@ -281,11 +318,13 @@ export const statsApi = {
     if (workcenter_id) params.set('workcenter_id', workcenter_id);
     if (from) params.set('from', from);
     if (to) params.set('to', to);
-    return api.get(`${BASE_URL}/stats/oee?${params}`);
+    const response = await api.get<{ oee: number; availability: number; performance: number; quality: number }>(`${BASE_URL}/stats/oee?${params}`);
+    return response.data;
   },
 
   getProductionReport: async (from: string, to: string): Promise<{ total_produced: number; total_scrapped: number; by_product: unknown[]; by_workcenter: unknown[] }> => {
-    return api.get(`${BASE_URL}/reports/production?from=${from}&to=${to}`);
+    const response = await api.get<{ total_produced: number; total_scrapped: number; by_product: unknown[]; by_workcenter: unknown[] }>(`${BASE_URL}/reports/production?from=${from}&to=${to}`);
+    return response.data;
   },
 };
 
@@ -295,14 +334,17 @@ export const statsApi = {
 
 export const planningApi = {
   getGantt: async (from: string, to: string): Promise<{ work_orders: unknown[]; operations: unknown[] }> => {
-    return api.get(`${BASE_URL}/planning/gantt?from=${from}&to=${to}`);
+    const response = await api.get<{ work_orders: unknown[]; operations: unknown[] }>(`${BASE_URL}/planning/gantt?from=${from}&to=${to}`);
+    return response.data;
   },
 
   autoSchedule: async (work_order_ids: string[]): Promise<{ scheduled: number; conflicts: unknown[] }> => {
-    return api.post(`${BASE_URL}/planning/auto-schedule`, { work_order_ids });
+    const response = await api.post<{ scheduled: number; conflicts: unknown[] }>(`${BASE_URL}/planning/auto-schedule`, { work_order_ids });
+    return response.data;
   },
 
   checkCapacity: async (product_id: string, quantity: number, desired_date: string): Promise<{ can_produce: boolean; earliest_date: string; constraints: string[] }> => {
-    return api.post(`${BASE_URL}/planning/capacity-check`, { product_id, quantity, desired_date });
+    const response = await api.post<{ can_produce: boolean; earliest_date: string; constraints: string[] }>(`${BASE_URL}/planning/capacity-check`, { product_id, quantity, desired_date });
+    return response.data;
   },
 };

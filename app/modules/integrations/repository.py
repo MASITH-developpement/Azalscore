@@ -13,7 +13,7 @@ from sqlalchemy import and_, or_, func, desc, asc
 from sqlalchemy.orm import Session, joinedload
 
 from .models import (
-    Connection, EntityMapping, SyncJob, SyncLog, Conflict, Webhook,
+    LegacyConnection as Connection, EntityMapping, SyncJob, SyncLog, Conflict, Webhook,
     ConnectionStatus, SyncStatus, ConnectorType, SyncDirection
 )
 from .schemas import ConnectionFilters, SyncJobFilters

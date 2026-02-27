@@ -176,7 +176,8 @@ class TestModels:
             code="my-theme",
             name="Mon Thème",
             mode=ThemeMode.DARK,
-            primary_color="#FF0000"
+            primary_color="#FF0000",
+            is_active=True  # Explicit default
         )
         assert theme.code == "my-theme"
         assert theme.mode == ThemeMode.DARK
@@ -202,7 +203,8 @@ class TestModels:
             code="my-dashboard",
             name="Mon Dashboard",
             page_type=PageType.DASHBOARD,
-            columns=3
+            columns=3,
+            is_default=False  # Explicit default
         )
         assert dashboard.code == "my-dashboard"
         assert dashboard.columns == 3
@@ -358,8 +360,12 @@ class TestServiceThemes:
 
     def test_list_themes(self, web_service, mock_db, sample_theme):
         """Tester le listing des thèmes."""
-        mock_db.query.return_value.filter.return_value.count.return_value = 1
-        mock_db.query.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [sample_theme]
+        # Setup chainable filter mock (service uses multiple .filter() calls)
+        mock_filter = MagicMock()
+        mock_filter.filter.return_value = mock_filter  # Allow chaining
+        mock_filter.count.return_value = 1
+        mock_filter.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [sample_theme]
+        mock_db.query.return_value.filter.return_value = mock_filter
 
         items, total = web_service.list_themes()
 
@@ -408,8 +414,12 @@ class TestServiceWidgets:
 
     def test_list_widgets(self, web_service, mock_db, sample_widget):
         """Tester le listing des widgets."""
-        mock_db.query.return_value.filter.return_value.count.return_value = 5
-        mock_db.query.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [sample_widget]
+        # Setup chainable filter mock (service uses multiple .filter() calls)
+        mock_filter = MagicMock()
+        mock_filter.filter.return_value = mock_filter  # Allow chaining
+        mock_filter.count.return_value = 5
+        mock_filter.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [sample_widget]
+        mock_db.query.return_value.filter.return_value = mock_filter
 
         items, total = web_service.list_widgets()
 
@@ -484,7 +494,11 @@ class TestServiceMenus:
         mock_item.code = "home"
         mock_item.label = "Accueil"
 
-        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [mock_item]
+        # Setup chainable filter mock (service uses multiple .filter() calls)
+        mock_filter = MagicMock()
+        mock_filter.filter.return_value = mock_filter  # Allow chaining
+        mock_filter.order_by.return_value.all.return_value = [mock_item]
+        mock_db.query.return_value.filter.return_value = mock_filter
 
         result = web_service.list_menu_items()
 
@@ -594,7 +608,11 @@ class TestServiceShortcuts:
         mock_shortcut.code = "search"
         mock_shortcut.key_combination = "Ctrl+K"
 
-        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [mock_shortcut]
+        # Setup chainable filter mock (service uses multiple .filter() calls)
+        mock_filter = MagicMock()
+        mock_filter.filter.return_value = mock_filter  # Allow chaining
+        mock_filter.order_by.return_value.all.return_value = [mock_shortcut]
+        mock_db.query.return_value.filter.return_value = mock_filter
 
         result = web_service.list_shortcuts()
 

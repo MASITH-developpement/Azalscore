@@ -74,8 +74,11 @@ class TrialRegistrationCreate(BaseModel):
     cgv_accepted: bool = Field(..., description="Acceptation des CGV")
     cgu_accepted: bool = Field(..., description="Acceptation des CGU")
 
-    # CAPTCHA (étape 4)
-    captcha_token: str = Field(..., min_length=1, description="Token hCaptcha")
+    # CAPTCHA (étape 4) - peut être vide si reCAPTCHA non configuré en dev
+    captcha_token: str = Field(default="", description="Token reCAPTCHA v3")
+
+    # Plan sélectionné (pour analytics)
+    selected_plan: str | None = Field(None, max_length=50, description="Code du plan sélectionné")
 
     model_config = ConfigDict(str_strip_whitespace=True)
 

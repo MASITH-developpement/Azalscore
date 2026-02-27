@@ -36,6 +36,7 @@ class MessageType(str, Enum):
     """Types de messages WebSocket."""
 
     # Client → Server
+    AUTH = "auth"                         # P0 SÉCURITÉ: Auth via message (pas URL)
     AUDIO_CHUNK = "audio_chunk"           # Chunk audio à transcrire
     AUDIO_END = "audio_end"               # Fin de l'enregistrement audio
     TEXT_INPUT = "text_input"             # Entrée texte (fallback)
@@ -156,20 +157,22 @@ ws_manager = TheoWebSocketManager()
 @theo_router.websocket("/ws")
 async def theo_websocket(
     websocket: WebSocket,
-    token: Optional[str] = Query(None),
     companion: str = Query("theo"),
     mode: str = Query("driving")
 ):
     """
     WebSocket principal pour Théo.
 
+    P0 SÉCURITÉ: Le token n'est PLUS passé via URL (exposé aux logs/historique).
+    Le client envoie un message 'auth' après connexion.
+
     Query params:
-        token: Token d'authentification (optionnel)
         companion: ID du compagnon (theo, lea, alex)
         mode: Mode d'interaction (driving, desktop, mobile)
 
     Message protocol:
         Client → Server:
+            - auth: {token: "..."} - P0 SÉCURITÉ: Auth via message sécurisé
             - audio_chunk: {data: base64, format: "webm"}
             - audio_end: {}
             - text_input: {text: "..."}
@@ -192,7 +195,7 @@ async def theo_websocket(
     translator = get_translator()
     companion_registry = get_companion_registry()
 
-    # NOTE: Phase 2 - Intégration auth JWT existant
+    # P0 SÉCURITÉ: Auth initialisée à None, sera mise à jour via message 'auth'
     user_id = None
     tenant_id = None
     authority_level = AuthorityLevel.USER
@@ -242,7 +245,18 @@ async def theo_websocket(
                 continue
 
             # Router selon le type de message
-            if message.type == MessageType.AUDIO_CHUNK:
+            # P0 SÉCURITÉ: Auth via message (pas URL)
+            if message.type == MessageType.AUTH:
+                auth_result = await handle_auth_message(
+                    session_id, session, message.payload
+                )
+                if auth_result:
+                    # Mettre à jour la session avec l'utilisateur authentifié
+                    session.user_id = auth_result.get("user_id")
+                    session.tenant_id = auth_result.get("tenant_id")
+                continue
+
+            elif message.type == MessageType.AUDIO_CHUNK:
                 await handle_audio_chunk(session_id, message.payload)
 
             elif message.type == MessageType.AUDIO_END:
@@ -283,6 +297,76 @@ async def theo_websocket(
 # ============================================================
 # MESSAGE HANDLERS
 # ============================================================
+
+async def handle_auth_message(
+    session_id: str,
+    session: Any,
+    payload: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
+    """
+    P0 SÉCURITÉ: Gère l'authentification via message WebSocket.
+
+    Le token est envoyé via message sécurisé au lieu de l'URL
+    pour éviter l'exposition dans les logs et l'historique.
+    """
+    token = payload.get("token")
+    if not token:
+        await ws_manager.send(
+            session_id,
+            WSMessage(
+                type=MessageType.ERROR,
+                payload={"message": "Auth token required", "code": "AUTH_REQUIRED"}
+            )
+        )
+        return None
+
+    try:
+        # Valider le token JWT
+        from app.core.security import decode_access_token
+
+        token_data = decode_access_token(token)
+        if not token_data:
+            await ws_manager.send(
+                session_id,
+                WSMessage(
+                    type=MessageType.ERROR,
+                    payload={"message": "Invalid or expired token", "code": "AUTH_INVALID"}
+                )
+            )
+            return None
+
+        user_id = token_data.get("sub")
+        tenant_id = token_data.get("tenant_id")
+
+        logger.info("[TheoWS] Auth successful: user=%s tenant=%s", user_id, tenant_id)
+
+        # Confirmer l'authentification
+        await ws_manager.send(
+            session_id,
+            WSMessage(
+                type=MessageType.SESSION_INFO,
+                payload={
+                    "session_id": session_id,
+                    "authenticated": True,
+                    "user_id": user_id,
+                    "tenant_id": tenant_id
+                }
+            )
+        )
+
+        return {"user_id": user_id, "tenant_id": tenant_id}
+
+    except Exception as e:
+        logger.error("[TheoWS] Auth error: %s", e)
+        await ws_manager.send(
+            session_id,
+            WSMessage(
+                type=MessageType.ERROR,
+                payload={"message": "Authentication failed", "code": "AUTH_ERROR"}
+            )
+        )
+        return None
+
 
 async def handle_audio_chunk(session_id: str, payload: Dict[str, Any]) -> None:
     """Gère un chunk audio entrant."""

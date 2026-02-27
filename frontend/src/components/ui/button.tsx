@@ -33,7 +33,7 @@ export function Button({
   className = '',
   variant = 'default',
   size = 'default',
-  asChild = false,
+  asChild: _asChild = false,
   children,
   ...props
 }: ButtonProps) {

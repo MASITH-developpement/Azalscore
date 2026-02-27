@@ -499,7 +499,7 @@ export interface DashboardWidget {
   size: string;
 }
 
-export interface AuditDashboard {
+export interface AuditDashboardConfig {
   id: string;
   tenant_id: string;
   code: string;

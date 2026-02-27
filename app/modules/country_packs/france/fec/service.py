@@ -56,6 +56,7 @@ from .schemas import (
     FECValidationLevelEnum,
     FECExportStatusEnum,
 )
+from ..exceptions import FECError, FECGenerationError, FECValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -180,8 +181,8 @@ class FECService:
             logger.info(f"[FEC] Export terminé: {filename}, valid={export.is_valid}")
             return export
 
-        except Exception as e:
-            logger.error(f"[FEC] Erreur génération: {e}")
+        except (FECGenerationError, FECValidationError, ValueError, IOError) as e:
+            logger.error(f"[FEC] Erreur generation: {e}")
             export.status = FECExportStatus.FAILED
             export.error_message = str(e)
             export.completed_at = datetime.utcnow()
@@ -729,7 +730,7 @@ class FECService:
         amount_str = amount_str.replace(",", ".").replace(" ", "")
         try:
             return Decimal(amount_str)
-        except Exception:
+        except (ValueError, TypeError, ArithmeticError):
             return Decimal("0")
 
     def _get_separator_char(self, separator: FECSeparator) -> str:

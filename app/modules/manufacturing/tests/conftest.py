@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.database import Base
 from app.modules.manufacturing.models import (
-    BOM, BOMLine, BOMStatus, BOMType,
+    BOM, ManufacturingBOMLine, BOMStatus, BOMType,
     Workcenter, WorkcenterState, WorkcenterType,
     Routing, Operation,
     WorkOrder, WorkOrderStatus, WorkOrderOperation, OperationStatus,
@@ -154,7 +154,7 @@ def bom_with_lines(db_session: Session, tenant_a_id: UUID, user_a_id: UUID) -> B
     db_session.flush()
 
     for i in range(3):
-        line = BOMLine(
+        line = ManufacturingBOMLine(
             tenant_id=tenant_a_id,
             bom_id=bom.id,
             sequence=i + 1,

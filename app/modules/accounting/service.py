@@ -17,6 +17,7 @@ from sqlalchemy import and_, desc, extract, func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.query_optimizer import QueryOptimizer
+from app.core.cache import get_cache, cache_key_tenant, CacheTTL, invalidate_cache
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,19 @@ class AccountingService:
         self.tenant_id = tenant_id
         self.user_id = user_id  # Pour CORE SaaS v2
         self._optimizer = QueryOptimizer(db)
+        self._cache = get_cache()
+
+    # ========================================================================
+    # CACHE HELPERS
+    # ========================================================================
+
+    def _cache_key(self, suffix: str) -> str:
+        """Génère une clé de cache scopée par tenant."""
+        return cache_key_tenant(self.tenant_id, "accounting", suffix)
+
+    def invalidate_accounting_cache(self) -> None:
+        """Invalide le cache comptable après modifications."""
+        invalidate_cache(f"tenant:{self.tenant_id}:accounting:*")
 
     # ========================================================================
     # FISCAL YEARS
@@ -692,12 +706,27 @@ class AccountingService:
         page: int = 1,
         per_page: int = 100
     ) -> Tuple[List[BalanceEntry], int]:
-        """Obtenir la balance (avec ouverture, mouvements, clôture)."""
-        # Pour chaque compte, calculer :
-        # - Solde d'ouverture (depuis ChartOfAccounts)
-        # - Mouvements de la période
-        # - Solde de clôture
+        """
+        Obtenir la balance (avec ouverture, mouvements, clôture).
 
+        PERFORMANCE:
+        1. Cache Redis avec TTL 60s (CacheTTL.SHORT)
+        2. GROUP BY pour éviter N+1 queries
+        Avant: 1 + N requêtes (N = nombre de comptes) + 0 cache
+        Après: 0 requêtes (cache hit) ou 2 requêtes (cache miss)
+        """
+        # Générer la clé de cache avec les paramètres
+        cache_suffix = f"balance:{fiscal_year_id or 'all'}:{period or 'all'}:{page}:{per_page}"
+        cache_key = self._cache_key(cache_suffix)
+
+        # Vérifier le cache
+        if self._cache:
+            cached = self._cache.get(cache_key)
+            if cached:
+                logger.debug(f"Cache HIT for balance: {cache_key}")
+                return cached['entries'], cached['total']
+
+        # 1. Récupérer les comptes actifs (paginés)
         query = self.db.query(ChartOfAccounts).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
             ChartOfAccounts.is_active == True
@@ -709,37 +738,60 @@ class AccountingService:
             (page - 1) * per_page
         ).limit(per_page).all()
 
-        balance_entries = []
+        if not accounts:
+            return [], total
 
-        for account in accounts:
-            # Solde d'ouverture
-            opening_debit = account.opening_balance_debit
-            opening_credit = account.opening_balance_credit
+        # 2. PERFORMANCE: Une seule requête GROUP BY pour TOUS les mouvements
+        account_numbers = [a.account_number for a in accounts]
 
-            # Mouvements de la période
-            movements_query = self.db.query(
-                func.sum(AccountingJournalEntryLine.debit).label('period_debit'),
-                func.sum(AccountingJournalEntryLine.credit).label('period_credit')
-            ).join(
-                AccountingJournalEntry,
-                AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
-            ).filter(
-                AccountingJournalEntryLine.tenant_id == self.tenant_id,
-                AccountingJournalEntryLine.account_number == account.account_number,
-                AccountingJournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
+        movements_query = self.db.query(
+            AccountingJournalEntryLine.account_number,
+            func.sum(AccountingJournalEntryLine.debit).label('period_debit'),
+            func.sum(AccountingJournalEntryLine.credit).label('period_credit')
+        ).join(
+            AccountingJournalEntry,
+            AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
+        ).filter(
+            AccountingJournalEntryLine.tenant_id == self.tenant_id,
+            AccountingJournalEntryLine.account_number.in_(account_numbers),
+            AccountingJournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
+        )
+
+        if fiscal_year_id:
+            movements_query = movements_query.filter(
+                AccountingJournalEntry.fiscal_year_id == fiscal_year_id
             )
 
-            if fiscal_year_id:
-                movements_query = movements_query.filter(AccountingJournalEntry.fiscal_year_id == fiscal_year_id)
+        if period:
+            movements_query = movements_query.filter(
+                AccountingJournalEntry.period == period
+            )
 
-            if period:
-                movements_query = movements_query.filter(AccountingJournalEntry.period == period)
+        # GROUP BY account_number pour agréger en une seule requête
+        movements_query = movements_query.group_by(
+            AccountingJournalEntryLine.account_number
+        )
 
-            result = movements_query.first()
-            period_debit = result.period_debit or Decimal("0.00")
-            period_credit = result.period_credit or Decimal("0.00")
+        # 3. Construire un dictionnaire account_number -> (debit, credit)
+        movements_map: dict[str, tuple[Decimal, Decimal]] = {}
+        for row in movements_query.all():
+            movements_map[row.account_number] = (
+                row.period_debit or Decimal("0.00"),
+                row.period_credit or Decimal("0.00")
+            )
 
-            # Solde de clôture
+        # 4. Construire les entrées de balance (lookup O(1) au lieu de query)
+        balance_entries = []
+        for account in accounts:
+            opening_debit = account.opening_balance_debit or Decimal("0.00")
+            opening_credit = account.opening_balance_credit or Decimal("0.00")
+
+            # Lookup dans le dictionnaire au lieu de query
+            period_debit, period_credit = movements_map.get(
+                account.account_number,
+                (Decimal("0.00"), Decimal("0.00"))
+            )
+
             closing_debit = opening_debit + period_debit
             closing_credit = opening_credit + period_credit
 
@@ -753,6 +805,15 @@ class AccountingService:
                 closing_debit=closing_debit,
                 closing_credit=closing_credit
             ))
+
+        # 5. Mettre en cache avec TTL court (60s)
+        if self._cache:
+            self._cache.set(
+                cache_key,
+                {'entries': balance_entries, 'total': total},
+                ttl=CacheTTL.SHORT
+            )
+            logger.debug(f"Cache SET for balance: {cache_key}")
 
         return balance_entries, total
 

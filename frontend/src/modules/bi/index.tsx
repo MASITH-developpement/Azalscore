@@ -1,14 +1,24 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { BarChart3, FileText, Play, Users } from 'lucide-react';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button } from '@ui/actions';
 import { StatCard } from '@ui/dashboards';
 import { Select } from '@ui/forms';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
+import {
+  biKeys,
+  useBIDashboardStats,
+  useDashboards,
+  useReports,
+  useDataSources,
+  type Dashboard,
+  type Widget,
+  type Report,
+  type DataSource,
+  type DataField,
+  type BIDashboardStats,
+} from './hooks';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -42,80 +52,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
     ))}
   </nav>
 );
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface Dashboard {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  type: 'OPERATIONAL' | 'ANALYTICAL' | 'STRATEGIC';
-  widgets: Widget[];
-  is_public: boolean;
-  created_at: string;
-}
-
-interface Widget {
-  id: string;
-  title: string;
-  type: 'KPI' | 'CHART' | 'TABLE' | 'MAP';
-  chart_type?: 'LINE' | 'BAR' | 'PIE' | 'DONUT' | 'AREA';
-  data_source: string;
-  config: Record<string, any>;
-  position: { x: number; y: number; w: number; h: number };
-}
-
-interface Report {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  type: 'STANDARD' | 'CUSTOM' | 'SCHEDULED';
-  category: string;
-  format: 'PDF' | 'EXCEL' | 'CSV';
-  parameters: ReportParameter[];
-  last_run?: string;
-  schedule?: string;
-  is_active: boolean;
-}
-
-interface ReportParameter {
-  name: string;
-  label: string;
-  type: 'DATE' | 'DATE_RANGE' | 'SELECT' | 'MULTI_SELECT' | 'TEXT';
-  required: boolean;
-  options?: { value: string; label: string }[];
-  default_value?: any;
-}
-
-interface DataSource {
-  id: string;
-  code: string;
-  name: string;
-  type: 'TABLE' | 'VIEW' | 'QUERY' | 'API';
-  module?: string;
-  fields: DataField[];
-  is_active: boolean;
-}
-
-interface DataField {
-  name: string;
-  label: string;
-  type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN';
-  is_dimension: boolean;
-  is_measure: boolean;
-}
-
-interface BIDashboardStats {
-  total_dashboards: number;
-  total_reports: number;
-  reports_run_today: number;
-  active_users: number;
-  popular_reports: { report_name: string; run_count: number }[];
-}
 
 // ============================================================================
 // CONSTANTES
@@ -158,54 +94,6 @@ const _formatDate = (date: string): string => {
 
 const formatDateTime = (date: string): string => {
   return new Date(date).toLocaleString('fr-FR');
-};
-
-// ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useBIDashboardStats = () => {
-  return useQuery({
-    queryKey: ['bi', 'stats'],
-    queryFn: async () => {
-      const response = await api.get<BIDashboardStats>('/bi/stats');
-      return response.data;
-    }
-  });
-};
-
-const useDashboards = (type?: string) => {
-  return useQuery({
-    queryKey: ['bi', 'dashboards', type],
-    queryFn: async () => {
-      const response = await api.get<Dashboard[]>(`/bi/dashboards${type ? `?type=${type}` : ''}`);
-      return response.data;
-    }
-  });
-};
-
-const useReports = (filters?: { type?: string; category?: string }) => {
-  return useQuery({
-    queryKey: ['bi', 'reports', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.category) params.append('category', filters.category);
-      const queryString = params.toString();
-      const response = await api.get<Report[]>(`/bi/reports${queryString ? `?${queryString}` : ''}`);
-      return response.data;
-    }
-  });
-};
-
-const useDataSources = () => {
-  return useQuery({
-    queryKey: ['bi', 'data-sources'],
-    queryFn: async () => {
-      const response = await api.get<DataSource[]>('/bi/data-sources');
-      return response.data;
-    }
-  });
 };
 
 // ============================================================================
@@ -426,3 +314,12 @@ const BIModule: React.FC = () => {
 };
 
 export default BIModule;
+
+// Re-export hooks for external use
+export {
+  biKeys,
+  useBIDashboardStats,
+  useDashboards,
+  useReports,
+  useDataSources,
+} from './hooks';

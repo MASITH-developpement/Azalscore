@@ -41,8 +41,8 @@ class TestStripeWebhookEndpoint:
 
         assert response.status_code == 400
 
-    @patch("app.services.stripe_service.StripeServiceLive.verify_webhook")
-    @patch("app.services.stripe_service.StripeWebhookHandler")
+    @patch("app.api.webhooks.StripeServiceLive.verify_webhook")
+    @patch("app.api.webhooks.StripeWebhookHandler")
     def test_webhook_valid_event(self, mock_handler_class, mock_verify, client):
         """Test: événement valide → 200."""
         mock_verify.return_value = {
@@ -74,8 +74,8 @@ class TestStripeWebhookEndpoint:
         data = response.json()
         assert data["status"] == "success"
 
-    @patch("app.services.stripe_service.StripeServiceLive.verify_webhook")
-    @patch("app.services.stripe_service.StripeWebhookHandler")
+    @patch("app.api.webhooks.StripeServiceLive.verify_webhook")
+    @patch("app.api.webhooks.StripeWebhookHandler")
     def test_webhook_unknown_event_type(self, mock_handler_class, mock_verify, client):
         """Test: type d'événement inconnu → 200 (ignoré)."""
         mock_verify.return_value = {
@@ -235,8 +235,8 @@ class TestStripeWebhookSecurity:
 
         assert response.status_code == 400
 
-    @patch("app.services.stripe_service.StripeServiceLive.verify_webhook")
-    @patch("app.services.stripe_service.StripeWebhookHandler")
+    @patch("app.api.webhooks.StripeServiceLive.verify_webhook")
+    @patch("app.api.webhooks.StripeWebhookHandler")
     def test_webhook_logs_events(self, mock_handler_class, mock_verify, client):
         """Test: webhook loggue les événements."""
         mock_verify.return_value = {
@@ -299,6 +299,18 @@ class TestStripeWebhookHandler:
     def test_handler_checkout_completed(self, mock_convert, db_session):
         """Test: handler checkout.session.completed."""
         from app.services.stripe_service import StripeWebhookHandler
+        from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
+
+        # Create test tenant in the database
+        tenant = Tenant(
+            tenant_id="test-company",
+            name="Test Company",
+            email="test@company.fr",
+            status=TenantStatus.TRIAL,
+            plan=SubscriptionPlan.PROFESSIONAL,
+        )
+        db_session.add(tenant)
+        db_session.flush()
 
         handler = StripeWebhookHandler(db=db_session)
 

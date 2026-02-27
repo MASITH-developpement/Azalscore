@@ -2,20 +2,16 @@
  * AZALSCORE Module - FACTURES & AVOIRS
  * Gestion de la facturation clients avec BaseViewStandard
  * Flux : CRM → DEV → COM/ODS → AFF → [FAC/AVO] → CPT
- * Numérotation : FAC-YY-MM-XXXX / AVO-YY-MM-XXXX
+ * Numerotation : FAC-YY-MM-XXXX / AVO-YY-MM-XXXX
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FileText, Plus, Edit, Search, Check, Send,
   Euro, Calendar, CreditCard, ChevronRight,
   Download, Printer, Clock, CheckCircle2, AlertTriangle,
-  ArrowLeftRight, Package, History, FileArchive, Sparkles,
-  Shield
+  ArrowLeftRight, Package, History, FileArchive, Sparkles, Shield
 } from 'lucide-react';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -29,144 +25,33 @@ import {
   type SemanticColor,
 } from '@ui/standards';
 import { DataTable } from '@ui/tables';
-import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-
-// Import types et composants tabs
+import type { TableColumn, DashboardKPI } from '@/types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+
+// Components
 import {
-  FactureInfoTab,
-  FactureLinesTab,
-  FactureFinancialTab,
-  FactureDocsTab,
-  FactureHistoryTab,
-  FactureIATab,
-  FactureRiskTab,
+  FactureInfoTab, FactureLinesTab, FactureFinancialTab,
+  FactureDocsTab, FactureHistoryTab, FactureIATab, FactureRiskTab,
 } from './components';
+
+// Types & config
 import {
   STATUS_CONFIG, TYPE_CONFIG, PAYMENT_METHODS,
   isOverdue, getDaysUntilDue
 } from './types';
 import type {
-  Facture, FactureFormData, Customer, FactureType, FactureStatus,
-  PaymentMethod, Payment, PaymentFormData
+  Facture, FactureType, FactureStatus, PaymentMethod, PaymentFormData
 } from './types';
 
-// ============================================================
-// API HOOKS
-// ============================================================
+// Hooks
+import {
+  useFacturesList, useFacture, useFacturePayments,
+  useValidateFacture, useSendFacture, useCreatePayment, useCreateAvoir
+} from './hooks';
 
-const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType; status?: string; search?: string }) => {
-  return useQuery({
-    queryKey: ['commercial', 'documents', 'factures', page, pageSize, serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-      });
-      if (filters?.type) {
-        params.append('type', filters.type);
-      } else {
-        params.append('type', 'INVOICE');
-      }
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Facture>>(`/commercial/documents?${params}`);
-      return response.data;
-    },
-  });
-};
-
-const useFacture = (id: string) => {
-  return useQuery({
-    queryKey: ['commercial', 'documents', id],
-    queryFn: async () => {
-      const response = await api.get<Facture>(`/commercial/documents/${id}`);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-};
-
-const useFacturePayments = (documentId: string) => {
-  return useQuery({
-    queryKey: ['commercial', 'documents', documentId, 'payments'],
-    queryFn: async () => {
-      const response = await api.get<Payment[]>(`/commercial/documents/${documentId}/payments`);
-      return response.data;
-    },
-    enabled: !!documentId,
-  });
-};
-
-const _useCustomers = (search?: string) => {
-  return useQuery({
-    queryKey: ['commercial', 'customers', 'search', search],
-    queryFn: async () => {
-      const params = new URLSearchParams({ page: '1', page_size: '50' });
-      if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
-      return response.data.items;
-    },
-  });
-};
-
-const _useCreateFacture = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: FactureFormData) => {
-      const response = await api.post<Facture>('/commercial/documents', data);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useValidateFacture = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.post<Facture>(`/commercial/documents/${id}/validate`);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useSendFacture = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.post<Facture>(`/commercial/documents/${id}/send`);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useCreatePayment = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ documentId, data }: { documentId: string; data: PaymentFormData }) => {
-      const response = await api.post<Payment>('/commercial/payments', {
-        document_id: documentId,
-        ...data,
-      });
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useCreateAvoir = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (factureId: string) => {
-      const response = await api.post<Facture>(`/commercial/documents/${factureId}/credit-note`);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
+// Re-exports
+export * from './hooks';
+export * from './types';
 
 // ============================================================
 // COMPONENTS
@@ -207,8 +92,8 @@ const FacturesStats: React.FC = () => {
   const kpis: DashboardKPI[] = [
     { id: 'attente', label: 'En attente', value: stats.enAttente, icon: <Clock size={20} /> },
     { id: 'retard', label: 'En retard', value: stats.enRetard, icon: <AlertTriangle size={20} />, variant: stats.enRetard > 0 ? 'danger' : undefined },
-    { id: 'encaisse', label: 'Encaissé', value: formatCurrency(stats.caEncaisse), icon: <CheckCircle2 size={20} /> },
-    { id: 'aencaisser', label: 'À encaisser', value: formatCurrency(stats.aEncaisser), icon: <Euro size={20} /> },
+    { id: 'encaisse', label: 'Encaisse', value: formatCurrency(stats.caEncaisse), icon: <CheckCircle2 size={20} /> },
+    { id: 'aencaisser', label: 'A encaisser', value: formatCurrency(stats.aEncaisser), icon: <Euro size={20} /> },
   ];
 
   return (
@@ -252,10 +137,7 @@ const FactureListView: React.FC<{
 
   const columns: TableColumn<Facture>[] = [
     {
-      id: 'number',
-      header: 'Numéro',
-      accessor: 'number',
-      sortable: true,
+      id: 'number', header: 'Numero', accessor: 'number', sortable: true,
       render: (value, row) => (
         <div>
           <span className="azals-link" onClick={() => onSelectFacture(row.id)}>{value as string}</span>
@@ -263,28 +145,13 @@ const FactureListView: React.FC<{
         </div>
       ),
     },
+    { id: 'date', header: 'Date', accessor: 'date', sortable: true, render: (value) => formatDate(value as string) },
     {
-      id: 'date',
-      header: 'Date',
-      accessor: 'date',
-      sortable: true,
-      render: (value) => formatDate(value as string),
+      id: 'customer', header: 'Client', accessor: 'customer_name',
+      render: (value, row) => (<div><div>{value as string}</div><div className="text-muted text-sm">{row.customer_code}</div></div>),
     },
     {
-      id: 'customer',
-      header: 'Client',
-      accessor: 'customer_name',
-      render: (value, row) => (
-        <div>
-          <div>{value as string}</div>
-          <div className="text-muted text-sm">{row.customer_code}</div>
-        </div>
-      ),
-    },
-    {
-      id: 'due_date',
-      header: 'Échéance',
-      accessor: 'due_date',
+      id: 'due_date', header: 'Echeance', accessor: 'due_date',
       render: (value, row) => {
         if (!value) return '-';
         const factureIsOverdue = isOverdue(row);
@@ -296,29 +163,17 @@ const FactureListView: React.FC<{
         );
       },
     },
+    { id: 'status', header: 'Statut', accessor: 'status', render: (value) => <StatusBadge status={value as FactureStatus} /> },
     {
-      id: 'status',
-      header: 'Statut',
-      accessor: 'status',
-      render: (value) => <StatusBadge status={value as FactureStatus} />,
-    },
-    {
-      id: 'total',
-      header: 'Total TTC',
-      accessor: 'total',
-      align: 'right',
+      id: 'total', header: 'Total TTC', accessor: 'total', align: 'right',
       render: (value, row) => (
         <span className={row.type === 'CREDIT_NOTE' ? 'text-danger' : ''}>
-          {row.type === 'CREDIT_NOTE' && '-'}
-          {formatCurrency(value as number, row.currency)}
+          {row.type === 'CREDIT_NOTE' && '-'}{formatCurrency(value as number, row.currency)}
         </span>
       ),
     },
     {
-      id: 'remaining',
-      header: 'Reste dû',
-      accessor: 'remaining_amount',
-      align: 'right',
+      id: 'remaining', header: 'Reste du', accessor: 'remaining_amount', align: 'right',
       render: (value, row) => {
         if (row.status === 'PAID' || row.status === 'CANCELLED' || row.type === 'CREDIT_NOTE') return '-';
         return <span className="text-warning">{formatCurrency(value as number)}</span>;
@@ -332,61 +187,28 @@ const FactureListView: React.FC<{
       subtitle="Gestion de la facturation"
       actions={
         <ButtonGroup>
-          <Button leftIcon={<Plus size={16} />} onClick={() => onCreateFacture('INVOICE')}>
-            Nouvelle facture
-          </Button>
-          <Button variant="secondary" leftIcon={<ArrowLeftRight size={16} />} onClick={() => onCreateFacture('CREDIT_NOTE')}>
-            Nouvel avoir
-          </Button>
+          <Button leftIcon={<Plus size={16} />} onClick={() => onCreateFacture('INVOICE')}>Nouvelle facture</Button>
+          <Button variant="secondary" leftIcon={<ArrowLeftRight size={16} />} onClick={() => onCreateFacture('CREDIT_NOTE')}>Nouvel avoir</Button>
         </ButtonGroup>
       }
     >
-      <section className="azals-section">
-        <FacturesStats />
-      </section>
+      <section className="azals-section"><FacturesStats /></section>
 
       <Card noPadding>
         <div className="azals-tabs">
-          <button
-            className={`azals-tab ${activeTab === 'INVOICE' ? 'azals-tab--active' : ''}`}
-            onClick={() => setActiveTab('INVOICE')}
-          >
-            Factures
-          </button>
-          <button
-            className={`azals-tab ${activeTab === 'CREDIT_NOTE' ? 'azals-tab--active' : ''}`}
-            onClick={() => setActiveTab('CREDIT_NOTE')}
-          >
-            Avoirs
-          </button>
-          <button
-            className={`azals-tab ${activeTab === 'ALL' ? 'azals-tab--active' : ''}`}
-            onClick={() => setActiveTab('ALL')}
-          >
-            Tout
-          </button>
+          <button className={`azals-tab ${activeTab === 'INVOICE' ? 'azals-tab--active' : ''}`} onClick={() => setActiveTab('INVOICE')}>Factures</button>
+          <button className={`azals-tab ${activeTab === 'CREDIT_NOTE' ? 'azals-tab--active' : ''}`} onClick={() => setActiveTab('CREDIT_NOTE')}>Avoirs</button>
+          <button className={`azals-tab ${activeTab === 'ALL' ? 'azals-tab--active' : ''}`} onClick={() => setActiveTab('ALL')}>Tout</button>
         </div>
 
         <div className="azals-filter-bar">
           <div className="azals-filter-bar__search">
             <Search size={16} />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={filters.search || ''}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="azals-input"
-            />
+            <input type="text" placeholder="Rechercher..." value={filters.search || ''} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="azals-input" />
           </div>
-          <select
-            className="azals-select"
-            value={filters.status || ''}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value || undefined })}
-          >
+          <select className="azals-select" value={filters.status || ''} onChange={(e) => setFilters({ ...filters, status: e.target.value || undefined })}>
             <option value="">Tous les statuts</option>
-            {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>{config.label}</option>
-            ))}
+            {Object.entries(STATUS_CONFIG).map(([key, config]) => (<option key={key} value={key}>{config.label}</option>))}
           </select>
         </div>
 
@@ -396,13 +218,7 @@ const FactureListView: React.FC<{
           keyField="id"
           filterable
           isLoading={isLoading}
-          pagination={{
-            page,
-            pageSize,
-            total: data?.total || 0,
-            onPageChange: setPage,
-            onPageSizeChange: setPageSize,
-          }}
+          pagination={{ page, pageSize, total: data?.total || 0, onPageChange: setPage, onPageSizeChange: setPageSize }}
           onRefresh={refetch}
           error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
           onRetry={() => refetch()}
@@ -414,7 +230,7 @@ const FactureListView: React.FC<{
 };
 
 // ============================================================
-// DETAIL VIEW - BaseViewStandard
+// DETAIL VIEW
 // ============================================================
 
 const FactureDetailView: React.FC<{
@@ -429,7 +245,6 @@ const FactureDetailView: React.FC<{
   const sendFacture = useSendFacture();
   const createAvoir = useCreateAvoir();
 
-  // Merge payments into facture data
   const factureWithPayments = useMemo(() => {
     if (!facture) return null;
     return { ...facture, payments: payments || facture.payments };
@@ -438,126 +253,51 @@ const FactureDetailView: React.FC<{
   const isCreditNote = facture?.type === 'CREDIT_NOTE';
   const isFactureOverdue = facture ? isOverdue(facture) : false;
 
-  // Tab definitions
   const tabs: TabDefinition<Facture>[] = useMemo(() => [
-    {
-      id: 'info',
-      label: 'Informations',
-      icon: <FileText size={18} />,
-      component: FactureInfoTab,
-    },
-    {
-      id: 'lines',
-      label: 'Lignes',
-      icon: <Package size={18} />,
-      badge: facture?.lines?.length || 0,
-      component: FactureLinesTab,
-    },
-    {
-      id: 'financial',
-      label: 'Financier',
-      icon: <Euro size={18} />,
-      component: FactureFinancialTab,
-    },
-    {
-      id: 'risk',
-      label: 'Risque Client',
-      icon: <Shield size={18} />,
-      component: FactureRiskTab,
-    },
-    {
-      id: 'documents',
-      label: 'Documents',
-      icon: <FileArchive size={18} />,
-      component: FactureDocsTab,
-    },
-    {
-      id: 'history',
-      label: 'Historique',
-      icon: <History size={18} />,
-      component: FactureHistoryTab,
-    },
-    {
-      id: 'ia',
-      label: 'Assistant IA',
-      icon: <Sparkles size={18} />,
-      isIA: true,
-      component: FactureIATab,
-    },
+    { id: 'info', label: 'Informations', icon: <FileText size={18} />, component: FactureInfoTab },
+    { id: 'lines', label: 'Lignes', icon: <Package size={18} />, badge: facture?.lines?.length || 0, component: FactureLinesTab },
+    { id: 'financial', label: 'Financier', icon: <Euro size={18} />, component: FactureFinancialTab },
+    { id: 'risk', label: 'Risque Client', icon: <Shield size={18} />, component: FactureRiskTab },
+    { id: 'documents', label: 'Documents', icon: <FileArchive size={18} />, component: FactureDocsTab },
+    { id: 'history', label: 'Historique', icon: <History size={18} />, component: FactureHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={18} />, isIA: true, component: FactureIATab },
   ], [facture?.lines?.length]);
 
-  // Status mapping
   const statusConfig = facture ? (STATUS_CONFIG[facture.status] || { label: facture.status, color: 'gray' }) : null;
-  const statusDef: StatusDefinition | undefined = statusConfig ? {
-    label: statusConfig.label,
-    color: statusConfig.color as SemanticColor,
-  } : undefined;
+  const statusDef: StatusDefinition | undefined = statusConfig ? { label: statusConfig.label, color: statusConfig.color as SemanticColor } : undefined;
 
-  // Info bar items (KPIs)
   const infoBarItems: InfoBarItem[] = useMemo(() => {
     if (!facture) return [];
     const daysUntilDue = getDaysUntilDue(facture.due_date);
-
     return [
-      {
-        id: 'type',
-        label: 'Type',
-        value: TYPE_CONFIG[facture.type].label,
-        icon: <FileText size={16} />,
-      },
-      {
-        id: 'date',
-        label: 'Date',
-        value: formatDate(facture.date),
-        icon: <Calendar size={16} />,
-      },
-      {
-        id: 'due',
-        label: 'Échéance',
-        value: facture.due_date ? formatDate(facture.due_date) : 'Non définie',
-        valueColor: isFactureOverdue ? 'negative' : (daysUntilDue !== null && daysUntilDue <= 7 ? 'warning' : undefined),
-        icon: <Clock size={16} />,
-      },
-      {
-        id: 'total',
-        label: 'Total TTC',
-        value: `${isCreditNote ? '-' : ''}${formatCurrency(facture.total, facture.currency)}`,
-        valueColor: isCreditNote ? 'negative' : undefined,
-        icon: <Euro size={16} />,
-      },
+      { id: 'type', label: 'Type', value: TYPE_CONFIG[facture.type].label, icon: <FileText size={16} /> },
+      { id: 'date', label: 'Date', value: formatDate(facture.date), icon: <Calendar size={16} /> },
+      { id: 'due', label: 'Echeance', value: facture.due_date ? formatDate(facture.due_date) : 'Non definie', valueColor: isFactureOverdue ? 'negative' : (daysUntilDue !== null && daysUntilDue <= 7 ? 'warning' : undefined), icon: <Clock size={16} /> },
+      { id: 'total', label: 'Total TTC', value: `${isCreditNote ? '-' : ''}${formatCurrency(facture.total, facture.currency)}`, valueColor: isCreditNote ? 'negative' : undefined, icon: <Euro size={16} /> },
     ];
   }, [facture, isFactureOverdue, isCreditNote]);
 
-  // Sidebar sections
   const sidebarSections: SidebarSection[] = useMemo(() => {
     if (!facture) return [];
     return [
       {
-        id: 'totaux',
-        title: 'Récapitulatif',
+        id: 'totaux', title: 'Recapitulatif',
         items: [
           { id: 'subtotal', label: 'Sous-total HT', value: isCreditNote ? -facture.subtotal : facture.subtotal, format: 'currency' },
-          ...(facture.discount_amount > 0 ? [{
-            id: 'discount',
-            label: `Remise (${facture.discount_percent}%)`,
-            value: -facture.discount_amount,
-            format: 'currency' as const,
-          }] : []),
+          ...(facture.discount_amount > 0 ? [{ id: 'discount', label: `Remise (${facture.discount_percent}%)`, value: -facture.discount_amount, format: 'currency' as const }] : []),
           { id: 'tax', label: 'TVA', value: isCreditNote ? -facture.tax_amount : facture.tax_amount, format: 'currency' },
         ],
         total: { label: 'Total TTC', value: isCreditNote ? -facture.total : facture.total },
       },
       ...(!isCreditNote ? [{
-        id: 'paiement',
-        title: 'Paiement',
+        id: 'paiement', title: 'Paiement',
         items: [
-          { id: 'paid', label: 'Montant payé', value: facture.paid_amount, format: 'currency' as const },
-          { id: 'remaining', label: 'Reste à payer', value: facture.remaining_amount, format: 'currency' as const },
+          { id: 'paid', label: 'Montant paye', value: facture.paid_amount, format: 'currency' as const },
+          { id: 'remaining', label: 'Reste a payer', value: facture.remaining_amount, format: 'currency' as const },
         ],
       }] : []),
       {
-        id: 'client',
-        title: 'Client',
+        id: 'client', title: 'Client',
         items: [
           { id: 'name', label: 'Nom', value: facture.customer_name || '-' },
           { id: 'code', label: 'Code', value: facture.customer_code || '-', secondary: true },
@@ -566,150 +306,48 @@ const FactureDetailView: React.FC<{
     ];
   }, [facture, isCreditNote]);
 
-  // Header actions
   const headerActions: ActionDefinition[] = useMemo(() => {
     if (!facture) return [];
     const actions: ActionDefinition[] = [];
-
     if (facture.status === 'DRAFT') {
-      actions.push({
-        id: 'edit',
-        label: 'Modifier',
-        icon: <Edit size={16} />,
-        variant: 'ghost',
-        onClick: onEdit,
-      });
+      actions.push({ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'ghost', onClick: onEdit });
     }
-
-    actions.push({
-      id: 'pdf',
-      label: 'PDF',
-      icon: <Download size={16} />,
-      variant: 'ghost',
-      onClick: () => { window.open(`/api/commercial/documents/${facture.id}/pdf`, '_blank'); },
-    });
-
-    actions.push({
-      id: 'print',
-      label: 'Imprimer',
-      icon: <Printer size={16} />,
-      variant: 'ghost',
-      onClick: () => { window.print(); },
-    });
-
+    actions.push({ id: 'pdf', label: 'PDF', icon: <Download size={16} />, variant: 'ghost', onClick: () => { window.open(`/api/commercial/documents/${facture.id}/pdf`, '_blank'); } });
+    actions.push({ id: 'print', label: 'Imprimer', icon: <Printer size={16} />, variant: 'ghost', onClick: () => { window.print(); } });
     return actions;
   }, [facture, onEdit]);
 
-  // Primary actions (footer)
   const primaryActions: ActionDefinition[] = useMemo(() => {
     if (!facture) return [];
     const actions: ActionDefinition[] = [];
     const isInvoice = facture.type === 'INVOICE';
-
-    // Encaisser
     if (isInvoice && ['VALIDATED', 'SENT', 'PARTIAL', 'OVERDUE'].includes(facture.status)) {
-      actions.push({
-        id: 'payment',
-        label: 'Encaisser',
-        icon: <CreditCard size={16} />,
-        variant: 'primary',
-        onClick: onAddPayment,
-      });
+      actions.push({ id: 'payment', label: 'Encaisser', icon: <CreditCard size={16} />, variant: 'primary', onClick: onAddPayment });
     }
-
-    // Comptabiliser
     if (facture.status === 'PAID') {
-      actions.push({
-        id: 'comptabiliser',
-        label: 'Comptabiliser',
-        icon: <ChevronRight size={16} />,
-        variant: 'secondary',
-        onClick: () => {
-          window.dispatchEvent(new CustomEvent('azals:navigate', {
-            detail: { view: 'comptabilite', params: { factureId, action: 'comptabiliser' } }
-          }));
-        },
-      });
+      actions.push({ id: 'comptabiliser', label: 'Comptabiliser', icon: <ChevronRight size={16} />, variant: 'secondary', onClick: () => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'comptabilite', params: { factureId, action: 'comptabiliser' } } })); } });
     }
-
-    // Envoyer
     if (facture.status === 'VALIDATED') {
-      actions.push({
-        id: 'send',
-        label: 'Marquer envoyée',
-        icon: <Send size={16} />,
-        variant: 'secondary',
-        loading: sendFacture.isPending,
-        onClick: async () => {
-          if (window.confirm('Marquer comme envoyée ?')) {
-            await sendFacture.mutateAsync(factureId);
-          }
-        },
-      });
+      actions.push({ id: 'send', label: 'Marquer envoyee', icon: <Send size={16} />, variant: 'secondary', loading: sendFacture.isPending, onClick: async () => { if (window.confirm('Marquer comme envoyee ?')) { await sendFacture.mutateAsync(factureId); } } });
     }
-
-    // Valider
     if (facture.status === 'DRAFT') {
-      actions.push({
-        id: 'validate',
-        label: 'Valider',
-        icon: <Check size={16} />,
-        variant: 'primary',
-        loading: validateFacture.isPending,
-        onClick: async () => {
-          if (window.confirm('Valider ce document ?')) {
-            await validateFacture.mutateAsync(factureId);
-          }
-        },
-      });
+      actions.push({ id: 'validate', label: 'Valider', icon: <Check size={16} />, variant: 'primary', loading: validateFacture.isPending, onClick: async () => { if (window.confirm('Valider ce document ?')) { await validateFacture.mutateAsync(factureId); } } });
     }
-
     return actions;
   }, [facture, factureId, validateFacture, sendFacture, onAddPayment]);
 
-  // Secondary actions (footer)
   const secondaryActions: ActionDefinition[] = useMemo(() => {
     if (!facture) return [];
     const actions: ActionDefinition[] = [];
-
-    // Créer avoir
     if (facture.type === 'INVOICE' && facture.status === 'PAID') {
-      actions.push({
-        id: 'avoir',
-        label: 'Créer avoir',
-        icon: <ArrowLeftRight size={16} />,
-        variant: 'ghost',
-        loading: createAvoir.isPending,
-        onClick: async () => {
-          if (window.confirm('Créer un avoir pour cette facture ?')) {
-            const avoir = await createAvoir.mutateAsync(factureId);
-            window.dispatchEvent(new CustomEvent('azals:navigate', {
-              detail: { view: 'factures', params: { id: avoir.id } }
-            }));
-          }
-        },
-      });
+      actions.push({ id: 'avoir', label: 'Creer avoir', icon: <ArrowLeftRight size={16} />, variant: 'ghost', loading: createAvoir.isPending, onClick: async () => { if (window.confirm('Creer un avoir pour cette facture ?')) { const avoir = await createAvoir.mutateAsync(factureId); window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'factures', params: { id: avoir.id } } })); } } });
     }
-
-    actions.push({
-      id: 'back',
-      label: 'Retour à la liste',
-      variant: 'ghost',
-      onClick: onBack,
-    });
-
+    actions.push({ id: 'back', label: 'Retour a la liste', variant: 'ghost', onClick: onBack });
     return actions;
   }, [facture, factureId, createAvoir, onBack]);
 
   if (!facture && !isLoading) {
-    return (
-      <PageWrapper title="Document non trouvé">
-        <Card>
-          <p>Ce document n'existe pas.</p>
-          <Button onClick={onBack}>Retour</Button>
-        </Card>
-      </PageWrapper>
-    );
+    return (<PageWrapper title="Document non trouve"><Card><p>Ce document n'existe pas.</p><Button onClick={onBack}>Retour</Button></Card></PageWrapper>);
   }
 
   return (
@@ -755,17 +393,12 @@ const PaymentFormView: React.FC<{
   });
 
   React.useEffect(() => {
-    if (facture) {
-      setForm(f => ({ ...f, amount: facture.remaining_amount }));
-    }
+    if (facture) { setForm(f => ({ ...f, amount: facture.remaining_amount })); }
   }, [facture]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.amount <= 0) {
-      alert('Le montant doit être supérieur à 0');
-      return;
-    }
+    if (form.amount <= 0) { alert('Le montant doit etre superieur a 0'); return; }
     try {
       await createPayment.mutateAsync({ documentId: factureId, data: form });
       onSaved();
@@ -775,80 +408,40 @@ const PaymentFormView: React.FC<{
   };
 
   return (
-    <PageWrapper
-      title="Enregistrer un paiement"
-      subtitle={facture?.number}
-      backAction={{ label: 'Retour', onClick: onBack }}
-    >
+    <PageWrapper title="Enregistrer un paiement" subtitle={facture?.number} backAction={{ label: 'Retour', onClick: onBack }}>
       <form onSubmit={handleSubmit}>
         <Card>
           {facture && (
             <div className="azals-alert azals-alert--info mb-4">
               <Euro size={20} />
-              <div>
-                <strong>Reste à encaisser</strong>
-                <p>{formatCurrency(facture.remaining_amount)}</p>
-              </div>
+              <div><strong>Reste a encaisser</strong><p>{formatCurrency(facture.remaining_amount)}</p></div>
             </div>
           )}
-
           <Grid cols={2} gap="md">
             <div className="azals-form-field">
               <label>Montant *</label>
-              <input
-                type="number"
-                className="azals-input"
-                value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
-                min="0"
-                step="0.01"
-                required
-              />
+              <input type="number" className="azals-input" value={form.amount} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} min="0" step="0.01" required />
             </div>
             <div className="azals-form-field">
               <label>Date *</label>
-              <input
-                type="date"
-                className="azals-input"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                required
-              />
+              <input type="date" className="azals-input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
             </div>
             <div className="azals-form-field">
               <label>Mode de paiement</label>
-              <select
-                className="azals-select"
-                value={form.method}
-                onChange={(e) => setForm({ ...form, method: e.target.value as PaymentMethod })}
-              >
-                {Object.entries(PAYMENT_METHODS).map(([key, config]) => (
-                  <option key={key} value={key}>{config.label}</option>
-                ))}
+              <select className="azals-select" value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value as PaymentMethod })}>
+                {Object.entries(PAYMENT_METHODS).map(([key, config]) => (<option key={key} value={key}>{config.label}</option>))}
               </select>
             </div>
             <div className="azals-form-field">
-              <label>Référence</label>
-              <input
-                type="text"
-                className="azals-input"
-                value={form.reference}
-                onChange={(e) => setForm({ ...form, reference: e.target.value })}
-                placeholder="N° chèque, virement..."
-              />
+              <label>Reference</label>
+              <input type="text" className="azals-input" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="N cheque, virement..." />
             </div>
             <div className="azals-form-field" style={{ gridColumn: 'span 2' }}>
               <label>Notes</label>
-              <textarea
-                className="azals-textarea"
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                rows={2}
-              />
+              <textarea className="azals-textarea" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
             </div>
           </Grid>
         </Card>
-
         <div className="azals-form-actions">
           <Button type="button" variant="ghost" onClick={onBack}>Annuler</Button>
           <Button type="submit" isLoading={createPayment.isPending}>Enregistrer le paiement</Button>
@@ -865,7 +458,6 @@ const PaymentFormView: React.FC<{
 export const FacturesModule: React.FC = () => {
   const [navState, setNavState] = useState<FactureNavState>({ view: 'list' });
 
-  // Écouter les événements de navigation
   React.useEffect(() => {
     const handleNavigate = (event: CustomEvent) => {
       const { params } = event.detail || {};
@@ -881,36 +473,16 @@ export const FacturesModule: React.FC = () => {
 
   const navigateToList = useCallback(() => setNavState({ view: 'list' }), []);
   const navigateToDetail = useCallback((id: string) => setNavState({ view: 'detail', factureId: id }), []);
-  const navigateToForm = useCallback((type: FactureType, id?: string) =>
-    setNavState({ view: 'form', factureId: id, factureType: type, isNew: !id }), []);
-  const navigateToPayment = useCallback((factureId: string) =>
-    setNavState({ view: 'payment', factureId }), []);
+  const navigateToForm = useCallback((type: FactureType, id?: string) => setNavState({ view: 'form', factureId: id, factureType: type, isNew: !id }), []);
+  const navigateToPayment = useCallback((factureId: string) => setNavState({ view: 'payment', factureId }), []);
 
   switch (navState.view) {
     case 'detail':
-      return (
-        <FactureDetailView
-          factureId={navState.factureId!}
-          onBack={navigateToList}
-          onEdit={() => navigateToForm(navState.factureType || 'INVOICE', navState.factureId)}
-          onAddPayment={() => navigateToPayment(navState.factureId!)}
-        />
-      );
+      return <FactureDetailView factureId={navState.factureId!} onBack={navigateToList} onEdit={() => navigateToForm(navState.factureType || 'INVOICE', navState.factureId)} onAddPayment={() => navigateToPayment(navState.factureId!)} />;
     case 'payment':
-      return (
-        <PaymentFormView
-          factureId={navState.factureId!}
-          onBack={() => navigateToDetail(navState.factureId!)}
-          onSaved={() => navigateToDetail(navState.factureId!)}
-        />
-      );
+      return <PaymentFormView factureId={navState.factureId!} onBack={() => navigateToDetail(navState.factureId!)} onSaved={() => navigateToDetail(navState.factureId!)} />;
     default:
-      return (
-        <FactureListView
-          onSelectFacture={navigateToDetail}
-          onCreateFacture={navigateToForm}
-        />
-      );
+      return <FactureListView onSelectFacture={navigateToDetail} onCreateFacture={navigateToForm} />;
   }
 };
 

@@ -21,7 +21,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, get_db_for_platform_operation, set_rls_context
 from app.core.logging_config import get_correlation_id, get_logger
 
 # Import des fonctions SAFE de gestion des erreurs
@@ -51,7 +51,9 @@ def _check_tables_exist() -> bool:
         return _tables_exist
 
     try:
-        db = SessionLocal()
+        # P0 SÉCURITÉ: Utiliser get_db_for_platform_operation pour la vérification startup
+        # car c'est une opération plateforme sans contexte tenant spécifique
+        db = get_db_for_platform_operation(caller="guardian.middleware._check_tables_exist")
         try:
             # Tenter une requête simple
             db.query(GuardianConfig).limit(1).all()
@@ -191,7 +193,9 @@ class GuardianMiddleware(BaseHTTPMiddleware):
             return
 
         try:
+            # P0 SÉCURITÉ: Utiliser SessionLocal avec RLS context pour isolation tenant
             db = SessionLocal()
+            set_rls_context(db, tenant_id)
             try:
                 # Vérifier si le système est activé pour ce tenant
                 config = db.query(GuardianConfig).filter(
@@ -258,7 +262,9 @@ class GuardianMiddleware(BaseHTTPMiddleware):
             return
 
         try:
+            # P0 SÉCURITÉ: Utiliser SessionLocal avec RLS context pour isolation tenant
             db = SessionLocal()
+            set_rls_context(db, tenant_id)
             try:
                 # Vérifier si le système est activé
                 config = db.query(GuardianConfig).filter(

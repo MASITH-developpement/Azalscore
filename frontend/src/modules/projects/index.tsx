@@ -4,13 +4,11 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Folder, ClipboardList, CheckCircle, RefreshCw, Clock, BarChart3,
   DollarSign, ArrowLeft, Edit, Printer,
   Sparkles, FileText, CheckSquare
 } from 'lucide-react';
-import { api } from '@core/api-client';
 import { Button, Modal } from '@ui/actions';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
@@ -43,9 +41,16 @@ import {
   getTotalLoggedHours, isProjectOverdue, isProjectNearDeadline,
   isBudgetOverrun
 } from './types';
-import type { Project, Task, TimeEntry, ProjectStats } from './types';
-
-// Composants tabs
+import type { Project, Task, TimeEntry } from './types';
+import {
+  useProjectsGlobalStats,
+  useSimpleProjectsList,
+  useSimpleProject,
+  useAllTasks,
+  useAllTimeEntries,
+  useUpdateTaskStatusQuick,
+  useLogTimeGlobal
+} from './hooks';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -76,119 +81,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useProjectStats = () => {
-  return useQuery({
-    queryKey: ['projects', 'stats'],
-    queryFn: async () => {
-      const response = await api.get<ProjectStats>('/projects/summary').then(r => r.data);
-      return response;
-    }
-  });
-};
-
-const useProjects = (filters?: { status?: string; client_id?: string }) => {
-  // Query key avec valeurs primitives (évite cache miss sur référence objet)
-  return useQuery({
-    queryKey: ['projects', 'list', filters?.status ?? null, filters?.client_id ?? null],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.client_id) params.append('client_id', filters.client_id);
-      const queryString = params.toString();
-      const url = queryString ? `/projects?${queryString}` : '/projects';
-      const response = await api.get<{ items: Project[] }>(url).then(r => r.data);
-      return response?.items || [];
-    }
-  });
-};
-
-const useProject = (id: string) => {
-  return useQuery({
-    queryKey: ['projects', 'detail', id],
-    queryFn: async () => {
-      const response = await api.get<Project>(`/projects/${id}`).then(r => r.data);
-      return response;
-    },
-    enabled: !!id
-  });
-};
-
-const useTasks = (filters?: { status?: string; project_id?: string; assignee_id?: string }) => {
-  // Query key avec valeurs primitives (évite cache miss sur référence objet)
-  return useQuery({
-    queryKey: ['projects', 'tasks', filters?.status ?? null, filters?.project_id ?? null, filters?.assignee_id ?? null],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.project_id) params.append('project_id', filters.project_id);
-      if (filters?.assignee_id) params.append('assignee_id', filters.assignee_id);
-      const queryString = params.toString();
-      const url = queryString ? `/projects/tasks?${queryString}` : '/projects/tasks';
-      const response = await api.get<{ items: Task[] }>(url).then(r => r.data);
-      return response?.items || [];
-    }
-  });
-};
-
-const useTimeEntries = (filters?: { project_id?: string; date_from?: string; date_to?: string }) => {
-  // Query key avec valeurs primitives (évite cache miss sur référence objet)
-  return useQuery({
-    queryKey: ['projects', 'time-entries', filters?.project_id ?? null, filters?.date_from ?? null, filters?.date_to ?? null],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.project_id) params.append('project_id', filters.project_id);
-      if (filters?.date_from) params.append('date_from', filters.date_from);
-      if (filters?.date_to) params.append('date_to', filters.date_to);
-      const queryString = params.toString();
-      const url = queryString ? `/projects/time-entries?${queryString}` : '/projects/time-entries';
-      const response = await api.get<TimeEntry[]>(url).then(r => r.data);
-      return response;
-    }
-  });
-};
-
-const _useCreateProject = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<Project>) => {
-      return api.post<Project>('/projects', data).then(r => r.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-    }
-  });
-};
-
-const useUpdateTaskStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch<Task>(`/projects/tasks/${id}/status`, { status }).then(r => r.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects', 'tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['projects', 'stats'] });
-    }
-  });
-};
-
-const useLogTime = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: { project_id: string; task_id?: string; date: string; hours: number; description?: string; is_billable?: boolean }) => {
-      return api.post<TimeEntry>('/projects/time-entries', data).then(r => r.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects', 'time-entries'] });
-      queryClient.invalidateQueries({ queryKey: ['projects', 'stats'] });
-    }
-  });
-};
-
-// ============================================================================
 // PROJECT DETAIL VIEW (BaseViewStandard)
 // ============================================================================
 
@@ -199,7 +91,7 @@ interface ProjectDetailViewProps {
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack, onEdit }) => {
-  const { data: project, isLoading, error, refetch } = useProject(projectId);
+  const { data: project, isLoading, error, refetch } = useSimpleProject(projectId);
 
   if (isLoading) {
     return <LoadingState onRetry={() => refetch()} message="Chargement du projet..." />;
@@ -412,7 +304,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack
 
 const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({ onSelectProject }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: projects = [], isLoading, error, refetch } = useProjects({
+  const { data: projects = [], isLoading, error, refetch } = useSimpleProjectsList({
     status: filterStatus || undefined
   });
 
@@ -506,12 +398,12 @@ const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({
 const TasksView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterProject, setFilterProject] = useState<string>('');
-  const { data: tasks = [], isLoading, error, refetch } = useTasks({
+  const { data: tasks = [], isLoading, error, refetch } = useAllTasks({
     status: filterStatus || undefined,
     project_id: filterProject || undefined
   });
-  const { data: projects = [] } = useProjects();
-  const updateStatus = useUpdateTaskStatus();
+  const { data: projects = [] } = useSimpleProjectsList();
+  const updateStatus = useUpdateTaskStatusQuick();
 
   const TASK_STATUS = [
     { value: 'TODO', label: 'A faire' },
@@ -608,11 +500,11 @@ const TimesheetView: React.FC = () => {
   const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [formHours, setFormHours] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
-  const { data: timeEntries = [], isLoading, error: timeError, refetch: timeRefetch } = useTimeEntries({
+  const { data: timeEntries = [], isLoading, error: timeError, refetch: timeRefetch } = useAllTimeEntries({
     project_id: filterProject || undefined
   });
-  const { data: projects = [] } = useProjects();
-  const logTime = useLogTime();
+  const { data: projects = [] } = useSimpleProjectsList();
+  const logTime = useLogTimeGlobal();
 
   const columns: TableColumn<TimeEntry>[] = [
     { id: 'date', header: 'Date', accessor: 'date', render: (v) => formatDate(v as string) },
@@ -743,7 +635,7 @@ type View = 'dashboard' | 'projects' | 'tasks' | 'timesheet' | 'detail';
 const ProjectsModule: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const { data: stats } = useProjectStats();
+  const { data: stats } = useProjectsGlobalStats();
 
   const tabs = [
     { id: 'dashboard', label: 'Vue d\'ensemble' },

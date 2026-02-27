@@ -191,6 +191,7 @@ class RateLimiter:
         try:
             from app.core.config import get_settings
             settings = get_settings()
+            is_production = settings.is_production
 
             # Essayer Redis si configuré
             redis_url = getattr(settings, 'redis_url', None)
@@ -199,18 +200,44 @@ class RateLimiter:
                     import redis
                     client = redis.from_url(redis_url, decode_responses=True)
                     client.ping()  # Test connection
+                    logger.info("[RATE_LIMITER] Redis backend connected successfully")
                     return RedisRateLimiterBackend(client)
                 except ImportError:
-                    logger.warning(
+                    error_msg = (
                         "[RATE_LIMITER] redis package not installed. "
                         "pip install redis for production."
                     )
+                    if is_production:
+                        # P2 SÉCURITÉ: Erreur critique en production
+                        logger.critical(error_msg)
+                        raise RuntimeError(error_msg)
+                    logger.warning(error_msg)
                 except Exception as e:
-                    logger.warning("[RATE_LIMITER] Redis connection failed: %s", e)
+                    error_msg = f"[RATE_LIMITER] Redis connection failed: {e}"
+                    if is_production:
+                        # P2 SÉCURITÉ: Erreur critique en production
+                        logger.critical(error_msg)
+                        raise RuntimeError(error_msg)
+                    logger.warning(error_msg)
+            elif is_production:
+                # P2 SÉCURITÉ: Redis obligatoire en production
+                error_msg = (
+                    "[RATE_LIMITER] REDIS_URL not configured. "
+                    "Redis is REQUIRED in production for distributed rate limiting."
+                )
+                logger.critical(error_msg)
+                raise RuntimeError(error_msg)
+
+        except RuntimeError:
+            raise  # Re-raise production errors
         except Exception as e:
             logger.warning("[RATE_LIMITER] Settings load failed: %s", e)
 
-        # Fallback to memory
+        # Fallback to memory (development only)
+        logger.warning(
+            "[RATE_LIMITER] Using in-memory fallback. "
+            "This is acceptable for development but NOT for production."
+        )
         return MemoryRateLimiterBackend()
 
     def check_rate(
@@ -346,8 +373,12 @@ class AuthRateLimiter:
                 headers={"Retry-After": "60"}
             )
 
+        # P1 SÉCURITÉ: Normalisation email (lowercase) pour éviter contournement
+        # Exemple: Admin@Test.com et admin@test.com = même compte
+        normalized_email = email.lower().strip()
+
         # Vérification par email (3x plus permissif)
-        allowed, count = self._limiter.check_rate("login:email", email, limit * 3, 60)
+        allowed, count = self._limiter.check_rate("login:email", normalized_email, limit * 3, 60)
         if not allowed:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -366,13 +397,16 @@ class AuthRateLimiter:
 
     def record_login_attempt(self, ip: str, email: str, success: bool) -> None:
         """Enregistre une tentative de login."""
+        # P1 SÉCURITÉ: Normalisation email cohérente avec check_login_rate
+        normalized_email = email.lower().strip()
+
         self._limiter.record_attempt("login:ip", ip, 60)
-        self._limiter.record_attempt("login:email", email, 60)
+        self._limiter.record_attempt("login:email", normalized_email, 60)
 
         if success:
-            self._limiter.reset_failures("login", email)
+            self._limiter.reset_failures("login", normalized_email)
         else:
-            self._limiter.record_failure("login", email, 900)
+            self._limiter.record_failure("login", normalized_email, 900)
 
     def check_register_rate(self, ip: str) -> None:
         """
@@ -395,6 +429,52 @@ class AuthRateLimiter:
     def record_register_attempt(self, ip: str) -> None:
         """Enregistre une tentative d'inscription."""
         self._limiter.record_attempt("register", ip, 300)
+
+    def check_bootstrap_rate(self, ip: str) -> None:
+        """
+        Vérifie le rate limit pour bootstrap.
+        P0 SÉCURITÉ: Très strict - 3 tentatives par heure par IP.
+
+        Raises:
+            HTTPException 429 si limit atteinte
+        """
+        from fastapi import HTTPException, status
+
+        # Max 3 bootstrap par heure par IP (protection brute force du secret)
+        allowed, count = self._limiter.check_rate("bootstrap", ip, 3, 3600)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many bootstrap attempts. Wait 1 hour.",
+                headers={"Retry-After": "3600"}
+            )
+
+    def record_bootstrap_attempt(self, ip: str) -> None:
+        """Enregistre une tentative de bootstrap."""
+        self._limiter.record_attempt("bootstrap", ip, 3600)
+
+    def check_refresh_rate(self, ip: str) -> None:
+        """
+        Vérifie le rate limit pour refresh token.
+        P1 SÉCURITÉ: Limiter les abus de refresh token.
+
+        Raises:
+            HTTPException 429 si limit atteinte
+        """
+        from fastapi import HTTPException, status
+
+        # Max 30 refresh par minute par IP (normal usage ~1-2 per 30 min)
+        allowed, count = self._limiter.check_rate("refresh", ip, 30, 60)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many refresh attempts. Wait 60 seconds.",
+                headers={"Retry-After": "60"}
+            )
+
+    def record_refresh_attempt(self, ip: str) -> None:
+        """Enregistre une tentative de refresh."""
+        self._limiter.record_attempt("refresh", ip, 60)
 
 
 # Instance pour rétrocompatibilité avec auth.py
@@ -509,16 +589,73 @@ class PlatformRateLimitMiddleware:
         await self.app(scope, receive, send)
 
     def _get_client_ip(self, request: "Request") -> str:
-        """Extrait l'IP client de manière sécurisée."""
+        """
+        Extrait l'IP client de manière sécurisée.
+
+        P1 SÉCURITÉ: X-Forwarded-For n'est accepté QUE si la connexion
+        vient d'un proxy de confiance (TRUSTED_PROXIES).
+        """
+        import os
+        import ipaddress
+
+        # Récupérer l'IP de connexion directe
+        direct_ip = request.client.host if request.client else "unknown"
+
+        # Liste des proxies de confiance (ex: "127.0.0.1,10.0.0.0/8")
+        trusted_proxies_str = os.getenv("TRUSTED_PROXIES", "127.0.0.1,::1")
+        trusted_proxies = [p.strip() for p in trusted_proxies_str.split(",") if p.strip()]
+
+        # Vérifier si la connexion directe vient d'un proxy de confiance
+        is_trusted = False
+        try:
+            client_addr = ipaddress.ip_address(direct_ip)
+            for proxy in trusted_proxies:
+                try:
+                    if "/" in proxy:
+                        # Réseau CIDR
+                        if client_addr in ipaddress.ip_network(proxy, strict=False):
+                            is_trusted = True
+                            break
+                    else:
+                        # IP unique
+                        if client_addr == ipaddress.ip_address(proxy):
+                            is_trusted = True
+                            break
+                except ValueError:
+                    continue
+        except ValueError:
+            pass
+
+        # Si pas de proxy de confiance, utiliser l'IP directe
+        if not is_trusted:
+            return direct_ip
+
+        # Proxy de confiance: on peut lire X-Forwarded-For
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
-            return forwarded.split(",")[0].strip()
+            # Prendre la première IP (client original)
+            client_ip = forwarded.split(",")[0].strip()
+            try:
+                # Valider le format IP
+                ipaddress.ip_address(client_ip)
+                return client_ip
+            except ValueError:
+                logger.warning(
+                    "[RATE_LIMIT] X-Forwarded-For invalide: %s",
+                    client_ip[:50]
+                )
+                return direct_ip
+
+        # Fallback X-Real-IP
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
-            return real_ip
-        if request.client:
-            return request.client.host
-        return "unknown"
+            try:
+                ipaddress.ip_address(real_ip)
+                return real_ip
+            except ValueError:
+                return direct_ip
+
+        return direct_ip
 
 
 def setup_platform_rate_limiting(

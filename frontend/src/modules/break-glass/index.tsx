@@ -18,7 +18,6 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Shield, Clock, Key, ArrowLeft, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { trackBreakGlassEvent } from '@core/audit-ui';
@@ -26,13 +25,19 @@ import { useCanBreakGlass } from '@core/capabilities';
 import { Button } from '@ui/actions';
 import { PageWrapper } from '@ui/layout';
 import {
-  breakGlassApi,
   type BreakGlassScope,
   type BreakGlassChallenge,
   type BreakGlassRequest,
   type TenantOption,
   type ModuleOption,
 } from './api';
+import {
+  breakGlassKeys,
+  useBreakGlassChallenge,
+  useExecuteBreakGlass,
+  useTenantsList,
+  useModulesList,
+} from './hooks';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 
 // ============================================================
@@ -40,47 +45,6 @@ import { ErrorState } from '../../ui-engine/components/StateViews';
 // ============================================================
 
 type BreakGlassStep = 'intention' | 'confirmation' | 'authentication' | 'executing' | 'complete';
-
-// ============================================================
-// API HOOKS
-// ============================================================
-
-const useBreakGlassChallenge = () => {
-  return useMutation({
-    mutationFn: async (scope: BreakGlassScope) => {
-      const response = await breakGlassApi.requestChallenge(scope);
-      return response.data;
-    },
-  });
-};
-
-const useExecuteBreakGlass = () => {
-  return useMutation({
-    mutationFn: async (request: BreakGlassRequest) => {
-      await breakGlassApi.execute(request);
-    },
-  });
-};
-
-const useTenantsList = () => {
-  return useQuery({
-    queryKey: ['break-glass', 'tenants'],
-    queryFn: async () => {
-      const response = await breakGlassApi.listTenants();
-      return response.data.items;
-    },
-  });
-};
-
-const useModulesList = () => {
-  return useQuery({
-    queryKey: ['break-glass', 'modules'],
-    queryFn: async () => {
-      const response = await breakGlassApi.listModules();
-      return response.data.items;
-    },
-  });
-};
 
 // ============================================================
 // LEVEL 1: INTENTION EXPLICITE
@@ -643,3 +607,12 @@ export const BreakGlassPage: React.FC = () => {
 };
 
 export default BreakGlassPage;
+
+// Re-export hooks for external use
+export {
+  breakGlassKeys,
+  useBreakGlassChallenge,
+  useExecuteBreakGlass,
+  useTenantsList,
+  useModulesList,
+} from './hooks';

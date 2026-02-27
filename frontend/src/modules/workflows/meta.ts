@@ -3,9 +3,9 @@
  * Metadonnees du module BPM/Workflows
  */
 
-import type { ModuleMeta } from '@/core/types';
 
-export const workflowsMeta: ModuleMeta = {
+
+export const workflowsMeta = {
   id: 'workflows',
   name: 'Workflows (BPM)',
   description: 'Gestion des processus metier - Workflows, approbations, automatisation',

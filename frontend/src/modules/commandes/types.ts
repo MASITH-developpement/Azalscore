@@ -64,6 +64,8 @@ export interface Commande {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  attachments?: CommandeDocument[];
+  affaire_id?: string;
 }
 
 export interface Address {

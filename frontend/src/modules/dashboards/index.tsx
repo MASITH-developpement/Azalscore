@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * AZALSCORE Module - Dashboards
  * Interface principale du module de tableaux de bord

@@ -20,37 +20,48 @@ Intégrations AZALS:
 - M8 Maintenance (équipements)
 - M16 Helpdesk (tickets)
 
-Note: Les modèles SQLAlchemy doivent être importés directement depuis
-app.modules.field_service.models pour éviter les conflits de registry.
+Note: Module currently disabled - files have .disabled extension.
 """
 
-from .router_crud import router
-from .service import FieldServiceService
-from .route_optimization import (
-    RouteOptimizationService,
-    TSPSolver,
-    VRPSolver,
-    OptimizationAlgorithm,
-    Location,
-    VehicleConstraints,
-    OptimizedRoute,
-    VRPSolution,
-    haversine_distance,
-    calculate_travel_time,
-)
+__all__ = []
 
-__all__ = [
-    "FieldServiceService",
-    "router",
-    # Route Optimization (GAP-002)
-    "RouteOptimizationService",
-    "TSPSolver",
-    "VRPSolver",
-    "OptimizationAlgorithm",
-    "Location",
-    "VehicleConstraints",
-    "OptimizedRoute",
-    "VRPSolution",
-    "haversine_distance",
-    "calculate_travel_time",
-]
+# Module is currently disabled - imports are optional
+try:
+    from .router_crud import router
+    __all__.append("router")
+except ImportError:
+    router = None
+
+try:
+    from .service import FieldServiceService
+    __all__.append("FieldServiceService")
+except ImportError:
+    FieldServiceService = None
+
+try:
+    from .route_optimization import (
+        RouteOptimizationService,
+        TSPSolver,
+        VRPSolver,
+        OptimizationAlgorithm,
+        Location,
+        VehicleConstraints,
+        OptimizedRoute,
+        VRPSolution,
+        haversine_distance,
+        calculate_travel_time,
+    )
+    __all__.extend([
+        "RouteOptimizationService",
+        "TSPSolver",
+        "VRPSolver",
+        "OptimizationAlgorithm",
+        "Location",
+        "VehicleConstraints",
+        "OptimizedRoute",
+        "VRPSolution",
+        "haversine_distance",
+        "calculate_travel_time",
+    ])
+except ImportError:
+    pass

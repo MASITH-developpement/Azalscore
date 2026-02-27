@@ -20,7 +20,7 @@ from sqlalchemy import (
     Boolean, Column, Date, DateTime, Enum as SQLEnum, ForeignKey,
     Integer, JSON, Numeric, String, Text, UniqueConstraint, Index
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from app.core.types import ARRAY
 from sqlalchemy.orm import relationship
 
 from app.db import Base

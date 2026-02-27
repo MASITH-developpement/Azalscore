@@ -12,8 +12,20 @@ from unittest.mock import MagicMock, Mock
 from uuid import UUID, uuid4
 
 import pytest
+from unittest.mock import patch
 
 from app.core.saas_context import SaaSContext, TenantScope, UserRole
+
+
+# ============================================================================
+# AUTO-USE FIXTURES
+# ============================================================================
+
+@pytest.fixture(autouse=True)
+def mock_tesseract():
+    """Mock TesseractEngine to avoid pytesseract dependency."""
+    with patch("app.modules.automated_accounting.services.ocr_service.TesseractEngine._check_tesseract", return_value=False):
+        yield
 
 
 # ============================================================================

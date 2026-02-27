@@ -43,11 +43,21 @@ if settings.database_url.startswith('sqlite://'):
         echo=False
     )
 else:
+    # P0 SÉCURITÉ: Protection contre DoS par épuisement du pool
+    # - pool_timeout: délai max d'attente d'une connexion (évite blocage infini)
+    # - pool_recycle: recycle les connexions anciennes (évite connexions zombies)
+    # - connect_args timeout: limite le temps de connexion initial
     engine = create_engine(
         settings.database_url,
         pool_pre_ping=True,
         pool_size=settings.db_pool_size,
         max_overflow=settings.db_max_overflow,
+        pool_timeout=30,  # P0: Max 30s d'attente pour une connexion
+        pool_recycle=3600,  # P0: Recycle connexions après 1h
+        connect_args={
+            "connect_timeout": 10,  # P0: Max 10s pour établir connexion
+            "options": "-c statement_timeout=30000"  # P0: Max 30s par requête
+        },
         echo=False  # PRODUCTION: pas de log SQL verbeux
     )
 
@@ -169,6 +179,92 @@ def set_rls_context(db, tenant_id: str) -> None:
             {"tenant_id": tenant_id}
         )
         logger.debug("[RLS] Tenant context set on existing session: %s", tenant_id)
+
+
+def get_db_for_scheduler(tenant_id: str):
+    """
+    P0 SÉCURITÉ: Crée une session DB pour les tâches planifiées avec contexte RLS.
+
+    IMPORTANT: Les schedulers/background tasks DOIVENT utiliser cette fonction
+    au lieu de SessionLocal() directement pour garantir l'isolation multi-tenant.
+
+    P0 CRITIQUE: tenant_id est OBLIGATOIRE pour éviter tout accès cross-tenant.
+    Pour les opérations plateforme (lister tous les tenants), utiliser
+    get_db_for_platform_operation() à la place.
+
+    Usage:
+        db = get_db_for_scheduler(tenant_id)
+        try:
+            # ... opérations DB isolées par tenant
+        finally:
+            db.close()
+
+    Args:
+        tenant_id: ID du tenant pour le contexte RLS (OBLIGATOIRE)
+
+    Returns:
+        Session SQLAlchemy avec contexte RLS
+
+    Raises:
+        ValueError: Si tenant_id est None ou vide
+    """
+    # P0 SÉCURITÉ: tenant_id OBLIGATOIRE - jamais de session sans contexte RLS
+    if not tenant_id or not tenant_id.strip():
+        raise ValueError(
+            "[RLS_CRITICAL] tenant_id est OBLIGATOIRE pour get_db_for_scheduler(). "
+            "Pour les opérations plateforme, utiliser get_db_for_platform_operation()."
+        )
+
+    db = SessionLocal()
+    set_rls_context(db, tenant_id)
+    logger.debug("[RLS] Scheduler session with RLS context: %s", tenant_id)
+    return db
+
+
+def get_db_for_platform_operation(caller: str = "unknown"):
+    """
+    P0 SÉCURITÉ: Session DB pour opérations plateforme UNIQUEMENT.
+
+    ATTENTION: Cette fonction crée une session SANS contexte RLS.
+    À utiliser UNIQUEMENT pour:
+    - Lister tous les tenants (opération plateforme)
+    - Migrations/maintenance système
+    - Opérations SUPERADMIN explicites
+    - Schedulers pour requêtes cross-tenant initiales
+
+    JAMAIS pour des opérations sur des données tenant-specific.
+
+    P1 SÉCURITÉ: Le paramètre caller permet de tracer l'origine des appels.
+
+    Usage:
+        db = get_db_for_platform_operation(caller="scheduler.reset_red_alerts")
+        try:
+            tenants = db.query(Tenant).all()  # OK - opération plateforme
+        finally:
+            db.close()
+
+    Args:
+        caller: Identifiant du code appelant pour audit
+
+    Returns:
+        Session SQLAlchemy SANS contexte RLS
+    """
+    import inspect
+    # P1 SÉCURITÉ: Détecter automatiquement l'appelant si non fourni
+    if caller == "unknown":
+        frame = inspect.currentframe()
+        if frame and frame.f_back:
+            caller = f"{frame.f_back.f_code.co_filename}:{frame.f_back.f_lineno}"
+
+    logger.warning(
+        "[RLS_PLATFORM] Session sans RLS créée - opération plateforme uniquement",
+        extra={
+            "caller": caller,
+            "consequence": "no_tenant_isolation",
+            "action_required": "verify_platform_scope_only"
+        }
+    )
+    return SessionLocal()
 
 
 def check_database_connection() -> bool:

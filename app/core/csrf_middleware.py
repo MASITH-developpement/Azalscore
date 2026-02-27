@@ -31,8 +31,10 @@ from starlette.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
-# Durée de validité du token CSRF (1 heure)
-CSRF_TOKEN_EXPIRY = 3600
+# P2 SÉCURITÉ: Durée de validité du token CSRF
+# Augmenté à 24 heures pour supporter les workflows longs (ex: formulaires complexes)
+# Rotation automatique: un nouveau token est généré après chaque validation réussie
+CSRF_TOKEN_EXPIRY = 86400  # 24 heures
 
 # Méthodes HTTP qui modifient les données (nécessitent CSRF)
 UNSAFE_METHODS = {"POST", "PUT", "DELETE", "PATCH"}
@@ -79,6 +81,15 @@ CSRF_EXEMPT_PATHS = {
     "/admin/social-networks/",
     "/v1/admin/social-networks/",
     "/api/v1/admin/social-networks/",
+    # Trial registration (public endpoint, protected by reCAPTCHA)
+    "/api/v2/public/trial",
+    "/v2/public/trial",
+    "/public/trial",
+    # Signup endpoints (public registration, protected by email verification)
+    "/signup/",
+    "/signup",
+    "/api/signup/",
+    "/api/signup",
 }
 
 
@@ -228,15 +239,30 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         # Référence: OWASP - "CSRF tokens are not needed for APIs that use bearer tokens"
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            # Validation supplémentaire: vérifier que le token a un format valide
+            # P0 SÉCURITÉ: Validation stricte du format JWT avec vérification base64url
             token_parts = auth_header.split(" ", 1)
-            if len(token_parts) == 2 and len(token_parts[1]) > 20:
-                # Token présent et de longueur minimale (JWT = ~100+ chars)
-                return await call_next(request)
+            if len(token_parts) == 2:
+                token = token_parts[1]
+                jwt_parts = token.split(".")
+                # JWT valide = 3 parties (header.payload.signature)
+                # Chaque partie doit être non-vide et base64url-safe
+                if (
+                    len(jwt_parts) == 3
+                    and all(len(part) > 0 for part in jwt_parts)
+                    and len(token) >= 100  # JWT minimal ~100 chars
+                    and len(token) <= 8192  # P0: Max 8KB pour éviter DoS
+                    and self._is_valid_base64url(jwt_parts)  # P0: Valider encodage
+                ):
+                    return await call_next(request)
+                else:
+                    # Token malformé - ne pas bypasser CSRF
+                    logger.warning(
+                        "[CSRF] Bearer token malformé détecté (format JWT invalide)",
+                        extra={"path": path, "method": request.method}
+                    )
             else:
-                # Token malformé - ne pas bypasser CSRF
                 logger.warning(
-                    "[CSRF] Bearer token malformé détecté",
+                    "[CSRF] Bearer header malformé",
                     extra={"path": path, "method": request.method}
                 )
 
@@ -279,6 +305,29 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return token
 
         return None
+
+    @staticmethod
+    def _is_valid_base64url(jwt_parts: list[str]) -> bool:
+        """
+        P0 SÉCURITÉ: Vérifie que chaque partie du JWT est en base64url valide.
+
+        Base64url utilise: A-Z, a-z, 0-9, -, _ (sans padding =)
+
+        Args:
+            jwt_parts: Liste des 3 parties du JWT
+
+        Returns:
+            True si toutes les parties sont base64url valides
+        """
+        import re
+        # Pattern base64url: lettres, chiffres, - et _ uniquement
+        # Le padding (=) est optionnel à la fin
+        base64url_pattern = re.compile(r'^[A-Za-z0-9_-]+={0,2}$')
+
+        for part in jwt_parts:
+            if not base64url_pattern.match(part):
+                return False
+        return True
 
 
 def setup_csrf_middleware(app, enforce: bool = True):

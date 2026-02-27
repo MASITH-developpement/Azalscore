@@ -106,7 +106,8 @@ class TestModels:
             tenant_id="test",
             slug="test-page",
             title="Page Test",
-            page_type=PageType.LANDING
+            page_type=PageType.LANDING,
+            status=PublishStatus.DRAFT
         )
         assert page.tenant_id == "test"
         assert page.slug == "test-page"
@@ -119,7 +120,8 @@ class TestModels:
             tenant_id="test",
             slug="test-article",
             title="Article Test",
-            content_type=ContentType.ARTICLE
+            content_type=ContentType.ARTICLE,
+            view_count=0
         )
         assert post.slug == "test-article"
         assert post.content_type == ContentType.ARTICLE
@@ -141,7 +143,8 @@ class TestModels:
         submission = ContactSubmission(
             tenant_id="test",
             form_category=FormCategory.CONTACT,
-            email="test@example.com"
+            email="test@example.com",
+            status=SubmissionStatus.NEW
         )
         assert submission.email == "test@example.com"
         assert submission.status == SubmissionStatus.NEW
@@ -151,7 +154,8 @@ class TestModels:
         subscriber = NewsletterSubscriber(
             tenant_id="test",
             email="newsletter@example.com",
-            frequency="weekly"
+            frequency="weekly",
+            is_active=True
         )
         assert subscriber.email == "newsletter@example.com"
         assert subscriber.is_active == True

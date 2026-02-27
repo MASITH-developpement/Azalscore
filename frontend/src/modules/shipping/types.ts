@@ -142,6 +142,9 @@ export interface Carrier {
   tracking_url_template?: string;
   is_active: boolean;
   created_at: string;
+  // API integration flags
+  api_integration?: boolean;
+  tracking_integration?: boolean;
 }
 
 export interface CarrierCreate {
@@ -216,6 +219,14 @@ export interface ShippingRate {
   valid_until?: string;
   is_active: boolean;
   created_at: string;
+  // Display fields (derived from relations)
+  carrier_name?: string;
+  zone_name?: string;
+  // Alias for display
+  base_price?: number | string;
+  price_per_kg?: number | string;
+  estimated_days_min?: number;
+  estimated_days_max?: number;
 }
 
 export interface WeightTier {
@@ -338,7 +349,9 @@ export interface Shipment {
   total_packages: number;
   total_weight: number | string;
   master_tracking_number?: string;
+  tracking_number?: string;
   tracking_url?: string;
+  label_url?: string;
   shipping_cost: number | string;
   insurance_cost: number | string;
   surcharges: number | string;
@@ -362,6 +375,9 @@ export interface Shipment {
   last_event_at?: string;
   notes?: string;
   created_at: string;
+  // Convenience fields (derived from ship_to)
+  recipient_name?: string;
+  recipient_city?: string;
 }
 
 export interface ShipmentCreate {
@@ -432,6 +448,10 @@ export interface PickupPoint {
   longitude?: number | string;
   is_active: boolean;
   created_at: string;
+  // Derived/display fields
+  carrier_name?: string;
+  city?: string;
+  postal_code?: string;
 }
 
 export interface PickupPointCreate {
@@ -582,6 +602,10 @@ export interface ShippingStats {
   shipments_by_method: Record<string, number>;
   total_returns: number;
   return_rate: number;
+  // Dashboard stats
+  in_transit?: number;
+  delivered_today?: number;
+  pending_returns?: number;
 }
 
 // ============================================================================

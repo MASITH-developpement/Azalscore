@@ -161,13 +161,19 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     - Rate limiting spécifique pour endpoints sensibles (/auth/login)
     """
 
-    # Endpoints sensibles avec limites réduites (brute-force protection)
+    # P1 SÉCURITÉ: Endpoints sensibles avec limites STRICTES (brute-force protection)
+    # OWASP recommande max 3-5 tentatives/minute pour login
     SENSITIVE_ENDPOINTS = {
-        "/auth/login": 10,      # 10 tentatives/minute
-        "/auth/register": 5,    # 5 inscriptions/minute
-        "/auth/reset-password": 5,
-        "/api/v2/auth/login": 10,
-        "/api/v2/auth/register": 5,
+        "/auth/login": 5,           # P1: 5 tentatives/minute (réduit de 10)
+        "/auth/register": 3,        # P1: 3 inscriptions/minute (réduit de 5)
+        "/auth/reset-password": 3,  # P1: 3 reset/minute
+        "/auth/refresh": 10,        # P1: Ajout refresh token endpoint
+        "/auth/2fa/verify-login": 3,  # P1: 3 tentatives 2FA/minute
+        "/api/v2/auth/login": 5,
+        "/api/v2/auth/register": 3,
+        "/v1/auth/login": 5,
+        "/v1/auth/register": 3,
+        "/v1/auth/refresh": 10,
     }
 
     def __init__(
@@ -466,6 +472,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "max-age=31536000; includeSubDomains; preload"
         )
 
+        # P1 SÉCURITÉ: Headers de sécurité additionnels
+        # Cross-domain policies pour Flash/PDF (bloquer)
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+
+        # Cross-Origin policies pour isolation
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+
         # Cache control pour TOUTES les API
         if not request.url.path.startswith("/static"):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
@@ -496,8 +511,26 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
     }
 
     async def dispatch(self, request: Request, call_next: Callable):
-        # Vérification taille du body
+        # P0 SÉCURITÉ: Vérification stricte taille du body
         content_length = request.headers.get("Content-Length")
+
+        # P0: Pour POST/PUT/PATCH, Content-Length est OBLIGATOIRE (sauf chunked)
+        if request.method in ("POST", "PUT", "PATCH"):
+            transfer_encoding = request.headers.get("Transfer-Encoding", "").lower()
+            if not content_length and "chunked" not in transfer_encoding:
+                # P0 SÉCURITÉ: Fail closed - rejeter si pas de Content-Length
+                logger.warning(
+                    "[SECURITY_MW] Content-Length manquant pour %s - requête rejetée",
+                    request.method,
+                    extra={"path": request.url.path, "consequence": "request_rejected"}
+                )
+                return build_error_response(
+                    status_code=411,
+                    error_type=ErrorType.VALIDATION,
+                    message="Content-Length header is required",
+                    html_path="frontend/errors/411.html"
+                )
+
         if content_length:
             try:
                 if int(content_length) > self.MAX_CONTENT_LENGTH:
@@ -508,9 +541,16 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
                         html_path="frontend/errors/413.html"
                     )
             except ValueError as e:
+                # P0 SÉCURITÉ: Fail closed si Content-Length invalide
                 logger.warning(
-                    "[SECURITY_MW] Content-Length invalide, vérification taille ignorée",
-                    extra={"content_length": content_length, "error": str(e)[:200], "consequence": "size_check_skipped"}
+                    "[SECURITY_MW] Content-Length invalide - requête rejetée",
+                    extra={"content_length": content_length, "error": str(e)[:200], "consequence": "request_rejected"}
+                )
+                return build_error_response(
+                    status_code=400,
+                    error_type=ErrorType.VALIDATION,
+                    message="Invalid Content-Length header",
+                    html_path="frontend/errors/400.html"
                 )
 
         # Vérification Content-Type pour les requêtes avec body

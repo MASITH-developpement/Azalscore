@@ -66,6 +66,15 @@ from app.modules.country_packs.france.einvoicing_autogen import (
     AutogenConfidence,
     DocumentContext,
 )
+from app.modules.country_packs.france.exceptions import (
+    EInvoicingError,
+    EInvoicingValidationError,
+    EInvoicingSubmissionError,
+    EInvoicingStatusError,
+    PDPError,
+    PDPAPIError,
+    PDPConnectionError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -148,8 +157,8 @@ async def create_pdp_config(
     try:
         config = service.create_pdp_config(data, created_by=current_user.id)
         return _config_to_response(config)
-    except Exception as e:
-        logger.error(f"Erreur création config PDP: {e}")
+    except (PDPError, PDPConnectionError, ValueError) as e:
+        logger.error(f"Erreur creation config PDP: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -322,9 +331,9 @@ async def create_einvoice_from_source(
         return EInvoiceResponse.model_validate(einvoice)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Erreur création e-invoice: {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors de la création")
+    except (EInvoicingError, EInvoicingValidationError) as e:
+        logger.error(f"Erreur creation e-invoice: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la creation")
 
 
 @router.post("/einvoices/manual", response_model=EInvoiceResponse, status_code=status.HTTP_201_CREATED)
@@ -345,9 +354,9 @@ async def create_einvoice_manual(
         return EInvoiceResponse.model_validate(einvoice)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Erreur création e-invoice manuelle: {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors de la création")
+    except (EInvoicingError, EInvoicingValidationError) as e:
+        logger.error(f"Erreur creation e-invoice manuelle: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la creation")
 
 
 @router.post("/einvoices/{einvoice_id}/submit", response_model=EInvoiceSubmitResponse)
@@ -368,7 +377,7 @@ async def submit_einvoice(
         return response
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except (EInvoicingSubmissionError, PDPAPIError, PDPConnectionError) as e:
         logger.error(f"Erreur soumission e-invoice: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la soumission")
 
@@ -663,9 +672,9 @@ async def bulk_generate_einvoices(
     try:
         response = service.bulk_generate(data, created_by=current_user.id)
         return response
-    except Exception as e:
-        logger.error(f"Erreur génération en masse: {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors de la génération")
+    except (EInvoicingError, EInvoicingValidationError, ValueError) as e:
+        logger.error(f"Erreur generation en masse: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la generation")
 
 
 @router.post("/einvoices/bulk/submit", response_model=BulkSubmitResponse)
@@ -684,7 +693,7 @@ async def bulk_submit_einvoices(
     try:
         response = service.bulk_submit(data, submitted_by=current_user.id)
         return response
-    except Exception as e:
+    except (EInvoicingSubmissionError, PDPAPIError, PDPConnectionError, ValueError) as e:
         logger.error(f"Erreur soumission en masse: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la soumission")
 
@@ -742,9 +751,9 @@ async def receive_inbound_xml(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Erreur réception facture entrante: {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors de la réception")
+    except (EInvoicingError, EInvoicingValidationError) as e:
+        logger.error(f"Erreur reception facture entrante: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la reception")
 
 
 @router.post("/einvoices/inbound/parsed", response_model=InboundInvoiceResponse, status_code=status.HTTP_201_CREATED)
@@ -786,9 +795,9 @@ async def receive_inbound_parsed(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Erreur réception facture parsée: {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors de la réception")
+    except (EInvoicingError, EInvoicingValidationError) as e:
+        logger.error(f"Erreur reception facture parsee: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la reception")
 
 
 @router.post("/einvoices/inbound/batch", response_model=InboundBatchResponse)
@@ -825,7 +834,7 @@ async def receive_inbound_batch(
                 "status": "received"
             })
             received += 1
-        except Exception as e:
+        except (EInvoicingError, EInvoicingValidationError, ValueError) as e:
             results.append({
                 "ppf_id": invoice_data.ppf_id,
                 "pdp_id": invoice_data.pdp_id,
@@ -939,8 +948,8 @@ async def create_ereporting(
     try:
         submission = service.create_ereporting(data, created_by=current_user.id)
         return EReportingResponse.model_validate(submission)
-    except Exception as e:
-        logger.error(f"Erreur création e-reporting: {e}")
+    except (EInvoicingError, EInvoicingValidationError, ValueError) as e:
+        logger.error(f"Erreur creation e-reporting: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -1137,7 +1146,7 @@ async def receive_pdp_webhook(
             processed=result.get("processed", False),
             message=result.get("message")
         )
-    except Exception as e:
+    except (EInvoicingError, PDPError, ValueError) as e:
         logger.error(f"Erreur traitement webhook: {e}")
         return WebhookResponse(
             received=True,
@@ -1147,7 +1156,7 @@ async def receive_pdp_webhook(
 
 
 # =============================================================================
-# AUTO-GÉNÉRATION
+# AUTO-GENERATION
 # =============================================================================
 
 class AutoCompleteRequest(BaseModel):

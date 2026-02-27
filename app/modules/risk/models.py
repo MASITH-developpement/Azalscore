@@ -14,7 +14,7 @@ from sqlalchemy import (
     Boolean, Date, DateTime, Enum as SQLEnum, ForeignKey, Integer,
     Numeric, String, Text, UniqueConstraint, Index, CheckConstraint
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from app.core.types import UniversalUUID as UUID, JSONB, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base

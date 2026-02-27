@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * AZALSCORE Module - Shipping
  * Interface principale du module d'expedition
@@ -786,7 +785,7 @@ function PickupPointsTab() {
                 <div className="flex-1">
                   <h3 className="font-medium">{pp.name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {pp.address}, {pp.postal_code} {pp.city}
+                    {pp.address?.street1 ?? pp.postal_code}, {pp.address?.postal_code ?? pp.postal_code} {pp.address?.city ?? pp.city}
                   </p>
                   <div className="flex gap-2 mt-2">
                     <Badge variant="secondary">{pp.carrier_name}</Badge>
@@ -795,7 +794,7 @@ function PickupPointsTab() {
                   {pp.opening_hours && (
                     <p className="text-xs text-muted-foreground mt-2">
                       <Clock className="h-3 w-3 inline mr-1" />
-                      {pp.opening_hours}
+                      {Object.entries(pp.opening_hours).map(([day, hours]) => `${day}: ${hours}`).join(', ')}
                     </p>
                   )}
                 </div>
@@ -840,11 +839,11 @@ export default function ShippingModule() {
     );
   }
 
-  const stats = dashboard?.stats || {
-    total_shipments: 0,
-    in_transit: 0,
-    delivered_today: 0,
-    pending_returns: 0,
+  const stats = {
+    total_shipments: dashboard?.stats?.total_shipments ?? 0,
+    in_transit: dashboard?.stats?.in_transit ?? 0,
+    delivered_today: dashboard?.stats?.delivered_today ?? 0,
+    pending_returns: dashboard?.stats?.pending_returns ?? 0,
   };
 
   return (
@@ -877,7 +876,7 @@ export default function ShippingModule() {
             <TabsTrigger value="returns">
               <RotateCcw className="h-4 w-4 mr-2" />
               Retours
-              {stats.pending_returns > 0 && (
+              {(stats.pending_returns ?? 0) > 0 && (
                 <Badge className="ml-2 bg-orange-100 text-orange-800">{stats.pending_returns}</Badge>
               )}
             </TabsTrigger>

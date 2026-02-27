@@ -10,7 +10,7 @@ Tests:
 """
 
 import pytest
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import Mock, MagicMock, AsyncMock
 from decimal import Decimal
 from datetime import date
 import uuid
@@ -26,11 +26,7 @@ from app.modules.automated_accounting.services.auto_accounting_service import (
 class TestFrenchAccounting:
     """Tests for French accounting standards (PCG)."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="FR")
-
-    def test_french_vat_rates(self, engine):
+    def test_french_vat_rates(self):
         """Test French VAT rate recognition."""
         vat_rates = {
             "NORMAL": Decimal("20.00"),  # Taux normal
@@ -43,7 +39,7 @@ class TestFrenchAccounting:
         assert vat_rates["NORMAL"] == Decimal("20.00")
         assert vat_rates["REDUIT"] == Decimal("5.50")
 
-    def test_french_chart_of_accounts(self, engine):
+    def test_french_chart_of_accounts(self):
         """Test French PCG account structure."""
         pcg_accounts = {
             "1": "Comptes de capitaux",
@@ -59,27 +55,27 @@ class TestFrenchAccounting:
         assert pcg_accounts["6"] == "Comptes de charges"
         assert pcg_accounts["7"] == "Comptes de produits"
 
-    def test_french_vendor_account(self, engine):
+    def test_french_vendor_account(self):
         """Test French vendor account (fournisseurs)."""
-        vendor_account = "401000"  # Fournisseurs
+        vendor_account = AccountingRulesEngine.DEFAULT_ACCOUNTS["supplier"]
 
         assert vendor_account.startswith("401")
 
-    def test_french_customer_account(self, engine):
+    def test_french_customer_account(self):
         """Test French customer account (clients)."""
-        customer_account = "411000"  # Clients
+        customer_account = AccountingRulesEngine.DEFAULT_ACCOUNTS["customer"]
 
         assert customer_account.startswith("411")
 
-    def test_french_vat_deductible_account(self, engine):
+    def test_french_vat_deductible_account(self):
         """Test French deductible VAT account."""
-        vat_deductible = "445660"  # TVA déductible sur ABS
+        vat_deductible = AccountingRulesEngine.DEFAULT_ACCOUNTS["vat_deductible"]
 
         assert vat_deductible.startswith("4456")
 
-    def test_french_vat_collected_account(self, engine):
+    def test_french_vat_collected_account(self):
         """Test French collected VAT account."""
-        vat_collected = "445710"  # TVA collectée
+        vat_collected = AccountingRulesEngine.DEFAULT_ACCOUNTS["vat_collected"]
 
         assert vat_collected.startswith("4457")
 
@@ -97,11 +93,7 @@ class TestFrenchAccounting:
 class TestGermanAccounting:
     """Tests for German accounting standards (SKR 03/04)."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="DE")
-
-    def test_german_vat_rates(self, engine):
+    def test_german_vat_rates(self):
         """Test German VAT (MwSt) rates."""
         mwst_rates = {
             "NORMAL": Decimal("19.00"),  # Normalsatz
@@ -111,7 +103,7 @@ class TestGermanAccounting:
         assert mwst_rates["NORMAL"] == Decimal("19.00")
         assert mwst_rates["ERMASIGT"] == Decimal("7.00")
 
-    def test_german_skr03_mapping(self, engine):
+    def test_german_skr03_mapping(self):
         """Test SKR 03 chart of accounts mapping."""
         skr03_mappings = {
             "3400": "Wareneingang",  # Goods received
@@ -136,11 +128,7 @@ class TestGermanAccounting:
 class TestBelgianAccounting:
     """Tests for Belgian accounting standards (PCMN)."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="BE")
-
-    def test_belgian_vat_rates(self, engine):
+    def test_belgian_vat_rates(self):
         """Test Belgian VAT (BTW/TVA) rates."""
         btw_rates = {
             "NORMAL": Decimal("21.00"),
@@ -151,7 +139,7 @@ class TestBelgianAccounting:
         assert btw_rates["NORMAL"] == Decimal("21.00")
         assert btw_rates["REDUIT_6"] == Decimal("6.00")
 
-    def test_belgian_pcmn_mapping(self, engine):
+    def test_belgian_pcmn_mapping(self):
         """Test PCMN chart of accounts mapping."""
         pcmn_mappings = {
             "60": "Achats et charges externes",
@@ -167,11 +155,7 @@ class TestBelgianAccounting:
 class TestSpanishAccounting:
     """Tests for Spanish accounting standards (PGC)."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="ES")
-
-    def test_spanish_vat_rates(self, engine):
+    def test_spanish_vat_rates(self):
         """Test Spanish VAT (IVA) rates."""
         iva_rates = {
             "GENERAL": Decimal("21.00"),
@@ -182,7 +166,7 @@ class TestSpanishAccounting:
         assert iva_rates["GENERAL"] == Decimal("21.00")
         assert iva_rates["SUPERREDUCIDO"] == Decimal("4.00")
 
-    def test_spanish_pgc_mapping(self, engine):
+    def test_spanish_pgc_mapping(self):
         """Test PGC chart of accounts mapping."""
         pgc_mappings = {
             "600": "Compras de mercaderías",
@@ -198,11 +182,7 @@ class TestSpanishAccounting:
 class TestItalianAccounting:
     """Tests for Italian accounting standards."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="IT")
-
-    def test_italian_vat_rates(self, engine):
+    def test_italian_vat_rates(self):
         """Test Italian VAT (IVA) rates."""
         iva_rates = {
             "ORDINARIA": Decimal("22.00"),
@@ -218,11 +198,7 @@ class TestItalianAccounting:
 class TestSwissAccounting:
     """Tests for Swiss accounting standards."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="CH")
-
-    def test_swiss_vat_rates(self, engine):
+    def test_swiss_vat_rates(self):
         """Test Swiss VAT (MWST/TVA) rates."""
         mwst_rates = {
             "NORMAL": Decimal("8.1"),  # Updated 2024 rate
@@ -233,7 +209,7 @@ class TestSwissAccounting:
         assert mwst_rates["NORMAL"] == Decimal("8.1")
         assert mwst_rates["REDUIT"] == Decimal("2.6")
 
-    def test_swiss_currency_handling(self, engine):
+    def test_swiss_currency_handling(self):
         """Test Swiss Franc (CHF) handling."""
         amount_chf = Decimal("1000.00")
         currency = "CHF"
@@ -249,11 +225,7 @@ class TestSwissAccounting:
 class TestUKAccounting:
     """Tests for UK accounting standards."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="GB")
-
-    def test_uk_vat_rates(self, engine):
+    def test_uk_vat_rates(self):
         """Test UK VAT rates."""
         vat_rates = {
             "STANDARD": Decimal("20.00"),
@@ -273,7 +245,7 @@ class TestUKAccounting:
 
         assert parsed_date == date(2024, 3, 15)
 
-    def test_uk_currency_handling(self, engine):
+    def test_uk_currency_handling(self):
         """Test British Pound (GBP) handling."""
         amount_gbp = Decimal("1000.00")
         currency = "GBP"
@@ -284,11 +256,7 @@ class TestUKAccounting:
 class TestUSAccounting:
     """Tests for US accounting standards (GAAP)."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="US")
-
-    def test_us_sales_tax_handling(self, engine):
+    def test_us_sales_tax_handling(self):
         """Test US sales tax handling (varies by state)."""
         # US doesn't have federal VAT, but state sales taxes
         state_tax_rates = {
@@ -310,7 +278,7 @@ class TestUSAccounting:
 
         assert parsed_date == date(2024, 3, 15)
 
-    def test_us_currency_handling(self, engine):
+    def test_us_currency_handling(self):
         """Test US Dollar (USD) handling."""
         amount_usd = Decimal("1000.00")
         currency = "USD"
@@ -321,11 +289,7 @@ class TestUSAccounting:
 class TestCanadianAccounting:
     """Tests for Canadian accounting standards."""
 
-    @pytest.fixture
-    def engine(self):
-        return AccountingRulesEngine(country_code="CA")
-
-    def test_canadian_gst_hst_rates(self, engine):
+    def test_canadian_gst_hst_rates(self):
         """Test Canadian GST/HST rates."""
         tax_rates = {
             "GST": Decimal("5.00"),  # Federal
@@ -337,7 +301,7 @@ class TestCanadianAccounting:
         assert tax_rates["GST"] == Decimal("5.00")
         assert tax_rates["HST_ON"] == Decimal("13.00")
 
-    def test_canadian_bilingual_support(self, engine):
+    def test_canadian_bilingual_support(self):
         """Test bilingual (EN/FR) document handling."""
         # Canadian invoices may be in English or French
         invoice_keywords_en = ["invoice", "total", "tax", "amount"]

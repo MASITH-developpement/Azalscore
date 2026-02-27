@@ -11,7 +11,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.core.database import SessionLocal
+from app.core.database import get_db_for_scheduler, get_db_for_platform_operation
 from .models import MarketingPlatform, SocialNetworkConfig
 from .config_service import ConfigService
 from .service import SocialNetworksService
@@ -82,18 +82,23 @@ class SocialNetworkScheduler:
         """Synchronise toutes les plateformes pour tous les tenants."""
         logger.info("[Scheduler] Début de la synchronisation globale")
 
-        db: Session = SessionLocal()
+        # P0 SÉCURITÉ: Session plateforme pour lister les tenants (sans RLS intentionnel)
+        db: Session = get_db_for_platform_operation()
         try:
             # Récupérer tous les tenants avec des configs actives
             tenant_ids = db.query(SocialNetworkConfig.tenant_id).filter(
                 SocialNetworkConfig.is_enabled == True
             ).distinct().all()
-
-            for (tenant_id,) in tenant_ids:
-                await self._sync_tenant(db, tenant_id)
-
         finally:
             db.close()
+
+        # P1 SÉCURITÉ: Synchroniser chaque tenant avec session RLS isolée
+        for (tenant_id,) in tenant_ids:
+            tenant_db = get_db_for_scheduler(tenant_id)
+            try:
+                await self._sync_tenant(tenant_db, tenant_id)
+            finally:
+                tenant_db.close()
 
         logger.info("[Scheduler] Synchronisation globale terminée")
 
@@ -124,14 +129,16 @@ class SocialNetworkScheduler:
         """Force une synchronisation immédiate."""
         logger.info(f"[Scheduler] Sync manuelle demandée (tenant: {tenant_id or 'tous'})")
 
-        db: Session = SessionLocal()
-        try:
-            if tenant_id:
+        if tenant_id:
+            # P1 SÉCURITÉ: Session avec contexte RLS pour ce tenant
+            db: Session = get_db_for_scheduler(tenant_id)
+            try:
                 await self._sync_tenant(db, tenant_id)
-            else:
-                await self._sync_all_tenants()
-        finally:
-            db.close()
+            finally:
+                db.close()
+        else:
+            # Synchroniser tous les tenants (chacun avec sa propre session RLS)
+            await self._sync_all_tenants()
 
 
 # Instance globale

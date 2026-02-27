@@ -14,27 +14,32 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useParams, useNavigate, Link } from 'react-router-dom';
 
-// API et Types
-import { contactsApi } from './api';
+// Components
 import {
   ContactPersonsManager,
   AddressManager,
   LogoUploader,
 } from './components';
+// Types
 import {
   EntityTypeLabels,
 } from './types';
 import type {
-  Contact,
   ContactCreate,
   ContactUpdate,
-  ContactSummary,
   ContactFilters,
   EntityType,
   RelationType,
 } from './types';
-
-// Sous-programmes réutilisables
+// Hooks
+import {
+  contactsKeys,
+  useContacts,
+  useContact,
+  useCreateContact,
+  useUpdateContact,
+  useDeleteContact,
+} from './hooks';
 
 // ============================================================================
 // COMPOSANT PRINCIPAL (ROUTES)
@@ -58,30 +63,14 @@ export default ContactsModule;
 
 const ContactsListPage: React.FC = () => {
   const navigate = useNavigate();
-  const [contacts, setContacts] = useState<ContactSummary[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<ContactFilters>({
     page: 1,
     page_size: 20,
   });
 
-  useEffect(() => {
-    loadContacts();
-  }, [filters]);
-
-  const loadContacts = async () => {
-    setIsLoading(true);
-    try {
-      const response = await contactsApi.list(filters);
-      setContacts(response.items);
-      setTotal(response.total);
-    } catch (err) {
-      console.error('Erreur chargement contacts:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data, isLoading } = useContacts(filters);
+  const contacts = data?.items || [];
+  const total = data?.total || 0;
 
   return (
     <div className="p-6">
@@ -258,10 +247,14 @@ const ContactFormPage: React.FC = () => {
   const navigate = useNavigate();
   const isNew = !id;
 
-  const [contact, setContact] = useState<Contact | null>(null);
-  const [isLoading, setIsLoading] = useState(!isNew);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // React Query hooks
+  const { data: contact, isLoading } = useContact(id);
+  const createContact = useCreateContact();
+  const updateContact = useUpdateContact();
+  const deleteContact = useDeleteContact();
+  const isSaving = createContact.isPending || updateContact.isPending;
 
   // État du formulaire
   const [formData, setFormData] = useState<ContactCreate>({
@@ -272,47 +265,35 @@ const ContactFormPage: React.FC = () => {
     phone: '',
   });
 
+  // Synchroniser formData avec les données du contact
   useEffect(() => {
-    if (id) {
-      loadContact(id);
-    }
-  }, [id]);
-
-  const loadContact = async (contactId: string) => {
-    setIsLoading(true);
-    try {
-      const data = await contactsApi.get(contactId);
-      setContact(data);
+    if (contact) {
       setFormData({
-        entity_type: data.entity_type,
-        relation_types: data.relation_types,
-        name: data.name,
-        legal_name: data.legal_name,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone,
-        mobile: data.mobile,
-        website: data.website,
-        tax_id: data.tax_id,
-        registration_number: data.registration_number,
-        legal_form: data.legal_form,
-        notes: data.notes,
-        internal_notes: data.internal_notes,
-        customer_type: data.customer_type,
-        customer_payment_terms: data.customer_payment_terms,
-        supplier_status: data.supplier_status,
-        supplier_type: data.supplier_type,
-        supplier_payment_terms: data.supplier_payment_terms,
+        entity_type: contact.entity_type,
+        relation_types: contact.relation_types,
+        name: contact.name,
+        legal_name: contact.legal_name,
+        first_name: contact.first_name,
+        last_name: contact.last_name,
+        email: contact.email,
+        phone: contact.phone,
+        mobile: contact.mobile,
+        website: contact.website,
+        tax_id: contact.tax_id,
+        registration_number: contact.registration_number,
+        legal_form: contact.legal_form,
+        notes: contact.notes,
+        internal_notes: contact.internal_notes,
+        customer_type: contact.customer_type,
+        customer_payment_terms: contact.customer_payment_terms,
+        supplier_status: contact.supplier_status,
+        supplier_type: contact.supplier_type,
+        supplier_payment_terms: contact.supplier_payment_terms,
       });
-    } catch (err) {
-      setError('Erreur chargement du contact');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [contact]);
 
-  const handleChange = (field: keyof ContactCreate, value: any) => {
+  const handleChange = (field: keyof ContactCreate, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -329,28 +310,24 @@ const ContactFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
     setError('');
 
     try {
       if (isNew) {
-        const newContact = await contactsApi.create(formData);
+        const newContact = await createContact.mutateAsync(formData);
         navigate(`/contacts/${newContact.id}`);
       } else {
-        await contactsApi.update(id!, formData as ContactUpdate);
-        await loadContact(id!);
+        await updateContact.mutateAsync({ id: id!, data: formData as ContactUpdate });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur sauvegarde');
-    } finally {
-      setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
     if (!confirm('Supprimer ce contact ?')) return;
     try {
-      await contactsApi.delete(id!);
+      await deleteContact.mutateAsync({ id: id! });
       navigate('/contacts');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur suppression');
@@ -641,3 +618,25 @@ const ContactFormPage: React.FC = () => {
     </div>
   );
 };
+
+// Re-export hooks for external use
+export {
+  contactsKeys,
+  useContacts,
+  useContact,
+  useContactLookup,
+  useContactStats,
+  useCreateContact,
+  useUpdateContact,
+  useDeleteContact,
+  useUploadContactLogo,
+  useDeleteContactLogo,
+  useContactPersons,
+  useCreateContactPerson,
+  useUpdateContactPerson,
+  useDeleteContactPerson,
+  useContactAddresses,
+  useCreateContactAddress,
+  useUpdateContactAddress,
+  useDeleteContactAddress,
+} from './hooks';

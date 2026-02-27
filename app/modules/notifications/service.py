@@ -22,7 +22,18 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
 from uuid import uuid4
 import json
+import logging
 import re
+
+from .exceptions import (
+    ChannelSendError,
+    EmailSendError,
+    SMSSendError,
+    PushSendError,
+    WebhookSendError,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationChannel(Enum):
@@ -858,7 +869,11 @@ class NotificationService:
             notification.status = NotificationStatus.SENT
             notification.sent_at = datetime.now()
 
-        except Exception as e:
+        except (ChannelSendError, ConnectionError, TimeoutError, ValueError, OSError) as e:
+            logger.warning(
+                "Notification send failed: %s (channel=%s, retry=%d)",
+                str(e), notification.channel.value, notification.retry_count
+            )
             notification.status = NotificationStatus.FAILED
             notification.failed_at = datetime.now()
             notification.failure_reason = str(e)
@@ -1001,7 +1016,8 @@ class NotificationService:
 
                 batch.sent_count += 1
 
-            except Exception:
+            except (ChannelSendError, ConnectionError, TimeoutError, ValueError, OSError) as e:
+                logger.warning("Batch send failed for recipient: %s", str(e))
                 batch.failed_count += 1
 
             batch.processed_count += 1
@@ -1167,7 +1183,8 @@ class NotificationService:
             subscription.last_triggered_at = datetime.now()
             subscription.failure_count = 0
 
-        except Exception:
+        except (WebhookSendError, ConnectionError, TimeoutError, OSError) as e:
+            logger.warning("Webhook trigger failed: %s", str(e))
             subscription.failure_count += 1
 
     # =========================================================================

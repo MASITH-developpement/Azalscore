@@ -33,7 +33,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSON
+from app.core.types import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.types import UniversalUUID

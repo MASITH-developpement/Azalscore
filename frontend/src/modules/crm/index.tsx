@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   UserPlus, Building2, MapPin,
   TrendingUp, Target, Clock, Euro,
@@ -13,8 +13,6 @@ import {
   CheckCircle2, FileText, AlertTriangle,
   Sparkles, ArrowLeft, Printer, Shield
 } from 'lucide-react';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -23,15 +21,26 @@ import {
   type TabDefinition,
   type InfoBarItem,
   type SidebarSection,
-  type ActionDefinition
-, SemanticColor } from '@ui/standards';
+  type ActionDefinition,
+  SemanticColor
+} from '@ui/standards';
 import { DataTable } from '@ui/tables';
-import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-
-// Types et helpers
+import type { TableColumn, DashboardKPI } from '@/types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
-// Composants tabs
+// Module imports
+import {
+  useCustomers,
+  useCustomer,
+  useOpportunities,
+  usePipelineStats,
+  useSalesDashboard,
+  useCreateCustomer,
+  useUpdateCustomer,
+  useDeleteCustomer,
+  useConvertProspect,
+  crmKeys,
+} from './hooks';
 import {
   CustomerInfoTab,
   CustomerOpportunitiesTab,
@@ -42,16 +51,18 @@ import {
   CustomerRiskTab
 } from './components';
 import {
-  CUSTOMER_TYPE_CONFIG, OPPORTUNITY_STATUS_CONFIG,
+  CUSTOMER_TYPE_CONFIG,
+  OPPORTUNITY_STATUS_CONFIG,
   canConvert
 } from './types';
 import type {
-  Customer, Opportunity, PipelineStats, SalesDashboard,
+  Customer, Opportunity,
   CustomerType, OpportunityStatus
 } from './types';
+import type { CustomerFilters, OpportunityFilters } from './api';
 
 // ============================================================
-// COMPONENTS LOCAUX
+// BADGES
 // ============================================================
 
 const CustomerTypeBadge: React.FC<{ type: CustomerType }> = ({ type }) => {
@@ -73,120 +84,7 @@ const OpportunityStatusBadge: React.FC<{ status: OpportunityStatus }> = ({ statu
 };
 
 // ============================================================
-// API HOOKS
-// ============================================================
-
-const useCustomers = (page = 1, pageSize = 25, filters?: { type?: string; search?: string; is_active?: boolean }) => {
-  return useQuery({
-    queryKey: ['commercial', 'customers', page, pageSize, serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
-      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
-      return response.data;
-    },
-  });
-};
-
-const useCustomer = (id: string) => {
-  return useQuery({
-    queryKey: ['commercial', 'customers', id],
-    queryFn: async () => {
-      const response = await api.get<Customer>(`/commercial/customers/${id}`);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-};
-
-const useOpportunities = (page = 1, pageSize = 25, filters?: { status?: string; customer_id?: string }) => {
-  return useQuery({
-    queryKey: ['commercial', 'opportunities', page, pageSize, serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.customer_id) params.append('customer_id', filters.customer_id);
-      const response = await api.get<PaginatedResponse<Opportunity>>(`/commercial/opportunities?${params}`);
-      return response.data;
-    },
-  });
-};
-
-const usePipelineStats = () => {
-  return useQuery({
-    queryKey: ['commercial', 'pipeline', 'stats'],
-    queryFn: async () => {
-      const response = await api.get<PipelineStats>('/commercial/pipeline/stats');
-      return response.data;
-    },
-  });
-};
-
-const useSalesDashboard = () => {
-  return useQuery({
-    queryKey: ['commercial', 'dashboard'],
-    queryFn: async () => {
-      const response = await api.get<SalesDashboard>('/commercial/dashboard');
-      return response.data;
-    },
-  });
-};
-
-const useCreateCustomer = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<Customer>) => {
-      const response = await api.post<Customer>('/commercial/customers', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'customers'] });
-    },
-  });
-};
-
-const useUpdateCustomer = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Customer> }) => {
-      const response = await api.put<Customer>(`/commercial/customers/${id}`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'customers'] });
-    },
-  });
-};
-
-const useDeleteCustomer = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/commercial/customers/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'customers'] });
-    },
-  });
-};
-
-const useConvertProspect = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (customerId: string) => {
-      const response = await api.post<Customer>(`/commercial/customers/${customerId}/convert`);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'customers'] });
-    },
-  });
-};
-
-// ============================================================
-// VUE DÉTAIL CLIENT - BaseViewStandard
+// VUE DÉTAIL CLIENT
 // ============================================================
 
 interface CustomerDetailViewProps {
@@ -223,14 +121,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customerId, onB
   const handleConvert = async () => {
     if (window.confirm('Convertir ce prospect en client ?')) {
       await convertProspect.mutateAsync(customerId);
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'customers', customerId] });
-    }
-  };
-
-  const _handleDelete = async () => {
-    if (window.confirm('Supprimer ce contact ?')) {
-      await deleteCustomer.mutateAsync(customerId);
-      onBack();
+      queryClient.invalidateQueries({ queryKey: crmKeys.customerDetail(customerId) });
     }
   };
 
@@ -240,194 +131,64 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customerId, onB
     }));
   };
 
-  // Définition des onglets
   const tabs: TabDefinition<Customer>[] = [
-    {
-      id: 'info',
-      label: 'Informations',
-      icon: <Building2 size={16} />,
-      component: CustomerInfoTab
-    },
-    {
-      id: 'opportunities',
-      label: 'Opportunités',
-      icon: <Target size={16} />,
-      badge: customer.opportunities?.length || 0,
-      component: CustomerOpportunitiesTab
-    },
-    {
-      id: 'financial',
-      label: 'Financier',
-      icon: <Euro size={16} />,
-      component: CustomerFinancialTab
-    },
-    {
-      id: 'docs',
-      label: 'Documents',
-      icon: <FileText size={16} />,
-      badge: customer.documents?.length || 0,
-      component: CustomerDocsTab
-    },
-    {
-      id: 'history',
-      label: 'Historique',
-      icon: <Clock size={16} />,
-      component: CustomerHistoryTab
-    },
-    {
-      id: 'risk',
-      label: 'Risque',
-      icon: <Shield size={16} />,
-      component: CustomerRiskTab
-    },
-    {
-      id: 'ia',
-      label: 'Assistant IA',
-      icon: <Sparkles size={16} />,
-      component: CustomerIATab
-    }
+    { id: 'info', label: 'Informations', icon: <Building2 size={16} />, component: CustomerInfoTab },
+    { id: 'opportunities', label: 'Opportunités', icon: <Target size={16} />, badge: customer.opportunities?.length || 0, component: CustomerOpportunitiesTab },
+    { id: 'financial', label: 'Financier', icon: <Euro size={16} />, component: CustomerFinancialTab },
+    { id: 'docs', label: 'Documents', icon: <FileText size={16} />, badge: customer.documents?.length || 0, component: CustomerDocsTab },
+    { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: CustomerHistoryTab },
+    { id: 'risk', label: 'Risque', icon: <Shield size={16} />, component: CustomerRiskTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: CustomerIATab }
   ];
 
-  // Barre d'info
   const typeConfig = CUSTOMER_TYPE_CONFIG[customer.type];
   const infoBarItems: InfoBarItem[] = [
-    {
-      id: 'code',
-      label: 'Code',
-      value: customer.code,
-      icon: <Building2 size={14} />
-    },
-    {
-      id: 'type',
-      label: 'Type',
-      value: typeConfig.label,
-      valueColor: typeConfig.color as SemanticColor
-    },
-    {
-      id: 'city',
-      label: 'Ville',
-      value: customer.city || '-',
-      icon: <MapPin size={14} />
-    },
-    {
-      id: 'ca',
-      label: 'CA Total',
-      value: formatCurrency(customer.total_revenue || 0),
-      valueColor: customer.total_revenue && customer.total_revenue > 10000 ? 'green' : undefined
-    }
+    { id: 'code', label: 'Code', value: customer.code, icon: <Building2 size={14} /> },
+    { id: 'type', label: 'Type', value: typeConfig.label, valueColor: typeConfig.color as SemanticColor },
+    { id: 'city', label: 'Ville', value: customer.city || '-', icon: <MapPin size={14} /> },
+    { id: 'ca', label: 'CA Total', value: formatCurrency(customer.total_revenue || 0), valueColor: customer.total_revenue && customer.total_revenue > 10000 ? 'green' : undefined }
   ];
 
-  // Sidebar
   const sidebarSections: SidebarSection[] = [
     {
-      id: 'contact',
-      title: 'Contact',
+      id: 'contact', title: 'Contact',
       items: [
-        {
-          id: 'email',
-          label: 'Email',
-          value: customer.email || '-'
-        },
-        {
-          id: 'phone',
-          label: 'Téléphone',
-          value: customer.phone || '-'
-        },
-        {
-          id: 'mobile',
-          label: 'Mobile',
-          value: customer.mobile || '-'
-        }
+        { id: 'email', label: 'Email', value: customer.email || '-' },
+        { id: 'phone', label: 'Téléphone', value: customer.phone || '-' },
+        { id: 'mobile', label: 'Mobile', value: customer.mobile || '-' }
       ]
     },
     {
-      id: 'commercial',
-      title: 'Commercial',
+      id: 'commercial', title: 'Commercial',
       items: [
-        {
-          id: 'orders',
-          label: 'Commandes',
-          value: String(customer.order_count || 0)
-        },
-        {
-          id: 'revenue',
-          label: 'CA Total',
-          value: formatCurrency(customer.total_revenue || 0),
-          highlight: true
-        },
-        {
-          id: 'last_order',
-          label: 'Dernière commande',
-          value: customer.last_order_date ? formatDate(customer.last_order_date) : '-'
-        }
+        { id: 'orders', label: 'Commandes', value: String(customer.order_count || 0) },
+        { id: 'revenue', label: 'CA Total', value: formatCurrency(customer.total_revenue || 0), highlight: true },
+        { id: 'last_order', label: 'Dernière commande', value: customer.last_order_date ? formatDate(customer.last_order_date) : '-' }
       ]
     }
   ];
 
-  // Actions header
   const headerActions: ActionDefinition[] = [
-    {
-      id: 'back',
-      label: 'Retour',
-      icon: <ArrowLeft size={16} />,
-      variant: 'ghost',
-      onClick: onBack
-    },
-    {
-      id: 'print',
-      label: 'Imprimer',
-      icon: <Printer size={16} />,
-      variant: 'secondary'
-    }
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost', onClick: onBack },
+    { id: 'print', label: 'Imprimer', icon: <Printer size={16} />, variant: 'secondary' }
   ];
 
-  // Actions primaires
   const primaryActions: ActionDefinition[] = [];
-
   if (canConvert(customer)) {
-    primaryActions.push({
-      id: 'convert',
-      label: 'Convertir en client',
-      icon: <CheckCircle2 size={16} />,
-      variant: 'primary',
-      onClick: handleConvert
-    });
+    primaryActions.push({ id: 'convert', label: 'Convertir en client', icon: <CheckCircle2 size={16} />, variant: 'primary', onClick: handleConvert });
   }
+  primaryActions.push({ id: 'devis', label: 'Créer devis', icon: <FileText size={16} />, variant: 'secondary', onClick: handleCreateDevis });
+  primaryActions.push({ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'ghost', onClick: onEdit });
 
-  primaryActions.push({
-    id: 'devis',
-    label: 'Créer devis',
-    icon: <FileText size={16} />,
-    variant: 'secondary',
-    onClick: handleCreateDevis
-  });
-
-  primaryActions.push({
-    id: 'edit',
-    label: 'Modifier',
-    icon: <Edit size={16} />,
-    variant: 'ghost',
-    onClick: onEdit
-  });
-
-  // Statut
   const statusColorMap: Record<string, SemanticColor> = {
-    gray: 'gray',
-    blue: 'blue',
-    green: 'green',
-    yellow: 'yellow',
-    purple: 'purple',
-    red: 'red'
+    gray: 'gray', blue: 'blue', green: 'green', yellow: 'yellow', purple: 'purple', red: 'red'
   };
 
   return (
     <BaseViewStandard<Customer>
       title={customer.name}
       subtitle={customer.legal_name || customer.code}
-      status={{
-        label: typeConfig.label,
-        color: statusColorMap[typeConfig.color] || 'gray'
-      }}
+      status={{ label: typeConfig.label, color: statusColorMap[typeConfig.color] || 'gray' }}
       data={customer}
       view="detail"
       tabs={tabs}
@@ -452,11 +213,8 @@ interface DashboardProps {
 }
 
 const CRMDashboard: React.FC<DashboardProps> = ({
-  onNavigateToCustomers,
-  onNavigateToOpportunities,
-  onSelectCustomer,
-  onSelectOpportunity,
-  onCreateCustomer
+  onNavigateToCustomers, onNavigateToOpportunities,
+  onSelectCustomer, onSelectOpportunity, onCreateCustomer
 }) => {
   const { data: dashboard } = useSalesDashboard();
   const { data: pipeline } = usePipelineStats();
@@ -471,28 +229,16 @@ const CRMDashboard: React.FC<DashboardProps> = ({
   ] : [];
 
   return (
-    <PageWrapper
-      title="CRM"
-      subtitle="Prospects, clients et opportunités"
-      actions={
-        <Button leftIcon={<Plus size={16} />} onClick={onCreateCustomer}>
-          Nouveau prospect
-        </Button>
-      }
-    >
+    <PageWrapper title="CRM" subtitle="Prospects, clients et opportunités"
+      actions={<Button leftIcon={<Plus size={16} />} onClick={onCreateCustomer}>Nouveau prospect</Button>}>
       <section className="azals-section">
-        <Grid cols={4} gap="md">
-          {kpis.map(kpi => <KPICard key={kpi.id} kpi={kpi} />)}
-        </Grid>
+        <Grid cols={4} gap="md">{kpis.map(kpi => <KPICard key={kpi.id} kpi={kpi} />)}</Grid>
       </section>
 
       <section className="azals-section">
         <Grid cols={2} gap="lg">
-          <Card
-            title="Prospects récents"
-            actions={<Button variant="ghost" size="sm" onClick={onNavigateToCustomers}>Voir tout</Button>}
-          >
-            {customers?.items && customers.items.length > 0 ? (
+          <Card title="Prospects récents" actions={<Button variant="ghost" size="sm" onClick={onNavigateToCustomers}>Voir tout</Button>}>
+            {customers?.items?.length ? (
               <ul className="azals-simple-list">
                 {customers.items.map(c => (
                   <li key={c.id} onClick={() => onSelectCustomer(c.id)} className="azals-clickable">
@@ -504,22 +250,15 @@ const CRMDashboard: React.FC<DashboardProps> = ({
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-muted text-center py-4">Aucun prospect</p>
-            )}
+            ) : <p className="text-muted text-center py-4">Aucun prospect</p>}
           </Card>
 
-          <Card
-            title="Opportunités en cours"
-            actions={<Button variant="ghost" size="sm" onClick={onNavigateToOpportunities}>Voir tout</Button>}
-          >
-            {opportunities?.items && opportunities.items.length > 0 ? (
+          <Card title="Opportunités en cours" actions={<Button variant="ghost" size="sm" onClick={onNavigateToOpportunities}>Voir tout</Button>}>
+            {opportunities?.items?.length ? (
               <ul className="azals-simple-list">
                 {opportunities.items.filter(o => !['WON', 'LOST'].includes(o.status)).slice(0, 5).map(o => (
                   <li key={o.id} onClick={() => onSelectOpportunity(o.id)} className="azals-clickable">
-                    <div className="azals-list-item__main">
-                      <strong>{o.name}</strong>
-                    </div>
+                    <div className="azals-list-item__main"><strong>{o.name}</strong></div>
                     <div className="azals-list-item__meta">
                       <OpportunityStatusBadge status={o.status} />
                       <span className="ml-2">{formatCurrency(o.amount)}</span>
@@ -527,9 +266,7 @@ const CRMDashboard: React.FC<DashboardProps> = ({
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-muted text-center py-4">Aucune opportunité</p>
-            )}
+            ) : <p className="text-muted text-center py-4">Aucune opportunité</p>}
           </Card>
         </Grid>
       </section>
@@ -572,90 +309,42 @@ interface CustomersListProps {
 const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onCreateCustomer, onBack }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [filters, setFilters] = useState<{ type?: string; search?: string }>({});
-
+  const [filters, setFilters] = useState<Partial<CustomerFilters>>({});
   const { data, isLoading, refetch } = useCustomers(page, pageSize, filters);
 
   const columns: TableColumn<Customer>[] = [
-    {
-      id: 'code',
-      header: 'Code',
-      accessor: 'code',
-      sortable: true,
-    },
-    {
-      id: 'name',
-      header: 'Nom',
-      accessor: 'name',
-      sortable: true,
-      render: (value, row) => (
-        <span className="azals-link" onClick={() => onSelectCustomer(row.id)}>{value as string}</span>
-      ),
-    },
+    { id: 'code', header: 'Code', accessor: 'code', sortable: true },
+    { id: 'name', header: 'Nom', accessor: 'name', sortable: true,
+      render: (value, row) => <span className="azals-link" onClick={() => onSelectCustomer(row.id)}>{value as string}</span> },
     { id: 'legal_name', header: 'Raison sociale', accessor: 'legal_name' },
     { id: 'city', header: 'Ville', accessor: 'city' },
     { id: 'phone', header: 'Téléphone', accessor: 'phone' },
-    {
-      id: 'type',
-      header: 'Type',
-      accessor: 'type',
-      render: (value) => <CustomerTypeBadge type={value as CustomerType} />,
-    },
-    {
-      id: 'total_revenue',
-      header: 'CA Total',
-      accessor: 'total_revenue',
-      align: 'right',
-      render: (value) => value ? formatCurrency(value as number) : '-',
-    },
+    { id: 'type', header: 'Type', accessor: 'type', render: (value) => <CustomerTypeBadge type={value as CustomerType} /> },
+    { id: 'total_revenue', header: 'CA Total', accessor: 'total_revenue', align: 'right',
+      render: (value) => value ? formatCurrency(value as number) : '-' },
   ];
 
   return (
-    <PageWrapper
-      title="Clients & Prospects"
-      backAction={{ label: 'Retour', onClick: onBack }}
-      actions={<Button leftIcon={<Plus size={16} />} onClick={onCreateCustomer}>Nouveau</Button>}
-    >
+    <PageWrapper title="Clients & Prospects" backAction={{ label: 'Retour', onClick: onBack }}
+      actions={<Button leftIcon={<Plus size={16} />} onClick={onCreateCustomer}>Nouveau</Button>}>
       <Card noPadding>
         <div className="azals-filter-bar">
           <div className="azals-filter-bar__search">
             <Search size={16} />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={filters.search || ''}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="azals-input"
-            />
+            <input type="text" placeholder="Rechercher..." value={filters.search || ''}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="azals-input" />
           </div>
-          <select
-            className="azals-select"
-            value={filters.type || ''}
-            onChange={(e) => setFilters({ ...filters, type: e.target.value || undefined })}
-          >
+          <select className="azals-select" value={filters.type || ''}
+            onChange={(e) => setFilters({ ...filters, type: (e.target.value as CustomerType) || undefined })}>
             <option value="">Tous les types</option>
             {Object.entries(CUSTOMER_TYPE_CONFIG).map(([key, config]) => (
               <option key={key} value={key}>{config.label}</option>
             ))}
           </select>
         </div>
-
-        <DataTable
-          columns={columns}
-          data={data?.items || []}
-          keyField="id"
-          filterable
-          isLoading={isLoading}
-          pagination={{
-            page,
-            pageSize,
-            total: data?.total || 0,
-            onPageChange: setPage,
-            onPageSizeChange: setPageSize,
-          }}
-          onRefresh={refetch}
-          emptyMessage="Aucun client"
-        />
+        <DataTable columns={columns} data={data?.items || []} keyField="id" filterable isLoading={isLoading}
+          pagination={{ page, pageSize, total: data?.total || 0, onPageChange: setPage, onPageSizeChange: setPageSize }}
+          onRefresh={refetch} emptyMessage="Aucun client" />
       </Card>
     </PageWrapper>
   );
@@ -678,69 +367,40 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onBack, onSaved
   const updateCustomer = useUpdateCustomer();
 
   const [form, setForm] = useState({
-    code: '',
-    name: '',
-    legal_name: '',
-    type: 'PROSPECT' as CustomerType,
-    email: '',
-    phone: '',
-    mobile: '',
-    address_line1: '',
-    city: '',
-    postal_code: '',
-    country_code: 'FR',
-    tax_id: '',
-    registration_number: '',
-    industry: '',
-    source: '',
-    notes: '',
+    code: '', name: '', legal_name: '', type: 'PROSPECT' as CustomerType,
+    email: '', phone: '', mobile: '', address_line1: '', city: '', postal_code: '',
+    country_code: 'FR', tax_id: '', registration_number: '', industry: '', source: '', notes: '',
   });
 
   React.useEffect(() => {
     if (customer) {
       setForm({
-        code: customer.code || '',
-        name: customer.name || '',
-        legal_name: customer.legal_name || '',
-        type: customer.type,
-        email: customer.email || '',
-        phone: customer.phone || '',
-        mobile: customer.mobile || '',
-        address_line1: customer.address_line1 || '',
-        city: customer.city || '',
-        postal_code: customer.postal_code || '',
-        country_code: customer.country_code || 'FR',
-        tax_id: customer.tax_id || '',
-        registration_number: customer.registration_number || '',
-        industry: customer.industry || '',
-        source: customer.source || '',
-        notes: customer.notes || '',
+        code: customer.code || '', name: customer.name || '', legal_name: customer.legal_name || '',
+        type: customer.type, email: customer.email || '', phone: customer.phone || '',
+        mobile: customer.mobile || '', address_line1: customer.address_line1 || '',
+        city: customer.city || '', postal_code: customer.postal_code || '',
+        country_code: customer.country_code || 'FR', tax_id: customer.tax_id || '',
+        registration_number: customer.registration_number || '', industry: customer.industry || '',
+        source: customer.source || '', notes: customer.notes || '',
       });
     }
   }, [customer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (isNew) {
-        const result = await createCustomer.mutateAsync(form);
-        onSaved(result.id);
-      } else {
-        await updateCustomer.mutateAsync({ id: customerId!, data: form });
-        onSaved(customerId!);
-      }
-    } catch (error) {
-      console.error('Erreur sauvegarde:', error);
+    if (isNew) {
+      const result = await createCustomer.mutateAsync(form);
+      onSaved(result.id);
+    } else {
+      await updateCustomer.mutateAsync({ id: customerId!, data: form });
+      onSaved(customerId!);
     }
   };
 
   const isSubmitting = createCustomer.isPending || updateCustomer.isPending;
 
   return (
-    <PageWrapper
-      title={isNew ? 'Nouveau prospect' : 'Modifier'}
-      backAction={{ label: 'Retour', onClick: onBack }}
-    >
+    <PageWrapper title={isNew ? 'Nouveau prospect' : 'Modifier'} backAction={{ label: 'Retour', onClick: onBack }}>
       <form onSubmit={handleSubmit}>
         <Card title="Informations">
           <Grid cols={2} gap="md">
@@ -852,89 +512,33 @@ interface OpportunitiesListProps {
 const OpportunitiesList: React.FC<OpportunitiesListProps> = ({ onSelectOpportunity, onBack }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [statusFilter, setStatusFilter] = useState<string>('');
-
-  const { data, isLoading, refetch } = useOpportunities(page, pageSize, { status: statusFilter || undefined });
+  const [statusFilter, setStatusFilter] = useState<OpportunityStatus | undefined>(undefined);
+  const { data, isLoading, refetch } = useOpportunities(page, pageSize, statusFilter ? { status: statusFilter } : undefined);
 
   const columns: TableColumn<Opportunity>[] = [
-    {
-      id: 'code',
-      header: 'Code',
-      accessor: 'code',
-      sortable: true,
-    },
-    {
-      id: 'name',
-      header: 'Nom',
-      accessor: 'name',
-      sortable: true,
-      render: (value, row) => (
-        <span className="azals-link" onClick={() => onSelectOpportunity(row.id)}>{value as string}</span>
-      ),
-    },
-    {
-      id: 'status',
-      header: 'Statut',
-      accessor: 'status',
-      render: (value) => <OpportunityStatusBadge status={value as OpportunityStatus} />,
-    },
-    {
-      id: 'amount',
-      header: 'Montant',
-      accessor: 'amount',
-      align: 'right',
-      render: (value, row) => formatCurrency(value as number, row.currency),
-    },
-    {
-      id: 'probability',
-      header: 'Probabilité',
-      accessor: 'probability',
-      align: 'right',
-      render: (value) => `${value}%`,
-    },
-    {
-      id: 'expected_close_date',
-      header: 'Clôture prévue',
-      accessor: 'expected_close_date',
-      render: (value) => value ? formatDate(value as string) : '-',
-    },
+    { id: 'code', header: 'Code', accessor: 'code', sortable: true },
+    { id: 'name', header: 'Nom', accessor: 'name', sortable: true,
+      render: (value, row) => <span className="azals-link" onClick={() => onSelectOpportunity(row.id)}>{value as string}</span> },
+    { id: 'status', header: 'Statut', accessor: 'status', render: (value) => <OpportunityStatusBadge status={value as OpportunityStatus} /> },
+    { id: 'amount', header: 'Montant', accessor: 'amount', align: 'right', render: (value, row) => formatCurrency(value as number, row.currency) },
+    { id: 'probability', header: 'Probabilité', accessor: 'probability', align: 'right', render: (value) => `${value}%` },
+    { id: 'expected_close_date', header: 'Clôture prévue', accessor: 'expected_close_date', render: (value) => value ? formatDate(value as string) : '-' },
   ];
 
   return (
-    <PageWrapper
-      title="Opportunités"
-      backAction={{ label: 'Retour', onClick: onBack }}
-    >
+    <PageWrapper title="Opportunités" backAction={{ label: 'Retour', onClick: onBack }}>
       <Card noPadding>
         <div className="azals-filter-bar">
-          <select
-            className="azals-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
+          <select className="azals-select" value={statusFilter || ''} onChange={(e) => setStatusFilter(e.target.value ? e.target.value as OpportunityStatus : undefined)}>
             <option value="">Tous les statuts</option>
             {Object.entries(OPPORTUNITY_STATUS_CONFIG).map(([key, config]) => (
               <option key={key} value={key}>{config.label}</option>
             ))}
           </select>
         </div>
-
-        <DataTable
-          columns={columns}
-          data={data?.items || []}
-          keyField="id"
-          filterable
-          isLoading={isLoading}
-          pagination={{
-            page,
-            pageSize,
-            total: data?.total || 0,
-            onPageChange: setPage,
-            onPageSizeChange: setPageSize,
-          }}
-          onRefresh={refetch}
-          emptyMessage="Aucune opportunité"
-        />
+        <DataTable columns={columns} data={data?.items || []} keyField="id" filterable isLoading={isLoading}
+          pagination={{ page, pageSize, total: data?.total || 0, onPageChange: setPage, onPageSizeChange: setPageSize }}
+          onRefresh={refetch} emptyMessage="Aucune opportunité" />
       </Card>
     </PageWrapper>
   );
@@ -965,47 +569,22 @@ export const CRMModule: React.FC = () => {
 
   switch (navState.view) {
     case 'customers':
-      return (
-        <CustomersList
-          onSelectCustomer={navigateToCustomerDetail}
-          onCreateCustomer={() => navigateToCustomerForm()}
-          onBack={navigateToDashboard}
-        />
-      );
+      return <CustomersList onSelectCustomer={navigateToCustomerDetail} onCreateCustomer={() => navigateToCustomerForm()} onBack={navigateToDashboard} />;
     case 'customer-detail':
-      return (
-        <CustomerDetailView
-          customerId={navState.customerId!}
-          onBack={navigateToCustomers}
-          onEdit={() => navigateToCustomerForm(navState.customerId)}
-        />
-      );
+      return <CustomerDetailView customerId={navState.customerId!} onBack={navigateToCustomers} onEdit={() => navigateToCustomerForm(navState.customerId)} />;
     case 'customer-form':
-      return (
-        <CustomerForm
-          customerId={navState.customerId}
-          onBack={navState.isNew ? navigateToDashboard : () => navigateToCustomerDetail(navState.customerId!)}
-          onSaved={navigateToCustomerDetail}
-        />
-      );
+      return <CustomerForm customerId={navState.customerId} onBack={navState.isNew ? navigateToDashboard : () => navigateToCustomerDetail(navState.customerId!)} onSaved={navigateToCustomerDetail} />;
     case 'opportunities':
-      return (
-        <OpportunitiesList
-          onSelectOpportunity={navigateToOpportunityDetail}
-          onBack={navigateToDashboard}
-        />
-      );
+      return <OpportunitiesList onSelectOpportunity={navigateToOpportunityDetail} onBack={navigateToDashboard} />;
     default:
-      return (
-        <CRMDashboard
-          onNavigateToCustomers={navigateToCustomers}
-          onNavigateToOpportunities={navigateToOpportunities}
-          onSelectCustomer={navigateToCustomerDetail}
-          onSelectOpportunity={navigateToOpportunityDetail}
-          onCreateCustomer={() => navigateToCustomerForm()}
-        />
-      );
+      return <CRMDashboard onNavigateToCustomers={navigateToCustomers} onNavigateToOpportunities={navigateToOpportunities}
+        onSelectCustomer={navigateToCustomerDetail} onSelectOpportunity={navigateToOpportunityDetail} onCreateCustomer={() => navigateToCustomerForm()} />;
   }
 };
 
 export default CRMModule;
+
+// Re-exports
+export * from './hooks';
+export * from './types';
+export { crmApi } from './api';

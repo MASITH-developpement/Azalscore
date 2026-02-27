@@ -17,7 +17,25 @@
 
   # Content Security Policy (P0 CRITIQUE)
   # Protège contre XSS, injection de scripts, clickjacking
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://api.azalscore.com https://hcaptcha.com https://*.hcaptcha.com wss:; frame-src https://hcaptcha.com https://*.hcaptcha.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  #
+  # ============================================================================
+  # P2 SÉCURITÉ: style-src 'unsafe-inline' - ACCEPTÉ AVEC MITIGATION
+  # ============================================================================
+  # PROBLÈME: React/Vite CSS-in-JS injecte des styles inline dynamiquement.
+  # RISQUE: Timing attacks CSS théoriques (impact: FAIBLE, probabilité: TRÈS FAIBLE)
+  # MITIGATION ACTUELLE:
+  #   - CSP report-uri configuré pour détecter les violations
+  #   - X-XSS-Protection: 1; mode=block en place
+  #   - Autres directives CSP strictes (script-src, connect-src, etc.)
+  #
+  # ROADMAP MIGRATION (Q3 2026):
+  #   1. Configurer vite-plugin-csp pour générer des nonces au build
+  #   2. Injecter le nonce dans index.html via __CSP_NONCE__
+  #   3. Passer à style-src 'self' 'nonce-{random}'
+  #   4. Tester régression UI complète avant déploiement
+  #   Référence: https://vitejs.dev/guide/features.html#content-security-policy-csp
+  # ============================================================================
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://api.azalscore.com https://hcaptcha.com https://*.hcaptcha.com wss:; frame-src https://hcaptcha.com https://*.hcaptcha.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /api/csp-report
 
   # CORS restreint (P0 - remplacer * par domaines autorisés en production)
   # En développement: Access-Control-Allow-Origin: *

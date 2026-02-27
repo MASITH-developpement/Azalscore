@@ -65,6 +65,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- P1 SÉCURITÉ: Content Security Policy -->
+    <!-- Note: 'unsafe-inline' temporairement nécessaire pour reCAPTCHA v3 et SW auto-update -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://hcaptcha.com https://*.hcaptcha.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https: wss:; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://www.google.com https://www.recaptcha.net https://js.stripe.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests" />
+    <!-- P1 SÉCURITÉ: X-Frame-Options -->
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <!-- P1 SÉCURITÉ: Permissions Policy - désactive les API sensibles non utilisées -->
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), accelerometer=(), payment=(self), usb=(), bluetooth=()" />
 
     <!-- Dublin Core Metadata (for academic/professional indexing) -->
     <meta name="DC.title" content="Azalscore ERP" />

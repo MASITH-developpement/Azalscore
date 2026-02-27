@@ -11,7 +11,12 @@ import {
   MessageSquare, Activity, Brain, CheckCircle2, AlertTriangle,
   Zap, Clock, BarChart3, RotateCcw
 } from 'lucide-react';
-import { api } from '@core/api-client';
+import {
+  marceauKeys,
+  useMarceauDashboard,
+  useSendMarceauMessage,
+  type DashboardStats,
+} from './hooks';
 
 // Types
 interface ChatMessage {
@@ -32,15 +37,6 @@ interface QuickAction {
   label: string;
   prompt: string;
   color: string;
-}
-
-interface DashboardStats {
-  total_actions_today: number;
-  total_conversations_today: number;
-  pending_validations: number;
-  avg_confidence_score: number;
-  llm_configured?: boolean;
-  llm_provider?: string | null;
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -82,19 +78,28 @@ const CAPABILITIES = [
 export default function MarceauModule() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [configStatus, setConfigStatus] = useState<'loading' | 'configured' | 'needs_config'>('loading');
   const [showStats, setShowStats] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load stats and config status
+  // React Query hooks
+  const { data: stats } = useMarceauDashboard();
+  const sendMessageMutation = useSendMarceauMessage();
+  const sending = sendMessageMutation.isPending;
+
+  // Derive config status from stats
+  const configStatus: 'loading' | 'configured' | 'needs_config' =
+    stats === undefined ? 'loading' :
+    stats?.llm_configured ? 'configured' : 'needs_config';
+
+  // Update showStats when stats load
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    if (stats?.total_actions_today && stats.total_actions_today > 0) {
+      setShowStats(true);
+    }
+  }, [stats]);
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -113,28 +118,6 @@ export default function MarceauModule() {
     }
   }, []);
 
-  const loadInitialData = async () => {
-    try {
-      const statsRes = await api.get<DashboardStats>('/marceau/dashboard').catch(() => ({ data: null }));
-
-      if (statsRes.data) {
-        setStats(statsRes.data);
-        setShowStats(statsRes.data.total_actions_today > 0);
-
-        // Check LLM status from dashboard response
-        if (statsRes.data.llm_configured) {
-          setConfigStatus('configured');
-        } else {
-          setConfigStatus('needs_config');
-        }
-      } else {
-        setConfigStatus('needs_config');
-      }
-    } catch {
-      setConfigStatus('needs_config');
-    }
-  };
-
   const sendMessage = async (messageText?: string) => {
     const text = messageText || input.trim();
     if (!text || sending) return;
@@ -148,20 +131,9 @@ export default function MarceauModule() {
 
     setMessages(prev => prev.filter(m => m.role !== 'system').concat(userMessage));
     setInput('');
-    setSending(true);
 
     try {
-      const response = await api.post<{
-        message: string;
-        conversation_id: string;
-        intent: string | null;
-        confidence: number;
-        action_created?: {
-          id: string;
-          action_type: string;
-          status: string;
-        };
-      }>('/marceau/chat/message', {
+      const response = await sendMessageMutation.mutateAsync({
         message: text,
         conversation_id: conversationId,
       });
@@ -169,19 +141,19 @@ export default function MarceauModule() {
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: response.data?.message || 'Je suis desole, je n\'ai pas pu traiter votre demande.',
+        content: response?.message || 'Je suis desole, je n\'ai pas pu traiter votre demande.',
         timestamp: new Date(),
-        intent: response.data?.intent || undefined,
-        action: response.data?.action_created ? {
-          type: response.data.action_created.action_type,
-          status: response.data.action_created.status as 'pending' | 'completed' | 'failed',
+        intent: response?.intent || undefined,
+        action: response?.action_created ? {
+          type: response.action_created.action_type,
+          status: response.action_created.status as 'pending' | 'completed' | 'failed',
         } : undefined,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      setConversationId(response.data?.conversation_id || null);
+      setConversationId(response?.conversation_id || null);
 
-    } catch (e: any) {
+    } catch {
       setMessages(prev => [...prev, {
         id: `error-${Date.now()}`,
         role: 'assistant',
@@ -189,7 +161,6 @@ export default function MarceauModule() {
         timestamp: new Date(),
       }]);
     } finally {
-      setSending(false);
       inputRef.current?.focus();
     }
   };
@@ -501,3 +472,10 @@ export default function MarceauModule() {
     </div>
   );
 }
+
+// Re-export hooks for external use
+export {
+  marceauKeys,
+  useMarceauDashboard,
+  useSendMarceauMessage,
+} from './hooks';

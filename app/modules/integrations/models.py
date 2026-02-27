@@ -108,8 +108,8 @@ class EntityType(str, Enum):
 
 # ============== Models ==============
 
-class Connection(Base):
-    """Connexion à un service externe."""
+class LegacyConnection(Base):
+    """Connexion à un service externe (legacy)."""
     __tablename__ = "integ_legacy_connections"
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
@@ -200,7 +200,7 @@ class EntityMapping(Base):
     updated_by = Column(UUID())
 
     # Relations
-    connection = relationship("Connection", back_populates="entity_mappings")
+    connection = relationship("LegacyConnection", back_populates="entity_mappings")
     sync_jobs = relationship("SyncJob", back_populates="entity_mapping")
 
     __table_args__ = (
@@ -252,7 +252,7 @@ class SyncJob(Base):
     created_by = Column(UUID())
 
     # Relations
-    connection = relationship("Connection", back_populates="sync_jobs")
+    connection = relationship("LegacyConnection", back_populates="sync_jobs")
     entity_mapping = relationship("EntityMapping", back_populates="sync_jobs")
     logs = relationship("SyncLog", back_populates="job", cascade="all, delete-orphan")
 

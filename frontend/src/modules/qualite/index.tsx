@@ -4,13 +4,10 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, AlertCircle, Search, CheckCircle,
   Edit, FileText, Clock, Sparkles
 } from 'lucide-react';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button, Modal } from '@ui/actions';
 import { StatCard } from '@ui/dashboards';
 import { Select, Input, TextArea } from '@ui/forms';
@@ -34,10 +31,20 @@ import {
 } from './types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 import type {
-  NonConformance, QCRule, QCInspection, QCParameter, QualityDashboard,
+  NonConformance, QCRule, QCInspection, QCParameter,
   NCType, NCOrigin, NCSeverity
 } from './types';
 import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
+import {
+  useQualityDashboard,
+  useNonConformances,
+  useNonConformance,
+  useCreateNonConformance,
+  useUpdateNCStatus,
+  useCloseNC,
+  useQCRules,
+  useQCInspections
+} from './hooks';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -66,96 +73,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
     ))}
   </nav>
 );
-
-// ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useQualityDashboard = () => {
-  return useQuery({
-    queryKey: ['quality', 'dashboard'],
-    queryFn: async () => {
-      return api.get<QualityDashboard>('/quality/dashboard').then(r => r.data);
-    }
-  });
-};
-
-const useNonConformances = (filters?: { type?: string; status?: string; severity?: string }) => {
-  return useQuery({
-    queryKey: ['quality', 'non-conformances', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.severity) params.append('severity', filters.severity);
-      const query = params.toString();
-      return api.get<NonConformance[]>(`/quality/non-conformances${query ? `?${query}` : ''}`).then(r => r.data);
-    }
-  });
-};
-
-const useNonConformance = (id: string) => {
-  return useQuery({
-    queryKey: ['quality', 'non-conformances', id],
-    queryFn: async () => {
-      return api.get<NonConformance>(`/quality/non-conformances/${id}`).then(r => r.data);
-    },
-    enabled: !!id,
-  });
-};
-
-const useQCRules = (filters?: { type?: string }) => {
-  return useQuery({
-    queryKey: ['qc', 'rules', serializeFilters(filters)],
-    queryFn: async () => {
-      const query = filters?.type ? `?type=${encodeURIComponent(filters.type)}` : '';
-      return api.get<QCRule[]>(`/qc/rules${query}`).then(r => r.data);
-    }
-  });
-};
-
-const useQCInspections = (filters?: { type?: string; status?: string }) => {
-  return useQuery({
-    queryKey: ['qc', 'inspections', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.status) params.append('status', filters.status);
-      const query = params.toString();
-      return api.get<QCInspection[]>(`/qc/inspections${query ? `?${query}` : ''}`).then(r => r.data);
-    }
-  });
-};
-
-const useCreateNonConformance = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<NonConformance>) => {
-      return api.post<NonConformance>('/quality/non-conformances', data).then(r => r.data);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
-  });
-};
-
-const useUpdateNCStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/quality/non-conformances/${id}`, { status }).then(r => r.data);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
-  });
-};
-
-const useCloseNC = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      return api.post(`/quality/non-conformances/${id}/close`).then(r => r.data);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
-  });
-};
 
 // ============================================================================
 // HELPERS

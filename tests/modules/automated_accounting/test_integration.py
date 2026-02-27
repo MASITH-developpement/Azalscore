@@ -23,12 +23,17 @@ class TestDocumentToAccountingFlow:
 
     @pytest.fixture
     def mock_db(self):
-        """Create mock database session."""
-        db = AsyncMock(spec=AsyncSession)
-        db.execute = AsyncMock()
-        db.commit = AsyncMock()
-        db.rollback = AsyncMock()
-        db.refresh = AsyncMock()
+        """Create mock database session with proper query chain."""
+        db = MagicMock()
+        # Set up query chain: db.query().filter().first() returns None by default
+        db.query.return_value.filter.return_value.first.return_value = None
+        db.query.return_value.filter.return_value.all.return_value = []
+        db.query.return_value.filter.return_value.count.return_value = 0
+        db.commit = MagicMock()
+        db.rollback = MagicMock()
+        db.refresh = MagicMock()
+        db.add = MagicMock()
+        db.flush = MagicMock()
         return db
 
     @pytest.fixture
@@ -50,10 +55,10 @@ class TestDocumentToAccountingFlow:
         )
 
         # 1. Create document service
-        doc_service = DocumentService(mock_db)
-        ocr_service = OCRService(mock_db)
-        ai_service = AIClassificationService(mock_db)
-        accounting_service = AutoAccountingService(mock_db)
+        doc_service = DocumentService(db=mock_db, tenant_id=str(tenant_id))
+        ocr_service = OCRService(db=mock_db, tenant_id=str(tenant_id))
+        ai_service = AIClassificationService(db=mock_db, tenant_id=str(tenant_id))
+        accounting_service = AutoAccountingService(db=mock_db, tenant_id=str(tenant_id))
 
         # Mock file content (PDF invoice)
         file_content = b"%PDF-1.4 fake invoice content"
@@ -136,7 +141,7 @@ class TestDocumentToAccountingFlow:
         """Test that low confidence documents require manual validation."""
         from app.modules.automated_accounting.services import DocumentService
 
-        doc_service = DocumentService(mock_db)
+        doc_service = DocumentService(db=mock_db, tenant_id=str(tenant_id))
 
         # Poor quality scan with low OCR confidence
         ocr_result = {
@@ -157,27 +162,32 @@ class TestDocumentToAccountingFlow:
         assert classification_result["confidence_level"] == "VERY_LOW"
         assert classification_result["confidence_score"] < 0.60
 
-    @pytest.mark.asyncio
-    async def test_duplicate_detection_blocks_processing(self, mock_db, tenant_id):
+    def test_duplicate_detection_blocks_processing(self, mock_db, tenant_id, tmp_path):
         """Test that duplicate documents are detected and blocked."""
         from app.modules.automated_accounting.services import OCRService
+        import hashlib
 
-        ocr_service = OCRService(mock_db)
+        ocr_service = OCRService(db=mock_db, tenant_id=str(tenant_id))
 
-        file_content = b"same file content"
-        file_hash = ocr_service.calculate_file_hash(file_content)
+        # Create a temporary file to test hash calculation
+        test_file = tmp_path / "test_invoice.pdf"
+        test_file.write_bytes(b"same file content")
+
+        file_hash = ocr_service.calculate_file_hash(str(test_file))
+
+        # Verify hash is SHA-256 hex string
+        assert len(file_hash) == 64
+        assert all(c in '0123456789abcdef' for c in file_hash)
 
         # Mock finding existing document with same hash
-        mock_result = Mock()
-        mock_result.scalar_one_or_none = Mock(return_value=uuid.uuid4())
-        mock_db.execute = AsyncMock(return_value=mock_result)
+        existing_doc = Mock()
+        existing_doc.id = uuid.uuid4()
+        mock_db.query.return_value.filter.return_value.first.return_value = existing_doc
 
-        is_duplicate, existing_id = await ocr_service.check_duplicate(
-            tenant_id, file_hash
-        )
+        result = ocr_service.check_duplicate(file_hash)
 
-        assert is_duplicate is True
-        assert existing_id is not None
+        assert result is not None
+        assert result.id == existing_doc.id
 
 
 class TestBankReconciliationFlow:
@@ -199,7 +209,7 @@ class TestBankReconciliationFlow:
         """Test automatic reconciliation with exact amount match."""
         from app.modules.automated_accounting.services import ReconciliationService
 
-        recon_service = ReconciliationService(mock_db)
+        recon_service = ReconciliationService(db=mock_db, tenant_id=str(tenant_id))
 
         # Bank transaction
         transaction = {
@@ -252,7 +262,7 @@ class TestBankReconciliationFlow:
         """Test reconciliation using custom rules."""
         from app.modules.automated_accounting.services import ReconciliationService
 
-        recon_service = ReconciliationService(mock_db)
+        recon_service = ReconciliationService(db=mock_db, tenant_id=str(tenant_id))
 
         # Custom rule: Match "LOYER" transactions to rent account
         rule = {
@@ -279,10 +289,21 @@ class TestMultiDocumentProcessing:
 
     @pytest.fixture
     def mock_db(self):
-        db = AsyncMock(spec=AsyncSession)
-        db.execute = AsyncMock()
-        db.commit = AsyncMock()
+        """Create mock database session with proper query chain."""
+        db = MagicMock()
+        db.query.return_value.filter.return_value.first.return_value = None
+        db.query.return_value.filter.return_value.all.return_value = []
+        db.query.return_value.filter.return_value.count.return_value = 0
+        db.commit = MagicMock()
+        db.rollback = MagicMock()
+        db.refresh = MagicMock()
+        db.add = MagicMock()
+        db.flush = MagicMock()
         return db
+
+    @pytest.fixture
+    def tenant_id(self):
+        return uuid.uuid4()
 
     @pytest.mark.asyncio
     async def test_bulk_upload_processing(self, mock_db):
@@ -296,32 +317,28 @@ class TestMultiDocumentProcessing:
         # All documents should be queued for processing
         assert len(documents) == 3
 
-    @pytest.mark.asyncio
-    async def test_bulk_validation_by_expert(self, mock_db):
+    def test_bulk_validation_by_expert(self, mock_db, tenant_id):
         """Test expert bulk validation of pending entries."""
         from app.modules.automated_accounting.services import AutoAccountingService
+        from unittest.mock import patch
 
-        service = AutoAccountingService(mock_db)
+        service = AutoAccountingService(db=mock_db, tenant_id=str(tenant_id))
 
-        pending_entries = [uuid.uuid4() for _ in range(10)]
+        pending_entries = [uuid.uuid4() for _ in range(3)]
         expert_id = uuid.uuid4()
 
-        # Mock successful bulk validation
-        mock_entries = [
-            Mock(id=eid, status="PENDING_VALIDATION") for eid in pending_entries
-        ]
-        mock_result = Mock()
-        mock_result.scalars = Mock(
-            return_value=Mock(all=Mock(return_value=mock_entries))
-        )
-        mock_db.execute = AsyncMock(return_value=mock_result)
+        # Mock the validate_entry method to avoid complex DB interactions
+        with patch.object(service, 'validate_entry') as mock_validate:
+            mock_validate.return_value = Mock(id=uuid.uuid4())
 
-        result = await service.bulk_validate(
-            entry_ids=pending_entries,
-            validated_by=expert_id,
-        )
+            result = service.bulk_validate(
+                auto_entry_ids=pending_entries,
+                validated_by=expert_id,
+            )
 
-        assert result is not None
+            assert result is not None
+            assert result["validated"] == 3
+            assert mock_validate.call_count == 3
 
 
 class TestAPIEndpointIntegration:
@@ -402,18 +419,28 @@ class TestErrorHandlingFlow:
 
     @pytest.fixture
     def mock_db(self):
-        db = AsyncMock(spec=AsyncSession)
-        db.execute = AsyncMock()
-        db.commit = AsyncMock()
-        db.rollback = AsyncMock()
+        """Create mock database session with proper query chain."""
+        db = MagicMock()
+        db.query.return_value.filter.return_value.first.return_value = None
+        db.query.return_value.filter.return_value.all.return_value = []
+        db.query.return_value.filter.return_value.count.return_value = 0
+        db.commit = MagicMock()
+        db.rollback = MagicMock()
+        db.refresh = MagicMock()
+        db.add = MagicMock()
+        db.flush = MagicMock()
         return db
 
+    @pytest.fixture
+    def tenant_id(self):
+        return uuid.uuid4()
+
     @pytest.mark.asyncio
-    async def test_ocr_failure_creates_alert(self, mock_db):
+    async def test_ocr_failure_creates_alert(self, mock_db, tenant_id):
         """Test that OCR failure creates an alert."""
         from app.modules.automated_accounting.services import DocumentService
 
-        service = DocumentService(mock_db)
+        service = DocumentService(db=mock_db, tenant_id=str(tenant_id))
 
         # OCR fails on corrupted file
         ocr_error = {
@@ -430,11 +457,11 @@ class TestErrorHandlingFlow:
         assert severity == "ERROR"
 
     @pytest.mark.asyncio
-    async def test_bank_sync_failure_creates_alert(self, mock_db):
+    async def test_bank_sync_failure_creates_alert(self, mock_db, tenant_id):
         """Test that bank sync failure creates an alert."""
         from app.modules.automated_accounting.services import BankPullService
 
-        service = BankPullService(mock_db)
+        service = BankPullService(db=mock_db, tenant_id=str(tenant_id))
 
         # Bank connection fails
         sync_error = {

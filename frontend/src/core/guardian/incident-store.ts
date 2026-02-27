@@ -121,7 +121,7 @@ const getUserId = (): string | null => {
 /**
  * Retourne un user_id hashé pour les incidents (pseudo-anonymisation)
  */
-const getHashedUserId = async (): Promise<string | null> => {
+const _getHashedUserId = async (): Promise<string | null> => {
   const userId = getUserId();
   if (!userId) return null;
   return await hashForPrivacy(userId);
@@ -130,32 +130,57 @@ const getHashedUserId = async (): Promise<string | null> => {
 /**
  * Liste des sélecteurs CSS pour les éléments sensibles à masquer dans les screenshots
  * P2 SÉCURITÉ: Protège les données métier sensibles
+ *
+ * IMPORTANT: Utiliser data-sensitive="true" ou data-pii="true" sur tout élément
+ * contenant des données personnelles ou financières dans les composants.
  */
 const SENSITIVE_SELECTORS = [
-  // Inputs sensibles
+  // Inputs sensibles - par type
   'input[type="password"]',
+  'input[type="email"]',  // P2: Emails peuvent être PII
+  // Inputs sensibles - par nom
   'input[name*="password"]',
   'input[name*="secret"]',
   'input[name*="token"]',
   'input[name*="api_key"]',
+  'input[name*="apikey"]',
   'input[name*="iban"]',
   'input[name*="bic"]',
+  'input[name*="swift"]',
   'input[name*="card"]',
   'input[name*="cvv"]',
+  'input[name*="cvc"]',
   'input[name*="ssn"]',
-  // Données financières
+  'input[name*="social_security"]',
+  'input[name*="nir"]',  // Numéro INSEE français
+  'input[name*="siret"]',
+  'input[name*="siren"]',
+  // P2 SÉCURITÉ: data-* attributes pour masquage dynamique
   '[data-sensitive]',
+  '[data-sensitive="true"]',
   '[data-pii]',
+  '[data-pii="true"]',
+  '[data-mask]',
+  '[data-mask="true"]',
+  '[data-confidential]',
+  '[data-financial]',
+  '[data-personal]',
+  // Classes génériques
   '.sensitive-data',
   '.pii-data',
   '.financial-data',
+  '.confidential-data',
+  '.masked-content',
   // Composants AZALS spécifiques
   '.azals-iban-field',
   '.azals-bank-details',
   '.azals-salary-field',
   '.azals-payment-info',
-  // Guardian panel
+  '.azals-employee-ssn',
+  '.azals-tax-info',
+  // Guardian panel (ne pas capturer l'interface Guardian elle-même)
   '.guardian-panel',
+  '.guardian-incident',
 ];
 
 /**
@@ -202,20 +227,36 @@ export const captureScreenshot = async (): Promise<string | null> => {
     // Import dynamique de html2canvas
     const html2canvas = (await import('html2canvas')).default;
 
-    const canvas = await html2canvas(document.body, {
+    // P2 SÉCURITÉ: Configuration html2canvas avec timeout via Promise.race
+    const capturePromise = html2canvas(document.body, {
       logging: false,
       useCORS: true,
-      allowTaint: true,
+      // P2 SÉCURITÉ: allowTaint=false empêche la capture d'images cross-origin sans CORS
+      allowTaint: false,
       scale: 0.5,
-      ignoreElements: (element) => {
+      ignoreElements: (element: Element) => {
         // Ignorer complètement certains éléments
         if (element.classList?.contains('guardian-panel')) return true;
         if (element.tagName === 'INPUT' && (element as HTMLInputElement).type === 'password') return true;
         // Ignorer les éléments marqués comme à ne pas capturer
         if (element.hasAttribute('data-no-screenshot')) return true;
+        // P2 SÉCURITÉ: Ignorer les images cross-origin qui pourraient échouer
+        if (element.tagName === 'IMG') {
+          const img = element as HTMLImageElement;
+          if (img.crossOrigin === null && img.src && !img.src.startsWith(window.location.origin)) {
+            return true;
+          }
+        }
         return false;
       },
     });
+
+    // P2 SÉCURITÉ: Timeout de 5s pour éviter DoS client-side
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Screenshot timeout')), 5000)
+    );
+
+    const canvas = await Promise.race([capturePromise, timeoutPromise]);
 
     // P2 SÉCURITÉ: Restaurer les éléments après capture
     restoreSensitiveElements(originalStyles);
@@ -227,11 +268,42 @@ export const captureScreenshot = async (): Promise<string | null> => {
 };
 
 /**
- * Envoie l'incident au backend
+ * P1 SÉCURITÉ: Patterns de données sensibles à masquer dans les logs/incidents
  */
+const SENSITIVE_PATTERNS = [
+  // Tokens et secrets
+  { pattern: /Bearer\s+[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/gi, replacement: 'Bearer [REDACTED]' },
+  { pattern: /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/gi, replacement: '[JWT_REDACTED]' },
+  { pattern: /api[_-]?key[=:]\s*['"]?[A-Za-z0-9_-]{16,}['"]?/gi, replacement: 'api_key=[REDACTED]' },
+  { pattern: /secret[=:]\s*['"]?[A-Za-z0-9_-]{8,}['"]?/gi, replacement: 'secret=[REDACTED]' },
+  // Mots de passe
+  { pattern: /password[=:]\s*['"]?[^'"\s&]{1,}['"]?/gi, replacement: 'password=[REDACTED]' },
+  { pattern: /pwd[=:]\s*['"]?[^'"\s&]{1,}['"]?/gi, replacement: 'pwd=[REDACTED]' },
+  // Données financières
+  { pattern: /\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b/g, replacement: '[IBAN_REDACTED]' },
+  { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, replacement: '[CARD_REDACTED]' },
+  // Identifiants français
+  { pattern: /\b[12]\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{3}\s?\d{3}\s?\d{2}\b/g, replacement: '[NIR_REDACTED]' },
+  { pattern: /\b\d{3}\s?\d{3}\s?\d{3}\s?\d{5}\b/g, replacement: '[SIRET_REDACTED]' },
+  // Emails (partiellement masqués)
+  { pattern: /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, replacement: '[EMAIL]@$2' },
+];
+
+/**
+ * P1 SÉCURITÉ: Sanitize une chaîne pour retirer les données sensibles
+ */
+const sanitizeForIncident = (str: string | null): string | null => {
+  if (!str) return null;
+  let sanitized = str;
+  for (const { pattern, replacement } of SENSITIVE_PATTERNS) {
+    sanitized = sanitized.replace(pattern, replacement);
+  }
+  return sanitized;
+};
+
 /**
  * Envoie l'incident au backend
- * P1 SÉCURITÉ: Les user_id sont hashés pour pseudo-anonymisation
+ * P1 SÉCURITÉ: Les user_id sont hashés et les données sensibles sont sanitizées
  */
 const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolean> => {
   try {
@@ -264,10 +336,11 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
         endpoint: incident.endpoint,
         method: incident.method,
         http_status: incident.http_status,
-        message: incident.message,
-        details: incident.details,
-        // P1: Ne pas envoyer stack_trace complet en production (peut contenir infos sensibles)
-        stack_trace: incident.stack_trace?.slice(0, 1000) || null,
+        // P1 SÉCURITÉ: Sanitize message et details pour retirer données sensibles
+        message: sanitizeForIncident(incident.message),
+        details: sanitizeForIncident(incident.details),
+        // P1: Ne pas envoyer stack_trace complet, sanitize et tronquer
+        stack_trace: sanitizeForIncident(incident.stack_trace?.slice(0, 1000) || null),
         // P1: Limiter la taille du screenshot pour éviter DOS
         screenshot_data: incident.screenshot_data?.slice(0, 500000) || null,
         frontend_timestamp: incident.timestamp.toISOString(),

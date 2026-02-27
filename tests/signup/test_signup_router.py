@@ -8,7 +8,20 @@ Exécution:
 """
 
 import pytest
+import sys
 from unittest.mock import patch, MagicMock
+
+# Mock resend module if not available
+try:
+    import resend
+    RESEND_AVAILABLE = True
+except ImportError:
+    # Create mock module
+    resend_mock = MagicMock()
+    resend_mock.Emails = MagicMock()
+    resend_mock.Emails.send = MagicMock(return_value={"id": "mock_email"})
+    sys.modules["resend"] = resend_mock
+    RESEND_AVAILABLE = False
 
 
 def skip_if_db_error(response, msg="Database not accessible in test environment"):

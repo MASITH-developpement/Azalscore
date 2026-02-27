@@ -517,6 +517,64 @@ MODULE_REGISTRY: List[ModuleDefinition] = [
         priority=ModulePriority.OPTIONAL,
         description="Comptabilité automatisée"
     ),
+
+    # -------------------------------------------------------------------------
+    # MODULES RÉACTIVÉS (anciennement désactivés)
+    # -------------------------------------------------------------------------
+    ModuleDefinition(
+        name="appointments",
+        import_path="app.modules.appointments.router",
+        priority=ModulePriority.STANDARD,
+        description="Rendez-vous, agenda, planification"
+    ),
+    ModuleDefinition(
+        name="consolidation",
+        import_path="app.modules.consolidation.router",
+        priority=ModulePriority.OPTIONAL,
+        description="Consolidation comptable multi-entités"
+    ),
+    ModuleDefinition(
+        name="contracts",
+        import_path="app.modules.contracts.router",
+        priority=ModulePriority.STANDARD,
+        description="Gestion des contrats"
+    ),
+    ModuleDefinition(
+        name="currency",
+        import_path="app.modules.currency.router",
+        priority=ModulePriority.OPTIONAL,
+        description="Gestion des devises et taux de change"
+    ),
+    ModuleDefinition(
+        name="dashboards",
+        import_path="app.modules.dashboards.router",
+        priority=ModulePriority.STANDARD,
+        description="Tableaux de bord personnalisables"
+    ),
+    ModuleDefinition(
+        name="integrations",
+        import_path="app.modules.integrations.router",
+        priority=ModulePriority.OPTIONAL,
+        description="Intégrations tierces"
+    ),
+    ModuleDefinition(
+        name="manufacturing",
+        import_path="app.modules.manufacturing.router",
+        priority=ModulePriority.IMPORTANT,
+        description="Fabrication, GPAO, ordres de production"
+    ),
+    ModuleDefinition(
+        name="resources",
+        import_path="app.modules.resources.router",
+        priority=ModulePriority.OPTIONAL,
+        description="Gestion des ressources"
+    ),
+    ModuleDefinition(
+        name="shipping",
+        import_path="app.modules.shipping.router",
+        priority=ModulePriority.STANDARD,
+        description="Expédition, livraison, transporteurs"
+    ),
 ]
 
 

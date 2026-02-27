@@ -3,9 +3,9 @@
  * Metadonnees du module de tableaux de bord
  */
 
-import type { ModuleMeta } from '@/core/types';
 
-export const dashboardsMeta: ModuleMeta = {
+
+export const dashboardsMeta = {
   id: 'dashboards',
   name: 'Tableaux de bord',
   description: 'Visualisation de donnees, KPIs, graphiques et rapports personnalisables',

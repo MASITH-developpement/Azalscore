@@ -137,7 +137,7 @@ const UserAvatar: React.FC<{ size?: number }> = ({ size = 20 }) => {
     return (
       <img
         src={photo}
-        alt="Photo de profil"
+        alt="Avatar utilisateur"
         style={{
           width: size,
           height: size,

@@ -26,48 +26,38 @@ from app.modules.interventions.router import (
 # FIXTURES
 # ============================================================================
 
+def _make_user_mock(role, email):
+    """Helper pour créer un mock utilisateur avec les bons attributs."""
+    user = MagicMock()
+    user.user_id = uuid4()
+    user.tenant_id = "test_tenant"
+    user.role = role
+    user.email = email
+    return user
+
+
 @pytest.fixture
 def admin_user():
     """Utilisateur admin."""
-    return {
-        "user_id": uuid4(),
-        "tenant_id": "test_tenant",
-        "role": RBACRoles.ADMIN,
-        "email": "admin@test.com"
-    }
+    return _make_user_mock(RBACRoles.ADMIN, "admin@test.com")
 
 
 @pytest.fixture
 def manager_user():
     """Utilisateur manager."""
-    return {
-        "user_id": uuid4(),
-        "tenant_id": "test_tenant",
-        "role": RBACRoles.MANAGER,
-        "email": "manager@test.com"
-    }
+    return _make_user_mock(RBACRoles.MANAGER, "manager@test.com")
 
 
 @pytest.fixture
 def intervenant_user():
     """Utilisateur intervenant."""
-    return {
-        "user_id": uuid4(),
-        "tenant_id": "test_tenant",
-        "role": RBACRoles.INTERVENANT,
-        "email": "intervenant@test.com"
-    }
+    return _make_user_mock(RBACRoles.INTERVENANT, "intervenant@test.com")
 
 
 @pytest.fixture
 def readonly_user():
     """Utilisateur lecture seule."""
-    return {
-        "user_id": uuid4(),
-        "tenant_id": "test_tenant",
-        "role": RBACRoles.READONLY,
-        "email": "readonly@test.com"
-    }
+    return _make_user_mock(RBACRoles.READONLY, "readonly@test.com")
 
 
 # ============================================================================
@@ -152,8 +142,8 @@ class TestPermissionsEndpoints:
         check = require_role(RBACRoles.ADMIN, RBACRoles.MANAGER)
 
         # Doit accepter admin et manager
-        admin = {"role": RBACRoles.ADMIN}
-        manager = {"role": RBACRoles.MANAGER}
+        admin = _make_user_mock(RBACRoles.ADMIN, "admin@test.com")
+        manager = _make_user_mock(RBACRoles.MANAGER, "manager@test.com")
 
         assert check(admin) == admin
         assert check(manager) == manager
@@ -162,8 +152,8 @@ class TestPermissionsEndpoints:
         """La suppression est réservée aux admins."""
         check = require_role(RBACRoles.ADMIN)
 
-        admin = {"role": RBACRoles.ADMIN}
-        manager = {"role": RBACRoles.MANAGER}
+        admin = _make_user_mock(RBACRoles.ADMIN, "admin@test.com")
+        manager = _make_user_mock(RBACRoles.MANAGER, "manager@test.com")
 
         assert check(admin) == admin
 
@@ -178,10 +168,10 @@ class TestPermissionsEndpoints:
             RBACRoles.INTERVENANT
         )
 
-        admin = {"role": RBACRoles.ADMIN}
-        manager = {"role": RBACRoles.MANAGER}
-        intervenant = {"role": RBACRoles.INTERVENANT}
-        readonly = {"role": RBACRoles.READONLY}
+        admin = _make_user_mock(RBACRoles.ADMIN, "admin@test.com")
+        manager = _make_user_mock(RBACRoles.MANAGER, "manager@test.com")
+        intervenant = _make_user_mock(RBACRoles.INTERVENANT, "intervenant@test.com")
+        readonly = _make_user_mock(RBACRoles.READONLY, "readonly@test.com")
 
         assert check(admin) == admin
         assert check(manager) == manager
@@ -208,9 +198,9 @@ class TestMatriceRBAC:
         ]
 
         for role in roles:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             # La lecture ne nécessite pas require_role, juste l'authentification
-            assert user["role"] in roles
+            assert user.role in roles
 
     def test_matrice_creation(self):
         """Seuls admin et manager peuvent créer."""
@@ -220,11 +210,11 @@ class TestMatriceRBAC:
         check = require_role(*can_create)
 
         for role in can_create:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             assert check(user) == user
 
         for role in cannot_create:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             with pytest.raises(HTTPException):
                 check(user)
 
@@ -236,11 +226,11 @@ class TestMatriceRBAC:
         check = require_role(*can_planify)
 
         for role in can_planify:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             assert check(user) == user
 
         for role in cannot_planify:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             with pytest.raises(HTTPException):
                 check(user)
 
@@ -252,11 +242,11 @@ class TestMatriceRBAC:
         check = require_role(*can_action)
 
         for role in can_action:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             assert check(user) == user
 
         for role in cannot_action:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             with pytest.raises(HTTPException):
                 check(user)
 
@@ -268,11 +258,11 @@ class TestMatriceRBAC:
         check = require_role(*can_delete)
 
         for role in can_delete:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             assert check(user) == user
 
         for role in cannot_delete:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             with pytest.raises(HTTPException):
                 check(user)
 
@@ -284,11 +274,11 @@ class TestMatriceRBAC:
         check = require_role(*can_generate)
 
         for role in can_generate:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             assert check(user) == user
 
         for role in cannot_generate:
-            user = {"role": role}
+            user = _make_user_mock(role, f"{role}@test.com")
             with pytest.raises(HTTPException):
                 check(user)
 

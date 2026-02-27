@@ -14,7 +14,7 @@ from sqlalchemy import and_, or_, func, desc, asc
 from sqlalchemy.orm import Session, joinedload
 
 from .models import (
-    BOM, BOMLine, BOMStatus, BOMType,
+    BOM, ManufacturingBOMLine, BOMStatus, BOMType,
     Workcenter, WorkcenterState, WorkcenterType,
     Routing, Operation,
     WorkOrder, WorkOrderStatus, WorkOrderOperation, OperationStatus,
@@ -215,7 +215,7 @@ class BOMRepository(BaseTenantRepository):
 
         # Ajouter les lignes
         for i, line_data in enumerate(lines_data):
-            line = BOMLine(
+            line = ManufacturingBOMLine(
                 tenant_id=self.tenant_id,
                 bom_id=bom.id,
                 sequence=line_data.get('sequence', (i + 1) * 10),
@@ -273,14 +273,14 @@ class BOMRepository(BaseTenantRepository):
         self,
         bom: BOM,
         line_data: Dict[str, Any]
-    ) -> BOMLine:
+    ) -> ManufacturingBOMLine:
         """Ajoute une ligne à la BOM."""
         sequence = line_data.get('sequence')
         if sequence is None:
             max_seq = max([l.sequence for l in bom.lines], default=0)
             sequence = max_seq + 10
 
-        line = BOMLine(
+        line = ManufacturingBOMLine(
             tenant_id=self.tenant_id,
             bom_id=bom.id,
             sequence=sequence,
@@ -298,9 +298,9 @@ class BOMRepository(BaseTenantRepository):
 
     def update_line(
         self,
-        line: BOMLine,
+        line: ManufacturingBOMLine,
         data: Dict[str, Any]
-    ) -> BOMLine:
+    ) -> ManufacturingBOMLine:
         """Met à jour une ligne."""
         for key, value in data.items():
             if hasattr(line, key):
@@ -316,7 +316,7 @@ class BOMRepository(BaseTenantRepository):
         self.db.refresh(line)
         return line
 
-    def delete_line(self, line: BOMLine) -> bool:
+    def delete_line(self, line: ManufacturingBOMLine) -> bool:
         """Supprime une ligne."""
         bom = line.bom
         self.db.delete(line)

@@ -13,154 +13,29 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Plus, Trash2, ChevronDown, Loader2, UserPlus, Package } from 'lucide-react';
-import { api } from '@core/api-client';
-import { unwrapApiResponse } from '@/types';
 import type { ApiMutationError } from '@/types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 import { useTranslation } from '../i18n';
+import {
+  useClients,
+  useCreateClient,
+  useProducts,
+  useCreateProduct,
+  useSaveDocument,
+  type Client,
+  type Product,
+  type LineData,
+  type DocumentType
+} from './hooks';
 
 // ============================================================
-// TYPES
+// LOCAL TYPES
 // ============================================================
 
-type DocumentType = 'QUOTE' | 'INVOICE' | 'ORDER' | 'INTERVENTION';
-
-interface Client {
+interface LineDataWithId extends LineData {
   id: string;
-  code: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  address_line1?: string;
-  city?: string;
-  postal_code?: string;
-  country_code?: string;
-  tax_id?: string;
 }
-
-interface LineData {
-  id: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  tax_rate: number;
-}
-
-interface DocumentData {
-  type: DocumentType;
-  client_id: string;
-  client?: Client;
-  date: string;
-  lines: LineData[];
-  notes?: string;
-}
-
-interface Product {
-  id: string;
-  code: string;
-  name: string;
-  sale_price?: number;
-  purchase_price?: number;
-}
-
-// ============================================================
-// HOOKS API
-// ============================================================
-
-const useClients = () => {
-  return useQuery({
-    queryKey: ['clients', 'lookup'],
-    queryFn: async () => {
-      const response = await api.get<{ items: Client[] }>(
-        '/commercial/customers?page_size=100&is_active=true'
-      );
-      const data = unwrapApiResponse<{ items: Client[] }>(response);
-      return data?.items || [];
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-  });
-};
-
-const useSaveDocument = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: DocumentData) => {
-      const endpoint = data.type === 'INTERVENTION'
-        ? '/interventions'
-        : '/commercial/documents';
-
-      const payload = data.type === 'INTERVENTION'
-        ? {
-            client_id: data.client_id,
-            titre: data.lines[0]?.description || 'Intervention',
-            description: data.notes,
-            type_intervention: 'MAINTENANCE',
-            priorite: 'NORMAL',
-          }
-        : {
-            type: data.type,
-            customer_id: data.client_id,
-            date: data.date,
-            notes: data.notes,
-            lines: data.lines.map(l => ({
-              description: l.description,
-              quantity: l.quantity,
-              unit_price: l.unit_price,
-              tax_rate: l.tax_rate,
-              discount_percent: 0,
-            })),
-          };
-
-      return api.post(endpoint, payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-    },
-  });
-};
-
-const useCreateClient = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<Client>) => {
-      const response = await api.post<Client>('/commercial/customers', data);
-      return response as unknown as Client;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-    },
-  });
-};
-
-const useProducts = () => {
-  return useQuery({
-    queryKey: ['products', 'lookup'],
-    queryFn: async () => {
-      const response = await api.get<{ items: Product[] }>(
-        '/inventory/products?page_size=100&is_active=true'
-      );
-      const data = unwrapApiResponse<{ items: Product[] }>(response);
-      return data?.items || [];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-};
-
-const useCreateProduct = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<Product>) => {
-      const response = await api.post<Product>('/inventory/products', data);
-      return response as unknown as Product;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-  });
-};
 
 // ============================================================
 // COMPOSANTS INTERNES
@@ -507,9 +382,9 @@ const ProductSelectorInline: React.FC<ProductSelectorInlineProps> = ({
 // ============================================================
 
 interface LinesEditorProps {
-  lines: LineData[];
+  lines: LineDataWithId[];
   products: Product[];
-  onChange: (lines: LineData[]) => void;
+  onChange: (lines: LineDataWithId[]) => void;
   t: (key: string) => string;
 }
 
@@ -527,7 +402,7 @@ const LinesEditor: React.FC<LinesEditorProps> = ({ lines, products, onChange, t 
     ]);
   }, [lines, onChange]);
 
-  const updateLine = useCallback((index: number, field: keyof LineData, value: LineData[keyof LineData]) => {
+  const updateLine = useCallback((index: number, field: keyof LineDataWithId, value: LineDataWithId[keyof LineDataWithId]) => {
     const updated = [...lines];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);
@@ -668,7 +543,7 @@ export const Worksheet: React.FC<WorksheetProps> = ({ defaultType }) => {
   // État du document en cours
   const [docType, setDocType] = useState<DocumentType>(getInitialType());
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [lines, setLines] = useState<LineData[]>([]);
+  const [lines, setLines] = useState<LineDataWithId[]>([]);
   const [notes, setNotes] = useState('');
   const [saved, setSaved] = useState(false);
 

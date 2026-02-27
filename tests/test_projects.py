@@ -299,7 +299,11 @@ class TestProjectServiceProjects:
         mock_project.id = project_id
         mock_project.code = "PRJ001"
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_project
+        # Support eager loading with .options()
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.options.return_value = mock_query
+        mock_query.filter.return_value.first.return_value = mock_project
 
         result = service.get_project(project_id)
 
@@ -312,6 +316,8 @@ class TestProjectServiceProjects:
 
         mock_query = MagicMock()
         mock_db.query.return_value = mock_query
+        # Support eager loading with .options()
+        mock_query.options.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.count.return_value = 2
         mock_query.order_by.return_value = mock_query
@@ -345,8 +351,13 @@ class TestProjectServiceProjects:
         project_id = uuid4()
         mock_project = MagicMock(spec=Project)
         mock_project.id = project_id
+        mock_project.is_active = True
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_project
+        # Support eager loading with .options() in get_project
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.options.return_value = mock_query
+        mock_query.filter.return_value.first.return_value = mock_project
 
         result = service.delete_project(project_id)
 

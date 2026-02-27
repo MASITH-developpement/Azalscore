@@ -187,7 +187,7 @@ class TestSignupService:
     # ========================================================================
 
     def test_signup_duplicate_email_fails(self, db, sample_tenant_data, sample_user):
-        """Test: email déjà utilisé → erreur."""
+        """Test: email déjà utilisé → erreur (message générique pour sécurité)."""
         service = SignupService(db)
 
         # Utiliser l'email de l'utilisateur existant
@@ -198,10 +198,11 @@ class TestSignupService:
         with pytest.raises(SignupError) as exc_info:
             service.signup(**sample_tenant_data)
 
-        assert exc_info.value.code == "EMAIL_EXISTS"
+        # SÉCURITÉ: Le service utilise un message générique pour éviter l'énumération
+        assert exc_info.value.code == "SIGNUP_FAILED"
 
     def test_signup_duplicate_company_email_fails(self, db, sample_tenant_data, sample_tenant):
-        """Test: email entreprise déjà utilisé → erreur."""
+        """Test: email entreprise déjà utilisé → erreur (message générique pour sécurité)."""
         service = SignupService(db)
 
         sample_tenant_data["company_email"] = sample_tenant.email
@@ -211,7 +212,8 @@ class TestSignupService:
         with pytest.raises(SignupError) as exc_info:
             service.signup(**sample_tenant_data)
 
-        assert exc_info.value.code == "COMPANY_EXISTS"
+        # SÉCURITÉ: Le service utilise un message générique pour éviter l'énumération
+        assert exc_info.value.code == "SIGNUP_FAILED"
 
     def test_signup_invalid_plan_defaults_to_professional(self, db, sample_tenant_data):
         """Test: plan invalide → défaut PROFESSIONAL."""

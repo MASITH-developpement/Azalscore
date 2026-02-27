@@ -3,9 +3,9 @@
  * Metadonnees du module d'expedition
  */
 
-import type { ModuleMeta } from '@/core/types';
 
-export const shippingMeta: ModuleMeta = {
+
+export const shippingMeta = {
   id: 'shipping',
   name: 'Expeditions',
   description: 'Gestion des expeditions, transporteurs, suivi et retours',

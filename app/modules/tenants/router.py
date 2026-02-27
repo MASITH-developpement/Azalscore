@@ -46,15 +46,22 @@ def verify_tenant_ownership(current_user: User, tenant_id: str) -> None:
 
 
 def require_super_admin(current_user: User) -> None:
-    """Vérifie que l'utilisateur est super_admin (opérations plateforme)."""
+    """
+    Vérifie que l'utilisateur est super_admin (opérations plateforme).
+
+    P1 SÉCURITÉ: Seul SUPERADMIN peut effectuer des opérations plateforme.
+    DIRIGEANT et ADMIN sont des rôles tenant, pas des rôles plateforme.
+    """
     from fastapi import HTTPException
 
-    ADMIN_ROLES = {'SUPERADMIN', 'SUPER_ADMIN', 'DIRIGEANT', 'ADMIN'}
+    # P1 SÉCURITÉ: Uniquement SUPERADMIN pour opérations plateforme
+    # DIRIGEANT/ADMIN sont des rôles tenant, pas plateforme
+    PLATFORM_ADMIN_ROLES = {'SUPERADMIN', 'SUPER_ADMIN'}
     user_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
-    if user_role not in ADMIN_ROLES:
+    if user_role not in PLATFORM_ADMIN_ROLES:
         raise HTTPException(
             status_code=403,
-            detail="Accès refusé. Droits super_admin requis pour cette opération."
+            detail="Accès refusé. Droits SUPERADMIN requis pour les opérations plateforme."
         )
 
 

@@ -14,6 +14,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '@/core/api-client';
 import { useErrorStore, type UIError, type ErrorSeverity } from '@/core/error-handling';
+import { createLogger } from '@core/logger';
+
+// P0 SÉCURITÉ: Utiliser le logger sécurisé au lieu de console.log
+const guardianLogger = createLogger('GUARDIAN');
 
 // ============================================================
 // TYPES
@@ -119,17 +123,19 @@ const getBrowserInfo = (): { browser: string; version: string; os: string } => {
 
 /**
  * Envoie une erreur au backend GUARDIAN
+ * P1 SÉCURITÉ: Utilise sessionStorage (pas localStorage) + tokenManager unifié
  */
 const sendErrorToGuardian = async (report: GuardianErrorReport): Promise<void> => {
   if (!reportingEnabled) return;
 
   try {
-    const token = localStorage.getItem('azals_token');
-    const tenantId = localStorage.getItem('azals_tenant_id');
+    // P1 SÉCURITÉ: Utiliser sessionStorage (cohérent avec api-client)
+    const token = sessionStorage.getItem('azals_access_token');
+    const tenantId = sessionStorage.getItem('azals_tenant_id');
 
     if (!token || !tenantId) {
       // Pas de token ou tenant, on ne peut pas envoyer
-      console.debug('GUARDIAN: No auth context, error not reported');
+      guardianLogger.debug('GUARDIAN: No auth context, error not reported');
       return;
     }
 
@@ -145,21 +151,23 @@ const sendErrorToGuardian = async (report: GuardianErrorReport): Promise<void> =
 
     if (!response.ok) {
       // Silently fail - don't create more errors
-      console.debug('GUARDIAN: Failed to report error', response.status);
+      guardianLogger.debug('GUARDIAN: Failed to report error', response.status);
     }
   } catch (err) {
     // Silently fail - don't create infinite loops
-    console.debug('GUARDIAN: Error reporting failed', err);
+    guardianLogger.debug('GUARDIAN: Error reporting failed', err);
   }
 };
 
 /**
  * Récupère les alertes GUARDIAN non lues
+ * P1 SÉCURITÉ: Utilise sessionStorage (cohérent avec api-client)
  */
 export const fetchGuardianAlerts = async (): Promise<GuardianAlert[]> => {
   try {
-    const token = localStorage.getItem('azals_token');
-    const tenantId = localStorage.getItem('azals_tenant_id');
+    // P1 SÉCURITÉ: Utiliser sessionStorage
+    const token = sessionStorage.getItem('azals_access_token');
+    const tenantId = sessionStorage.getItem('azals_tenant_id');
 
     if (!token || !tenantId) return [];
 
@@ -181,11 +189,13 @@ export const fetchGuardianAlerts = async (): Promise<GuardianAlert[]> => {
 
 /**
  * Acquitte une alerte GUARDIAN
+ * P1 SÉCURITÉ: Utilise sessionStorage (cohérent avec api-client)
  */
 export const acknowledgeGuardianAlert = async (alertId: number): Promise<boolean> => {
   try {
-    const token = localStorage.getItem('azals_token');
-    const tenantId = localStorage.getItem('azals_tenant_id');
+    // P1 SÉCURITÉ: Utiliser sessionStorage
+    const token = sessionStorage.getItem('azals_access_token');
+    const tenantId = sessionStorage.getItem('azals_tenant_id');
 
     if (!token || !tenantId) return false;
 
@@ -344,7 +354,7 @@ export const initGuardian = (options?: {
   });
 
   isInitialized = true;
-  console.debug('GUARDIAN: Frontend module initialized', { correlationId });
+  guardianLogger.debug('GUARDIAN: Frontend module initialized', { correlationId });
 };
 
 /**

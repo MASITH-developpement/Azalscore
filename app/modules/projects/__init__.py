@@ -24,7 +24,7 @@ Architecture:
 """
 
 from .models import (
-    BudgetLine,
+    ProjectBudgetLine as BudgetLine,  # Alias for backwards compatibility
     BudgetType,
     ExpenseStatus,
     IssuePriority,

@@ -11,6 +11,9 @@ from decimal import Decimal
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+# Skip if module not yet implemented
+pytest.importorskip("app.modules.bi.models", reason="Module BI not yet implemented")
+
 # Import des modèles
 from app.modules.bi.models import (
     Dashboard, DashboardWidget, WidgetFilter,

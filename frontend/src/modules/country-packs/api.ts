@@ -595,7 +595,7 @@ export function useCreateTaxRate() {
 export function useUpdateTaxRate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId, data }: { id: number; packId: number; data: TaxRateUpdate }) => {
+    mutationFn: async ({ id, data }: { id: number; packId: number; data: TaxRateUpdate }) => {
       return api.put<TaxRate>(`/country-packs/tax-rates/${id}`, data);
     },
     onSuccess: (_, { id, packId }) => {
@@ -608,7 +608,7 @@ export function useUpdateTaxRate() {
 export function useDeleteTaxRate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId }: { id: number; packId: number }) => {
+    mutationFn: async ({ id }: { id: number; packId: number }) => {
       return api.delete(`/country-packs/tax-rates/${id}`);
     },
     onSuccess: (_, { packId }) => {
@@ -667,7 +667,7 @@ export function useCreateDocumentTemplate() {
 export function useUpdateDocumentTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId, data }: { id: number; packId: number; data: DocumentTemplateUpdate }) => {
+    mutationFn: async ({ id, data }: { id: number; packId: number; data: DocumentTemplateUpdate }) => {
       return api.put<DocumentTemplate>(`/country-packs/templates/${id}`, data);
     },
     onSuccess: (_, { id, packId }) => {
@@ -680,7 +680,7 @@ export function useUpdateDocumentTemplate() {
 export function useDeleteDocumentTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId }: { id: number; packId: number }) => {
+    mutationFn: async ({ id }: { id: number; packId: number }) => {
       return api.delete(`/country-packs/templates/${id}`);
     },
     onSuccess: (_, { packId }) => {
@@ -739,7 +739,7 @@ export function useCreateBankConfig() {
 export function useUpdateBankConfig() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId, data }: { id: number; packId: number; data: BankConfigUpdate }) => {
+    mutationFn: async ({ id, data }: { id: number; packId: number; data: BankConfigUpdate }) => {
       return api.put<BankConfig>(`/country-packs/bank-configs/${id}`, data);
     },
     onSuccess: (_, { id, packId }) => {
@@ -752,7 +752,7 @@ export function useUpdateBankConfig() {
 export function useDeleteBankConfig() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId }: { id: number; packId: number }) => {
+    mutationFn: async ({ id }: { id: number; packId: number }) => {
       return api.delete(`/country-packs/bank-configs/${id}`);
     },
     onSuccess: (_, { packId }) => {
@@ -827,7 +827,7 @@ export function useCreatePublicHoliday() {
 export function useUpdatePublicHoliday() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId, data }: { id: number; packId: number; data: PublicHolidayUpdate }) => {
+    mutationFn: async ({ id, data }: { id: number; packId: number; data: PublicHolidayUpdate }) => {
       return api.put<PublicHoliday>(`/country-packs/holidays/${id}`, data);
     },
     onSuccess: (_, { id, packId }) => {
@@ -840,7 +840,7 @@ export function useUpdatePublicHoliday() {
 export function useDeletePublicHoliday() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId }: { id: number; packId: number }) => {
+    mutationFn: async ({ id }: { id: number; packId: number }) => {
       return api.delete(`/country-packs/holidays/${id}`);
     },
     onSuccess: (_, { packId }) => {
@@ -901,7 +901,7 @@ export function useCreateLegalRequirement() {
 export function useUpdateLegalRequirement() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId, data }: { id: number; packId: number; data: LegalRequirementUpdate }) => {
+    mutationFn: async ({ id, data }: { id: number; packId: number; data: LegalRequirementUpdate }) => {
       return api.put<LegalRequirement>(`/country-packs/requirements/${id}`, data);
     },
     onSuccess: (_, { id, packId }) => {
@@ -914,7 +914,7 @@ export function useUpdateLegalRequirement() {
 export function useDeleteLegalRequirement() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, packId }: { id: number; packId: number }) => {
+    mutationFn: async ({ id }: { id: number; packId: number }) => {
       return api.delete(`/country-packs/requirements/${id}`);
     },
     onSuccess: (_, { packId }) => {

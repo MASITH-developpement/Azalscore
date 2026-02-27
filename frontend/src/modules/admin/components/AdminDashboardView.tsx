@@ -5,16 +5,16 @@
 
 import React, { useState } from 'react';
 import { Users, Building, Shield, Database, Activity, AlertTriangle } from 'lucide-react';
-import { PageWrapper, Grid } from '@ui/layout';
-import { StatCard } from '@ui/dashboards';
 import SocialNetworksModule from '@modules/social-networks';
+import { StatCard } from '@ui/dashboards';
+import { PageWrapper, Grid } from '@ui/layout';
 import { useAdminDashboard } from '../hooks';
-import UsersView from './UsersView';
-import UsersPermissionsView from './UsersPermissionsView';
-import RolesView from './RolesView';
-import TenantsView from './TenantsView';
 import AuditView from './AuditView';
 import BackupsView from './BackupsView';
+import RolesView from './RolesView';
+import TenantsView from './TenantsView';
+import UsersPermissionsView from './UsersPermissionsView';
+import UsersView from './UsersView';
 import { SequencesView, EnrichmentProvidersView, CSSCustomizationView } from './index';
 
 interface TabNavProps {

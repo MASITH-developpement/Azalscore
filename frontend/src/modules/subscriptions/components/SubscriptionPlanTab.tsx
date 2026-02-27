@@ -68,13 +68,13 @@ export const SubscriptionPlanTab: React.FC<TabContentProps<Subscription>> = ({ d
             <div className="azals-std-field azals-std-field--secondary">
               <span>Equivalent mensuel</span>
               <div>
-                {formatCurrency(getMonthlyEquivalent(subscription.amount, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /mois
+                {formatCurrency(getMonthlyEquivalent(subscription.amount || 0, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /mois
               </div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
               <span>Equivalent annuel</span>
               <div>
-                {formatCurrency(getYearlyEquivalent(subscription.amount, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /an
+                {formatCurrency(getYearlyEquivalent(subscription.amount || 0, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /an
               </div>
             </div>
             <div className="azals-std-field">

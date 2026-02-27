@@ -4,13 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Inbox, Settings, AlertTriangle, CheckCircle, Clock, Target, Star,
   MessageSquare, FileText, BookOpen, Sparkles, Edit
 } from 'lucide-react';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button, Modal } from '@ui/actions';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
@@ -20,6 +17,16 @@ import { BaseViewStandard } from '@ui/standards';
 import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
 import { formatDate, formatDuration } from '@/utils/formatters';
+import {
+  helpdeskKeys,
+  useHelpdeskDashboard,
+  useTicketCategories,
+  useTickets,
+  useTicket,
+  useKnowledgeArticles,
+  useCreateTicket,
+  useUpdateTicketStatus
+} from './hooks';
 import {
   TicketInfoTab,
   TicketMessagesTab,
@@ -71,82 +78,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 
 const getStatusInfo = (statuses: typeof STATUSES, status: string) => {
   return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
-};
-
-// ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useHelpdeskDashboard = () => {
-  return useQuery({
-    queryKey: ['helpdesk', 'dashboard'],
-    queryFn: async () => {
-      return api.get<HelpdeskDashboard>('/helpdesk/dashboard').then(r => r.data);
-    }
-  });
-};
-
-const useTicketCategories = () => {
-  return useQuery({
-    queryKey: ['helpdesk', 'categories'],
-    queryFn: async () => {
-      return api.get<TicketCategory[]>('/helpdesk/categories').then(r => r.data);
-    }
-  });
-};
-
-const useTickets = (filters?: { status?: string; priority?: string; category_id?: string }) => {
-  return useQuery({
-    queryKey: ['helpdesk', 'tickets', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.priority) params.append('priority', filters.priority);
-      if (filters?.category_id) params.append('category_id', filters.category_id);
-      const queryString = params.toString();
-      const url = queryString ? `/helpdesk/tickets?${queryString}` : '/helpdesk/tickets';
-      return api.get<Ticket[]>(url).then(r => r.data);
-    }
-  });
-};
-
-const useTicket = (id: string) => {
-  return useQuery({
-    queryKey: ['helpdesk', 'tickets', id],
-    queryFn: async () => {
-      return api.get<Ticket>(`/helpdesk/tickets/${id}`).then(r => r.data);
-    },
-    enabled: !!id
-  });
-};
-
-const useKnowledgeArticles = () => {
-  return useQuery({
-    queryKey: ['helpdesk', 'articles'],
-    queryFn: async () => {
-      return api.get<KnowledgeArticle[]>('/helpdesk/articles').then(r => r.data);
-    }
-  });
-};
-
-const useCreateTicket = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<Ticket>) => {
-      return api.post('/helpdesk/tickets', data).then(r => r.data);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
-  });
-};
-
-const useUpdateTicketStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/helpdesk/tickets/${id}`, { status }).then(r => r.data);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
-  });
 };
 
 // ============================================================================
@@ -696,3 +627,15 @@ const HelpdeskModule: React.FC = () => {
 };
 
 export default HelpdeskModule;
+
+// Re-export hooks for external use
+export {
+  helpdeskKeys,
+  useHelpdeskDashboard,
+  useTicketCategories,
+  useTickets,
+  useTicket,
+  useKnowledgeArticles,
+  useCreateTicket,
+  useUpdateTicketStatus
+} from './hooks';

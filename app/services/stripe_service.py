@@ -533,10 +533,10 @@ class StripeWebhookHandler:
             return False
 
         try:
-            from app.modules.tenants.models import Tenant
+            from app.modules.tenants.models import Tenant, TenantStatus
             tenant = self.db.query(Tenant).filter(
-                Tenant.id == tenant_id,
-                Tenant.is_active == True
+                Tenant.tenant_id == tenant_id,
+                Tenant.status.in_([TenantStatus.ACTIVE, TenantStatus.TRIAL])
             ).first()
             return tenant is not None
         except Exception as e:

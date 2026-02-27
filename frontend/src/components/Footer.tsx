@@ -45,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'full' }) => {
               AZALSCORE
             </Link>
             <p className="text-gray-400 text-sm mt-2">
-              L'ERP français pour les PME modernes
+              L&apos;ERP français pour les PME modernes
             </p>
           </div>
 

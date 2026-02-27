@@ -3,9 +3,9 @@
  * Metadonnees du module de formation
  */
 
-import type { ModuleMeta } from '@/core/types';
 
-export const trainingMeta: ModuleMeta = {
+
+export const trainingMeta = {
   id: 'training',
   name: 'Formation',
   description: 'Gestion des formations, sessions, inscriptions et certifications',

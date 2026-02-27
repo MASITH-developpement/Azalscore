@@ -21,7 +21,8 @@ settings = get_settings()
 SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-REFRESH_TOKEN_EXPIRE_DAYS = 7  # P1: Refresh token valide 7 jours
+# P1 SÉCURITÉ: Refresh token réduit à 2 jours (OWASP recommande 24-48h pour SaaS financier)
+REFRESH_TOKEN_EXPIRE_DAYS = 2
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -63,7 +64,8 @@ def get_password_hash(password: str) -> str:
             "Veuillez utiliser un mot de passe plus court."
         )
 
-    salt = bcrypt.gensalt()
+    # P1 SÉCURITÉ: bcrypt rounds=14 (OWASP 2023 recommande minimum 14, default=12 trop faible)
+    salt = bcrypt.gensalt(rounds=14)
     hashed = bcrypt.hashpw(password_bytes, salt)
     return hashed.decode('utf-8')
 
@@ -281,9 +283,16 @@ def decode_access_token(token: str, check_blacklist: bool = True) -> dict | None
         Payload du JWT si valide et non révoqué, None sinon
 
     SÉCURITÉ:
+    - P0: Valide la taille du token avant décodage (protection DoS)
     - Vérifie la signature et l'expiration
     - Vérifie que le token n'est pas dans la blacklist (révoqué)
     """
+    # P0 SÉCURITÉ: Limite taille token pour éviter DoS par tokens géants
+    # JWT typique: 500-1500 chars. Max raisonnable: 8KB
+    MAX_TOKEN_SIZE = 8192
+    if not token or len(token) > MAX_TOKEN_SIZE:
+        return None
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 

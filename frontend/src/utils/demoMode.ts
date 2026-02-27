@@ -4,16 +4,23 @@
  *
  * Permet d'activer/désactiver les données de démonstration
  * pour tester l'interface sans backend.
+ *
+ * P0 SÉCURITÉ: Utilise sessionStorage (pas localStorage)
+ * - sessionStorage est vidé à la fermeture du navigateur
+ * - Cohérent avec le stockage des tokens (auth/index.ts)
+ * - Moins vulnérable aux attaques XSS persistantes
  */
 
 const DEMO_MODE_KEY = 'azals_demo_mode';
 
 export const isDemoMode = (): boolean => {
-  return localStorage.getItem(DEMO_MODE_KEY) === 'true';
+  // P0 SÉCURITÉ: sessionStorage au lieu de localStorage
+  return sessionStorage.getItem(DEMO_MODE_KEY) === 'true';
 };
 
 export const setDemoMode = (enabled: boolean): void => {
-  localStorage.setItem(DEMO_MODE_KEY, String(enabled));
+  // P0 SÉCURITÉ: sessionStorage au lieu de localStorage
+  sessionStorage.setItem(DEMO_MODE_KEY, String(enabled));
   // Dispatch event pour que les composants puissent réagir
   window.dispatchEvent(new CustomEvent('azals:demoModeChanged', { detail: { enabled } }));
   // Reload pour appliquer le changement

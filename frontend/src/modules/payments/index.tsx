@@ -4,12 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   DollarSign, BarChart2, Clock, AlertCircle, Calendar, TrendingUp, RotateCcw,
   CreditCard, FileText, History, Sparkles, ArrowLeft, Info
 } from 'lucide-react';
-import { serializeFilters } from '@core/query-keys';
 import { Button, Modal } from '@ui/actions';
 import { LoadingState } from '@ui/components/StateViews';
 import { StatCard } from '@ui/dashboards';
@@ -19,7 +17,6 @@ import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/st
 import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
-import { paymentsApi, type RefundCreate } from './api';
 import {
   PaymentInfoTab,
   PaymentDetailsTab,
@@ -33,9 +30,18 @@ import {
   PAYMENT_STATUS_CONFIG, METHOD_CONFIG
 } from './types';
 import type {
-  Payment, Refund, SavedPaymentMethod, PaymentStats,
+  Payment, Refund, SavedPaymentMethod,
   PaymentMethod as PaymentMethodType, PaymentStatus
 } from './types';
+import {
+  usePaymentStats,
+  usePayments,
+  usePayment,
+  useRefunds,
+  usePaymentMethods,
+  useCreateRefund,
+  useRetryPayment
+} from './hooks';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -76,87 +82,6 @@ const STATUS_COLORS: Record<string, string> = {
   FAILED: 'red',
   REFUNDED: 'gray',
   CANCELLED: 'red'
-};
-
-// ============================================================================
-// API HOOKS (using centralized paymentsApi)
-// ============================================================================
-
-const usePaymentStats = () => {
-  return useQuery({
-    queryKey: ['payments', 'stats'],
-    queryFn: async () => {
-      const response = await paymentsApi.getSummary();
-      return response.data;
-    }
-  });
-};
-
-const usePayments = (filters?: { status?: string; method?: string; date_from?: string; date_to?: string }) => {
-  return useQuery({
-    queryKey: ['payments', 'list', serializeFilters(filters)],
-    queryFn: async () => {
-      const response = await paymentsApi.listPayments(filters as Parameters<typeof paymentsApi.listPayments>[0]);
-      return response.data?.items || [];
-    }
-  });
-};
-
-const usePayment = (id: string) => {
-  return useQuery({
-    queryKey: ['payments', 'detail', id],
-    queryFn: async () => {
-      const response = await paymentsApi.getPayment(id);
-      return response.data;
-    },
-    enabled: !!id
-  });
-};
-
-const useRefunds = (filters?: { status?: string }) => {
-  return useQuery({
-    queryKey: ['payments', 'refunds', serializeFilters(filters)],
-    queryFn: async () => {
-      const response = await paymentsApi.listRefunds(filters as Parameters<typeof paymentsApi.listRefunds>[0]);
-      return response.data;
-    }
-  });
-};
-
-const usePaymentMethods = (filters?: { customer_id?: string }) => {
-  return useQuery({
-    queryKey: ['payments', 'methods', serializeFilters(filters)],
-    queryFn: async () => {
-      const response = await paymentsApi.listPaymentMethods(filters);
-      return response.data;
-    }
-  });
-};
-
-const useCreateRefund = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: RefundCreate) => {
-      const response = await paymentsApi.createRefund(data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-    }
-  });
-};
-
-const useRetryPayment = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (paymentId: string) => {
-      const response = await paymentsApi.retryPayment(paymentId);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-    }
-  });
 };
 
 // ============================================================================

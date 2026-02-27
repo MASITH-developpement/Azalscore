@@ -7,93 +7,89 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Key, ShieldCheck, Smartphone, User, Save, Edit, X, Loader2, Check, Camera, Copy, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { MainLayout } from '@/ui-engine/layouts/MainLayout';
 import { useAuth } from '@/core/auth';
-import { api } from '@/core/api-client';
-
-interface UserProfile {
-  id?: string;
-  name: string;
-  email: string;
-  phone?: string;
-  photo?: string;
-  api_token?: string;
-  role: string;
-}
+import {
+  profileKeys,
+  useProfile,
+  useUpdateProfile,
+  useGenerateApiToken,
+  type UserProfile,
+} from './hooks';
 
 export default function ProfileModule() {
   const { user: authUser } = useAuth();
 
-  const [user, setUser] = useState<UserProfile>({
-    name: authUser?.name || 'Utilisateur',
-    email: authUser?.email || '',
+  // React Query hooks
+  const { data: profileData } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const generateApiToken = useGenerateApiToken();
+
+  // Local state for form
+  const [formData, setFormData] = useState<UserProfile>({
+    name: '',
+    email: '',
     phone: '',
     photo: '',
     api_token: '',
-    role: 'Admin',
+    role: 'Utilisateur',
   });
 
   const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToken, setShowToken] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
-  const [generatingToken, setGeneratingToken] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Charger le profil depuis l'API
+  // Synchroniser formData avec les données du profil
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await api.get<UserProfile>('/web/profile');
-        // L'API retourne les données directement (pas de wrapper {data: ...})
-        const profile = response as unknown as UserProfile;
-        if (profile && profile.id) {
-          setUser({
-            name: profile.name || authUser?.name || 'Utilisateur',
-            email: profile.email || authUser?.email || '',
-            phone: profile.phone || '',
-            photo: profile.photo || '',
-            api_token: profile.api_token || '',
-            role: profile.role || 'Utilisateur',
-          });
-        }
-      } catch (err) {
-        console.error('Failed to load profile:', err);
-        // Fallback to auth user data
-        if (authUser) {
-          setUser({
-            name: authUser.name || 'Utilisateur',
-            email: authUser.email || '',
-            phone: '',
-            photo: '',
-            api_token: '',
-            role: 'Utilisateur',
-          });
-        }
-      }
-    };
-    loadProfile();
-  }, [authUser]);
+    if (profileData?.id) {
+      setFormData({
+        name: profileData.name || authUser?.name || 'Utilisateur',
+        email: profileData.email || authUser?.email || '',
+        phone: profileData.phone || '',
+        photo: profileData.photo || '',
+        api_token: profileData.api_token || '',
+        role: profileData.role || 'Utilisateur',
+      });
+    } else if (authUser) {
+      setFormData({
+        name: authUser.name || 'Utilisateur',
+        email: authUser.email || '',
+        phone: '',
+        photo: '',
+        api_token: '',
+        role: 'Utilisateur',
+      });
+    }
+  }, [profileData, authUser]);
+
+  // Utiliser les données du profil ou formData
+  const user = profileData?.id ? {
+    ...profileData,
+    name: editing ? formData.name : profileData.name,
+    email: editing ? formData.email : profileData.email,
+    phone: editing ? formData.phone : profileData.phone,
+    photo: editing ? formData.photo : profileData.photo,
+  } : formData;
+
+  const saving = updateProfile.isPending;
+  const generatingToken = generateApiToken.isPending;
 
   // Sauvegarder le profil
   const handleSave = async () => {
-    setSaving(true);
     setError(null);
     try {
-      await api.put('/web/profile', {
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        photo: user.photo,
+      await updateProfile.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        photo: formData.photo,
       });
       setSaved(true);
       setEditing(false);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setError('Erreur lors de la sauvegarde du profil');
-      console.error('Failed to save profile:', err);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -117,7 +113,7 @@ export default function ProfileModule() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      setUser({ ...user, photo: base64 });
+      setFormData({ ...formData, photo: base64 });
     };
     reader.readAsDataURL(file);
   };
@@ -133,21 +129,14 @@ export default function ProfileModule() {
 
   // Générer un nouveau token API
   const generateToken = async () => {
-    setGeneratingToken(true);
     setError(null);
     try {
-      const response = await api.post<{ api_token: string }>('/web/profile/generate-token');
-      // L'API retourne les données directement
-      const result = response as unknown as { api_token: string };
+      const result = await generateApiToken.mutateAsync();
       if (result?.api_token) {
-        setUser({ ...user, api_token: result.api_token });
         setShowToken(true);
       }
     } catch (err) {
-      console.error('Failed to generate token:', err);
       setError('Erreur lors de la génération du token');
-    } finally {
-      setGeneratingToken(false);
     }
   };
 
@@ -251,8 +240,8 @@ export default function ProfileModule() {
                     id="profile-name"
                     type="text"
                     className="azals-input"
-                    value={user.name}
-                    onChange={(e) => setUser({ ...user, name: e.target.value })}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 ) : (
                   <p id="profile-name">{user.name}</p>
@@ -266,8 +255,8 @@ export default function ProfileModule() {
                     id="profile-email"
                     type="email"
                     className="azals-input"
-                    value={user.email}
-                    onChange={(e) => setUser({ ...user, email: e.target.value })}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 ) : (
                   <p id="profile-email">{user.email}</p>
@@ -281,8 +270,8 @@ export default function ProfileModule() {
                     id="profile-phone"
                     type="tel"
                     className="azals-input"
-                    value={user.phone || ''}
-                    onChange={(e) => setUser({ ...user, phone: e.target.value })}
+                    value={formData.phone || ''}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+33 6 12 34 56 78"
                   />
                 ) : (
@@ -433,3 +422,11 @@ export default function ProfileModule() {
     </MainLayout>
   );
 }
+
+// Re-export hooks for external use
+export {
+  profileKeys,
+  useProfile,
+  useUpdateProfile,
+  useGenerateApiToken,
+} from './hooks';

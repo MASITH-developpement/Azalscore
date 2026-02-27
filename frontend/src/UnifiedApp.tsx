@@ -16,8 +16,9 @@ import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
-import { initTenantTheme } from '@core/css-theme';
+import { logger } from '@core/logger';
 import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
+import { initTenantTheme } from '@core/css-theme';
 import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import LandingPage from './pages/LandingPage';
 import { MentionsLegales, Confidentialite, CGV, Contact } from './pages/legal';
@@ -45,7 +46,7 @@ const HRModule = lazy(() => import('./modules/hr'));
 const AdminModule = lazy(() => import('./modules/admin'));
 const PurchasesModule = lazy(() => import('./modules/purchases'));
 const ProjectsModule = lazy(() => import('./modules/projects'));
-const VehiculesModule = lazy(() => import('./modules/vehicles'));
+const _VehiculesModule = lazy(() => import('./modules/vehicles'));
 const AffairesModule = lazy(() => import('./modules/affaires'));
 const ProductionModule = lazy(() => import('./modules/production'));
 const MaintenanceModule = lazy(() => import('./modules/maintenance'));
@@ -225,7 +226,7 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    console.error('[AZALSCORE] Unhandled error:', error, errorInfo);
+    logger.error('[AZALSCORE] Unhandled error:', error, errorInfo);
   }
 
   handleReload = (): void => {
@@ -325,7 +326,7 @@ const Login: React.FC = () => {
       // Utiliser la fonction login du store qui gère tout (tokens + user data)
       await login({ email, password });
     } catch (err) {
-      console.error('[LOGIN] Erreur:', err);
+      logger.error('[LOGIN] Erreur:', err);
       setError(err instanceof Error ? err.message : 'Identifiants invalides');
     } finally {
       setLoading(false);

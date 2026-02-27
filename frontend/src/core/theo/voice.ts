@@ -6,6 +6,9 @@
  */
 
 import { create } from 'zustand';
+import { createLogger } from '@core/logger';
+
+const voiceLogger = createLogger('TheoVoice');
 
 // ============================================================
 // TYPES
@@ -122,13 +125,23 @@ export const useTheoVoiceStore = create<TheoVoiceStore>((set, get) => ({
 
     try {
       // Build WebSocket URL
+      // P0 SÉCURITÉ: Token JAMAIS dans l'URL (exposé aux logs/historique)
+      // Le token est envoyé via message après connexion
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsHost = API_BASE_URL.replace(/^https?:\/\//, '') || window.location.host;
-      const wsUrl = `${wsProtocol}//${wsHost}/theo/ws?companion=${companionId}&mode=desktop${token ? `&token=${token}` : ''}`;
+      const wsUrl = `${wsProtocol}//${wsHost}/theo/ws?companion=${companionId}&mode=desktop`;
 
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        // P0 SÉCURITÉ: Envoyer le token via message WebSocket sécurisé
+        // après établissement de la connexion (pas dans l'URL)
+        if (token) {
+          ws.send(JSON.stringify({
+            type: 'auth',
+            payload: { token },
+          }));
+        }
         set({ connectionState: 'connected' });
       };
 
@@ -137,12 +150,12 @@ export const useTheoVoiceStore = create<TheoVoiceStore>((set, get) => ({
           const message: WSMessage = JSON.parse(event.data);
           handleWSMessage(message, set, get);
         } catch (e) {
-          console.error('[TheoVoice] Invalid message:', e);
+          voiceLogger.error(' Invalid message:', e);
         }
       };
 
       ws.onerror = (error) => {
-        console.error('[TheoVoice] WebSocket error:', error);
+        voiceLogger.error(' WebSocket error:', error);
         set({ connectionState: 'error', voiceState: 'error' });
       };
 
@@ -161,7 +174,7 @@ export const useTheoVoiceStore = create<TheoVoiceStore>((set, get) => ({
       set({ audioContext });
 
     } catch (error) {
-      console.error('[TheoVoice] Connection error:', error);
+      voiceLogger.error(' Connection error:', error);
       set({ connectionState: 'error' });
     }
   },
@@ -205,7 +218,7 @@ export const useTheoVoiceStore = create<TheoVoiceStore>((set, get) => ({
     const { websocket, useBrowserSTT } = get();
 
     if (!websocket || websocket.readyState !== WebSocket.OPEN) {
-      console.error('[TheoVoice] Not connected');
+      voiceLogger.error(' Not connected');
       return;
     }
 
@@ -240,7 +253,7 @@ export const useTheoVoiceStore = create<TheoVoiceStore>((set, get) => ({
     const { websocket } = get();
 
     if (!websocket || websocket.readyState !== WebSocket.OPEN) {
-      console.error('[TheoVoice] Not connected');
+      voiceLogger.error(' Not connected');
       return;
     }
 
@@ -404,7 +417,7 @@ function handleWSMessage(
     }
 
     case 'error':
-      console.error('[TheoVoice] Error:', payload.message);
+      voiceLogger.error(' Error:', payload.message);
       set(() => ({
         voiceState: 'error',
       }));
@@ -424,7 +437,7 @@ function startBrowserSTT(
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    console.error('[TheoVoice] Web Speech API not supported');
+    voiceLogger.error(' Web Speech API not supported');
     set(() => ({ voiceState: 'error' }));
     return;
   }
@@ -480,7 +493,7 @@ function startBrowserSTT(
   };
 
   recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-    console.error('[TheoVoice] Speech recognition error:', event.error);
+    voiceLogger.error(' Speech recognition error:', event.error);
     set(() => ({
       isListening: false,
       voiceState: event.error === 'no-speech' ? 'idle' : 'error',
@@ -555,7 +568,7 @@ async function startMediaRecording(
     set(() => ({ mediaRecorder }));
 
   } catch (error) {
-    console.error('[TheoVoice] Microphone error:', error);
+    voiceLogger.error(' Microphone error:', error);
     set(() => ({
       voiceState: 'error',
       isListening: false,
@@ -602,7 +615,7 @@ async function playAudioQueue(
         source.start();
       });
     } catch (e) {
-      console.error('[TheoVoice] Audio playback error:', e);
+      voiceLogger.error(' Audio playback error:', e);
     }
   }
 

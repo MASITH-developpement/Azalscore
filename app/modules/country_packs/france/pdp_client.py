@@ -49,6 +49,16 @@ from .e_invoicing import (
     PDPResponse,
     EInvoiceService,
 )
+from .exceptions import (
+    PDPError,
+    PDPConnectionError,
+    PDPAuthenticationError,
+    PDPAPIError,
+    PDPRateLimitError,
+    PDPTimeoutError,
+    PDPInvoiceNotFoundError,
+    PDPInvoiceRejectedError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -379,8 +389,17 @@ class ChorusProClient(BasePDPClient):
                 ]
             )
 
-        except Exception as e:
-            logger.error(f"Erreur Chorus Pro: {e}")
+        except (httpx.TimeoutException, httpx.ConnectError) as e:
+            logger.error(f"Erreur connexion Chorus Pro: {e}")
+            return PDPInvoiceResponse(
+                success=False,
+                transaction_id=transaction_id,
+                status=EInvoiceStatus.REJECTED,
+                message=f"Erreur connexion Chorus Pro: {str(e)}",
+                errors=[str(e)]
+            )
+        except (httpx.HTTPStatusError, PDPAPIError) as e:
+            logger.error(f"Erreur API Chorus Pro: {e}")
             return PDPInvoiceResponse(
                 success=False,
                 transaction_id=transaction_id,
@@ -439,7 +458,7 @@ class ChorusProClient(BasePDPClient):
                 message=response.get("libelleStatut", "")
             )
 
-        except Exception as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
             return PDPInvoiceResponse(
                 success=False,
                 transaction_id=str(uuid.uuid4()),
@@ -485,8 +504,8 @@ class ChorusProClient(BasePDPClient):
                     message=f"Facture {facture.get('numeroFacture')}"
                 ))
 
-        except Exception as e:
-            logger.error(f"Erreur récupération factures: {e}")
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
+            logger.error(f"Erreur recuperation factures: {e}")
 
         return invoices
 
@@ -599,7 +618,7 @@ class PPFClient(BasePDPClient):
                 ]
             )
 
-        except Exception as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
             logger.error(f"Erreur PPF: {e}")
             return PDPInvoiceResponse(
                 success=False,
@@ -631,7 +650,7 @@ class PPFClient(BasePDPClient):
                 message=response.get("message", "")
             )
 
-        except Exception as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
             return PDPInvoiceResponse(
                 success=False,
                 transaction_id=str(uuid.uuid4()),
@@ -640,7 +659,7 @@ class PPFClient(BasePDPClient):
             )
 
     async def get_received_invoices(self, since: Optional[datetime] = None) -> List[PDPInvoiceResponse]:
-        """Récupérer les factures reçues via PPF."""
+        """Recuperer les factures recues via PPF."""
         invoices = []
 
         try:
@@ -671,8 +690,8 @@ class PPFClient(BasePDPClient):
                     xml_content=facture.get("contenuXml")
                 ))
 
-        except Exception as e:
-            logger.error(f"Erreur récupération PPF: {e}")
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
+            logger.error(f"Erreur recuperation PPF: {e}")
 
         return invoices
 
@@ -713,7 +732,7 @@ class PPFClient(BasePDPClient):
                 message=f"e-reporting soumis: {response.get('referenceDeclaration')}"
             )
 
-        except Exception as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
             logger.error(f"Erreur e-reporting: {e}")
             return PDPInvoiceResponse(
                 success=False,
@@ -799,7 +818,7 @@ class GenericPDPClient(BasePDPClient):
                 xml_content=xml_content
             )
 
-        except Exception as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
             return PDPInvoiceResponse(
                 success=False,
                 transaction_id=transaction_id,
@@ -808,7 +827,7 @@ class GenericPDPClient(BasePDPClient):
             )
 
     async def get_invoice_status(self, invoice_id: str) -> PDPInvoiceResponse:
-        """Obtenir le statut via PDP générique."""
+        """Obtenir le statut via PDP generique."""
         try:
             endpoint = self.endpoints["status"].format(id=invoice_id)
 
@@ -831,7 +850,7 @@ class GenericPDPClient(BasePDPClient):
                 message=response.get("message", "")
             )
 
-        except Exception as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
             return PDPInvoiceResponse(
                 success=False,
                 transaction_id=str(uuid.uuid4()),
@@ -840,7 +859,7 @@ class GenericPDPClient(BasePDPClient):
             )
 
     async def get_received_invoices(self, since: Optional[datetime] = None) -> List[PDPInvoiceResponse]:
-        """Récupérer les factures reçues."""
+        """Recuperer les factures recues."""
         try:
             params = {}
             if since:
@@ -860,8 +879,8 @@ class GenericPDPClient(BasePDPClient):
                 for inv in response.get("invoices", [])
             ]
 
-        except Exception as e:
-            logger.error(f"Erreur: {e}")
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
+            logger.error(f"Erreur reception factures: {e}")
             return []
 
     async def submit_ereporting(self, data: EReportingData) -> PDPInvoiceResponse:
@@ -896,7 +915,7 @@ class GenericPDPClient(BasePDPClient):
                 message="e-reporting soumis"
             )
 
-        except Exception as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPAPIError) as e:
             return PDPInvoiceResponse(
                 success=False,
                 transaction_id=transaction_id,
@@ -1284,7 +1303,7 @@ class UnifiedEInvoicingService:
                         "test_mode": config.test_mode,
                         "connected": test_response.success or "SANDBOX" in test_response.message
                     }
-            except Exception as e:
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError, PDPError, OSError) as e:
                 status["providers"][provider.value] = {
                     "configured": True,
                     "error": str(e)

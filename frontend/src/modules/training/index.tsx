@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * AZALSCORE Module - Training
  * Interface principale du module de formation

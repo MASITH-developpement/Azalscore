@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import type { ApiError, Result } from '@/types';
+import { logger } from '@core/logger';
 
 // ============================================================
 // TYPES
@@ -212,7 +213,7 @@ export const showCritical = (
 
 export class UIErrorBoundary {
   static handleError(error: Error, errorInfo: React.ErrorInfo): void {
-    console.error('UI Error Boundary caught:', error, errorInfo);
+    logger.error('UI Error Boundary caught:', error, errorInfo);
 
     useErrorStore.getState().addError({
       code: 'UI_CRASH',

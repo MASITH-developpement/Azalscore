@@ -3,7 +3,7 @@
  * Client REST pour la comptabilite automatisee
  */
 
-import { api } from '@/core/api-client';
+import { api } from '@core/api-client';
 import type {
   Document,
   DocumentUpdate,
@@ -17,7 +17,6 @@ import type {
   Alert,
   AlertFilters,
   AlertListResponse,
-  AlertUpdate,
   AccountingRule,
   AccountingRuleCreate,
   EmailInbox,
@@ -36,9 +35,6 @@ const BASE_URL = '/accounting';
 // ============================================================================
 
 export const dashboardApi = {
-  /**
-   * Dashboard simplifie pour le dirigeant
-   */
   getDirigeant: (syncBank = true) =>
     api.get<{
       treasury_current: number;
@@ -49,11 +45,8 @@ export const dashboardApi = {
       invoices_to_receive_amount: number;
       result_estimated: number;
       alerts_critical: Alert[];
-    }>(`${BASE_URL}/dirigeant/dashboard`, { params: { sync_bank: syncBank } }),
+    }>(`${BASE_URL}/dirigeant/dashboard?sync_bank=${syncBank}`),
 
-  /**
-   * Dashboard documentaire pour l'assistante
-   */
   getAssistante: () =>
     api.get<{
       documents_received_today: number;
@@ -63,9 +56,6 @@ export const dashboardApi = {
       alerts: Alert[];
     }>(`${BASE_URL}/assistante/dashboard`),
 
-  /**
-   * Dashboard complet pour l'expert-comptable
-   */
   getExpert: () =>
     api.get<{
       documents_to_validate: number;
@@ -76,9 +66,6 @@ export const dashboardApi = {
       pending_validations: Document[];
     }>(`${BASE_URL}/expert/dashboard`),
 
-  /**
-   * Dashboard general M2A
-   */
   getGeneral: () => api.get<M2ADashboard>(`${BASE_URL}/dashboard`),
 };
 
@@ -87,9 +74,6 @@ export const dashboardApi = {
 // ============================================================================
 
 export const documentApi = {
-  /**
-   * Liste des documents
-   */
   list: (filters?: DocumentFilters) => {
     const params = new URLSearchParams();
     if (filters?.document_type) params.append('document_type', filters.document_type);
@@ -103,68 +87,45 @@ export const documentApi = {
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
-    return api.get<DocumentListResponse>(`${BASE_URL}/documents?${params.toString()}`);
+    const queryString = params.toString();
+    return api.get<DocumentListResponse>(`${BASE_URL}/documents${queryString ? `?${queryString}` : ''}`);
   },
 
-  /**
-   * Detail d'un document
-   */
   get: (id: string) => api.get<Document>(`${BASE_URL}/documents/${id}`),
 
-  /**
-   * Upload d'un document
-   */
-  upload: (file: File, documentType: DocumentType = 'INVOICE_RECEIVED') => {
+  upload: async (file: File, documentType: DocumentType = 'INVOICE_RECEIVED') => {
+    // For file upload, we need to use FormData
     const formData = new FormData();
     formData.append('file', file);
-    return api.postForm<Document>(
+    // Using post with headers for multipart
+    return api.post<Document>(
       `${BASE_URL}/assistante/documents/upload?document_type=${documentType}`,
-      formData
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
     );
   },
 
-  /**
-   * Mise a jour d'un document
-   */
   update: (id: string, data: DocumentUpdate) =>
     api.put<Document>(`${BASE_URL}/documents/${id}`, data),
 
-  /**
-   * Valider un document
-   */
   validate: (id: string, data?: { corrections?: DocumentUpdate }) =>
     api.post<Document>(`${BASE_URL}/documents/${id}/validate`, data),
 
-  /**
-   * Rejeter un document
-   */
   reject: (id: string, reason?: string) =>
     api.post<Document>(`${BASE_URL}/documents/${id}/reject`, { reason }),
 
-  /**
-   * Relancer le traitement OCR/IA
-   */
   reprocess: (id: string) =>
     api.post<Document>(`${BASE_URL}/documents/${id}/reprocess`),
 
-  /**
-   * Comptabiliser un document
-   */
   account: (id: string) =>
     api.post<{ entry_id: string }>(`${BASE_URL}/documents/${id}/account`),
 
-  /**
-   * Validation en masse
-   */
   bulkValidate: (documentIds: string[]) =>
     api.post<{ validated: number; errors: string[] }>(
       `${BASE_URL}/expert/bulk-validate`,
       { document_ids: documentIds }
     ),
 
-  /**
-   * Telecharger le fichier original
-   */
   download: (id: string) =>
     api.get<Blob>(`${BASE_URL}/documents/${id}/download`, { responseType: 'blob' }),
 };
@@ -174,39 +135,21 @@ export const documentApi = {
 // ============================================================================
 
 export const bankConnectionApi = {
-  /**
-   * Liste des connexions bancaires
-   */
   list: () => api.get<BankConnection[]>(`${BASE_URL}/bank/connections`),
 
-  /**
-   * Detail d'une connexion
-   */
   get: (id: string) => api.get<BankConnection>(`${BASE_URL}/bank/connections/${id}`),
 
-  /**
-   * Initier une connexion bancaire
-   */
   create: (data: BankConnectionCreate) =>
     api.post<{ connection_id: string; redirect_url: string }>(
       `${BASE_URL}/bank/connections`,
       data
     ),
 
-  /**
-   * Deconnecter une banque
-   */
   delete: (id: string) => api.delete(`${BASE_URL}/bank/connections/${id}`),
 
-  /**
-   * Declencher une synchronisation
-   */
   sync: (id: string) =>
     api.post<SyncLog>(`${BASE_URL}/bank/connections/${id}/sync`),
 
-  /**
-   * Synchroniser toutes les connexions
-   */
   syncAll: () => api.post<SyncLog[]>(`${BASE_URL}/bank/sync-all`),
 };
 
@@ -215,9 +158,6 @@ export const bankConnectionApi = {
 // ============================================================================
 
 export const bankTransactionApi = {
-  /**
-   * Liste des transactions bancaires
-   */
   list: (filters?: BankTransactionFilters) => {
     const params = new URLSearchParams();
     if (filters?.connection_id) params.append('connection_id', filters.connection_id);
@@ -230,12 +170,10 @@ export const bankTransactionApi = {
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
-    return api.get<BankTransactionListResponse>(`${BASE_URL}/bank/transactions?${params.toString()}`);
+    const queryString = params.toString();
+    return api.get<BankTransactionListResponse>(`${BASE_URL}/bank/transactions${queryString ? `?${queryString}` : ''}`);
   },
 
-  /**
-   * Detail d'une transaction
-   */
   get: (id: string) => api.get<BankTransaction>(`${BASE_URL}/bank/transactions/${id}`),
 };
 
@@ -244,31 +182,19 @@ export const bankTransactionApi = {
 // ============================================================================
 
 export const reconciliationApi = {
-  /**
-   * Obtenir les suggestions de rapprochement
-   */
   getSuggestions: (transactionId?: string) => {
     const params = transactionId ? `?transaction_id=${transactionId}` : '';
     return api.get<ReconciliationSuggestion[]>(`${BASE_URL}/reconciliation/suggestions${params}`);
   },
 
-  /**
-   * Rapprocher manuellement
-   */
   reconcile: (action: ReconciliationAction) =>
     api.post<BankTransaction>(`${BASE_URL}/reconciliation/manual`, action),
 
-  /**
-   * Annuler un rapprochement
-   */
   unreconcile: (transactionId: string) =>
     api.post<BankTransaction>(`${BASE_URL}/reconciliation/unreconcile`, {
       transaction_id: transactionId,
     }),
 
-  /**
-   * Lancer le rapprochement automatique
-   */
   autoReconcile: () =>
     api.post<{ matched: number; unmatched: number }>(`${BASE_URL}/reconciliation/auto`),
 };
@@ -278,9 +204,6 @@ export const reconciliationApi = {
 // ============================================================================
 
 export const alertApi = {
-  /**
-   * Liste des alertes
-   */
   list: (filters?: AlertFilters) => {
     const params = new URLSearchParams();
     if (filters?.alert_type) params.append('alert_type', filters.alert_type);
@@ -290,32 +213,21 @@ export const alertApi = {
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
-    return api.get<AlertListResponse>(`${BASE_URL}/alerts?${params.toString()}`);
+    const queryString = params.toString();
+    return api.get<AlertListResponse>(`${BASE_URL}/alerts${queryString ? `?${queryString}` : ''}`);
   },
 
-  /**
-   * Detail d'une alerte
-   */
   get: (id: string) => api.get<Alert>(`${BASE_URL}/alerts/${id}`),
 
-  /**
-   * Marquer comme lu
-   */
   markRead: (id: string) =>
     api.put<Alert>(`${BASE_URL}/alerts/${id}`, { is_read: true }),
 
-  /**
-   * Resoudre une alerte
-   */
   resolve: (id: string, note?: string) =>
     api.put<Alert>(`${BASE_URL}/alerts/${id}`, {
       is_resolved: true,
       resolution_note: note,
     }),
 
-  /**
-   * Marquer toutes comme lues
-   */
   markAllRead: () => api.post(`${BASE_URL}/alerts/mark-all-read`),
 };
 
@@ -324,36 +236,18 @@ export const alertApi = {
 // ============================================================================
 
 export const accountingRuleApi = {
-  /**
-   * Liste des regles comptables
-   */
   list: () => api.get<AccountingRule[]>(`${BASE_URL}/rules`),
 
-  /**
-   * Detail d'une regle
-   */
   get: (id: string) => api.get<AccountingRule>(`${BASE_URL}/rules/${id}`),
 
-  /**
-   * Creer une regle
-   */
   create: (data: AccountingRuleCreate) =>
     api.post<AccountingRule>(`${BASE_URL}/rules`, data),
 
-  /**
-   * Mettre a jour une regle
-   */
   update: (id: string, data: Partial<AccountingRuleCreate>) =>
     api.put<AccountingRule>(`${BASE_URL}/rules/${id}`, data),
 
-  /**
-   * Supprimer une regle
-   */
   delete: (id: string) => api.delete(`${BASE_URL}/rules/${id}`),
 
-  /**
-   * Activer/Desactiver une regle
-   */
   toggle: (id: string, isActive: boolean) =>
     api.put<AccountingRule>(`${BASE_URL}/rules/${id}`, { is_active: isActive }),
 };
@@ -363,30 +257,15 @@ export const accountingRuleApi = {
 // ============================================================================
 
 export const emailInboxApi = {
-  /**
-   * Liste des boites email
-   */
   list: () => api.get<EmailInbox[]>(`${BASE_URL}/email-inboxes`),
 
-  /**
-   * Detail d'une boite
-   */
   get: (id: string) => api.get<EmailInbox>(`${BASE_URL}/email-inboxes/${id}`),
 
-  /**
-   * Configurer une boite email
-   */
   create: (data: EmailInboxCreate) =>
     api.post<EmailInbox>(`${BASE_URL}/email-inboxes`, data),
 
-  /**
-   * Supprimer une boite email
-   */
   delete: (id: string) => api.delete(`${BASE_URL}/email-inboxes/${id}`),
 
-  /**
-   * Verifier manuellement une boite
-   */
   check: (id: string) =>
     api.post<{ documents_received: number }>(`${BASE_URL}/email-inboxes/${id}/check`),
 };
@@ -396,9 +275,6 @@ export const emailInboxApi = {
 // ============================================================================
 
 export const syncLogApi = {
-  /**
-   * Liste des logs de synchronisation
-   */
   list: (connectionId?: string) => {
     const params = connectionId ? `?connection_id=${connectionId}` : '';
     return api.get<SyncLog[]>(`${BASE_URL}/bank/sync-logs${params}`);

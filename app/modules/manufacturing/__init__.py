@@ -26,7 +26,7 @@ from .models import (
     QualityResult,
     # Modèles
     BOM,
-    BOMLine,
+    ManufacturingBOMLine,
     Workcenter,
     Routing,
     Operation,
@@ -150,7 +150,7 @@ __all__ = [
     "QualityResult",
     # Modèles
     "BOM",
-    "BOMLine",
+    "ManufacturingBOMLine",
     "Workcenter",
     "Routing",
     "Operation",

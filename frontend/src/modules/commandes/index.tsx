@@ -6,15 +6,12 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Plus, Edit, Trash2, Search, Check,
+  Plus, Edit, Trash2, Check,
   Euro, Calendar, FileText,
   Download, Printer, Clock, Truck, Package,
   History, FileArchive, Sparkles
 } from 'lucide-react';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -29,9 +26,9 @@ import {
 } from '@ui/standards';
 import { DataTable } from '@ui/tables';
 import { SmartSelector } from '@/components/SmartSelector';
-import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
+import type { TableColumn, DashboardKPI } from '@/types';
 
-// Import types et composants tabs
+// Internal imports
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   CommandeInfoTab,
@@ -42,132 +39,21 @@ import {
   CommandeIATab,
 } from './components';
 import { STATUS_CONFIG } from './types';
-import type { Commande, CommandeFormData, Customer, DocumentStatus, DocumentLine } from './types';
+import type { Commande, CommandeFormData, DocumentStatus, DocumentLine } from './types';
 
-// ============================================================
-// API HOOKS
-// ============================================================
-
-const useCommandesList = (page = 1, pageSize = 25, filters?: { status?: string; customer_id?: string; search?: string }) => {
-  return useQuery({
-    queryKey: ['commercial', 'documents', 'ORDER', page, pageSize, serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-        type: 'ORDER',
-      });
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.customer_id) params.append('customer_id', filters.customer_id);
-      if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Commande>>(`/commercial/documents?${params}`);
-      return response.data;
-    },
-  });
-};
-
-const useCommande = (id: string) => {
-  return useQuery({
-    queryKey: ['commercial', 'documents', id],
-    queryFn: async () => {
-      const response = await api.get<Commande>(`/commercial/documents/${id}`);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-};
-
-const useCustomers = (search?: string) => {
-  return useQuery({
-    queryKey: ['commercial', 'customers', 'search', search],
-    queryFn: async () => {
-      const params = new URLSearchParams({ page: '1', page_size: '50' });
-      if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
-      return response.data.items;
-    },
-  });
-};
-
-const useCreateCommande = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: CommandeFormData) => {
-      const response = await api.post<Commande>('/commercial/documents', { ...data, type: 'ORDER' });
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useUpdateCommande = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CommandeFormData> }) => {
-      const response = await api.put<Commande>(`/commercial/documents/${id}`, data);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useValidateCommande = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.post<Commande>(`/commercial/documents/${id}/validate`);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useMarkDelivered = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.post<Commande>(`/commercial/documents/${id}/deliver`);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useCreateInvoice = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (orderId: string) => {
-      const response = await api.post<{ id: string; number: string }>(`/commercial/orders/${orderId}/invoice`);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
-
-const useCreateAffaire = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (orderId: string) => {
-      const response = await api.post<{ id: string; reference: string }>(`/commercial/orders/${orderId}/affaire`);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-      queryClient.invalidateQueries({ queryKey: ['affaires'] });
-    },
-  });
-};
-
-const useAddLine = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ documentId, data }: { documentId: string; data: Partial<DocumentLine> }) => {
-      const response = await api.post<DocumentLine>(`/commercial/documents/${documentId}/lines`, data);
-      return response.data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
-  });
-};
+// Hooks
+import {
+  useCommandesList,
+  useCommande,
+  useCustomers,
+  useCreateCommande,
+  useUpdateCommande,
+  useValidateCommande,
+  useMarkDelivered,
+  useCreateInvoice,
+  useCreateAffaire,
+  useAddLine,
+} from './hooks';
 
 // ============================================================
 // COMPONENTS
@@ -199,8 +85,8 @@ const CommandeStats: React.FC = () => {
 
   const kpis: DashboardKPI[] = [
     { id: 'encours', label: 'En cours', value: stats.enCours, icon: <Clock size={20} /> },
-    { id: 'livrees', label: 'Livrées', value: stats.livrees, icon: <Truck size={20} /> },
-    { id: 'facturees', label: 'Facturées', value: stats.facturees, icon: <FileText size={20} /> },
+    { id: 'livrees', label: 'Livrees', value: stats.livrees, icon: <Truck size={20} /> },
+    { id: 'facturees', label: 'Facturees', value: stats.facturees, icon: <FileText size={20} /> },
     { id: 'ca', label: 'CA Total', value: formatCurrency(stats.caTotal), icon: <Euro size={20} /> },
   ];
 
@@ -240,57 +126,14 @@ const CommandeListView: React.FC<{
 
   const columns: TableColumn<Commande>[] = [
     {
-      id: 'number',
-      header: 'N° Commande',
-      accessor: 'number',
-      sortable: true,
-      render: (value, row) => (
-        <span className="azals-link" onClick={() => onSelectCommande(row.id)}>{value as string}</span>
-      ),
+      id: 'number', header: 'N Commande', accessor: 'number', sortable: true,
+      render: (value, row) => <span className="azals-link" onClick={() => onSelectCommande(row.id)}>{value as string}</span>,
     },
-    {
-      id: 'date',
-      header: 'Date',
-      accessor: 'date',
-      sortable: true,
-      render: (value) => formatDate(value as string),
-    },
-    {
-      id: 'customer',
-      header: 'Client',
-      accessor: 'customer_name',
-      render: (value, row) => (
-        <div>
-          <div>{value as string}</div>
-          <div className="text-muted text-sm">{row.customer_code}</div>
-        </div>
-      ),
-    },
-    {
-      id: 'parent',
-      header: 'Devis',
-      accessor: 'parent_number',
-      render: (value) => value ? <span className="text-muted">{value as string}</span> : '-',
-    },
-    {
-      id: 'status',
-      header: 'Statut',
-      accessor: 'status',
-      render: (value) => <StatusBadge status={value as DocumentStatus} />,
-    },
-    {
-      id: 'delivery',
-      header: 'Livraison',
-      accessor: 'delivery_date',
-      render: (value) => value ? formatDate(value as string) : '-',
-    },
-    {
-      id: 'total',
-      header: 'Total TTC',
-      accessor: 'total',
-      align: 'right',
-      render: (value, row) => formatCurrency(value as number, row.currency),
-    },
+    { id: 'date', header: 'Date', accessor: 'date', render: (value) => formatDate(value as string) },
+    { id: 'customer', header: 'Client', accessor: 'customer_name' },
+    { id: 'status', header: 'Statut', accessor: 'status', render: (value) => <StatusBadge status={value as DocumentStatus} /> },
+    { id: 'total', header: 'Total TTC', accessor: 'total', align: 'right', render: (value) => formatCurrency(value as number) },
+    { id: 'delivery', header: 'Livraison', accessor: 'delivery_date', render: (value) => value ? formatDate(value as string) : '-' },
   ];
 
   return (
@@ -299,49 +142,17 @@ const CommandeListView: React.FC<{
       subtitle="Gestion des commandes clients"
       actions={<Button leftIcon={<Plus size={16} />} onClick={() => onCreateCommande()}>Nouvelle commande</Button>}
     >
-      <section className="azals-section">
-        <CommandeStats />
-      </section>
-
-      <Card noPadding>
-        <div className="azals-filter-bar">
-          <div className="azals-filter-bar__search">
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={filters.search || ''}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="azals-input"
-            />
-          </div>
-          <select
-            className="azals-select"
-            value={filters.status || ''}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value || undefined })}
-          >
-            <option value="">Tous les statuts</option>
-            {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>{config.label}</option>
-            ))}
-          </select>
-        </div>
-
+      <CommandeStats />
+      <Card noPadding className="mt-4">
         <DataTable
           columns={columns}
           data={data?.items || []}
           keyField="id"
           filterable
           isLoading={isLoading}
-          pagination={{
-            page,
-            pageSize,
-            total: data?.total || 0,
-            onPageChange: setPage,
-            onPageSizeChange: setPageSize,
-          }}
-          onRefresh={refetch}
           error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          pagination={{ page, pageSize, total: data?.total || 0, onPageChange: setPage, onPageSizeChange: setPageSize }}
+          onRefresh={refetch}
           onRetry={() => refetch()}
           emptyMessage="Aucune commande"
         />
@@ -351,7 +162,7 @@ const CommandeListView: React.FC<{
 };
 
 // ============================================================
-// DETAIL VIEW - BaseViewStandard
+// DETAIL VIEW
 // ============================================================
 
 const CommandeDetailView: React.FC<{
@@ -365,262 +176,109 @@ const CommandeDetailView: React.FC<{
   const createInvoice = useCreateInvoice();
   const createAffaire = useCreateAffaire();
 
-  // Tab definitions
-  const tabs: TabDefinition<Commande>[] = useMemo(() => [
-    {
-      id: 'info',
-      label: 'Informations',
-      icon: <FileText size={18} />,
-      component: CommandeInfoTab,
-    },
-    {
-      id: 'lines',
-      label: 'Lignes',
-      icon: <Package size={18} />,
-      badge: commande?.lines?.length || 0,
-      component: CommandeLinesTab,
-    },
-    {
-      id: 'financial',
-      label: 'Financier',
-      icon: <Euro size={18} />,
-      component: CommandeFinancialTab,
-    },
-    {
-      id: 'documents',
-      label: 'Documents',
-      icon: <FileArchive size={18} />,
-      component: CommandeDocsTab,
-    },
-    {
-      id: 'history',
-      label: 'Historique',
-      icon: <History size={18} />,
-      component: CommandeHistoryTab,
-    },
-    {
-      id: 'ia',
-      label: 'Assistant IA',
-      icon: <Sparkles size={18} />,
-      isIA: true,
-      component: CommandeIATab,
-    },
-  ], [commande?.lines?.length]);
+  const statusDef: StatusDefinition = useMemo(() => {
+    if (!commande) return { label: '-', color: 'gray' };
+    const config = STATUS_CONFIG[commande.status];
+    return { label: config.label, color: config.color as SemanticColor, icon: config.icon };
+  }, [commande]);
 
-  // Status mapping
-  const statusDef: StatusDefinition | undefined = commande ? {
-    label: STATUS_CONFIG[commande.status].label,
-    color: STATUS_CONFIG[commande.status].color as SemanticColor,
-  } : undefined;
+  const tabs: TabDefinition<Commande>[] = [
+    { id: 'info', label: 'Informations', icon: <FileText size={16} />, component: CommandeInfoTab },
+    { id: 'lines', label: 'Lignes', icon: <Package size={16} />, badge: commande?.lines?.length, component: CommandeLinesTab },
+    { id: 'financial', label: 'Financier', icon: <Euro size={16} />, component: CommandeFinancialTab },
+    { id: 'docs', label: 'Documents', icon: <FileArchive size={16} />, badge: commande?.attachments?.length, component: CommandeDocsTab },
+    { id: 'history', label: 'Historique', icon: <History size={16} />, component: CommandeHistoryTab },
+    { id: 'ia', label: 'IA', icon: <Sparkles size={16} />, component: CommandeIATab },
+  ];
 
-  // Info bar items (KPIs)
   const infoBarItems: InfoBarItem[] = useMemo(() => {
     if (!commande) return [];
     return [
-      {
-        id: 'date',
-        label: 'Date',
-        value: formatDate(commande.date),
-        icon: <Calendar size={16} />,
-      },
-      {
-        id: 'delivery',
-        label: 'Livraison',
-        value: commande.delivery_date ? formatDate(commande.delivery_date) : 'Non définie',
-        valueColor: !commande.delivery_date && commande.status === 'VALIDATED' ? 'warning' : undefined,
-        icon: <Truck size={16} />,
-      },
-      {
-        id: 'lines',
-        label: 'Lignes',
-        value: commande.lines?.length || 0,
-        icon: <Package size={16} />,
-        secondary: true,
-      },
-      {
-        id: 'total',
-        label: 'Total TTC',
-        value: formatCurrency(commande.total, commande.currency),
-        icon: <Euro size={16} />,
-      },
+      { id: 'total', label: 'Total TTC', value: formatCurrency(commande.total), valueColor: 'blue' as SemanticColor },
+      { id: 'date', label: 'Date', value: formatDate(commande.date), icon: <Calendar size={14} /> },
+      { id: 'delivery', label: 'Livraison', value: commande.delivery_date ? formatDate(commande.delivery_date) : 'Non definie', icon: <Truck size={14} /> },
     ];
   }, [commande]);
 
-  // Sidebar sections
   const sidebarSections: SidebarSection[] = useMemo(() => {
     if (!commande) return [];
     return [
       {
-        id: 'totaux',
-        title: 'Récapitulatif',
-        items: [
-          { id: 'subtotal', label: 'Sous-total HT', value: commande.subtotal, format: 'currency' },
-          ...(commande.shipping_cost > 0 ? [{
-            id: 'shipping',
-            label: 'Frais de port',
-            value: commande.shipping_cost,
-            format: 'currency' as const,
-          }] : []),
-          ...(commande.discount_amount > 0 ? [{
-            id: 'discount',
-            label: `Remise (${commande.discount_percent}%)`,
-            value: -commande.discount_amount,
-            format: 'currency' as const,
-          }] : []),
-          { id: 'tax', label: 'TVA', value: commande.tax_amount, format: 'currency' },
-        ],
-        total: { label: 'Total TTC', value: commande.total },
-      },
-      {
-        id: 'client',
-        title: 'Client',
+        id: 'client', title: 'Client',
         items: [
           { id: 'name', label: 'Nom', value: commande.customer_name || '-' },
-          { id: 'code', label: 'Code', value: commande.customer_code || '-', secondary: true },
+          { id: 'ref', label: 'Reference', value: commande.reference || '-' },
         ],
       },
-      ...(commande.parent_number ? [{
-        id: 'origine',
-        title: 'Origine',
+      {
+        id: 'montants', title: 'Montants',
         items: [
-          { id: 'devis', label: 'Devis source', value: commande.parent_number },
+          { id: 'ht', label: 'Total HT', value: formatCurrency(commande.subtotal) },
+          { id: 'tva', label: 'TVA', value: formatCurrency(commande.tax_amount) },
+          { id: 'ttc', label: 'Total TTC', value: formatCurrency(commande.total), highlight: true },
         ],
-      }] : []),
+      },
     ];
   }, [commande]);
 
-  // Header actions
-  const headerActions: ActionDefinition[] = useMemo(() => {
-    if (!commande) return [];
-    const actions: ActionDefinition[] = [];
-
-    if (commande.status === 'DRAFT') {
-      actions.push({
-        id: 'edit',
-        label: 'Modifier',
-        icon: <Edit size={16} />,
-        variant: 'ghost',
-        onClick: onEdit,
-      });
-    }
-
-    actions.push({
-      id: 'pdf',
-      label: 'PDF',
-      icon: <Download size={16} />,
-      variant: 'ghost',
-    });
-
-    actions.push({
-      id: 'print',
-      label: 'Imprimer',
-      icon: <Printer size={16} />,
-      variant: 'ghost',
-    });
-
-    return actions;
-  }, [commande, onEdit]);
-
-  // Primary actions (footer)
   const primaryActions: ActionDefinition[] = useMemo(() => {
     if (!commande) return [];
     const actions: ActionDefinition[] = [];
 
-    // Créer facture
-    if (['VALIDATED', 'DELIVERED'].includes(commande.status)) {
-      actions.push({
-        id: 'invoice',
-        label: 'Créer facture',
-        icon: <FileText size={16} />,
-        variant: 'primary',
-        loading: createInvoice.isPending,
-        onClick: async () => {
-          if (window.confirm('Créer une facture pour cette commande ?')) {
-            const invoice = await createInvoice.mutateAsync(commandeId);
-            window.dispatchEvent(new CustomEvent('azals:navigate', {
-              detail: { view: 'factures', params: { id: invoice.id } }
-            }));
-          }
-        },
-      });
-    }
-
-    // Marquer livrée
-    if (commande.status === 'VALIDATED') {
-      actions.push({
-        id: 'deliver',
-        label: 'Marquer livrée',
-        icon: <Truck size={16} />,
-        variant: 'secondary',
-        loading: markDelivered.isPending,
-        onClick: async () => {
-          if (window.confirm('Marquer cette commande comme livrée ?')) {
-            await markDelivered.mutateAsync(commandeId);
-          }
-        },
-      });
-    }
-
-    // Valider
     if (commande.status === 'DRAFT') {
       actions.push({
-        id: 'validate',
-        label: 'Valider',
-        icon: <Check size={16} />,
-        variant: 'primary',
-        loading: validateCommande.isPending,
-        onClick: async () => {
-          if (window.confirm('Valider cette commande ?')) {
-            await validateCommande.mutateAsync(commandeId);
-          }
-        },
+        id: 'validate', label: 'Valider', variant: 'primary', icon: <Check size={16} />,
+        onClick: async () => { await validateCommande.mutateAsync(commandeId); },
+      });
+    }
+
+    if (commande.status === 'VALIDATED') {
+      actions.push({
+        id: 'deliver', label: 'Marquer livre', variant: 'success', icon: <Truck size={16} />,
+        onClick: async () => { await markDelivered.mutateAsync(commandeId); },
+      });
+    }
+
+    if (commande.status === 'DELIVERED') {
+      actions.push({
+        id: 'invoice', label: 'Facturer', variant: 'primary', icon: <FileText size={16} />,
+        onClick: async () => { await createInvoice.mutateAsync(commandeId); },
       });
     }
 
     return actions;
   }, [commande, commandeId, validateCommande, markDelivered, createInvoice]);
 
-  // Secondary actions (footer)
   const secondaryActions: ActionDefinition[] = useMemo(() => {
     if (!commande) return [];
-    const actions: ActionDefinition[] = [];
+    const actions: ActionDefinition[] = [
+      { id: 'pdf', label: 'Telecharger PDF', icon: <Download size={16} />, onClick: () => {} },
+      { id: 'print', label: 'Imprimer', icon: <Printer size={16} />, onClick: () => {} },
+    ];
 
-    // Créer affaire
-    if (commande.status === 'VALIDATED') {
+    if (['VALIDATED', 'DELIVERED'].includes(commande.status) && !commande.affaire_id) {
       actions.push({
-        id: 'affaire',
-        label: 'Créer affaire',
-        icon: <Package size={16} />,
-        variant: 'ghost',
-        loading: createAffaire.isPending,
-        onClick: async () => {
-          if (window.confirm('Créer une affaire pour cette commande ?')) {
-            const affaire = await createAffaire.mutateAsync(commandeId);
-            window.dispatchEvent(new CustomEvent('azals:navigate', {
-              detail: { view: 'affaires', params: { id: affaire.id } }
-            }));
-          }
-        },
+        id: 'affaire', label: 'Creer affaire', icon: <Package size={16} />,
+        onClick: async () => { await createAffaire.mutateAsync(commandeId); },
       });
     }
 
-    actions.push({
-      id: 'back',
-      label: 'Retour à la liste',
-      variant: 'ghost',
-      onClick: onBack,
-    });
-
     return actions;
-  }, [commande, commandeId, createAffaire, onBack]);
+  }, [commande, commandeId, createAffaire]);
+
+  const headerActions: ActionDefinition[] = useMemo(() => {
+    const actions: ActionDefinition[] = [];
+    if (commande?.status === 'DRAFT') {
+      actions.push({ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, onClick: onEdit });
+    }
+    actions.push({ id: 'back', label: 'Retour a la liste', variant: 'ghost', onClick: onBack });
+    return actions;
+  }, [commande, onBack, onEdit]);
 
   if (!commande && !isLoading) {
     return (
-      <PageWrapper title="Commande non trouvée">
-        <Card>
-          <p>Cette commande n'existe pas.</p>
-          <Button onClick={onBack}>Retour</Button>
-        </Card>
+      <PageWrapper title="Commande non trouvee">
+        <Card><p>Cette commande n'existe pas.</p><Button onClick={onBack}>Retour</Button></Card>
       </PageWrapper>
     );
   }
@@ -678,12 +336,7 @@ const CommandeFormView: React.FC<{
 
   const [lines, setLines] = useState<Partial<DocumentLine>[]>([]);
   const [newLine, setNewLine] = useState<Partial<DocumentLine>>({
-    description: '',
-    quantity: 1,
-    unit: 'pce',
-    unit_price: 0,
-    discount_percent: 0,
-    tax_rate: 20,
+    description: '', quantity: 1, unit: 'pce', unit_price: 0, discount_percent: 0, tax_rate: 20,
   });
 
   React.useEffect(() => {
@@ -709,35 +362,26 @@ const CommandeFormView: React.FC<{
     setNewLine({ description: '', quantity: 1, unit: 'pce', unit_price: 0, discount_percent: 0, tax_rate: 20 });
   };
 
-  const handleRemoveLine = (index: number) => {
-    setLines(lines.filter((_, i) => i !== index));
-  };
+  const handleRemoveLine = (index: number) => setLines(lines.filter((_, i) => i !== index));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.customer_id) {
-      alert('Veuillez sélectionner un client');
-      return;
-    }
+    if (!form.customer_id) { alert('Veuillez selectionner un client'); return; }
     try {
       if (isNew) {
         const result = await createCommande.mutateAsync(form);
-        for (const line of lines) {
-          await addLine.mutateAsync({ documentId: result.id, data: line });
-        }
+        for (const line of lines) await addLine.mutateAsync({ documentId: result.id, data: line });
         onSaved(result.id);
       } else {
         await updateCommande.mutateAsync({ id: commandeId!, data: form });
         onSaved(commandeId!);
       }
-    } catch (error) {
-      console.error('Erreur sauvegarde:', error);
-    }
+    } catch (error) { console.error('Erreur sauvegarde:', error); }
   };
 
   const isSubmitting = createCommande.isPending || updateCommande.isPending;
 
-  const calculateTotals = () => {
+  const totals = useMemo(() => {
     const subtotal = lines.reduce((sum, line) => {
       const lineTotal = (line.quantity || 0) * (line.unit_price || 0) * (1 - (line.discount_percent || 0) / 100);
       return sum + lineTotal;
@@ -750,15 +394,10 @@ const CommandeFormView: React.FC<{
     }, 0) * (1 - (form.discount_percent || 0) / 100);
     const total = subtotal + shippingCost - discountAmount + taxAmount;
     return { subtotal, shippingCost, discountAmount, taxAmount, total };
-  };
-
-  const totals = calculateTotals();
+  }, [lines, form.shipping_cost, form.discount_percent]);
 
   return (
-    <PageWrapper
-      title={isNew ? 'Nouvelle commande' : `Modifier ${commande?.number}`}
-      backAction={{ label: 'Retour', onClick: onBack }}
-    >
+    <PageWrapper title={isNew ? 'Nouvelle commande' : `Modifier ${commande?.number}`} backAction={{ label: 'Retour', onClick: onBack }}>
       <form onSubmit={handleSubmit}>
         <Grid cols={2} gap="lg">
           <Card title="Client">
@@ -773,53 +412,29 @@ const CommandeFormView: React.FC<{
               createFields={[
                 { key: 'name', label: 'Nom', required: true },
                 { key: 'email', label: 'Email', type: 'email' },
-                { key: 'phone', label: 'Téléphone', type: 'tel' },
+                { key: 'phone', label: 'Telephone', type: 'tel' },
               ]}
               queryKeys={['customers']}
               allowCreate={true}
             />
             <div className="azals-form-field">
-              <label>Référence client</label>
-              <input
-                type="text"
-                className="azals-input"
-                value={form.reference}
-                onChange={(e) => setForm({ ...form, reference: e.target.value })}
-                placeholder="Votre référence..."
-              />
+              <label>Reference client</label>
+              <input type="text" className="azals-input" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="Votre reference..." />
             </div>
           </Card>
 
           <Card title="Livraison">
             <div className="azals-form-field">
               <label>Date de livraison</label>
-              <input
-                type="date"
-                className="azals-input"
-                value={form.delivery_date}
-                onChange={(e) => setForm({ ...form, delivery_date: e.target.value })}
-              />
+              <input type="date" className="azals-input" value={form.delivery_date} onChange={(e) => setForm({ ...form, delivery_date: e.target.value })} />
             </div>
             <div className="azals-form-field">
               <label>Mode de livraison</label>
-              <input
-                type="text"
-                className="azals-input"
-                value={form.shipping_method}
-                onChange={(e) => setForm({ ...form, shipping_method: e.target.value })}
-                placeholder="Transporteur, retrait..."
-              />
+              <input type="text" className="azals-input" value={form.shipping_method} onChange={(e) => setForm({ ...form, shipping_method: e.target.value })} placeholder="Transporteur, retrait..." />
             </div>
             <div className="azals-form-field">
               <label>Frais de port</label>
-              <input
-                type="number"
-                className="azals-input"
-                value={form.shipping_cost}
-                onChange={(e) => setForm({ ...form, shipping_cost: parseFloat(e.target.value) || 0 })}
-                min="0"
-                step="0.01"
-              />
+              <input type="number" className="azals-input" value={form.shipping_cost} onChange={(e) => setForm({ ...form, shipping_cost: parseFloat(e.target.value) || 0 })} min="0" step="0.01" />
             </div>
           </Card>
         </Grid>
@@ -830,7 +445,7 @@ const CommandeFormView: React.FC<{
               <thead>
                 <tr>
                   <th>Description</th>
-                  <th className="text-right">Qté</th>
+                  <th className="text-right">Qte</th>
                   <th className="text-right">P.U. HT</th>
                   <th className="text-right">Remise</th>
                   <th className="text-right">TVA</th>
@@ -846,14 +461,8 @@ const CommandeFormView: React.FC<{
                     <td className="text-right">{formatCurrency(line.unit_price || 0)}</td>
                     <td className="text-right">{line.discount_percent}%</td>
                     <td className="text-right">{line.tax_rate}%</td>
-                    <td className="text-right">
-                      {formatCurrency((line.quantity || 0) * (line.unit_price || 0) * (1 - (line.discount_percent || 0) / 100))}
-                    </td>
-                    <td>
-                      <Button variant="ghost" size="sm" onClick={() => handleRemoveLine(index)}>
-                        <Trash2 size={14} />
-                      </Button>
-                    </td>
+                    <td className="text-right">{formatCurrency((line.quantity || 0) * (line.unit_price || 0) * (1 - (line.discount_percent || 0) / 100))}</td>
+                    <td><Button variant="ghost" size="sm" onClick={() => handleRemoveLine(index)}><Trash2 size={14} /></Button></td>
                   </tr>
                 ))}
               </tbody>
@@ -863,81 +472,32 @@ const CommandeFormView: React.FC<{
           <div className="azals-add-line">
             <Grid cols={4} gap="sm">
               <div className="azals-form-field" style={{ gridColumn: 'span 2' }}>
-                <input
-                  type="text"
-                  className="azals-input"
-                  placeholder="Description..."
-                  value={newLine.description}
-                  onChange={(e) => setNewLine({ ...newLine, description: e.target.value })}
-                />
+                <input type="text" className="azals-input" placeholder="Description..." value={newLine.description} onChange={(e) => setNewLine({ ...newLine, description: e.target.value })} />
               </div>
               <div className="azals-form-field">
-                <input
-                  type="number"
-                  className="azals-input"
-                  placeholder="Qté"
-                  value={newLine.quantity}
-                  onChange={(e) => setNewLine({ ...newLine, quantity: parseFloat(e.target.value) || 1 })}
-                  min="0"
-                  step="0.01"
-                />
+                <input type="number" className="azals-input" placeholder="Qte" value={newLine.quantity} onChange={(e) => setNewLine({ ...newLine, quantity: parseFloat(e.target.value) || 1 })} min="0" step="0.01" />
               </div>
               <div className="azals-form-field">
-                <input
-                  type="number"
-                  className="azals-input"
-                  placeholder="P.U. HT"
-                  value={newLine.unit_price}
-                  onChange={(e) => setNewLine({ ...newLine, unit_price: parseFloat(e.target.value) || 0 })}
-                  min="0"
-                  step="0.01"
-                />
+                <input type="number" className="azals-input" placeholder="P.U. HT" value={newLine.unit_price} onChange={(e) => setNewLine({ ...newLine, unit_price: parseFloat(e.target.value) || 0 })} min="0" step="0.01" />
               </div>
               <div className="azals-form-field">
-                <select
-                  className="azals-select"
-                  value={newLine.tax_rate}
-                  onChange={(e) => setNewLine({ ...newLine, tax_rate: parseFloat(e.target.value) })}
-                >
+                <select className="azals-select" value={newLine.tax_rate} onChange={(e) => setNewLine({ ...newLine, tax_rate: parseFloat(e.target.value) })}>
                   <option value="20">20%</option>
                   <option value="10">10%</option>
                   <option value="5.5">5.5%</option>
                   <option value="0">0%</option>
                 </select>
               </div>
-              <div>
-                <Button type="button" variant="secondary" onClick={handleAddLine}>
-                  <Plus size={16} />
-                </Button>
-              </div>
+              <div><Button type="button" variant="secondary" onClick={handleAddLine}><Plus size={16} /></Button></div>
             </Grid>
           </div>
 
           <div className="azals-totals mt-4">
-            <div className="azals-totals__row">
-              <span>Sous-total HT</span>
-              <span>{formatCurrency(totals.subtotal)}</span>
-            </div>
-            {totals.shippingCost > 0 && (
-              <div className="azals-totals__row">
-                <span>Frais de port</span>
-                <span>{formatCurrency(totals.shippingCost)}</span>
-              </div>
-            )}
-            {totals.discountAmount > 0 && (
-              <div className="azals-totals__row">
-                <span>Remise ({form.discount_percent}%)</span>
-                <span>-{formatCurrency(totals.discountAmount)}</span>
-              </div>
-            )}
-            <div className="azals-totals__row">
-              <span>TVA</span>
-              <span>{formatCurrency(totals.taxAmount)}</span>
-            </div>
-            <div className="azals-totals__row azals-totals__row--total">
-              <span>Total TTC</span>
-              <span>{formatCurrency(totals.total)}</span>
-            </div>
+            <div className="azals-totals__row"><span>Sous-total HT</span><span>{formatCurrency(totals.subtotal)}</span></div>
+            {totals.shippingCost > 0 && <div className="azals-totals__row"><span>Frais de port</span><span>{formatCurrency(totals.shippingCost)}</span></div>}
+            {totals.discountAmount > 0 && <div className="azals-totals__row"><span>Remise ({form.discount_percent}%)</span><span>-{formatCurrency(totals.discountAmount)}</span></div>}
+            <div className="azals-totals__row"><span>TVA</span><span>{formatCurrency(totals.taxAmount)}</span></div>
+            <div className="azals-totals__row azals-totals__row--total"><span>Total TTC</span><span>{formatCurrency(totals.total)}</span></div>
           </div>
         </Card>
 
@@ -945,29 +505,18 @@ const CommandeFormView: React.FC<{
           <Grid cols={2} gap="md">
             <div className="azals-form-field">
               <label>Notes (visibles sur la commande)</label>
-              <textarea
-                className="azals-textarea"
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                rows={3}
-              />
+              <textarea className="azals-textarea" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
             </div>
             <div className="azals-form-field">
               <label>Conditions</label>
-              <textarea
-                className="azals-textarea"
-                value={form.terms}
-                onChange={(e) => setForm({ ...form, terms: e.target.value })}
-                rows={3}
-                placeholder="Conditions de paiement, délais..."
-              />
+              <textarea className="azals-textarea" value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} rows={3} placeholder="Conditions de paiement, delais..." />
             </div>
           </Grid>
         </Card>
 
         <div className="azals-form-actions">
           <Button type="button" variant="ghost" onClick={onBack}>Annuler</Button>
-          <Button type="submit" isLoading={isSubmitting}>{isNew ? 'Créer la commande' : 'Enregistrer'}</Button>
+          <Button type="submit" isLoading={isSubmitting}>{isNew ? 'Creer la commande' : 'Enregistrer'}</Button>
         </div>
       </form>
     </PageWrapper>
@@ -981,7 +530,6 @@ const CommandeFormView: React.FC<{
 export const CommandesModule: React.FC = () => {
   const [navState, setNavState] = useState<CommandeNavState>({ view: 'list' });
 
-  // Écouter les événements de navigation
   React.useEffect(() => {
     const handleNavigate = (event: CustomEvent) => {
       const { params } = event.detail || {};
@@ -1002,30 +550,15 @@ export const CommandesModule: React.FC = () => {
 
   switch (navState.view) {
     case 'detail':
-      return (
-        <CommandeDetailView
-          commandeId={navState.commandeId!}
-          onBack={navigateToList}
-          onEdit={() => navigateToForm(navState.commandeId)}
-        />
-      );
+      return <CommandeDetailView commandeId={navState.commandeId!} onBack={navigateToList} onEdit={() => navigateToForm(navState.commandeId)} />;
     case 'form':
-      return (
-        <CommandeFormView
-          commandeId={navState.commandeId}
-          customerId={navState.customerId}
-          onBack={navState.isNew ? navigateToList : () => navigateToDetail(navState.commandeId!)}
-          onSaved={navigateToDetail}
-        />
-      );
+      return <CommandeFormView commandeId={navState.commandeId} customerId={navState.customerId} onBack={navState.isNew ? navigateToList : () => navigateToDetail(navState.commandeId!)} onSaved={navigateToDetail} />;
     default:
-      return (
-        <CommandeListView
-          onSelectCommande={navigateToDetail}
-          onCreateCommande={(customerId) => navigateToForm(undefined, customerId)}
-        />
-      );
+      return <CommandeListView onSelectCommande={navigateToDetail} onCreateCommande={(customerId) => navigateToForm(undefined, customerId)} />;
   }
 };
 
+// Re-exports
+export * from './types';
+export * from './hooks';
 export default CommandesModule;

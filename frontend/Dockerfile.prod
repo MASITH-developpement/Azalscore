@@ -16,6 +16,10 @@ RUN npm ci --only=production=false
 # Copy source code
 COPY . .
 
+# Ensure .env.production is present for Vite build
+# (contains VITE_RECAPTCHA_SITE_KEY)
+COPY .env.production .env.production
+
 # Build for production (VITE_DEMO_MODE is NOT set for production)
 ENV NODE_ENV=production
 RUN npm run build

@@ -1,8 +1,8 @@
 /**
  * Module Comptabilité - Formation
  */
-import type { ModuleTrainingContent } from '@/modules/onboarding/training/types';
 import type { SupportedLanguage } from '@/modules/onboarding/i18n';
+import type { ModuleTrainingContent } from '@/modules/onboarding/training/types';
 import { fr } from './i18n/fr';
 
 const translations: Record<SupportedLanguage, ModuleTrainingContent> = {

@@ -33,6 +33,8 @@ import uuid
 
 logger = logging.getLogger(__name__)
 
+from .exceptions import EInvoicingPDFError, EInvoicingXMLError, EInvoicingValidationError
+
 
 # =============================================================================
 # CONSTANTES ET TYPES
@@ -225,13 +227,13 @@ class FacturXPDFGenerator:
                     return result.decode('utf-8')
                 elif isinstance(result, str):
                     return result
-            except Exception as e:
+            except (EInvoicingXMLError, ValueError, UnicodeDecodeError) as e:
                 logger.error(f"Erreur extraction XML: {e}")
 
         if self._pypdf_available:
             try:
                 return self._extract_xml_with_pypdf(pdf_content)
-            except Exception as e:
+            except (EInvoicingPDFError, ValueError, KeyError) as e:
                 logger.error(f"Erreur extraction pypdf: {e}")
 
         return None
@@ -312,8 +314,8 @@ class FacturXPDFGenerator:
         if logo_path and os.path.exists(logo_path):
             try:
                 c.drawImage(logo_path, margin_left, height - 22 * mm, width=40 * mm, height=18 * mm, preserveAspectRatio=True)
-            except Exception:
-                pass
+            except (IOError, OSError, ValueError):
+                pass  # Logo non critique, on continue sans
 
         # Titre FACTURE
         c.setFillColor(Color(1, 1, 1))  # Blanc
@@ -705,9 +707,9 @@ class FacturXPDFGenerator:
 
             return facturx_pdf
 
-        except Exception as e:
+        except (EInvoicingPDFError, ValueError, IOError, ImportError) as e:
             logger.error(f"Erreur embarquement factur-x: {e}")
-            # Fallback sur méthode manuelle
+            # Fallback sur methode manuelle
             return self._embed_xml_manually(pdf_content, xml_content, profile)
 
     def _embed_xml_manually(
@@ -759,7 +761,7 @@ class FacturXPDFGenerator:
 
             return output.getvalue()
 
-        except Exception as e:
+        except (EInvoicingPDFError, ValueError, IOError, KeyError) as e:
             logger.error(f"Erreur embarquement manuel: {e}")
             return pdf_content
 
@@ -797,8 +799,8 @@ class FacturXPDFGenerator:
                 '/Producer': 'AZALSCORE PDF Generator',
                 '/Creator': 'AZALS E-Invoicing Module',
             })
-        except Exception as e:
-            logger.warning(f"Impossible d'ajouter métadonnées: {e}")
+        except (ValueError, TypeError, AttributeError) as e:
+            logger.warning(f"Impossible d'ajouter metadonnees: {e}")
 
     def _extract_xml_with_pypdf(self, pdf_content: bytes) -> Optional[str]:
         """Extrait le XML en utilisant pypdf."""

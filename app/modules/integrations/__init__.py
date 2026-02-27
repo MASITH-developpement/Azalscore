@@ -13,7 +13,7 @@ Gestion des intégrations tierces:
 
 # Models SQLAlchemy
 from .models import (
-    Connection as ConnectionModel,
+    LegacyConnection as ConnectionModel,
     EntityMapping as EntityMappingModel,
     SyncJob as SyncJobModel,
     SyncLog as SyncLogModel,

@@ -957,8 +957,12 @@ class ESignatureService:
             raise SignerOrderError(str(signer.id), next_signer.signing_order)
 
         # Remplir les champs de signature
+        # SÉCURITÉ: Filtrer par envelope_id pour éviter accès cross-tenant
         for field_id, signature_data in signatures.items():
-            field = self.db.query(EnvelopeDocument).get(field_id)
+            field = self.db.query(EnvelopeDocument).filter(
+                EnvelopeDocument.id == field_id,
+                EnvelopeDocument.envelope_id == envelope.id
+            ).first()
             if field and field.signer_id == signer.id:
                 field.value = signature_data
                 field.signature_data = signature_data

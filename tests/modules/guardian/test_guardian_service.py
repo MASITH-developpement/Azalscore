@@ -215,24 +215,13 @@ class TestErrorDetection:
 
     def test_detect_error_success(self, guardian_service, mock_db, sample_guardian_config, sample_error_detection_data):
         """Test successful error detection."""
-        mock_db.query.return_value.filter.return_value.first.return_value = sample_guardian_config
-
-        # Mock no similar error found
-        def filter_side_effect(*args, **kwargs):
-            mock_result = MagicMock()
-            mock_result.first.return_value = None
-            return mock_result
-
-        mock_db.query.return_value.filter.return_value = MagicMock()
-        mock_db.query.return_value.filter.return_value.first.side_effect = [
-            sample_guardian_config,  # get_config
-            None,  # _find_similar_error
-        ]
-
-        # Reset for clean test
+        # Set config to avoid config query
         guardian_service._config = sample_guardian_config
 
-        error = guardian_service.detect_error(sample_error_detection_data)
+        # Mock methods that make DB queries
+        with patch.object(guardian_service, '_find_similar_error', return_value=None), \
+             patch.object(guardian_service, '_attempt_auto_correction', return_value=None):
+            error = guardian_service.detect_error(sample_error_detection_data)
 
         mock_db.add.assert_called()
         mock_db.commit.assert_called()
@@ -312,23 +301,23 @@ class TestCorrectionRegistry:
         mock_db.commit.assert_called()
 
     def test_create_correction_registry_validation_fails(self, guardian_service, mock_db):
-        """Test correction registry creation fails with invalid data."""
-        invalid_data = CorrectionRegistryCreate(
-            environment=Environment.SANDBOX,
-            error_source=ErrorSource.BACKEND_LOG,
-            error_type=ErrorType.EXCEPTION,
-            severity=ErrorSeverity.MAJOR,
-            module="invoicing",
-            probable_cause="Short",  # Too short
-            correction_action=CorrectionAction.AUTO_FIX,
-            correction_description="Added validation",
-            estimated_impact="Low impact",
-            is_reversible=True,
-            reversibility_justification="Can revert",
-        )
+        """Test correction registry creation fails with invalid data (Pydantic validation)."""
+        from pydantic import ValidationError
 
-        with pytest.raises(ValueError, match="au moins 10 caractères"):
-            guardian_service.create_correction_registry(invalid_data)
+        with pytest.raises(ValidationError, match="string_too_short"):
+            CorrectionRegistryCreate(
+                environment=Environment.SANDBOX,
+                error_source=ErrorSource.BACKEND_LOG,
+                error_type=ErrorType.EXCEPTION,
+                severity=ErrorSeverity.MAJOR,
+                module="invoicing",
+                probable_cause="Short",  # Too short - must be at least 10 characters
+                correction_action=CorrectionAction.AUTO_FIX,
+                correction_description="Added validation",
+                estimated_impact="Low impact",
+                is_reversible=True,
+                reversibility_justification="Can revert",
+            )
 
     def test_create_correction_registry_links_error(self, guardian_service, mock_db, sample_correction_registry_data):
         """Test correction registry links to error detection."""
@@ -612,6 +601,8 @@ class TestListingQueries:
         mock_query = MagicMock()
         mock_query.count.return_value = 2
         mock_query.order_by.return_value.offset.return_value.limit.return_value.all.return_value = errors
+        # Chain filter calls return the same mock
+        mock_query.filter.return_value = mock_query
         mock_db.query.return_value.filter.return_value = mock_query
 
         items, total = guardian_service.list_errors(
@@ -811,6 +802,7 @@ class TestGuardianModels:
             severity=ErrorSeverity.CRITICAL,
             title="Critical Error",
             message="Critical error occurred in production",
+            is_read=False,  # SQLAlchemy default only applies on INSERT
         )
 
         assert alert.severity == ErrorSeverity.CRITICAL

@@ -10,18 +10,16 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Briefcase, Euro, Calendar, Target, Edit, Plus, Sparkles } from 'lucide-react';
-import { api } from '@core/api-client';
 import {
   Page, PageHeader, Section, Stats, SearchBar, SimpleTable,
   Badge, Progress, Totals, Button, Loading,
   formatCurrency, formatDate,
   SmartField, SmartForm, useModulePermissions,
 } from '@ui/simple';
-import { unwrapApiResponse } from '@/types';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 import type { FieldMode, ContextMode, EntityConfig } from '@ui/simple';
+import { affairesKeys, useAffaires, useAffaire, useSaveAffaire } from './hooks';
 
 // ============================================================
 // TYPES & CONFIG
@@ -78,48 +76,6 @@ const CLIENT_ENTITY: EntityConfig = {
 };
 
 const getStatusLabel = (s: Status) => STATUS_OPTIONS.find(x => x.value === s)?.label || s;
-
-// ============================================================
-// API HOOKS
-// ============================================================
-
-const useAffaires = (search?: string) => useQuery({
-  queryKey: ['affaires', search],
-  queryFn: async () => {
-    const params = search ? `?search=${search}&limit=100` : '?limit=100';
-    const res = await api.get<{ items: Affaire[] }>(`/projects${params}`);
-    const data = unwrapApiResponse<{ items: Affaire[] }>(res);
-    return data?.items || [];
-  },
-});
-
-const useAffaire = (id?: string) => useQuery({
-  queryKey: ['affaire', id],
-  queryFn: () => api.get(`/projects/${id}`),
-  enabled: !!id,
-});
-
-const useSaveAffaire = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id?: string; data: Partial<Affaire> }): Promise<Affaire> => {
-      const payload = id ? data : {
-        ...data,
-        code: data.code || `AFF-${Date.now().toString(36).toUpperCase()}`,
-      };
-      const res = id
-        ? await api.put<Affaire>(`/projects/${id}`, payload)
-        : await api.post<Affaire>('/projects', payload);
-      const result = unwrapApiResponse<Affaire>(res);
-      if (!result) throw new Error('No data returned from API');
-      return result;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['affaires'] });
-      qc.invalidateQueries({ queryKey: ['affaire'] });
-    },
-  });
-};
 
 // ============================================================
 // LIST VIEW
@@ -484,3 +440,6 @@ export const AffairesModule: React.FC = () => {
 };
 
 export default AffairesModule;
+
+// Re-export hooks for external use
+export { affairesKeys, useAffaires, useAffaire, useSaveAffaire } from './hooks';

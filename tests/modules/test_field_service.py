@@ -10,6 +10,9 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
 
+# Skip if module is disabled
+pytest.importorskip("app.modules.field_service.service", reason="Module field_service is currently disabled")
+
 from app.modules.field_service.models import (
     ServiceZone, Technician, Vehicle, InterventionTemplate,
     Intervention, InterventionHistory, FSTimeEntry as TimeEntry, Route, Expense, ServiceContract,

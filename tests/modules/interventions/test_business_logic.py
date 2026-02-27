@@ -27,6 +27,10 @@ from app.modules.interventions.models import (
 )
 # Import audit models so Base.metadata includes audit_logs table
 import app.modules.audit.models  # noqa: F401
+# Import tenant and user models to resolve foreign key references
+from app.modules.tenants.models import Tenant  # noqa: F401
+from app.core.models import User  # noqa: F401
+from app.core.sequences import SequenceConfig  # noqa: F401
 from app.modules.interventions.schemas import (
     InterventionCreate,
     InterventionUpdate,

@@ -6,14 +6,29 @@
 
 import { create } from 'zustand';
 import { api, tokenManager, setTenantId, clearTenantId } from '@core/api-client';
+import { logger } from '@core/logger';
 import type { User, AuthTokens, AuthState, TypedAuthState } from '@/types';
 
 // ============================================================
 // MODE DÉMO (développement sans backend)
 // ============================================================
 
-// Mode démo activé UNIQUEMENT si variable explicite (pas par défaut en dev)
-const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
+// P0 SÉCURITÉ: Mode démo INTERDIT en production
+// Empêche l'activation accidentelle du bypass d'authentification
+const IS_PRODUCTION = import.meta.env.PROD === true || import.meta.env.MODE === 'production';
+
+// Mode démo activé UNIQUEMENT si:
+// 1. Variable explicite VITE_DEMO_MODE=true
+// 2. ET pas en production (build de prod)
+const DEMO_MODE = !IS_PRODUCTION && import.meta.env.VITE_DEMO_MODE === 'true';
+
+// Log warning si quelqu'un essaie d'activer le mode démo en production
+if (IS_PRODUCTION && import.meta.env.VITE_DEMO_MODE === 'true') {
+  logger.error(
+    '[SECURITY] DEMO_MODE cannot be enabled in production builds. ' +
+    'This is a security measure to prevent authentication bypass.'
+  );
+}
 
 const DEMO_CAPABILITIES = {
   user: [
@@ -42,12 +57,20 @@ const DEMO_CAPABILITIES = {
   ],
 };
 
+// P0 SÉCURITÉ: Credentials démo UNIQUEMENT via variables d'environnement
+// JAMAIS de valeurs par défaut hardcodées - risque de fuite en production
+// En développement, définir VITE_DEMO_* dans .env.local (non commité)
+const DEMO_USER_EMAIL = import.meta.env.VITE_DEMO_USER_EMAIL || '';
+const DEMO_USER_PASSWORD = import.meta.env.VITE_DEMO_USER_PASSWORD || '';
+const DEMO_ADMIN_EMAIL = import.meta.env.VITE_DEMO_ADMIN_EMAIL || '';
+const DEMO_ADMIN_PASSWORD = import.meta.env.VITE_DEMO_ADMIN_PASSWORD || '';
+
 const DEMO_USERS: Record<string, { password: string; user: User; capabilities: string[] }> = {
-  'demo@azalscore.local': {
-    password: 'Demo123!',
+  [DEMO_USER_EMAIL]: {
+    password: DEMO_USER_PASSWORD,
     user: {
       id: 'demo-user-001',
-      email: 'demo@azalscore.local',
+      email: DEMO_USER_EMAIL,
       name: 'Utilisateur Démo',
       roles: ['admin'],
       capabilities: DEMO_CAPABILITIES.user,
@@ -57,11 +80,11 @@ const DEMO_USERS: Record<string, { password: string; user: User; capabilities: s
     },
     capabilities: DEMO_CAPABILITIES.user,
   },
-  'admin@azalscore.local': {
-    password: 'Admin123!',
+  [DEMO_ADMIN_EMAIL]: {
+    password: DEMO_ADMIN_PASSWORD,
     user: {
       id: 'admin-user-001',
-      email: 'admin@azalscore.local',
+      email: DEMO_ADMIN_EMAIL,
       name: 'Administrateur Root',
       roles: ['superadmin'],
       capabilities: DEMO_CAPABILITIES.admin,
@@ -207,10 +230,10 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
 
       return loginData;
     } catch (error) {
-      // En mode démo, afficher un message plus clair
+      // En mode démo, afficher un message générique (ne jamais exposer les credentials)
       if (DEMO_MODE) {
-        set({ isLoading: false, error: 'Identifiants invalides. Utilisez demo@azalscore.local / Demo123! ou admin@azalscore.local / Admin123!' });
-        throw new Error('Identifiants démo invalides');
+        set({ isLoading: false, error: 'Identifiants invalides. Vérifiez vos informations de connexion.' });
+        throw new Error('Identifiants invalides');
       }
       const message = error instanceof Error ? error.message : 'Échec de connexion';
       set({ isLoading: false, error: message });
@@ -460,7 +483,7 @@ export const resetSessionTimeout = (): void => {
 
   // Timer d'expiration
   sessionTimeoutId = setTimeout(() => {
-    console.warn('[SESSION] Session expirée par inactivité');
+    logger.warn('Session expirée par inactivité');
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('azals:session:expired'));
     }

@@ -55,7 +55,7 @@ def test_register_creates_user_with_tenant(client, db_session):
     """
     response = client.post(
         "/auth/register",
-        json={"email": "dirigeant@tenant-a.com", "password": "SecurePass123"},
+        json={"email": "dirigeant@tenant-a.com", "password": "SecurePass123!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
@@ -79,14 +79,14 @@ def test_register_rejects_duplicate_email(client, db_session):
     # Créer un utilisateur
     client.post(
         "/auth/register",
-        json={"email": "test@tenant-a.com", "password": "Pass123"},
+        json={"email": "test@tenant-a.com", "password": "Pass123!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
     # Tenter de créer avec le même email
     response = client.post(
         "/auth/register",
-        json={"email": "test@tenant-a.com", "password": "Pass456"},
+        json={"email": "test@tenant-a.com", "password": "Pass456!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
@@ -103,7 +103,7 @@ def test_login_returns_jwt_with_tenant_info(client, db_session):
     # Créer un utilisateur
     user = User(
         email="user@tenant-a.com",
-        password_hash=get_password_hash("Password123"),
+        password_hash=get_password_hash("Password123!"),
         tenant_id="tenant-a",
         role=UserRole.DIRIGEANT,
         is_active=1
@@ -114,7 +114,7 @@ def test_login_returns_jwt_with_tenant_info(client, db_session):
     # Login
     response = client.post(
         "/auth/login",
-        json={"email": "user@tenant-a.com", "password": "Password123"},
+        json={"email": "user@tenant-a.com", "password": "Password123!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
@@ -145,7 +145,7 @@ def test_login_fails_with_wrong_password(client, db_session):
     
     response = client.post(
         "/auth/login",
-        json={"email": "user@tenant-a.com", "password": "WrongPassword"},
+        json={"email": "user@tenant-a.com", "password": "WrongPassword1!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
@@ -159,7 +159,7 @@ def test_login_fails_with_unknown_email(client):
     """
     response = client.post(
         "/auth/login",
-        json={"email": "unknown@example.com", "password": "AnyPassword"},
+        json={"email": "unknown@example.com", "password": "AnyPassword1!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
@@ -207,7 +207,7 @@ def test_user_cannot_access_other_tenant_with_jwt(client, db_session):
     # Créer un utilisateur tenant-a
     user = User(
         email="user-a@tenant-a.com",
-        password_hash=get_password_hash("Pass123"),
+        password_hash=get_password_hash("Pass123!"),
         tenant_id="tenant-a",
         role=UserRole.DIRIGEANT,
         is_active=1
@@ -218,7 +218,7 @@ def test_user_cannot_access_other_tenant_with_jwt(client, db_session):
     # Login pour obtenir JWT
     login_response = client.post(
         "/auth/login",
-        json={"email": "user-a@tenant-a.com", "password": "Pass123"},
+        json={"email": "user-a@tenant-a.com", "password": "Pass123!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
@@ -247,7 +247,7 @@ def test_jwt_tenant_coherence_validation(client, db_session):
     # Créer un utilisateur tenant-a
     user = User(
         email="user-tenant-a@example.com",
-        password_hash=get_password_hash("SecurePass"),
+        password_hash=get_password_hash("SecurePass1!"),
         tenant_id="tenant-a",
         role=UserRole.DIRIGEANT,
         is_active=1
@@ -258,7 +258,7 @@ def test_jwt_tenant_coherence_validation(client, db_session):
     # Login
     login_response = client.post(
         "/auth/login",
-        json={"email": "user-tenant-a@example.com", "password": "SecurePass"},
+        json={"email": "user-tenant-a@example.com", "password": "SecurePass1!"},
         headers={"X-Tenant-ID": "tenant-a"}
     )
     
@@ -287,7 +287,7 @@ def test_user_can_access_own_tenant_with_valid_jwt(client, db_session):
     # Créer un utilisateur
     user = User(
         email="valid-user@tenant-x.com",
-        password_hash=get_password_hash("ValidPass123"),
+        password_hash=get_password_hash("ValidPass123!"),
         tenant_id="tenant-x",
         role=UserRole.DIRIGEANT,
         is_active=1
@@ -298,7 +298,7 @@ def test_user_can_access_own_tenant_with_valid_jwt(client, db_session):
     # Login
     login_response = client.post(
         "/auth/login",
-        json={"email": "valid-user@tenant-x.com", "password": "ValidPass123"},
+        json={"email": "valid-user@tenant-x.com", "password": "ValidPass123!"},
         headers={"X-Tenant-ID": "tenant-x"}
     )
     

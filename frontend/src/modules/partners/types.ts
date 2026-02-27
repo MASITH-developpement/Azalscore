@@ -124,6 +124,42 @@ export interface PartnerStats {
   total_outstanding?: number;
 }
 
+/**
+ * Legacy Partner interface pour les vues liste (backward compatibility)
+ */
+export interface PartnerLegacy {
+  id: string;
+  type: 'client' | 'supplier' | 'contact';
+  code?: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  country?: string;
+  vat_number?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+/**
+ * Formulaire client pour création/édition
+ */
+export interface ClientFormData {
+  code: string;
+  name: string;
+  type: string;
+  email: string;
+  phone: string;
+  address_line1: string;
+  city: string;
+  postal_code: string;
+  country_code: string;
+  tax_id: string;
+  notes: string;
+}
+
 // ============================================================================
 // CONSTANTES & CONFIGURATIONS
 // ============================================================================

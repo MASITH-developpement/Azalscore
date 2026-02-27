@@ -22,7 +22,9 @@ BEGIN
         ''
     );
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+-- P1 SÉCURITÉ: SECURITY DEFINER garantit que la fonction s'exécute avec les
+-- privilèges du propriétaire, empêchant l'escalade de privilèges via RLS
 
 COMMENT ON FUNCTION get_current_tenant_id() IS
     'Retourne le tenant_id courant depuis la session PostgreSQL. '

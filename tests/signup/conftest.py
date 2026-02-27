@@ -135,7 +135,7 @@ def sample_tenant_data() -> Dict[str, Any]:
         "company_name": "Test Company SAS",
         "company_email": "contact@testcompany.fr",
         "country": "FR",
-        "siret": "12345678901234",
+        "siret": "73282932000074",  # Valid SIRET (passes Luhn algorithm)
         "admin_email": "admin@testcompany.fr",
         "admin_password": "SecurePass123!",
         "admin_first_name": "Jean",
@@ -398,6 +398,17 @@ def stripe_subscription_deleted_event() -> Dict[str, Any]:
 # ============================================================================
 # MOCK FIXTURES
 # ============================================================================
+
+@pytest.fixture(autouse=True)
+def mock_rate_limiter():
+    """Mock du rate limiter pour permettre les tests sans limitation."""
+    mock_limiter = MagicMock()
+    mock_limiter.check_rate.return_value = (True, 0)  # Always allow
+    mock_limiter.record_attempt.return_value = None
+
+    with patch("app.core.rate_limiter.rate_limiter", mock_limiter):
+        yield mock_limiter
+
 
 @pytest.fixture
 def mock_stripe():

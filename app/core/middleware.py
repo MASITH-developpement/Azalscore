@@ -114,14 +114,40 @@ class TenantMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
+    # P1 SÉCURITÉ: Liste des tenant_ids réservés/interdits
+    # Ces noms pourraient entrer en conflit avec des routes ou fonctionnalités internes
+    RESERVED_TENANT_IDS = {
+        # Noms système
+        "admin", "administrator", "root", "system", "api", "internal",
+        "platform", "superadmin", "super-admin", "super_admin",
+        # Noms potentiellement confus
+        "null", "none", "undefined", "void", "test", "demo",
+        "default", "public", "private", "global", "local",
+        # Préfixes internes
+        "_internal", "_system", "_admin", "_platform", "_test",
+        "__internal__", "__system__", "__admin__",
+        # Routes réservées
+        "health", "metrics", "docs", "api", "auth", "v1", "v2", "v3",
+        "static", "assets", "webhooks", "ws", "websocket",
+    }
+
     @staticmethod
     def _is_valid_tenant_id(tenant_id: str) -> bool:
         """
         Valide le format du tenant_id.
         Accepte : lettres, chiffres, tirets, underscores
-        Longueur : 1-255 caractères
+        Longueur : 3-255 caractères (P1 SÉCURITÉ: min 3 pour éviter IDs triviaux)
         """
-        if not tenant_id or len(tenant_id) > 255:
+        # P1 SÉCURITÉ: Longueur minimale 3 pour éviter tenant_ids comme "a", "1", etc.
+        if not tenant_id or len(tenant_id) < 3 or len(tenant_id) > 255:
+            return False
+
+        # P1 SÉCURITÉ: Vérifier que ce n'est pas un nom réservé
+        if tenant_id.lower() in TenantMiddleware.RESERVED_TENANT_IDS:
+            return False
+
+        # P1 SÉCURITÉ: Interdire les tenant_ids commençant par _ ou - (réservés internes)
+        if tenant_id.startswith('_') or tenant_id.startswith('-'):
             return False
 
         # Validation alphanumérique + tirets + underscores uniquement
@@ -136,12 +162,15 @@ class RLSMiddleware(BaseHTTPMiddleware):
     """
     Middleware pour activer automatiquement le Row-Level Security PostgreSQL.
 
-    P2 SÉCURITÉ: Ce middleware définit la variable de session PostgreSQL
+    P1 SÉCURITÉ: Ce middleware définit la variable de session PostgreSQL
     `app.current_tenant_id` pour que les politiques RLS filtrent automatiquement
     les données par tenant.
 
     IMPORTANT: Requiert que les politiques RLS soient créées en base de données.
     Voir: migrations/rls_policies.sql
+
+    NOTE: Le middleware prépare le contexte, mais l'application effective du RLS
+    se fait via la dépendance get_db_with_rls_auto() qui lit request.state.tenant_id.
     """
 
     async def dispatch(self, request: Request, call_next):
@@ -151,8 +180,7 @@ class RLSMiddleware(BaseHTTPMiddleware):
         tenant_id = getattr(request.state, 'tenant_id', None)
 
         if tenant_id:
-            # Stocker le tenant_id pour que get_db() puisse l'utiliser
-            # Le contexte RLS sera appliqué dans la dépendance get_db_with_rls
+            # Marquer que RLS doit être activé
             request.state.rls_enabled = True
             logger.debug("[RLS] Context prepared for tenant: %s", tenant_id)
 
@@ -176,3 +204,45 @@ def get_rls_tenant_id(request: Request) -> str | None:
             ...
     """
     return getattr(request.state, 'tenant_id', None)
+
+
+# =============================================================================
+# RLS DATABASE DEPENDENCY (P1 SÉCURITÉ)
+# =============================================================================
+
+from typing import Generator
+from sqlalchemy.orm import Session
+
+
+def get_db_with_rls_auto(request: Request) -> Generator[Session, None, None]:
+    """
+    P1 SÉCURITÉ: Dépendance FastAPI qui applique automatiquement le contexte RLS.
+
+    Cette dépendance:
+    1. Crée une session de base de données
+    2. Lit le tenant_id depuis request.state (injecté par TenantMiddleware)
+    3. Exécute SET LOCAL app.current_tenant_id pour activer RLS PostgreSQL
+    4. Retourne la session avec RLS actif
+
+    Usage:
+        @router.get("/items")
+        async def get_items(
+            db: Session = Depends(get_db_with_rls_auto)
+        ):
+            # Toutes les requêtes sont automatiquement filtrées par RLS
+            return db.query(Item).all()
+
+    NOTE: Requiert que les politiques RLS soient configurées en PostgreSQL.
+    Voir: migrations/rls_policies.sql
+    """
+    from app.core.database import SessionLocal, set_rls_context
+
+    db = SessionLocal()
+    try:
+        tenant_id = getattr(request.state, 'tenant_id', None)
+        if tenant_id:
+            set_rls_context(db, tenant_id)
+            logger.debug("[RLS] PostgreSQL context set: tenant_id=%s", tenant_id)
+        yield db
+    finally:
+        db.close()

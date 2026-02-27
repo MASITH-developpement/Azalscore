@@ -15,39 +15,26 @@
  */
 
 import React, { useState, useMemo, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, FileText, Check, X,
   Search, ArrowRight, Building,
   Mail, Loader2, Trash2
 } from 'lucide-react';
-import { api } from '@core/api-client';
 import { Button } from '@ui/actions';
 import { PageWrapper, Card } from '@ui/layout';
 import { CompanyAutocomplete, AddressAutocomplete } from '@/modules/enrichment';
 import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
-import type { PaginatedResponse } from '@/types';
+import {
+  useQuickCustomers,
+  useCreateQuickCustomer,
+  useCreateQuickDevis,
+  type QuickCustomer,
+  type QuickDocumentResult
+} from './hooks';
 
 // ============================================================
-// TYPES
+// LOCAL TYPES
 // ============================================================
-
-interface QuickCustomer {
-  id: string;
-  code?: string;
-  name: string;
-  email?: string;
-  phone?: string;
-}
-
-interface QuickProduct {
-  id: string;
-  code: string;
-  name: string;
-  unit_price: number;
-  unit?: string;
-  tax_rate?: number;
-}
 
 interface QuickLine {
   id: string;
@@ -57,122 +44,6 @@ interface QuickLine {
   unit_price: number;
   tax_rate: number;
 }
-
-interface QuickDevisResult {
-  id: string;
-  number: string;
-}
-
-// ============================================================
-// API HOOKS
-// ============================================================
-
-const useQuickCustomers = (search: string) => {
-  return useQuery({
-    queryKey: ['quick-customers', search],
-    queryFn: async () => {
-      if (!search || search.length < 2) return [];
-      const params = new URLSearchParams({
-        search,
-        page_size: '10',
-        is_active: 'true'
-      });
-      try {
-        const response = await api.get<PaginatedResponse<QuickCustomer>>(
-          `/partners/clients?${params}`
-        );
-        return (response as unknown as PaginatedResponse<QuickCustomer>).items || [];
-      } catch {
-        return [];
-      }
-    },
-    enabled: search.length >= 2,
-  });
-};
-
-const _useQuickProducts = (search: string) => {
-  return useQuery({
-    queryKey: ['quick-products', search],
-    queryFn: async () => {
-      if (!search || search.length < 2) return [];
-      const params = new URLSearchParams({
-        search,
-        page_size: '10',
-        is_active: 'true'
-      });
-      try {
-        const response = await api.get<PaginatedResponse<QuickProduct>>(
-          `/inventory/products?${params}`
-        );
-        return (response as unknown as PaginatedResponse<QuickProduct>).items || [];
-      } catch {
-        return [];
-      }
-    },
-    enabled: search.length >= 2,
-  });
-};
-
-const useCreateQuickDevis = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: {
-      customer_id: string;
-      lines: Omit<QuickLine, 'id'>[];
-      notes?: string;
-    }) => {
-      const payload = {
-        type: 'QUOTE',
-        customer_id: data.customer_id,
-        date: new Date().toISOString().split('T')[0],
-        validity_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: data.notes,
-        lines: data.lines.map((line, index) => ({
-          line_number: index + 1,
-          description: line.description,
-          quantity: line.quantity,
-          unit_price: line.unit_price,
-          tax_rate: line.tax_rate,
-          discount_percent: 0,
-        })),
-      };
-      const response = await api.post<QuickDevisResult>('/commercial/documents', payload);
-      return response as unknown as QuickDevisResult;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', 'QUOTE'] });
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
-  });
-};
-
-const useCreateQuickCustomer = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: {
-      name: string;
-      email?: string;
-      phone?: string;
-      mobile?: string;
-      siret?: string;
-      tax_id?: string;
-      address?: string;
-      city?: string;
-      postal_code?: string;
-    }) => {
-      const response = await api.post<QuickCustomer>('/partners/clients', {
-        ...data,
-        type: 'CUSTOMER',
-        is_active: true,
-      });
-      return response as unknown as QuickCustomer;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quick-customers'] });
-      queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
-    },
-  });
-};
 
 // ============================================================
 // HELPERS
@@ -686,7 +557,7 @@ export const SaisieModule: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
-  const [success, setSuccess] = useState<QuickDevisResult | null>(null);
+  const [success, setSuccess] = useState<QuickDocumentResult | null>(null);
 
   const createDevis = useCreateQuickDevis();
 

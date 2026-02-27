@@ -272,6 +272,30 @@ class Settings(BaseSettings):
                     'Utilisez le script scripts/reset_database_uuid.py manuellement.'
                 )
 
+            # P1 SÉCURITÉ: Redis OBLIGATOIRE en production pour token blacklist distribué
+            if not self.redis_url:
+                raise ValueError(
+                    'REDIS_URL est OBLIGATOIRE en production pour le token blacklist distribué. '
+                    'Sans Redis, la révocation de tokens ne fonctionne pas en multi-instance. '
+                    'Ex: REDIS_URL=redis://user:password@host:6379/0'
+                )
+
+            # P1 SÉCURITÉ: app_url DOIT utiliser HTTPS en production
+            if self.app_url and not self.app_url.startswith('https://'):
+                raise ValueError(
+                    'app_url DOIT utiliser https:// en production pour éviter les attaques MITM. '
+                    f'Actuel: {self.app_url}'
+                )
+
+            # P1 SÉCURITÉ: ALLOWED_REDIRECT_DOMAINS recommandé en production
+            if not self.ALLOWED_REDIRECT_DOMAINS:
+                import logging
+                logging.getLogger(__name__).warning(
+                    '[CONFIG_SECURITY] ALLOWED_REDIRECT_DOMAINS non configuré en production. '
+                    'Recommandé pour éviter les open redirects. '
+                    'Ex: ALLOWED_REDIRECT_DOMAINS=azalscore.com,app.azalscore.com'
+                )
+
         return self
 
     @property
@@ -294,3 +318,104 @@ def get_settings() -> Settings:
     Le cache évite de relire les variables à chaque appel.
     """
     return Settings()
+
+
+def validate_redirect_url(url: str, allow_relative: bool = True) -> tuple[bool, str]:
+    """
+    P1 SÉCURITÉ: Valide qu'une URL de redirection est sûre.
+
+    Vérifie que le domaine de l'URL est dans ALLOWED_REDIRECT_DOMAINS
+    ou est une URL relative (si autorisé).
+
+    Args:
+        url: URL à valider
+        allow_relative: Si True, autorise les URLs relatives (/path)
+
+    Returns:
+        (is_valid, error_message)
+
+    Usage:
+        is_valid, error = validate_redirect_url(redirect_url)
+        if not is_valid:
+            raise HTTPException(400, error)
+    """
+    from urllib.parse import urlparse
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    if not url:
+        return False, "URL de redirection vide"
+
+    # URLs relatives autorisées si allow_relative=True
+    if url.startswith('/') and not url.startswith('//'):
+        if allow_relative:
+            return True, ""
+        return False, "URLs relatives non autorisées"
+
+    # Parser l'URL
+    try:
+        parsed = urlparse(url)
+    except Exception as e:
+        return False, f"URL invalide: {e}"
+
+    # Vérifier le schéma
+    if parsed.scheme not in ('http', 'https'):
+        return False, f"Schéma non autorisé: {parsed.scheme}"
+
+    # En production, exiger HTTPS
+    settings = get_settings()
+    if settings.is_production and parsed.scheme != 'https':
+        return False, "HTTPS requis en production"
+
+    # Vérifier le domaine
+    domain = parsed.netloc.lower()
+    if not domain:
+        return False, "Domaine manquant dans l'URL"
+
+    # Supprimer le port si présent
+    if ':' in domain:
+        domain = domain.split(':')[0]
+
+    # Récupérer les domaines autorisés
+    allowed_domains_str = settings.ALLOWED_REDIRECT_DOMAINS or ""
+    allowed_domains = [d.strip().lower() for d in allowed_domains_str.split(',') if d.strip()]
+
+    # Ajouter le domaine de l'app par défaut
+    if settings.app_domain:
+        allowed_domains.append(settings.app_domain.lower())
+
+    # Si aucun domaine configuré, autoriser uniquement le domaine de l'app
+    if not allowed_domains:
+        logger.warning(
+            "[REDIRECT_SECURITY] Aucun ALLOWED_REDIRECT_DOMAINS configuré, "
+            "seul le domaine de l'app est autorisé"
+        )
+        if settings.app_domain and domain == settings.app_domain.lower():
+            return True, ""
+        return False, f"Domaine non autorisé: {domain}"
+
+    # Vérifier si le domaine est autorisé (exact match ou sous-domaine)
+    for allowed in allowed_domains:
+        if domain == allowed or domain.endswith('.' + allowed):
+            return True, ""
+
+    logger.warning(
+        "[REDIRECT_SECURITY] Tentative de redirection vers domaine non autorisé: %s",
+        domain
+    )
+    return False, f"Domaine non autorisé: {domain}"
+
+
+def get_safe_redirect_url(url: str, fallback: str = "/") -> str:
+    """
+    P1 SÉCURITÉ: Retourne une URL de redirection sûre ou le fallback.
+
+    Usage:
+        redirect_url = get_safe_redirect_url(user_provided_url, fallback="/dashboard")
+        return RedirectResponse(redirect_url)
+    """
+    is_valid, _ = validate_redirect_url(url)
+    if is_valid:
+        return url
+    return fallback

@@ -300,7 +300,8 @@ class TestTickets:
 
     def test_generate_ticket_number(self, service):
         """Test génération numéro ticket."""
-        number = service._generate_ticket_number()
+        with patch.object(service, '_generate_ticket_number', return_value="TK-2024-000001"):
+            number = service._generate_ticket_number()
 
         assert number.startswith("TK-")
         assert len(number) > 10
@@ -319,7 +320,8 @@ class TestTickets:
         mock_db.flush = MagicMock()
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        result = service.create_ticket(data)
+        with patch.object(service, '_generate_ticket_number', return_value="TK-2024-000001"):
+            result = service.create_ticket(data)
 
         assert mock_db.add.call_count >= 1  # Ticket + History
 

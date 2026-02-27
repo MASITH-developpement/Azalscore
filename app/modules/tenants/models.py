@@ -421,3 +421,6 @@ class TrialRegistration(Base):
     # Code promo
     promo_code: Mapped[str | None] = mapped_column(String(50))
     promo_approval_token: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+
+    # Plan sélectionné
+    selected_plan: Mapped[str | None] = mapped_column(String(50))

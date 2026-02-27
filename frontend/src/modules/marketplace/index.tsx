@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Store, Hourglass, Package, ClipboardList, ShoppingCart, Banknote,
   DollarSign, Wallet, BarChart3, User, Clock, Sparkles, ArrowLeft, Edit
 } from 'lucide-react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
-import { api } from '@core/api-client';
-import { serializeFilters } from '@core/query-keys';
 import { Button } from '@ui/actions';
 import { StatCard } from '@ui/dashboards';
 import { Select } from '@ui/forms';
@@ -27,10 +24,18 @@ import {
   SELLER_STATUS_CONFIG, PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYOUT_STATUS_CONFIG,
   formatRating
 } from './types';
-import type {
-  Seller, MarketplaceProduct, MarketplaceOrder, Payout, MarketplaceStats
-} from './types';
+import type { Seller, MarketplaceProduct, MarketplaceOrder, Payout } from './types';
 import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
+import {
+  useMarketplaceStats,
+  useSellers,
+  useSeller,
+  useUpdateSellerStatus,
+  useMarketplaceProducts,
+  useApproveProduct,
+  useMarketplaceOrders,
+  usePayouts
+} from './hooks';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -105,110 +110,6 @@ const STATUS_COLORS: Record<string, string> = {
 const formatCurrency = formatCurrencyHelper;
 const formatDate = formatDateHelper;
 const formatPercent = formatPercentHelper;
-
-// ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useMarketplaceStats = () => {
-  return useQuery({
-    queryKey: ['marketplace', 'stats'],
-    queryFn: async () => {
-      return api.get<MarketplaceStats>('/marketplace/stats').then(r => r.data);
-    }
-  });
-};
-
-const useSellers = (filters?: { status?: string }) => {
-  return useQuery({
-    queryKey: ['marketplace', 'sellers', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      const queryString = params.toString();
-      const url = queryString ? `/marketplace/sellers?${queryString}` : '/marketplace/sellers';
-      return api.get<Seller[]>(url).then(r => r.data);
-    }
-  });
-};
-
-const useMarketplaceProducts = (filters?: { status?: string; seller_id?: string }) => {
-  return useQuery({
-    queryKey: ['marketplace', 'products', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.seller_id) params.append('seller_id', filters.seller_id);
-      const queryString = params.toString();
-      const url = queryString ? `/marketplace/products?${queryString}` : '/marketplace/products';
-      return api.get<MarketplaceProduct[]>(url).then(r => r.data);
-    }
-  });
-};
-
-const useMarketplaceOrders = (filters?: { status?: string; seller_id?: string }) => {
-  return useQuery({
-    queryKey: ['marketplace', 'orders', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.seller_id) params.append('seller_id', filters.seller_id);
-      const queryString = params.toString();
-      const url = queryString ? `/marketplace/orders?${queryString}` : '/marketplace/orders';
-      return api.get<MarketplaceOrder[]>(url).then(r => r.data);
-    }
-  });
-};
-
-const usePayouts = (filters?: { status?: string; seller_id?: string }) => {
-  return useQuery({
-    queryKey: ['marketplace', 'payouts', serializeFilters(filters)],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.seller_id) params.append('seller_id', filters.seller_id);
-      const queryString = params.toString();
-      const url = queryString ? `/marketplace/payouts?${queryString}` : '/marketplace/payouts';
-      return api.get<Payout[]>(url).then(r => r.data);
-    }
-  });
-};
-
-const useUpdateSellerStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/marketplace/sellers/${id}/status`, { status }).then(r => r.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketplace', 'sellers'] });
-      queryClient.invalidateQueries({ queryKey: ['marketplace', 'stats'] });
-    }
-  });
-};
-
-const useApproveProduct = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
-      return api.patch(`/marketplace/products/${id}/review`, { approved }).then(r => r.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketplace', 'products'] });
-      queryClient.invalidateQueries({ queryKey: ['marketplace', 'stats'] });
-    }
-  });
-};
-
-const useSeller = (id: string) => {
-  return useQuery({
-    queryKey: ['marketplace', 'seller', id],
-    queryFn: async () => {
-      return api.get<Seller>(`/marketplace/sellers/${id}`).then(r => r.data);
-    },
-    enabled: !!id
-  });
-};
 
 // ============================================================================
 // DETAIL VIEW - SELLER

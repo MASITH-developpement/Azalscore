@@ -14,10 +14,10 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .models import (
-    BudgetLine,
+    ProjectBudgetLine as BudgetLine,  # Alias for backwards compatibility
     ExpenseStatus,
     IssuePriority,
     IssueStatus,
@@ -129,9 +129,30 @@ class ProjectsService:
         logger.info("Project created | project_id=%s project_code=%s", project.id, project.code)
         return project
 
-    def get_project(self, project_id: UUID) -> Project | None:
-        """Récupérer un projet."""
-        return self.db.query(Project).filter(
+    def get_project(self, project_id: UUID, with_relations: bool = True) -> Project | None:
+        """
+        Récupérer un projet.
+
+        Args:
+            project_id: UUID du projet
+            with_relations: Si True, charge les relations en eager loading
+
+        Returns:
+            Project ou None
+        """
+        query = self.db.query(Project)
+
+        # PERFORMANCE: Eager loading pour éviter N+1 queries
+        if with_relations:
+            query = query.options(
+                selectinload(Project.tasks),
+                selectinload(Project.milestones),
+                selectinload(Project.team_members),
+                selectinload(Project.phases),
+                selectinload(Project.risks)
+            )
+
+        return query.filter(
             and_(
                 Project.id == project_id,
                 Project.tenant_id == self.tenant_id
@@ -151,7 +172,12 @@ class ProjectsService:
         limit: int = 50
     ) -> tuple[list[Project], int]:
         """Lister les projets."""
-        query = self.db.query(Project).filter(
+        # PERFORMANCE: Eager loading pour éviter N+1 queries
+        query = self.db.query(Project).options(
+            selectinload(Project.tasks),
+            selectinload(Project.milestones),
+            selectinload(Project.team_members)
+        ).filter(
             Project.tenant_id == self.tenant_id
         )
 

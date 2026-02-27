@@ -541,7 +541,7 @@ export function useCreateOdooFieldMapping() {
 export function useUpdateOdooFieldMapping() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, configId, data }: { id: string; configId: string; data: OdooFieldMappingUpdate }) => {
+    mutationFn: async ({ id, data }: { id: string; configId: string; data: OdooFieldMappingUpdate }) => {
       return api.put<OdooFieldMapping>(`/odoo/mappings/${id}`, data);
     },
     onSuccess: (_, { id, configId }) => {
@@ -554,7 +554,7 @@ export function useUpdateOdooFieldMapping() {
 export function useDeleteOdooFieldMapping() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, configId }: { id: string; configId: string }) => {
+    mutationFn: async ({ id }: { id: string; configId: string }) => {
       return api.delete(`/odoo/mappings/${id}`);
     },
     onSuccess: (_, { configId }) => {

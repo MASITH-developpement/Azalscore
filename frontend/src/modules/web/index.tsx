@@ -4,125 +4,33 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FileText, Palette, LayoutGrid,
   Plus, Edit, Trash2, Eye, Menu, Layers
 } from 'lucide-react';
 import { Routes, Route } from 'react-router-dom';
-import { api } from '@core/api-client';
 import { Button, Modal } from '@ui/actions';
 import { StatCard } from '@ui/dashboards';
 import { Input, TextArea } from '@ui/forms';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import type { TableColumn } from '@/types';
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface Theme {
-  id: string;
-  name: string;
-  description?: string;
-  is_default: boolean;
-  is_active: boolean;
-  primary_color: string;
-  secondary_color: string;
-  created_at: string;
-}
-
-interface Widget {
-  id: string;
-  name: string;
-  widget_type: string;
-  config: Record<string, unknown>;
-  is_active: boolean;
-  position: number;
-}
-
-interface Dashboard {
-  id: string;
-  name: string;
-  description?: string;
-  is_default: boolean;
-  is_public: boolean;
-  layout: string;
-  widgets: string[];
-}
-
-interface CustomPage {
-  id: string;
-  slug: string;
-  title: string;
-  content?: string;
-  is_published: boolean;
-  created_at: string;
-}
-
-interface MenuItem {
-  id: string;
-  label: string;
-  icon?: string;
-  path?: string;
-  parent_id?: string;
-  position: number;
-  is_visible: boolean;
-}
-
-// ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useThemes = () => useQuery({
-  queryKey: ['web', 'themes'],
-  queryFn: () => api.get<{ items: Theme[] }>('/web/themes').then(r => r.data.items || [])
-});
-
-const useWidgets = () => useQuery({
-  queryKey: ['web', 'widgets'],
-  queryFn: () => api.get<{ items: Widget[] }>('/web/widgets').then(r => r.data.items || [])
-});
-
-const useDashboards = () => useQuery({
-  queryKey: ['web', 'dashboards'],
-  queryFn: () => api.get<{ items: Dashboard[] }>('/web/dashboards').then(r => r.data.items || [])
-});
-
-const usePages = () => useQuery({
-  queryKey: ['web', 'pages'],
-  queryFn: () => api.get<{ items: CustomPage[] }>('/web/pages').then(r => r.data.items || [])
-});
-
-const useMenuItems = () => useQuery({
-  queryKey: ['web', 'menu-items'],
-  queryFn: () => api.get<MenuItem[]>('/web/menu-items').then(r => r.data || [])
-});
-
-const useCreateTheme = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Partial<Theme>) => api.post('/web/themes', data).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'themes'] })
-  });
-};
-
-const useCreatePage = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Partial<CustomPage>) => api.post('/web/pages', data).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'pages'] })
-  });
-};
-
-const useDeletePage = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.delete(`/web/pages/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'pages'] })
-  });
-};
+import {
+  webKeys,
+  useThemes,
+  useWidgets,
+  useWebDashboards,
+  usePages,
+  useMenuItems,
+  useCreateTheme,
+  useCreatePage,
+  useDeletePage,
+  type Theme,
+  type Widget,
+  type Dashboard,
+  type CustomPage,
+  type MenuItem,
+} from './hooks';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -244,7 +152,7 @@ const WidgetsView: React.FC = () => {
 // ============================================================================
 
 const DashboardsView: React.FC = () => {
-  const { data: dashboards = [], isLoading } = useDashboards();
+  const { data: dashboards = [], isLoading } = useWebDashboards();
 
   const columns: TableColumn<Dashboard>[] = [
     { id: 'name', header: 'Nom', accessor: 'name' },
@@ -365,7 +273,7 @@ const WebDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('themes');
   const { data: themes = [] } = useThemes();
   const { data: widgets = [] } = useWidgets();
-  const { data: dashboards = [] } = useDashboards();
+  const { data: dashboards = [] } = useWebDashboards();
   const { data: pages = [] } = usePages();
 
   const tabs = [
@@ -415,3 +323,16 @@ export const WebRoutes: React.FC = () => (
 );
 
 export default WebRoutes;
+
+// Re-export hooks for external use
+export {
+  webKeys,
+  useThemes,
+  useWidgets,
+  useWebDashboards,
+  usePages,
+  useMenuItems,
+  useCreateTheme,
+  useCreatePage,
+  useDeletePage,
+} from './hooks';

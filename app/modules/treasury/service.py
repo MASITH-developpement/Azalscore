@@ -27,9 +27,10 @@ from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, case, func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.query_optimizer import QueryOptimizer
+from app.core.cache import get_cache, cache_key_tenant, CacheTTL, invalidate_cache
 from app.modules.finance.models import BankAccount, BankTransaction, BankTransactionType
 
 from .models import AccountType, TransactionType
@@ -47,6 +48,9 @@ from .schemas import (
     ReconciliationRequest,
     TreasurySummary,
 )
+from .exceptions import TreasuryCacheError
+from pydantic import ValidationError
+from json import JSONDecodeError
 
 
 class TreasuryService:
@@ -79,20 +83,54 @@ class TreasuryService:
         self.tenant_id = tenant_id
         self.user_id = user_id
         self._optimizer = QueryOptimizer(db)
+        self._cache = get_cache()
+
+    # =========================================================================
+    # CACHE HELPERS
+    # =========================================================================
+
+    def _cache_key(self, suffix: str) -> str:
+        """Génère une clé de cache scopée par tenant."""
+        return cache_key_tenant(self.tenant_id, "treasury", suffix)
+
+    def invalidate_summary_cache(self) -> None:
+        """
+        Invalide le cache du summary.
+
+        Doit être appelé après toute modification de compte ou transaction.
+        """
+        invalidate_cache(f"tenant:{self.tenant_id}:treasury:*")
 
     # =========================================================================
     # SUMMARY & FORECAST
     # =========================================================================
 
-    def get_summary(self) -> TreasurySummary:
+    def get_summary(self, use_cache: bool = True) -> TreasurySummary:
         """
         Obtenir le résumé de trésorerie.
 
         Calcule les totaux à partir des comptes bancaires réels.
+        PERFORMANCE: Résultat mis en cache pendant 60 secondes (CacheTTL.SHORT).
+
+        Args:
+            use_cache: Si True, utilise le cache Redis (défaut: True)
 
         Returns:
             TreasurySummary avec les soldes agrégés
         """
+        import json
+
+        cache_key = self._cache_key("summary")
+
+        # Check cache first
+        if use_cache:
+            cached = self._cache.get(cache_key)
+            if cached:
+                try:
+                    return TreasurySummary.model_validate_json(cached)
+                except (ValidationError, JSONDecodeError):
+                    pass  # Cache invalide, recalculer
+
         # Récupérer tous les comptes actifs du tenant
         accounts = self.db.query(BankAccount).filter(
             BankAccount.tenant_id == self.tenant_id,
@@ -140,7 +178,7 @@ class TreasuryService:
         pending_in = Decimal(str(pending_query.pending_in or 0)) if pending_query else Decimal("0.00")
         pending_out = Decimal(str(pending_query.pending_out or 0)) if pending_query else Decimal("0.00")
 
-        return TreasurySummary(
+        result = TreasurySummary(
             total_balance=total_balance,
             total_pending_in=pending_in,
             total_pending_out=abs(pending_out),
@@ -148,6 +186,15 @@ class TreasuryService:
             forecast_30d=total_balance,  # Simplifié pour l'instant
             accounts=account_summaries
         )
+
+        # Store in cache (60 seconds - données financières volatiles)
+        if use_cache:
+            try:
+                self._cache.set(cache_key, result.model_dump_json(), CacheTTL.SHORT)
+            except (ConnectionError, TimeoutError, TreasuryCacheError):
+                pass  # Cache write failure is not critical
+
+        return result
 
     def get_forecast(self, days: int = 30) -> List[ForecastData]:
         """
@@ -246,6 +293,9 @@ class TreasuryService:
         self.db.commit()
         self.db.refresh(account)
 
+        # Invalider le cache après création
+        self.invalidate_summary_cache()
+
         return self._to_account_response(account)
 
     def list_accounts(
@@ -257,6 +307,10 @@ class TreasuryService:
         """
         Lister les comptes bancaires du tenant.
 
+        PERFORMANCE:
+        1. Eager loading des transactions via selectinload
+        2. Préchargement des stats en bulk via GROUP BY (évite N+1)
+
         Args:
             is_active: Filtrer par statut actif
             page: Numéro de page (1-indexed)
@@ -265,22 +319,56 @@ class TreasuryService:
         Returns:
             PaginatedBankAccounts avec la liste et pagination
         """
-        query = self.db.query(BankAccount).filter(
+        # PERFORMANCE: Eager loading pour éviter N+1 queries
+        query = self.db.query(BankAccount).options(
+            selectinload(BankAccount.transactions)
+        ).filter(
             BankAccount.tenant_id == self.tenant_id
         )
 
         if is_active is not None:
             query = query.filter(BankAccount.is_active == is_active)
 
-        # Compter total
-        total = query.count()
+        # Compter total (sans eager loading)
+        total = self.db.query(BankAccount).filter(
+            BankAccount.tenant_id == self.tenant_id
+        ).count() if is_active is None else query.count()
 
         # Pagination
         offset = (page - 1) * per_page
         accounts = query.order_by(BankAccount.name).offset(offset).limit(per_page).all()
 
+        # PERFORMANCE: Précharger les stats en bulk via GROUP BY
+        # Évite 2N queries individuelles pour tx_count et unreconciled
+        account_ids = [a.id for a in accounts]
+        if account_ids:
+            stats_query = self.db.query(
+                BankTransaction.bank_account_id,
+                func.count(BankTransaction.id).label('tx_count'),
+                func.sum(
+                    case(
+                        (BankTransaction.entry_line_id == None, 1),
+                        else_=0
+                    )
+                ).label('unreconciled')
+            ).filter(
+                BankTransaction.bank_account_id.in_(account_ids)
+            ).group_by(
+                BankTransaction.bank_account_id
+            ).all()
+
+            preloaded_stats = {
+                row.bank_account_id: {
+                    'tx_count': row.tx_count,
+                    'unreconciled': row.unreconciled or 0
+                }
+                for row in stats_query
+            }
+        else:
+            preloaded_stats = {}
+
         return PaginatedBankAccounts(
-            items=[self._to_account_response(a) for a in accounts],
+            items=[self._to_account_response(a, preloaded_stats) for a in accounts],
             total=total,
             page=page,
             per_page=per_page,
@@ -341,6 +429,9 @@ class TreasuryService:
         self.db.commit()
         self.db.refresh(account)
 
+        # Invalider le cache après mise à jour
+        self.invalidate_summary_cache()
+
         return self._to_account_response(account)
 
     def delete_account(self, account_id: UUID, hard_delete: bool = False) -> bool:
@@ -380,6 +471,10 @@ class TreasuryService:
             account.updated_at = datetime.utcnow()
 
         self.db.commit()
+
+        # Invalider le cache après suppression
+        self.invalidate_summary_cache()
+
         return True
 
     # =========================================================================
@@ -443,6 +538,9 @@ class TreasuryService:
 
         self.db.commit()
         self.db.refresh(transaction)
+
+        # Invalider le cache après création de transaction
+        self.invalidate_summary_cache()
 
         return self._to_transaction_response(transaction)
 
@@ -542,6 +640,9 @@ class TreasuryService:
         self.db.commit()
         self.db.refresh(transaction)
 
+        # Invalider le cache après mise à jour de transaction
+        self.invalidate_summary_cache()
+
         return self._to_transaction_response(transaction)
 
     def delete_transaction(self, transaction_id: UUID) -> bool:
@@ -567,6 +668,9 @@ class TreasuryService:
 
         self.db.delete(transaction)
         self.db.commit()
+
+        # Invalider le cache après suppression de transaction
+        self.invalidate_summary_cache()
 
         return True
 
@@ -631,18 +735,46 @@ class TreasuryService:
             BankAccount.is_default == True
         ).update({"is_default": False})
 
-    def _to_account_response(self, account: BankAccount) -> BankAccountResponse:
-        """Convertir un modèle BankAccount en réponse."""
-        # Compter les transactions
-        tx_count = self.db.query(BankTransaction).filter(
-            BankTransaction.bank_account_id == account.id
-        ).count()
+    def _to_account_response(
+        self,
+        account: BankAccount,
+        preloaded_stats: dict | None = None
+    ) -> BankAccountResponse:
+        """
+        Convertir un modèle BankAccount en réponse.
 
-        # Transactions non rapprochées
-        unreconciled = self.db.query(BankTransaction).filter(
-            BankTransaction.bank_account_id == account.id,
-            BankTransaction.entry_line_id == None
-        ).count()
+        PERFORMANCE: Utilise les données eager-loaded ou preloaded_stats
+        pour éviter 2 queries par compte (N+1 problem).
+
+        Args:
+            account: Le compte bancaire
+            preloaded_stats: Dict optionnel {account_id: {tx_count, unreconciled}}
+                             pour éviter les requêtes individuelles
+
+        Returns:
+            BankAccountResponse
+        """
+        # PERFORMANCE: Utiliser les stats préchargées ou les transactions eager-loaded
+        if preloaded_stats and account.id in preloaded_stats:
+            stats = preloaded_stats[account.id]
+            tx_count = stats['tx_count']
+            unreconciled = stats['unreconciled']
+        elif hasattr(account, 'transactions') and account.transactions is not None:
+            # Utiliser les transactions eager-loaded (évite 2 queries)
+            tx_count = len(account.transactions)
+            unreconciled = sum(
+                1 for tx in account.transactions
+                if tx.entry_line_id is None
+            )
+        else:
+            # Fallback: queries individuelles (cas non-optimisé)
+            tx_count = self.db.query(BankTransaction).filter(
+                BankTransaction.bank_account_id == account.id
+            ).count()
+            unreconciled = self.db.query(BankTransaction).filter(
+                BankTransaction.bank_account_id == account.id,
+                BankTransaction.entry_line_id == None
+            ).count()
 
         return BankAccountResponse(
             id=account.id,

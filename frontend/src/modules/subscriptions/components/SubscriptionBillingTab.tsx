@@ -116,7 +116,7 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
             </thead>
             <tbody>
               {invoices.map((invoice) => (
-                <InvoiceRow key={invoice.id} invoice={invoice} currency={subscription.currency} />
+                <InvoiceRow key={invoice.id} invoice={invoice} currency={subscription.currency || 'EUR'} />
               ))}
             </tbody>
           </table>

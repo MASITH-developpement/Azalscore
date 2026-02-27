@@ -120,7 +120,7 @@ const EntitySelect: React.FC<EntitySelectProps> = ({
         params.set(config.searchField, search);
       }
       const res = await api.get<{ items?: EntityItem[] }>(`${config.endpoint}?${params}`);
-      return (res as { items?: EntityItem[] }).items || [];
+      return ((res as unknown) as { items?: EntityItem[] }).items || [];
     },
   });
 

@@ -15,7 +15,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from .models import (
-    BOM, BOMLine, BOMStatus, BOMType,
+    BOM, ManufacturingBOMLine, BOMStatus, BOMType,
     Workcenter, WorkcenterState, WorkcenterType,
     Routing, Operation,
     WorkOrder, WorkOrderStatus, WorkOrderOperation, OperationStatus,
@@ -177,7 +177,7 @@ class ManufacturingService:
 
         return bom
 
-    def add_bom_line(self, bom_id: UUID, data: BOMLineCreate) -> BOMLine:
+    def add_bom_line(self, bom_id: UUID, data: BOMLineCreate) -> ManufacturingBOMLine:
         """Ajoute une ligne à une BOM."""
         bom = self.get_bom(bom_id)
 
@@ -186,7 +186,7 @@ class ManufacturingService:
 
         return self.bom_repo.add_line(bom, data.model_dump(exclude_unset=True))
 
-    def update_bom_line(self, bom_id: UUID, line_id: UUID, data: BOMLineUpdate) -> BOMLine:
+    def update_bom_line(self, bom_id: UUID, line_id: UUID, data: BOMLineUpdate) -> ManufacturingBOMLine:
         """Met à jour une ligne de BOM."""
         bom = self.get_bom(bom_id)
 

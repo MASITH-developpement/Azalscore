@@ -4,37 +4,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Palette, Globe, Bell, Settings, Save, RotateCcw, Trash2, Check, Loader2, Upload, X, Image } from 'lucide-react';
-import { api } from '@/core/api-client';
+import { Palette, Globe, Bell, Settings, Save, RotateCcw, Trash2, Check, Loader2, X, Image } from 'lucide-react';
 import { MainLayout } from '@/ui-engine/layouts/MainLayout';
-
-// Types
-type AccentColor = 'orange' | 'blue' | 'violet' | 'emerald' | 'rose';
-type LogoIcon = 'text' | 'letter-a' | 'cube' | 'spark' | 'shield' | 'hexagon';
-
-interface UserPreferences {
-  theme_mode: 'LIGHT' | 'DARK' | 'SYSTEM';
-  ui_style: 'CLASSIC' | 'MODERN' | 'GLASS';
-  accent_color: AccentColor;
-  logo_icon: LogoIcon;
-  custom_logo: string | null; // Base64 ou URL du logo personnalisé
-  language: string;
-  toolbar_dense: boolean;
-  desktop_notifications: boolean;
-  sound_enabled: boolean;
-}
-
-const DEFAULT_PREFERENCES: UserPreferences = {
-  theme_mode: 'SYSTEM',
-  ui_style: 'CLASSIC',
-  accent_color: 'orange',
-  logo_icon: 'text',
-  custom_logo: null,
-  language: 'fr',
-  toolbar_dense: false,
-  desktop_notifications: false,
-  sound_enabled: true,
-};
+import {
+  useUserPreferences,
+  useSaveUserPreferences,
+  loadLocalPreferences,
+  DEFAULT_PREFERENCES,
+  type UserPreferences,
+  type AccentColor,
+  type LogoIcon,
+} from './hooks';
 
 // Icônes du logo
 const LOGO_ICONS: Record<LogoIcon, { name: string; icon: React.ReactNode }> = {
@@ -201,54 +181,20 @@ const applyPreferences = (prefs: UserPreferences) => {
   localStorage.setItem('azals_preferences', JSON.stringify(prefs));
 };
 
-// Load preferences from localStorage (for initial render before API)
-const loadLocalPreferences = (): UserPreferences => {
-  try {
-    const stored = localStorage.getItem('azals_preferences');
-    if (stored) {
-      return { ...DEFAULT_PREFERENCES, ...JSON.parse(stored) };
-    }
-  } catch {
-    // ignore
-  }
-  return DEFAULT_PREFERENCES;
-};
-
 export default function SettingsModule() {
+  const { data: apiPreferences, isLoading: loading } = useUserPreferences();
+  const savePreferencesMutation = useSaveUserPreferences();
   const [settings, setSettings] = useState<UserPreferences>(loadLocalPreferences);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load preferences from API
+  // Sync settings with API data
   useEffect(() => {
-    const loadPreferences = async () => {
-      try {
-        const response = await api.get<UserPreferences>('/web/preferences');
-        if (response.data) {
-          const prefs = {
-            theme_mode: response.data.theme_mode || 'SYSTEM',
-            ui_style: response.data.ui_style || 'CLASSIC',
-            accent_color: (response.data.accent_color as AccentColor) || 'orange',
-            logo_icon: (response.data.logo_icon as LogoIcon) || 'text',
-            custom_logo: response.data.custom_logo || null,
-            language: response.data.language || 'fr',
-            toolbar_dense: response.data.toolbar_dense || false,
-            desktop_notifications: response.data.desktop_notifications || false,
-            sound_enabled: response.data.sound_enabled ?? true,
-          };
-          setSettings(prefs);
-          applyPreferences(prefs);
-        }
-      } catch (err) {
-        console.warn('Could not load preferences from API, using local storage');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadPreferences();
-  }, []);
+    if (apiPreferences) {
+      setSettings(apiPreferences);
+      applyPreferences(apiPreferences);
+    }
+  }, [apiPreferences]);
 
   // Apply preferences when they change
   useEffect(() => {
@@ -272,17 +218,14 @@ export default function SettingsModule() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     setError(null);
     try {
-      await api.put('/web/preferences', settings);
+      await savePreferencesMutation.mutateAsync(settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setError('Erreur lors de la sauvegarde des paramètres');
       console.error('Failed to save preferences:', err);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -713,9 +656,9 @@ export default function SettingsModule() {
               <button
                 className={`azals-btn ${saved ? 'azals-btn--success' : 'azals-btn--primary'}`}
                 onClick={handleSave}
-                disabled={saving}
+                disabled={savePreferencesMutation.isPending}
               >
-                {saving ? (
+                {savePreferencesMutation.isPending ? (
                   <><Loader2 size={16} className="animate-spin" /> Enregistrement...</>
                 ) : saved ? (
                   <><Check size={16} /> Paramètres enregistrés</>

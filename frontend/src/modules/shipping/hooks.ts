@@ -68,6 +68,7 @@ export function useZones() {
   return useQuery({
     queryKey: shippingKeys.zones(),
     queryFn: () => zoneApi.list(),
+    select: (data) => data.items,
   });
 }
 
@@ -118,6 +119,7 @@ export function useCarriers() {
   return useQuery({
     queryKey: shippingKeys.carriers(),
     queryFn: () => carrierApi.list(),
+    select: (data) => data.items,
   });
 }
 
@@ -174,6 +176,7 @@ export function useRates(carrierId?: string) {
   return useQuery({
     queryKey: shippingKeys.rates(carrierId),
     queryFn: () => rateApi.list(carrierId),
+    select: (data) => data.items,
   });
 }
 
@@ -375,6 +378,7 @@ export function usePickupPoints(carrierId?: string) {
   return useQuery({
     queryKey: shippingKeys.pickupPoints(carrierId),
     queryFn: () => pickupPointApi.list(carrierId),
+    select: (data) => data.items,
   });
 }
 
