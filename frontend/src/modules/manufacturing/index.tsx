@@ -4,28 +4,76 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Button,
-  Badge,
-  DataTable,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Input,
-  Select,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  Skeleton,
-  EmptyState,
-} from '@/ui-engine';
+import { Button } from '@ui/actions';
+import { Card, PageWrapper, Grid } from '@ui/layout';
+import { Input, Select } from '@ui/forms';
+import { DataTable } from '@ui/tables';
+import { StatCard } from '@ui/dashboards';
+
+// Local components
+const Badge: React.FC<{ variant?: string; className?: string; children: React.ReactNode }> = ({ variant = 'default', className = '', children }) => (
+  <span className={`azals-badge azals-badge--${variant} ${className}`}>{children}</span>
+);
+
+const Skeleton: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+);
+
+const EmptyState: React.FC<{ icon?: React.ReactNode; title: string; description?: string; action?: React.ReactNode }> = ({ icon, title, description, action }) => (
+  <div className="text-center py-12">
+    {icon && <div className="flex justify-center mb-4 text-gray-400">{icon}</div>}
+    <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+    {description && <p className="text-gray-500 mb-4">{description}</p>}
+    {action && <div className="flex justify-center">{action}</div>}
+  </div>
+);
+
+const CardContent: React.FC<{ className?: string; children: React.ReactNode }> = ({ className = '', children }) => (
+  <div className={`azals-card__body ${className}`}>{children}</div>
+);
+
+// Simple Tabs components
+const Tabs: React.FC<{ defaultValue: string; children: React.ReactNode }> = ({ children }) => {
+  const [activeTab, setActiveTab] = React.useState('');
+  return (
+    <div className="azals-tabs" data-active={activeTab}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as React.ReactElement<{ activeTab?: string; setActiveTab?: (v: string) => void }>, { activeTab, setActiveTab });
+        }
+        return child;
+      })}
+    </div>
+  );
+};
+
+const TabsList: React.FC<{ children: React.ReactNode; activeTab?: string; setActiveTab?: (v: string) => void }> = ({ children, activeTab, setActiveTab }) => (
+  <div className="azals-tabs__list flex gap-2 border-b mb-4" role="tablist">
+    {React.Children.map(children, (child) => {
+      if (React.isValidElement(child)) {
+        return React.cloneElement(child as React.ReactElement<{ activeTab?: string; setActiveTab?: (v: string) => void }>, { activeTab, setActiveTab });
+      }
+      return child;
+    })}
+  </div>
+);
+
+const TabsTrigger: React.FC<{ value: string; children: React.ReactNode; activeTab?: string; setActiveTab?: (v: string) => void }> = ({ value, children, activeTab, setActiveTab }) => (
+  <button
+    type="button"
+    role="tab"
+    className={`px-4 py-2 border-b-2 transition-colors ${activeTab === value ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+    aria-selected={activeTab === value}
+    onClick={() => setActiveTab?.(value)}
+  >
+    <span className="flex items-center gap-2">{children}</span>
+  </button>
+);
+
+const TabsContent: React.FC<{ value: string; children: React.ReactNode; className?: string; activeTab?: string }> = ({ value, children, className = '', activeTab }) => {
+  if (activeTab !== value) return null;
+  return <div className={className} role="tabpanel">{children}</div>;
+};
 import {
   Factory,
   FileStack,
@@ -223,51 +271,58 @@ function WorkOrdersTab() {
   const pauseWorkOrder = usePauseWorkOrder();
   const completeWorkOrder = useCompleteWorkOrder();
 
-  const columns = [
+  const columns: import('@/types').TableColumn<WorkOrder>[] = [
     {
+      id: 'work_order_number',
       header: 'N° OF',
-      accessorKey: 'work_order_number' as const,
-      cell: (row: WorkOrder) => (
+      accessor: 'work_order_number',
+      render: (_value, row) => (
         <span className="font-mono font-medium">{row.work_order_number}</span>
       ),
     },
     {
+      id: 'product_name',
       header: 'Produit',
-      accessorKey: 'product_name' as const,
+      accessor: 'product_name',
     },
     {
+      id: 'quantity_planned',
       header: 'Quantite',
-      accessorKey: 'quantity_planned' as const,
-      cell: (row: WorkOrder) => (
+      accessor: 'quantity_planned',
+      render: (_value, row) => (
         <span>
           {toNum(row.quantity_produced)}/{toNum(row.quantity_planned)} {row.unit}
         </span>
       ),
     },
     {
+      id: 'status',
       header: 'Statut',
-      accessorKey: 'status' as const,
-      cell: (row: WorkOrder) => <StatusBadge status={row.status} type="workOrder" />,
+      accessor: 'status',
+      render: (_value, row) => <StatusBadge status={row.status} type="workOrder" />,
     },
     {
+      id: 'planned_start',
       header: 'Date prevue',
-      accessorKey: 'planned_start' as const,
-      cell: (row: WorkOrder) => formatDate(row.planned_start),
+      accessor: 'planned_start',
+      render: (_value, row) => formatDate(row.planned_start),
     },
     {
+      id: 'assigned_to_name',
       header: 'Assigne a',
-      accessorKey: 'assigned_to_name' as const,
-      cell: (row: WorkOrder) => row.assigned_to_name || '-',
+      accessor: 'assigned_to_name',
+      render: (_value, row) => row.assigned_to_name || '-',
     },
     {
+      id: 'actions',
       header: 'Actions',
-      accessorKey: 'id' as const,
-      cell: (row: WorkOrder) => (
+      accessor: 'id',
+      render: (_value, row) => (
         <div className="flex gap-2">
           {row.status === 'confirmed' && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => startWorkOrder.mutate(row.id)}
             >
               <Play className="h-4 w-4" />
@@ -277,14 +332,14 @@ function WorkOrdersTab() {
             <>
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 onClick={() => pauseWorkOrder.mutate({ id: row.id })}
               >
                 <Pause className="h-4 w-4" />
               </Button>
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 onClick={() => completeWorkOrder.mutate({ id: row.id, data: { quantity_produced: toNum(row.quantity_planned) } })}
               >
                 <CheckCircle className="h-4 w-4" />
@@ -294,7 +349,7 @@ function WorkOrdersTab() {
           {row.status === 'paused' && (
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => startWorkOrder.mutate(row.id)}
             >
               <Play className="h-4 w-4" />
@@ -322,19 +377,18 @@ function WorkOrdersTab() {
           <Input
             placeholder="Rechercher un ordre de fabrication..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(value: string) => setSearch(value)}
             className="pl-10"
           />
         </div>
         <Select
           value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as WorkOrderStatus | '')}
-        >
-          <option value="">Tous les statuts</option>
-          {Object.entries(WORK_ORDER_STATUS_CONFIG).map(([key, { label }]) => (
-            <option key={key} value={key}>{label}</option>
-          ))}
-        </Select>
+          onChange={(value: string) => setStatusFilter(value as WorkOrderStatus | '')}
+          options={[
+            { value: '', label: 'Tous les statuts' },
+            ...Object.entries(WORK_ORDER_STATUS_CONFIG).map(([key, { label }]) => ({ value: key, label }))
+          ]}
+        />
         <Button>
           <Plus className="h-4 w-4 mr-2" />
           Nouvel OF
@@ -372,44 +426,51 @@ function BOMsTab() {
   const [search, setSearch] = useState('');
   const { data, isLoading } = useBOMList({ search: search || undefined });
 
-  const columns = [
+  const columns: import('@/types').TableColumn<BOM>[] = [
     {
+      id: 'code',
       header: 'Code',
-      accessorKey: 'code' as const,
-      cell: (row: BOM) => <span className="font-mono">{row.code}</span>,
+      accessor: 'code',
+      render: (_value, row) => <span className="font-mono">{row.code}</span>,
     },
     {
+      id: 'name',
       header: 'Nom',
-      accessorKey: 'name' as const,
+      accessor: 'name',
     },
     {
+      id: 'product_name',
       header: 'Produit',
-      accessorKey: 'product_name' as const,
+      accessor: 'product_name',
     },
     {
+      id: 'bom_version',
       header: 'Version',
-      accessorKey: 'bom_version' as const,
-      cell: (row: BOM) => (
+      accessor: 'bom_version',
+      render: (_value, row) => (
         <span className="flex items-center gap-2">
           v{row.bom_version}
-          {row.is_current && <Badge variant="outline">Actuelle</Badge>}
+          {row.is_current && <Badge variant="secondary">Actuelle</Badge>}
         </span>
       ),
     },
     {
+      id: 'status',
       header: 'Statut',
-      accessorKey: 'status' as const,
-      cell: (row: BOM) => <StatusBadge status={row.status} type="bom" />,
+      accessor: 'status',
+      render: (_value, row) => <StatusBadge status={row.status} type="bom" />,
     },
     {
+      id: 'total_cost',
       header: 'Cout total',
-      accessorKey: 'total_cost' as const,
-      cell: (row: BOM) => `${toNum(row.total_cost).toFixed(2)} EUR`,
+      accessor: 'total_cost',
+      render: (_value, row) => `${toNum(row.total_cost).toFixed(2)} EUR`,
     },
     {
+      id: 'lines',
       header: 'Lignes',
-      accessorKey: 'lines' as const,
-      cell: (row: BOM) => row.lines?.length || 0,
+      accessor: 'lines',
+      render: (_value, row) => row.lines?.length || 0,
     },
   ];
 
@@ -425,7 +486,7 @@ function BOMsTab() {
           <Input
             placeholder="Rechercher une nomenclature..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(value: string) => setSearch(value)}
             className="pl-10"
           />
         </div>
@@ -465,43 +526,51 @@ function BOMsTab() {
 function WorkcentersTab() {
   const { data, isLoading } = useWorkcenterList();
 
-  const columns = [
+  const columns: import('@/types').TableColumn<Workcenter>[] = [
     {
+      id: 'code',
       header: 'Code',
-      accessorKey: 'code' as const,
-      cell: (row: Workcenter) => <span className="font-mono">{row.code}</span>,
+      accessor: 'code',
+      render: (_value, row) => <span className="font-mono">{row.code}</span>,
     },
     {
+      id: 'name',
       header: 'Nom',
-      accessorKey: 'name' as const,
+      accessor: 'name',
     },
     {
+      id: 'workcenter_type',
       header: 'Type',
-      accessorKey: 'workcenter_type' as const,
+      accessor: 'workcenter_type',
     },
     {
+      id: 'state',
       header: 'Etat',
-      accessorKey: 'state' as const,
-      cell: (row: Workcenter) => <StatusBadge status={row.state} type="workcenter" />,
+      accessor: 'state',
+      render: (_value, row) => <StatusBadge status={row.state} type="workcenter" />,
     },
     {
+      id: 'capacity',
       header: 'Capacite',
-      accessorKey: 'capacity' as const,
+      accessor: 'capacity',
     },
     {
+      id: 'efficiency',
       header: 'Efficacite',
-      accessorKey: 'efficiency' as const,
-      cell: (row: Workcenter) => `${(toNum(row.efficiency) * 100).toFixed(0)}%`,
+      accessor: 'efficiency',
+      render: (_value, row) => `${(toNum(row.efficiency) * 100).toFixed(0)}%`,
     },
     {
+      id: 'hourly_cost',
       header: 'Cout horaire',
-      accessorKey: 'hourly_cost' as const,
-      cell: (row: Workcenter) => `${toNum(row.hourly_cost).toFixed(2)} EUR/h`,
+      accessor: 'hourly_cost',
+      render: (_value, row) => `${toNum(row.hourly_cost).toFixed(2)} EUR/h`,
     },
     {
+      id: 'current_operator_name',
       header: 'Operateur',
-      accessorKey: 'current_operator_name' as const,
-      cell: (row: Workcenter) => row.current_operator_name || '-',
+      accessor: 'current_operator_name',
+      render: (_value, row) => row.current_operator_name || '-',
     },
   ];
 
@@ -589,7 +658,7 @@ export default function ManufacturingModule() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="secondary">
             <Calendar className="h-4 w-4 mr-2" />
             Planning
           </Button>
@@ -655,4 +724,4 @@ export { ManufacturingModule };
 export * from './types';
 export * from './hooks';
 export * from './api';
-export { manufacturingMeta } from './meta';
+export { moduleMeta as manufacturingMeta } from './meta';
