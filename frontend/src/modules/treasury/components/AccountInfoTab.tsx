@@ -11,7 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import { formatDate, formatDateTime, formatIBAN, formatCurrency } from '@/utils/formatters';
 import {
-  ACCOUNT_TYPE_CONFIG
+  ACCOUNT_TYPE_CONFIG,
+  toNumber
 } from '../types';
 import type { BankAccount } from '../types';
 import type { TabContentProps } from '@ui/standards';
@@ -101,15 +102,15 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
         <Grid cols={3} gap="md">
           <div className="azals-field">
             <span className="azals-field__label">Solde actuel</span>
-            <div className={`azals-field__value text-xl font-bold ${account.balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-              {formatCurrency(account.balance, account.currency)}
+            <div className={`azals-field__value text-xl font-bold ${toNumber(account.balance) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+              {formatCurrency(toNumber(account.balance), account.currency)}
             </div>
           </div>
           {account.available_balance !== undefined && (
             <div className="azals-field">
               <span className="azals-field__label">Solde disponible</span>
               <div className="azals-field__value text-lg font-medium">
-                {formatCurrency(account.available_balance, account.currency)}
+                {formatCurrency(toNumber(account.available_balance), account.currency)}
               </div>
             </div>
           )}
@@ -126,7 +127,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
                 <div className="azals-field">
                   <span className="azals-field__label">Encaissements en attente</span>
                   <div className="azals-field__value text-green-600">
-                    +{formatCurrency(account.pending_in, account.currency)}
+                    +{formatCurrency(toNumber(account.pending_in), account.currency)}
                   </div>
                 </div>
               )}
@@ -134,7 +135,7 @@ export const AccountInfoTab: React.FC<TabContentProps<BankAccount>> = ({ data: a
                 <div className="azals-field">
                   <span className="azals-field__label">Decaissements prevus</span>
                   <div className="azals-field__value text-red-600">
-                    -{formatCurrency(account.pending_out, account.currency)}
+                    -{formatCurrency(toNumber(account.pending_out), account.currency)}
                   </div>
                 </div>
               )}

@@ -126,7 +126,7 @@ export const useAdminDashboard = () => {
         if (response && typeof response === 'object' && 'data' in response) {
           return (response as { data: AdminDashboard }).data || defaultDashboard;
         }
-        return (response as AdminDashboard) || defaultDashboard;
+        return (response as unknown as AdminDashboard) || defaultDashboard;
       } catch {
         return defaultDashboard;
       }
@@ -189,7 +189,7 @@ export const useUser = (id: string | undefined) => {
         if (response && typeof response === 'object' && 'data' in response) {
           return (response as { data: AdminUser }).data || null;
         }
-        return response as AdminUser || null;
+        return (response as unknown as AdminUser) || null;
       } catch {
         return null;
       }

@@ -5,7 +5,6 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   Building2,
@@ -23,14 +22,13 @@ import {
   Link2
 } from 'lucide-react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
-import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard, MetricComparison } from '@ui/dashboards';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { BaseViewStandard } from '@ui/standards';
 import { DataTable } from '@ui/tables';
-import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
+import type { TableColumn, DashboardKPI } from '@/types';
 import {
   formatCurrency as formatCurrencyHelper,
   formatDate as formatDateHelper,
@@ -43,8 +41,24 @@ import {
   AccountHistoryTab,
   AccountIATab
 } from './components';
-import type { BankAccount as BankAccountType, Transaction as TransactionType, TreasurySummary, ForecastData } from './types';
+import type { BankAccount as BankAccountType, Transaction as TransactionType } from './types';
 import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
+
+// Helper to convert string amounts to numbers
+const toNum = (value: string | number | null | undefined): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
+import {
+  useTreasurySummary,
+  useBankAccounts,
+  useBankAccount,
+  useBankTransactions,
+  useAccountTransactions,
+  useForecast
+} from './hooks';
 
 // ============================================================
 // TYPES (imported from ./types, aliased for local use)
@@ -52,84 +66,6 @@ import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } fro
 
 type BankAccount = BankAccountType;
 type Transaction = TransactionType;
-
-// ============================================================
-// API HOOKS
-// ============================================================
-
-const useTreasurySummary = () => {
-  return useQuery({
-    queryKey: ['treasury', 'summary'],
-    queryFn: async () => {
-      const response = await api.get<TreasurySummary>('/treasury/summary');
-      return response.data;
-    },
-  });
-};
-
-const useBankAccounts = () => {
-  return useQuery({
-    queryKey: ['treasury', 'accounts'],
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<BankAccount>>('/treasury/accounts');
-      return response.data;
-    },
-  });
-};
-
-const useTransactions = (accountId?: string, page = 1, pageSize = 25) => {
-  return useQuery({
-    queryKey: ['treasury', 'transactions', accountId, page, pageSize],
-    queryFn: async () => {
-      const url = accountId
-        ? `/treasury/accounts/${accountId}/transactions?page=${page}&page_size=${pageSize}`
-        : `/treasury/transactions?page=${page}&page_size=${pageSize}`;
-      const response = await api.get<PaginatedResponse<Transaction>>(url);
-      return response.data;
-    },
-  });
-};
-
-const useForecast = (days = 30) => {
-  return useQuery({
-    queryKey: ['treasury', 'forecast', days],
-    queryFn: async () => {
-      const response = await api.get<ForecastData[]>(`/treasury/forecast?days=${days}`);
-      return response.data;
-    },
-  });
-};
-
-const _useReconcileTransaction = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ transactionId, documentType, documentId }: {
-      transactionId: string;
-      documentType: string;
-      documentId: string;
-    }) => {
-      await api.post(`/treasury/transactions/${transactionId}/reconcile`, {
-        document_type: documentType,
-        document_id: documentId,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['treasury'] });
-    },
-  });
-};
-
-const useBankAccount = (id: string) => {
-  return useQuery({
-    queryKey: ['treasury', 'account', id],
-    queryFn: async () => {
-      const response = await api.get<BankAccount>(`/treasury/accounts/${id}`);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-};
 
 // ============================================================
 // BANK ACCOUNT DETAIL VIEW
@@ -175,14 +111,14 @@ const BankAccountDetailView: React.FC = () => {
       id: 'transactions',
       label: 'Transactions',
       icon: <CreditCard size={16} />,
-      badge: account.transactions_count,
+      badge: account.transactions_count ?? undefined,
       component: AccountTransactionsTab
     },
     {
       id: 'reconciliation',
       label: 'Rapprochement',
       icon: <Link2 size={16} />,
-      badge: account.unreconciled_count,
+      badge: account.unreconciled_count ?? undefined,
       component: AccountReconciliationTab
     },
     {
@@ -203,19 +139,19 @@ const BankAccountDetailView: React.FC = () => {
     {
       id: 'balance',
       label: 'Solde',
-      value: formatCurrency(account.balance, account.currency),
-      valueColor: account.balance < 0 ? 'red' : 'green'
+      value: formatCurrency(toNum(account.balance), account.currency),
+      valueColor: toNum(account.balance) < 0 ? 'red' : 'green'
     },
     {
       id: 'pending_in',
       label: 'A recevoir',
-      value: `+${formatCurrency(account.pending_in || 0, account.currency)}`,
+      value: `+${formatCurrency(toNum(account.pending_in), account.currency)}`,
       valueColor: 'green'
     },
     {
       id: 'pending_out',
       label: 'A payer',
-      value: `-${formatCurrency(account.pending_out || 0, account.currency)}`,
+      value: `-${formatCurrency(toNum(account.pending_out), account.currency)}`,
       valueColor: 'red'
     },
     {
@@ -240,8 +176,8 @@ const BankAccountDetailView: React.FC = () => {
       id: 'balance',
       title: 'Soldes',
       items: [
-        { id: 'current', label: 'Solde actuel', value: formatCurrency(account.balance, account.currency), highlight: true },
-        { id: 'available', label: 'Disponible', value: formatCurrency(account.available_balance || account.balance, account.currency) },
+        { id: 'current', label: 'Solde actuel', value: formatCurrency(toNum(account.balance), account.currency), highlight: true },
+        { id: 'available', label: 'Disponible', value: formatCurrency(toNum(account.available_balance) || toNum(account.balance), account.currency) },
         { id: 'currency', label: 'Devise', value: account.currency }
       ]
     },
@@ -323,15 +259,15 @@ export const TreasuryDashboard: React.FC = () => {
       id: 'balance',
       label: 'Solde total',
       value: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-        summary.total_balance
+        toNum(summary.total_balance)
       ),
-      severity: summary.total_balance < 0 ? 'RED' : summary.total_balance < 10000 ? 'ORANGE' : 'GREEN',
+      severity: toNum(summary.total_balance) < 0 ? 'RED' : toNum(summary.total_balance) < 10000 ? 'ORANGE' : 'GREEN',
     },
     {
       id: 'pending_in',
       label: 'Encaissements attendus',
       value: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-        summary.total_pending_in
+        toNum(summary.total_pending_in)
       ),
       trend: 'up',
     },
@@ -339,7 +275,7 @@ export const TreasuryDashboard: React.FC = () => {
       id: 'pending_out',
       label: 'Décaissements prévus',
       value: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-        summary.total_pending_out
+        toNum(summary.total_pending_out)
       ),
       trend: 'down',
     },
@@ -347,9 +283,9 @@ export const TreasuryDashboard: React.FC = () => {
       id: 'forecast',
       label: 'Prévision 30j',
       value: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-        summary.forecast_30d
+        toNum(summary.forecast_30d)
       ),
-      severity: summary.forecast_30d < 0 ? 'RED' : 'GREEN',
+      severity: toNum(summary.forecast_30d) < 0 ? 'RED' : 'GREEN',
     },
   ];
 
@@ -410,12 +346,12 @@ export const TreasuryDashboard: React.FC = () => {
                 </div>
                 <div className="azals-treasury__account-balance">
                   <span
-                    className={account.balance < 0 ? 'azals-text--danger' : 'azals-text--success'}
+                    className={toNum(account.balance) < 0 ? 'azals-text--danger' : 'azals-text--success'}
                   >
                     {new Intl.NumberFormat('fr-FR', {
                       style: 'currency',
                       currency: account.currency,
-                    }).format(account.balance)}
+                    }).format(toNum(account.balance))}
                   </span>
                 </div>
               </div>
@@ -468,8 +404,8 @@ export const BankAccountsPage: React.FC = () => {
       accessor: 'balance',
       align: 'right',
       render: (value, row) => (
-        <span className={(value as number) < 0 ? 'text-red-600' : 'text-green-600'}>
-          {formatCurrencyHelper(value as number, row.currency)}
+        <span className={toNum(value as string | number) < 0 ? 'text-red-600' : 'text-green-600'}>
+          {formatCurrencyHelper(toNum(value as string | number), row.currency)}
         </span>
       ),
     },
@@ -537,7 +473,9 @@ const TransactionsList: React.FC<TransactionsListProps> = ({ accountId, maxItems
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(maxItems || 25);
 
-  const { data, isLoading, refetch } = useTransactions(accountId, page, pageSize);
+  const { data, isLoading, refetch } = accountId
+    ? useAccountTransactions(accountId, { page, page_size: pageSize })
+    : useBankTransactions({ page, page_size: pageSize });
 
   const columns: TableColumn<Transaction>[] = [
     {
@@ -570,14 +508,15 @@ const TransactionsList: React.FC<TransactionsListProps> = ({ accountId, maxItems
       accessor: 'amount',
       align: 'right',
       render: (value, row) => {
-        const amount = value as number;
+        const amount = toNum(value as string | number);
         const formatted = new Intl.NumberFormat('fr-FR', {
           style: 'currency',
           currency: row.currency,
         }).format(Math.abs(amount));
+        const isCredit = row.type === 'credit' || row.type === 'CREDIT';
         return (
-          <span className={row.type === 'credit' ? 'azals-text--success' : 'azals-text--danger'}>
-            {row.type === 'credit' ? '+' : '-'}{formatted}
+          <span className={isCredit ? 'azals-text--success' : 'azals-text--danger'}>
+            {isCredit ? '+' : '-'}{formatted}
           </span>
         );
       },
@@ -663,8 +602,8 @@ export const ForecastPage: React.FC = () => {
             <div className="azals-forecast__summary">
               <MetricComparison
                 label="Solde actuel → Prévision 30j"
-                current={summary.forecast_30d}
-                previous={summary.total_balance}
+                current={toNum(summary.forecast_30d)}
+                previous={toNum(summary.total_balance)}
                 format="currency"
               />
               <div className="azals-forecast__row">
@@ -672,7 +611,7 @@ export const ForecastPage: React.FC = () => {
                   <span>Encaissements attendus</span>
                   <strong className="azals-text--success">
                     +{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-                      summary.total_pending_in
+                      toNum(summary.total_pending_in)
                     )}
                   </strong>
                 </div>
@@ -680,7 +619,7 @@ export const ForecastPage: React.FC = () => {
                   <span>Décaissements prévus</span>
                   <strong className="azals-text--danger">
                     -{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-                      summary.total_pending_out
+                      toNum(summary.total_pending_out)
                     )}
                   </strong>
                 </div>
@@ -690,7 +629,7 @@ export const ForecastPage: React.FC = () => {
         </Card>
 
         <Card title="Alertes">
-          {summary && summary.forecast_30d < 0 && (
+          {summary && toNum(summary.forecast_30d) < 0 && (
             <div className="azals-forecast__alert azals-forecast__alert--danger">
               <AlertTriangle size={20} />
               <p>
@@ -698,7 +637,7 @@ export const ForecastPage: React.FC = () => {
               </p>
             </div>
           )}
-          {summary && summary.forecast_30d >= 0 && summary.forecast_30d < 10000 && (
+          {summary && toNum(summary.forecast_30d) >= 0 && toNum(summary.forecast_30d) < 10000 && (
             <div className="azals-forecast__alert azals-forecast__alert--warning">
               <AlertTriangle size={20} />
               <p>
@@ -706,7 +645,7 @@ export const ForecastPage: React.FC = () => {
               </p>
             </div>
           )}
-          {summary && summary.forecast_30d >= 10000 && (
+          {summary && toNum(summary.forecast_30d) >= 10000 && (
             <div className="azals-forecast__alert azals-forecast__alert--success">
               <CheckCircle size={20} />
               <p>
@@ -734,17 +673,17 @@ export const ForecastPage: React.FC = () => {
                   <td>{new Date(day.date).toLocaleDateString('fr-FR')}</td>
                   <td className="azals-text--success">
                     +{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-                      day.pending_in
+                      toNum(day.pending_in)
                     )}
                   </td>
                   <td className="azals-text--danger">
                     -{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-                      day.pending_out
+                      toNum(day.pending_out)
                     )}
                   </td>
-                  <td className={day.projected_balance < 0 ? 'azals-text--danger' : ''}>
+                  <td className={Number(toNum(day.projected_balance)) < 0 ? 'azals-text--danger' : ''}>
                     {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-                      day.projected_balance
+                      Number(toNum(day.projected_balance))
                     )}
                   </td>
                 </tr>

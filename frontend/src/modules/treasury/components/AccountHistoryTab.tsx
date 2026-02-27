@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Card } from '@ui/layout';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
+import { toNumber } from '../types';
 import type { BankAccount, AccountHistoryEntry } from '../types';
 import type { TabContentProps } from '@ui/standards';
 
@@ -64,11 +65,11 @@ export const AccountHistoryTab: React.FC<TabContentProps<BankAccount>> = ({ data
                   {item.old_balance !== undefined && item.new_balance !== undefined && (
                     <span className="ml-2">
                       <span className="font-mono">
-                        {formatCurrency(item.old_balance, account.currency)}
+                        {formatCurrency(toNumber(item.old_balance), account.currency)}
                       </span>
                       <ArrowRight size={12} className="mx-1 inline" />
                       <span className="font-mono">
-                        {formatCurrency(item.new_balance, account.currency)}
+                        {formatCurrency(toNumber(item.new_balance), account.currency)}
                       </span>
                     </span>
                   )}
@@ -129,10 +130,10 @@ const HistoryEntryComponent: React.FC<HistoryEntryComponentProps> = ({ entry, is
         )}
         {entry.old_balance !== undefined && entry.new_balance !== undefined && (
           <div className="azals-timeline__change text-sm mt-1">
-            <span className="font-mono">{formatCurrency(entry.old_balance, currency)}</span>
+            <span className="font-mono">{formatCurrency(toNumber(entry.old_balance), currency)}</span>
             <ArrowRight size={12} className="mx-2" />
-            <span className={`font-mono ${entry.new_balance > entry.old_balance ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrency(entry.new_balance, currency)}
+            <span className={`font-mono ${toNumber(entry.new_balance) > toNumber(entry.old_balance) ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(toNumber(entry.new_balance), currency)}
             </span>
           </div>
         )}

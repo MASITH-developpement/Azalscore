@@ -10,7 +10,7 @@ import {
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-import { isTransactionReconciled } from '../types';
+import { isTransactionReconciled, toNumber, isCredit as isCreditTx } from '../types';
 import type { BankAccount, Transaction } from '../types';
 import type { TabContentProps } from '@ui/standards';
 
@@ -24,11 +24,11 @@ export const AccountReconciliationTab: React.FC<TabContentProps<BankAccount>> = 
   const unreconciledTransactions = transactions.filter(t => !isTransactionReconciled(t));
 
   const unreconciledCredits = unreconciledTransactions
-    .filter(t => t.type === 'credit')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(isCreditTx)
+    .reduce((sum, t) => sum + toNumber(t.amount), 0);
   const unreconciledDebits = unreconciledTransactions
-    .filter(t => t.type === 'debit')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => !isCreditTx(t))
+    .reduce((sum, t) => sum + toNumber(t.amount), 0);
 
   const reconciliationRate = transactions.length > 0
     ? Math.round((reconciledTransactions.length / transactions.length) * 100)
@@ -153,7 +153,7 @@ export const AccountReconciliationTab: React.FC<TabContentProps<BankAccount>> = 
  * Ligne transaction non rapprochee
  */
 const UnreconciledRow: React.FC<{ transaction: Transaction; currency: string }> = ({ transaction, currency }) => {
-  const isCredit = transaction.type === 'credit';
+  const isCredit = isCreditTx(transaction);
 
   return (
     <tr>
@@ -165,7 +165,7 @@ const UnreconciledRow: React.FC<{ transaction: Transaction; currency: string }> 
         )}
       </td>
       <td className={`text-right font-medium ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
-        {isCredit ? '+' : '-'}{formatCurrency(transaction.amount, currency)}
+        {isCredit ? '+' : '-'}{formatCurrency(toNumber(transaction.amount), currency)}
       </td>
       <td className="text-center">
         <Button size="sm" variant="secondary" leftIcon={<Link2 size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'reconcileTransaction', transactionId: transaction.id } })); }}>
@@ -180,22 +180,23 @@ const UnreconciledRow: React.FC<{ transaction: Transaction; currency: string }> 
  * Ligne transaction rapprochee
  */
 const ReconciledRow: React.FC<{ transaction: Transaction; currency: string }> = ({ transaction, currency }) => {
-  const isCredit = transaction.type === 'credit';
+  const isCredit = isCreditTx(transaction);
+  const linkedDoc = transaction.linked_document as Record<string, unknown> | null | undefined;
 
   return (
     <tr>
       <td className="text-sm text-muted">{formatDate(transaction.date)}</td>
       <td className="text-muted">{transaction.description}</td>
       <td className={`text-right ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
-        {isCredit ? '+' : '-'}{formatCurrency(transaction.amount, currency)}
+        {isCredit ? '+' : '-'}{formatCurrency(toNumber(transaction.amount), currency)}
       </td>
       <td>
-        {transaction.linked_document ? (
+        {linkedDoc ? (
           <span className="text-sm">
             <span className="azals-badge azals-badge--blue text-xs">
-              {transaction.linked_document.type}
+              {String(linkedDoc.type || '')}
             </span>
-            <span className="ml-1 font-mono text-xs">{transaction.linked_document.number}</span>
+            <span className="ml-1 font-mono text-xs">{String(linkedDoc.number || '')}</span>
           </span>
         ) : (
           <span className="text-muted">-</span>

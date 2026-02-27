@@ -1,54 +1,100 @@
 /**
  * AZALSCORE Module - Subscriptions Types
  * Types, constantes et utilitaires pour la gestion des abonnements
+ * Aligne avec l'API backend
  */
 
 // ============================================================================
-// TYPES
+// TYPES (alignes avec l'API)
 // ============================================================================
 
-export type SubscriptionInterval = 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
-export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED';
+export type PlanInterval = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+export type SubscriptionInterval = PlanInterval; // Alias pour compatibilite
+
+export type SubscriptionStatus =
+  | 'TRIALING'
+  | 'ACTIVE'
+  | 'PAST_DUE'
+  | 'PAUSED'
+  | 'CANCELED'
+  | 'UNPAID'
+  | 'INCOMPLETE'
+  | 'INCOMPLETE_EXPIRED'
+  | 'TRIAL'       // Alias pour compatibilite UI
+  | 'CANCELLED'   // Alias pour compatibilite UI
+  | 'EXPIRED';    // Alias pour compatibilite UI
+
 export type InvoiceStatus = 'DRAFT' | 'OPEN' | 'PAID' | 'VOID' | 'UNCOLLECTIBLE';
 
+// Helper pour convertir string en number
+const toNum = (val: string | number | null | undefined): number => {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return val;
+  const parsed = parseFloat(val);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 export interface Plan {
-  id: string;
+  id: string | number;
   code: string;
   name: string;
-  description?: string;
-  price: number;
+  description?: string | null;
+  // API renvoie base_price comme string, on accepte les deux
+  base_price?: string;
+  price?: number;  // Pour compatibilite UI (converti depuis base_price)
   currency: string;
-  interval: SubscriptionInterval;
-  features: string[];
+  interval: PlanInterval;
+  interval_count?: number;
+  features?: string[] | Record<string, unknown> | null;
   trial_days: number;
   is_active: boolean;
-  subscribers_count: number;
+  is_public?: boolean;
+  subscribers_count?: number;  // Optionnel (pas dans l'API)
+  per_user_price?: string;
+  included_users?: number;
+  setup_fee?: string;
+  sort_order?: number;
   created_at: string;
   updated_at?: string;
 }
 
 export interface Subscription {
-  id: string;
-  plan_id: string;
-  plan_name: string;
+  id: string | number;
+  subscription_number?: string;
+  plan_id: string | number;
+  plan_name?: string;  // Optionnel - peut etre joint depuis Plan
   plan_code?: string;
-  customer_id: string;
-  customer_name: string;
-  customer_email: string;
+  customer_id: string | number;
+  customer_name?: string | null;
+  customer_email?: string | null;
   status: SubscriptionStatus;
-  start_date: string;
+  quantity?: number;
+  current_users?: number;
+  // Dates - API utilise started_at, UI peut utiliser start_date
+  started_at?: string;
+  start_date?: string;  // Alias pour started_at
+  ended_at?: string | null;
+  trial_start?: string | null;
+  trial_end?: string | null;
   current_period_start?: string;
   current_period_end: string;
-  trial_start?: string;
-  trial_end?: string;
   cancel_at_period_end: boolean;
-  cancelled_at?: string;
-  amount: number;
-  currency: string;
+  canceled_at?: string | null;
+  cancelled_at?: string | null;  // Alias
+  paused_at?: string | null;
+  resume_at?: string | null;
+  // Montants - API renvoie mrr/arr comme string
+  mrr?: string;
+  arr?: string;
+  amount?: number;  // Pour compatibilite UI
+  currency?: string;
+  discount_percent?: string;
+  discount_end_date?: string | null;
+  items?: SubscriptionItem[];
   created_at: string;
   updated_at?: string;
   // Champs additionnels pour detail
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   invoices?: SubscriptionInvoice[];
   payment_method_id?: string;
   payment_method_last_four?: string;
@@ -57,30 +103,70 @@ export interface Subscription {
   lifetime_value?: number;
 }
 
+export interface SubscriptionItem {
+  id: number;
+  add_on_code?: string | null;
+  name: string;
+  description?: string | null;
+  unit_price: string;
+  quantity: number;
+  usage_type?: string;
+  metered_usage?: string;
+  is_active: boolean;
+}
+
 export interface SubscriptionInvoice {
-  id: string;
-  subscription_id: string;
-  customer_name: string;
-  number: string;
+  id: string | number;
+  subscription_id: string | number;
+  invoice_number?: string;
+  number?: string;  // Alias pour invoice_number
+  customer_id?: string | number;
+  customer_name?: string | null;
+  customer_email?: string | null;
   status: InvoiceStatus;
-  amount: number;
-  currency: string;
   period_start: string;
   period_end: string;
-  due_date: string;
-  paid_at?: string;
+  due_date?: string | null;
+  paid_at?: string | null;
+  finalized_at?: string | null;
+  // Montants
+  subtotal?: string;
+  discount_amount?: string;
+  tax_rate?: string;
+  tax_amount?: string;
+  total?: string;
+  amount?: number;  // Pour compatibilite UI (converti depuis total)
+  amount_paid?: string;
+  amount_remaining?: string;
+  currency: string;
+  lines?: InvoiceLine[];
   created_at: string;
+}
+
+export interface InvoiceLine {
+  id: number;
+  description: string;
+  item_type?: string | null;
+  period_start?: string | null;
+  period_end?: string | null;
+  quantity: string;
+  unit_price: string;
+  discount_amount?: string;
+  amount: string;
+  tax_rate?: string;
+  tax_amount?: string;
+  proration?: boolean;
 }
 
 export interface SubscriptionStats {
   total_plans: number;
   active_subscriptions: number;
   trial_subscriptions: number;
-  mrr: number;
-  arr: number;
-  churn_rate: number;
+  mrr: number | string;
+  arr: number | string;
+  churn_rate: number | string;
   new_subscribers_month: number;
-  revenue_this_month: number;
+  revenue_this_month: number | string;
 }
 
 export interface SubscriptionHistoryEntry {
@@ -97,7 +183,9 @@ export interface SubscriptionHistoryEntry {
 // CONSTANTES & CONFIGURATIONS
 // ============================================================================
 
-export const INTERVALS: Array<{ value: SubscriptionInterval; label: string; months: number }> = [
+export const INTERVALS: Array<{ value: PlanInterval; label: string; months: number }> = [
+  { value: 'DAILY', label: 'Quotidien', months: 0 },
+  { value: 'WEEKLY', label: 'Hebdomadaire', months: 0 },
   { value: 'MONTHLY', label: 'Mensuel', months: 1 },
   { value: 'QUARTERLY', label: 'Trimestriel', months: 3 },
   { value: 'YEARLY', label: 'Annuel', months: 12 }
@@ -105,10 +193,11 @@ export const INTERVALS: Array<{ value: SubscriptionInterval; label: string; mont
 
 export const SUBSCRIPTION_STATUS: Array<{ value: SubscriptionStatus; label: string }> = [
   { value: 'ACTIVE', label: 'Actif' },
-  { value: 'TRIAL', label: 'Essai' },
+  { value: 'TRIALING', label: 'Essai' },
   { value: 'PAST_DUE', label: 'En retard' },
-  { value: 'CANCELLED', label: 'Annule' },
-  { value: 'EXPIRED', label: 'Expire' }
+  { value: 'PAUSED', label: 'En pause' },
+  { value: 'CANCELED', label: 'Annule' },
+  { value: 'UNPAID', label: 'Impaye' }
 ];
 
 export const INVOICE_STATUS: Array<{ value: InvoiceStatus; label: string }> = [
@@ -119,15 +208,20 @@ export const INVOICE_STATUS: Array<{ value: InvoiceStatus; label: string }> = [
   { value: 'UNCOLLECTIBLE', label: 'Irrecouvrable' }
 ];
 
-export const SUBSCRIPTION_STATUS_CONFIG: Record<SubscriptionStatus, {
+export const SUBSCRIPTION_STATUS_CONFIG: Record<string, {
   label: string;
-  color: 'green' | 'orange' | 'red' | 'blue' | 'gray';
+  color: 'green' | 'orange' | 'red' | 'blue' | 'gray' | 'purple';
   description: string;
 }> = {
   ACTIVE: {
     label: 'Actif',
     color: 'green',
     description: 'L\'abonnement est actif et en cours'
+  },
+  TRIALING: {
+    label: 'Essai',
+    color: 'blue',
+    description: 'L\'abonnement est en periode d\'essai'
   },
   TRIAL: {
     label: 'Essai',
@@ -139,10 +233,35 @@ export const SUBSCRIPTION_STATUS_CONFIG: Record<SubscriptionStatus, {
     color: 'orange',
     description: 'Le paiement est en retard'
   },
+  PAUSED: {
+    label: 'En pause',
+    color: 'gray',
+    description: 'L\'abonnement est en pause'
+  },
+  CANCELED: {
+    label: 'Annule',
+    color: 'red',
+    description: 'L\'abonnement a ete annule'
+  },
   CANCELLED: {
     label: 'Annule',
     color: 'red',
     description: 'L\'abonnement a ete annule'
+  },
+  UNPAID: {
+    label: 'Impaye',
+    color: 'red',
+    description: 'L\'abonnement est impaye'
+  },
+  INCOMPLETE: {
+    label: 'Incomplet',
+    color: 'orange',
+    description: 'La souscription est incomplete'
+  },
+  INCOMPLETE_EXPIRED: {
+    label: 'Expire (incomplet)',
+    color: 'gray',
+    description: 'La souscription incomplete a expire'
   },
   EXPIRED: {
     label: 'Expire',
@@ -183,11 +302,13 @@ export const INVOICE_STATUS_CONFIG: Record<InvoiceStatus, {
   }
 };
 
-export const INTERVAL_CONFIG: Record<SubscriptionInterval, {
+export const INTERVAL_CONFIG: Record<PlanInterval, {
   label: string;
   shortLabel: string;
   months: number;
 }> = {
+  DAILY: { label: 'Quotidien', shortLabel: '/jour', months: 0 },
+  WEEKLY: { label: 'Hebdomadaire', shortLabel: '/sem.', months: 0 },
   MONTHLY: { label: 'Mensuel', shortLabel: '/mois', months: 1 },
   QUARTERLY: { label: 'Trimestriel', shortLabel: '/trim.', months: 3 },
   YEARLY: { label: 'Annuel', shortLabel: '/an', months: 12 }
@@ -197,8 +318,24 @@ export const INTERVAL_CONFIG: Record<SubscriptionInterval, {
 // HELPERS
 // ============================================================================
 
+// Obtenir start_date avec fallback sur started_at
+const getStartDate = (subscription: Subscription): string => {
+  return subscription.start_date || subscription.started_at || subscription.created_at;
+};
+
+// Obtenir amount avec fallback sur mrr
+const getAmount = (subscription: Subscription): number => {
+  if (subscription.amount !== undefined) return subscription.amount;
+  return toNum(subscription.mrr);
+};
+
+// Obtenir currency avec fallback
+const getCurrency = (subscription: Subscription): string => {
+  return subscription.currency || 'EUR';
+};
+
 export const getSubscriptionAge = (subscription: Subscription): string => {
-  const start = new Date(subscription.start_date);
+  const start = new Date(getStartDate(subscription));
   const now = new Date();
   const diffMs = now.getTime() - start.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -211,7 +348,7 @@ export const getSubscriptionAge = (subscription: Subscription): string => {
 };
 
 export const getSubscriptionAgeDays = (subscription: Subscription): number => {
-  const start = new Date(subscription.start_date);
+  const start = new Date(getStartDate(subscription));
   const now = new Date();
   return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 };
@@ -223,11 +360,11 @@ export const getDaysUntilRenewal = (subscription: Subscription): number => {
 };
 
 export const isInTrial = (subscription: Subscription): boolean => {
-  return subscription.status === 'TRIAL';
+  return subscription.status === 'TRIAL' || subscription.status === 'TRIALING';
 };
 
 export const isActive = (subscription: Subscription): boolean => {
-  return subscription.status === 'ACTIVE' || subscription.status === 'TRIAL';
+  return subscription.status === 'ACTIVE' || subscription.status === 'TRIALING' || subscription.status === 'TRIAL';
 };
 
 export const isPastDue = (subscription: Subscription): boolean => {
@@ -235,7 +372,7 @@ export const isPastDue = (subscription: Subscription): boolean => {
 };
 
 export const isCancelled = (subscription: Subscription): boolean => {
-  return subscription.status === 'CANCELLED' || subscription.status === 'EXPIRED';
+  return subscription.status === 'CANCELLED' || subscription.status === 'CANCELED' || subscription.status === 'EXPIRED';
 };
 
 export const willCancel = (subscription: Subscription): boolean => {
@@ -250,17 +387,19 @@ export const getTrialDaysRemaining = (subscription: Subscription): number | null
   return days > 0 ? days : 0;
 };
 
-export const getMonthlyEquivalent = (amount: number, interval: SubscriptionInterval): number => {
+export const getMonthlyEquivalent = (amount: number | string, interval: PlanInterval): number => {
   const config = INTERVAL_CONFIG[interval];
-  return amount / config.months;
+  if (!config || config.months === 0) return toNum(amount);
+  return toNum(amount) / config.months;
 };
 
-export const getYearlyEquivalent = (amount: number, interval: SubscriptionInterval): number => {
+export const getYearlyEquivalent = (amount: number | string, interval: PlanInterval): number => {
   const config = INTERVAL_CONFIG[interval];
-  return (amount / config.months) * 12;
+  if (!config || config.months === 0) return toNum(amount) * 12;
+  return (toNum(amount) / config.months) * 12;
 };
 
-export const getIntervalLabel = (interval: SubscriptionInterval): string => {
+export const getIntervalLabel = (interval: PlanInterval): string => {
   return INTERVAL_CONFIG[interval]?.label || interval;
 };
 
@@ -282,5 +421,22 @@ export const getTotalPaid = (subscription: Subscription): number => {
   if (!subscription.invoices) return 0;
   return subscription.invoices
     .filter(inv => inv.status === 'PAID')
-    .reduce((sum, inv) => sum + inv.amount, 0);
+    .reduce((sum, inv) => sum + toNum(inv.total || inv.amount), 0);
+};
+
+// Obtenir le prix du plan
+export const getPlanPrice = (plan: Plan): number => {
+  if (plan.price !== undefined) return plan.price;
+  return toNum(plan.base_price);
+};
+
+// Obtenir le numero de facture
+export const getInvoiceNumber = (invoice: SubscriptionInvoice): string => {
+  return invoice.number || invoice.invoice_number || String(invoice.id);
+};
+
+// Obtenir le montant de la facture
+export const getInvoiceAmount = (invoice: SubscriptionInvoice): number => {
+  if (invoice.amount !== undefined) return invoice.amount;
+  return toNum(invoice.total);
 };

@@ -11,7 +11,7 @@ import {
 import { Card } from '@ui/layout';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
-  isCredit, isDebit, isTransactionReconciled
+  isCredit, isDebit, isTransactionReconciled, toNumber
 } from '../types';
 import type { BankAccount, Transaction } from '../types';
 import type { TabContentProps } from '@ui/standards';
@@ -24,10 +24,10 @@ export const AccountTransactionsTab: React.FC<TabContentProps<BankAccount>> = ({
 
   const totalCredits = transactions
     .filter(isCredit)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + toNumber(t.amount), 0);
   const totalDebits = transactions
     .filter(isDebit)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + toNumber(t.amount), 0);
   const reconciledCount = transactions.filter(isTransactionReconciled).length;
   const unreconciledCount = transactions.length - reconciledCount;
 
@@ -156,7 +156,7 @@ const TransactionRow: React.FC<{ transaction: Transaction; currency: string }> =
         )}
       </td>
       <td className={`text-right font-medium ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
-        {isCredit ? '+' : '-'}{formatCurrency(transaction.amount, currency)}
+        {isCredit ? '+' : '-'}{formatCurrency(toNumber(transaction.amount), currency)}
       </td>
       <td className="text-center">
         {transaction.reconciled ? (
@@ -169,9 +169,9 @@ const TransactionRow: React.FC<{ transaction: Transaction; currency: string }> =
         {transaction.linked_document ? (
           <span className="text-sm">
             <span className="azals-badge azals-badge--blue text-xs">
-              {transaction.linked_document.type}
+              {(transaction.linked_document as Record<string, unknown>).type as string}
             </span>
-            <span className="ml-1 font-mono">{transaction.linked_document.number}</span>
+            <span className="ml-1 font-mono">{(transaction.linked_document as Record<string, unknown>).number as string}</span>
           </span>
         ) : (
           <span className="text-muted">-</span>
@@ -193,7 +193,7 @@ const CategoryBreakdown: React.FC<{
   const categories = transactions.reduce((acc, t) => {
     const cat = t.category || 'Non categorise';
     if (!acc[cat]) acc[cat] = 0;
-    acc[cat] += t.amount;
+    acc[cat] += toNumber(t.amount);
     return acc;
   }, {} as Record<string, number>);
 

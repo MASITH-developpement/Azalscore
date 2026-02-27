@@ -19,7 +19,7 @@ import { Card, Grid } from '@ui/layout';
 import { formatCurrency } from '@/utils/formatters';
 import {
   hasNegativeBalance, hasLowBalance,
-  hasUnreconciledTransactions, getProjectedBalance
+  hasUnreconciledTransactions, getProjectedBalance, toNumber
 } from '../types';
 import type { BankAccount } from '../types';
 import type { TabContentProps } from '@ui/standards';
@@ -100,8 +100,8 @@ export const AccountIATab: React.FC<TabContentProps<BankAccount>> = ({ data: acc
         <div className="azals-analysis-grid">
           <div className="azals-analysis-item">
             <h4>Solde actuel</h4>
-            <p className={`text-lg font-medium ${account.balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-              {formatCurrency(account.balance, account.currency)}
+            <p className={`text-lg font-medium ${toNumber(account.balance) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+              {formatCurrency(toNumber(account.balance), account.currency)}
             </p>
           </div>
           <div className="azals-analysis-item">
@@ -233,7 +233,7 @@ function generateInsights(account: BankAccount): Insight[] {
       id: 'negative-balance',
       type: 'warning',
       title: 'Solde negatif',
-      description: `Le compte est a decouvert (${formatCurrency(account.balance, account.currency)}).`,
+      description: `Le compte est a decouvert (${formatCurrency(toNumber(account.balance), account.currency)}).`,
     });
   } else if (hasLowBalance(account)) {
     insights.push({
@@ -308,23 +308,23 @@ function generateInsights(account: BankAccount): Insight[] {
   }
 
   // Mouvements en attente
-  if ((account.pending_in || 0) > 0 || (account.pending_out || 0) > 0) {
-    const pending_in = account.pending_in || 0;
-    const pending_out = account.pending_out || 0;
+  const pending_in: number = toNumber(account.pending_in);
+  const pending_out: number = toNumber(account.pending_out);
 
+  if (pending_in > 0 || pending_out > 0) {
     if (pending_in > pending_out) {
       insights.push({
         id: 'pending-positive',
         type: 'success',
         title: 'Encaissements attendus',
-        description: `+${formatCurrency(pending_in - pending_out, account.currency)} net a recevoir.`,
+        description: `+${formatCurrency(Number(pending_in - pending_out), account.currency)} net a recevoir.`,
       });
     } else if (pending_out > pending_in) {
       insights.push({
         id: 'pending-negative',
         type: 'suggestion',
         title: 'Decaissements prevus',
-        description: `-${formatCurrency(pending_out - pending_in, account.currency)} net a payer.`,
+        description: `-${formatCurrency(Number(pending_out - pending_in), account.currency)} net a payer.`,
       });
     }
   }
