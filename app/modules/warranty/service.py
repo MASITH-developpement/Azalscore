@@ -1,102 +1,60 @@
 """
 Module de Gestion des Garanties Produits - GAP-039
 
-Gestion complète du cycle de vie des garanties:
-- Garantie légale de conformité (2 ans)
+Gestion complete du cycle de vie des garanties avec persistence SQLAlchemy:
+- Garantie legale de conformite (2 ans)
 - Garantie commerciale
 - Extensions de garantie
-- Demandes SAV et réparations
+- Demandes SAV et reparations
 - Remplacements et remboursements
 - Provisions comptables
 
-Conformité:
-- Code de la consommation (L217-3 à L217-14)
-- Garantie légale de conformité (2 ans)
-- Garantie des vices cachés
-- Directive européenne 2019/771
+Conformite:
+- Code de la consommation (L217-3 a L217-14)
+- Garantie legale de conformite (2 ans)
+- Garantie des vices caches
+- Directive europeenne 2019/771
 
-Architecture multi-tenant avec isolation stricte.
+CRITIQUE: Utilise les repositories pour l'isolation multi-tenant.
 """
 from __future__ import annotations
-
 
 from dataclasses import dataclass, field
 from datetime import datetime, date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
-from typing import Any, Dict, List, Optional
-import uuid
+from typing import Any, Dict, List, Optional, Tuple
+
+from sqlalchemy.orm import Session
+
+from .models import (
+    Warranty,
+    WarrantyClaim,
+    WarrantyExtension,
+    WarrantyProvision,
+    WarrantyStatus,
+    ClaimStatus,
+    ClaimResolution,
+    DefectType,
+    WarrantyType,
+)
+from .repository import (
+    WarrantyRepository,
+    WarrantyClaimRepository,
+    WarrantyExtensionRepository,
+    WarrantyProvisionRepository,
+)
+from .schemas import WarrantyFilters, ClaimFilters
 
 
 # ============================================================================
-# ÉNUMÉRATIONS
+# CONSTANTES LEGALES
 # ============================================================================
 
-class WarrantyType(Enum):
-    """Type de garantie."""
-    LEGAL_CONFORMITY = "legal_conformity"  # Garantie légale de conformité (2 ans)
-    LEGAL_HIDDEN_DEFECTS = "legal_hidden_defects"  # Garantie vices cachés
-    COMMERCIAL = "commercial"  # Garantie commerciale constructeur
-    EXTENDED = "extended"  # Extension de garantie
-    ACCIDENTAL_DAMAGE = "accidental_damage"  # Casse/dommage accidentel
-    THEFT = "theft"  # Vol
+LEGAL_WARRANTY_DURATION_MONTHS = 24  # Garantie legale de conformite
+HIDDEN_DEFECTS_DURATION_YEARS = 2  # Delai pour vices caches apres decouverte
+REPAIR_MAX_DAYS = 30  # Delai max reparation sous garantie
 
-
-class WarrantyStatus(Enum):
-    """Statut de la garantie."""
-    ACTIVE = "active"  # Active
-    EXPIRED = "expired"  # Expirée
-    SUSPENDED = "suspended"  # Suspendue
-    VOIDED = "voided"  # Annulée
-    CLAIMED = "claimed"  # Réclamée (épuisée)
-
-
-class ClaimStatus(Enum):
-    """Statut d'une demande de garantie."""
-    SUBMITTED = "submitted"  # Soumise
-    UNDER_REVIEW = "under_review"  # En cours d'examen
-    APPROVED = "approved"  # Approuvée
-    REJECTED = "rejected"  # Rejetée
-    IN_REPAIR = "in_repair"  # En réparation
-    PENDING_PARTS = "pending_parts"  # En attente de pièces
-    REPAIRED = "repaired"  # Réparé
-    REPLACED = "replaced"  # Remplacé
-    REFUNDED = "refunded"  # Remboursé
-    CLOSED = "closed"  # Clôturée
-
-
-class ClaimResolution(Enum):
-    """Type de résolution."""
-    REPAIR = "repair"  # Réparation
-    REPLACEMENT_SAME = "replacement_same"  # Remplacement identique
-    REPLACEMENT_EQUIVALENT = "replacement_equivalent"  # Remplacement équivalent
-    REFUND_FULL = "refund_full"  # Remboursement intégral
-    REFUND_PARTIAL = "refund_partial"  # Remboursement partiel
-    NO_ACTION = "no_action"  # Pas d'action (hors garantie)
-
-
-class DefectType(Enum):
-    """Type de défaut."""
-    MANUFACTURING = "manufacturing"  # Défaut de fabrication
-    MATERIAL = "material"  # Défaut de matériau
-    DESIGN = "design"  # Défaut de conception
-    SOFTWARE = "software"  # Défaut logiciel
-    WEAR = "wear"  # Usure normale
-    MISUSE = "misuse"  # Mauvaise utilisation
-    ACCIDENTAL = "accidental"  # Accident
-    UNKNOWN = "unknown"  # Inconnu
-
-
-# ============================================================================
-# CONSTANTES LÉGALES
-# ============================================================================
-
-# Durées légales (France)
-LEGAL_WARRANTY_DURATION_MONTHS = 24  # Garantie légale de conformité
-HIDDEN_DEFECTS_DURATION_YEARS = 2  # Délai pour vices cachés après découverte
-REPAIR_MAX_DAYS = 30  # Délai max réparation sous garantie
-
-# Conditions d'application
 WARRANTY_EXCLUSIONS = [
     "usure_normale",
     "mauvaise_utilisation",
@@ -110,7 +68,7 @@ WARRANTY_EXCLUSIONS = [
 
 
 # ============================================================================
-# DATA CLASSES
+# DATA CLASSES (pour compatibilite API)
 # ============================================================================
 
 @dataclass
@@ -120,24 +78,18 @@ class Product:
     name: str
     sku: str
     serial_number: Optional[str] = None
-
-    # Catégorie
     category: Optional[str] = None
     brand: Optional[str] = None
     model: Optional[str] = None
-
-    # Prix
     purchase_price: Decimal = Decimal("0")
     currency: str = "EUR"
-
-    # Dates
     purchase_date: Optional[date] = None
     delivery_date: Optional[date] = None
 
 
 @dataclass
 class Customer:
-    """Client propriétaire."""
+    """Client proprietaire."""
     id: str
     name: str
     email: Optional[str] = None
@@ -153,198 +105,9 @@ class WarrantyTerms:
     inclusions: List[str] = field(default_factory=list)
     exclusions: List[str] = field(default_factory=list)
     limitations: List[str] = field(default_factory=list)
-
-    # Limites
     max_claims: Optional[int] = None
     max_claim_amount: Optional[Decimal] = None
     deductible: Decimal = Decimal("0")
-
-
-@dataclass
-class Warranty:
-    """Garantie produit."""
-    id: str
-    tenant_id: str
-    warranty_number: str
-
-    # Type
-    warranty_type: WarrantyType
-
-    # Produit et client (champs requis)
-    product: Product
-    customer: Customer
-
-    # Statut
-    status: WarrantyStatus = WarrantyStatus.ACTIVE
-
-    # Durée
-    start_date: date = field(default_factory=date.today)
-    end_date: date = field(default_factory=date.today)
-    duration_months: int = 24
-
-    # Conditions
-    terms: Optional[WarrantyTerms] = None
-
-    # Prix (extensions)
-    price: Decimal = Decimal("0")
-    is_paid: bool = True
-
-    # Documents
-    proof_of_purchase_id: Optional[str] = None
-    warranty_certificate_id: Optional[str] = None
-
-    # Utilisation
-    claims_count: int = 0
-    total_claimed_amount: Decimal = Decimal("0")
-
-    # Métadonnées
-    created_at: datetime = field(default_factory=datetime.now)
-    created_by: str = ""
-    notes: Optional[str] = None
-
-    def is_active(self) -> bool:
-        """Vérifie si la garantie est active."""
-        if self.status != WarrantyStatus.ACTIVE:
-            return False
-        today = date.today()
-        return self.start_date <= today <= self.end_date
-
-    def days_remaining(self) -> int:
-        """Jours restants de garantie."""
-        if not self.is_active():
-            return 0
-        delta = self.end_date - date.today()
-        return max(0, delta.days)
-
-
-@dataclass
-class ClaimDocument:
-    """Document de la demande."""
-    id: str
-    name: str
-    file_path: str
-    document_type: str  # photo, video, receipt, report
-    uploaded_at: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class RepairDetail:
-    """Détails de réparation."""
-    technician_id: Optional[str] = None
-    technician_name: Optional[str] = None
-    repair_center: Optional[str] = None
-
-    # Dates
-    received_date: Optional[date] = None
-    start_date: Optional[date] = None
-    completion_date: Optional[date] = None
-    return_date: Optional[date] = None
-
-    # Travaux
-    diagnosis: Optional[str] = None
-    work_performed: Optional[str] = None
-    parts_replaced: List[Dict[str, Any]] = field(default_factory=list)
-
-    # Coûts (internes)
-    labor_cost: Decimal = Decimal("0")
-    parts_cost: Decimal = Decimal("0")
-    total_cost: Decimal = Decimal("0")
-
-
-@dataclass
-class WarrantyClaim:
-    """Demande de garantie."""
-    id: str
-    tenant_id: str
-    claim_number: str
-    warranty_id: str
-
-    # Statut
-    status: ClaimStatus = ClaimStatus.SUBMITTED
-
-    # Description du problème
-    defect_type: DefectType = DefectType.UNKNOWN
-    defect_description: str = ""
-    occurrence_date: Optional[date] = None
-
-    # Documents
-    documents: List[ClaimDocument] = field(default_factory=list)
-
-    # Réparation
-    repair: Optional[RepairDetail] = None
-
-    # Résolution
-    resolution: Optional[ClaimResolution] = None
-    resolution_description: Optional[str] = None
-    resolution_date: Optional[datetime] = None
-
-    # Remplacement
-    replacement_product_id: Optional[str] = None
-    replacement_serial_number: Optional[str] = None
-
-    # Remboursement
-    refund_amount: Decimal = Decimal("0")
-    refund_reason: Optional[str] = None
-
-    # Rejet
-    rejection_reason: Optional[str] = None
-
-    # Coûts
-    claim_cost: Decimal = Decimal("0")
-
-    # Dates
-    submitted_at: datetime = field(default_factory=datetime.now)
-    reviewed_at: Optional[datetime] = None
-    closed_at: Optional[datetime] = None
-
-    # Assignation
-    assigned_to: Optional[str] = None
-
-    # Notes
-    internal_notes: List[str] = field(default_factory=list)
-    customer_communications: List[Dict[str, Any]] = field(default_factory=list)
-
-
-@dataclass
-class WarrantyExtension:
-    """Extension de garantie."""
-    id: str
-    warranty_id: str
-    extension_type: str  # standard, premium, accidental
-
-    # Durée
-    additional_months: int
-    new_end_date: date
-
-    # Prix
-    price: Decimal
-    currency: str = "EUR"
-
-    # Dates
-    purchased_at: datetime = field(default_factory=datetime.now)
-    activated_at: Optional[datetime] = None
-
-
-@dataclass
-class WarrantyProvision:
-    """Provision pour garantie (comptabilité)."""
-    id: str
-    tenant_id: str
-    period: str  # YYYY-MM
-
-    # Montants
-    opening_balance: Decimal = Decimal("0")
-    provisions_added: Decimal = Decimal("0")
-    claims_charged: Decimal = Decimal("0")
-    reversals: Decimal = Decimal("0")
-    closing_balance: Decimal = Decimal("0")
-
-    # Statistiques
-    warranties_active: int = 0
-    claims_count: int = 0
-    average_claim_cost: Decimal = Decimal("0")
-
-    calculated_at: datetime = field(default_factory=datetime.now)
 
 
 # ============================================================================
@@ -353,31 +116,31 @@ class WarrantyProvision:
 
 class WarrantyService:
     """
-    Service de gestion des garanties.
+    Service de gestion des garanties avec persistence SQLAlchemy.
 
-    Gère:
+    Gere:
     - Enregistrement des garanties
     - Demandes SAV
-    - Réparations et remplacements
+    - Reparations et remplacements
     - Extensions de garantie
     - Provisions comptables
     """
 
     def __init__(
         self,
+        db: Session,
         tenant_id: str,
         default_warranty_months: int = 24
     ):
+        self.db = db
         self.tenant_id = tenant_id
         self.default_warranty_months = default_warranty_months
 
-        # Stockage (à remplacer par DB)
-        self._warranties: Dict[str, Warranty] = {}
-        self._claims: Dict[str, WarrantyClaim] = {}
-        self._extensions: Dict[str, WarrantyExtension] = {}
-        self._provisions: Dict[str, WarrantyProvision] = {}
-        self._warranty_counter = 0
-        self._claim_counter = 0
+        # Repositories avec isolation tenant
+        self.warranty_repo = WarrantyRepository(db, tenant_id)
+        self.claim_repo = WarrantyClaimRepository(db, tenant_id)
+        self.extension_repo = WarrantyExtensionRepository(db, tenant_id)
+        self.provision_repo = WarrantyProvisionRepository(db, tenant_id)
 
     # ========================================================================
     # GESTION DES GARANTIES
@@ -395,47 +158,51 @@ class WarrantyService:
         created_by: str = ""
     ) -> Warranty:
         """Enregistre une nouvelle garantie."""
-        self._warranty_counter += 1
-        warranty_number = f"GAR-{date.today().year}-{self._warranty_counter:06d}"
-
-        # Durée par défaut selon le type
+        # Duree par defaut selon le type
         if duration_months is None:
             if warranty_type == WarrantyType.LEGAL_CONFORMITY:
                 duration_months = LEGAL_WARRANTY_DURATION_MONTHS
             else:
                 duration_months = self.default_warranty_months
 
-        # Date de début
+        # Date de debut
         if start_date is None:
             start_date = product.purchase_date or date.today()
 
         # Date de fin
         end_date = start_date + timedelta(days=duration_months * 30)
 
-        # Conditions par défaut
-        if terms is None:
-            terms = WarrantyTerms(
-                coverage_description="Garantie standard",
-                exclusions=WARRANTY_EXCLUSIONS
-            )
+        # Conditions par defaut
+        terms_dict = None
+        if terms:
+            terms_dict = {
+                "coverage_description": terms.coverage_description,
+                "inclusions": terms.inclusions,
+                "exclusions": terms.exclusions,
+                "limitations": terms.limitations,
+                "max_claims": terms.max_claims,
+                "max_claim_amount": float(terms.max_claim_amount) if terms.max_claim_amount else None,
+                "deductible": float(terms.deductible)
+            }
 
-        warranty = Warranty(
-            id=str(uuid.uuid4()),
-            tenant_id=self.tenant_id,
-            warranty_number=warranty_number,
-            warranty_type=warranty_type,
-            product=product,
-            customer=customer,
-            start_date=start_date,
-            end_date=end_date,
-            duration_months=duration_months,
-            terms=terms,
-            proof_of_purchase_id=proof_of_purchase_id,
-            created_by=created_by
-        )
+        data = {
+            "warranty_type": warranty_type,
+            "product_id": product.id,
+            "product_name": product.name,
+            "product_sku": product.sku,
+            "serial_number": product.serial_number,
+            "customer_id": customer.id,
+            "customer_name": customer.name,
+            "start_date": start_date,
+            "end_date": end_date,
+            "duration_months": duration_months,
+            "terms": terms_dict,
+            "proof_of_purchase_id": proof_of_purchase_id,
+            "purchase_price": product.purchase_price,
+            "purchase_date": product.purchase_date,
+        }
 
-        self._warranties[warranty.id] = warranty
-        return warranty
+        return self.warranty_repo.create(data, created_by=created_by)
 
     def register_legal_warranty(
         self,
@@ -444,25 +211,25 @@ class WarrantyService:
         purchase_date: date,
         proof_of_purchase_id: Optional[str] = None
     ) -> Warranty:
-        """Enregistre la garantie légale de conformité."""
+        """Enregistre la garantie legale de conformite."""
         terms = WarrantyTerms(
             coverage_description=(
-                "Garantie légale de conformité - Code de la consommation "
-                "articles L217-3 à L217-14"
+                "Garantie legale de conformite - Code de la consommation "
+                "articles L217-3 a L217-14"
             ),
             inclusions=[
-                "Défauts de conformité existants à la livraison",
-                "Défauts apparaissant dans les 24 mois suivant la livraison "
-                "(présumés exister au moment de la livraison)"
+                "Defauts de conformite existants a la livraison",
+                "Defauts apparaissant dans les 24 mois suivant la livraison "
+                "(presumes exister au moment de la livraison)"
             ],
             exclusions=[
-                "Défauts résultant de matériaux fournis par le consommateur",
-                "Défauts dont le consommateur avait connaissance",
-                "Défauts résultant de l'utilisation anormale"
+                "Defauts resultant de materiaux fournis par le consommateur",
+                "Defauts dont le consommateur avait connaissance",
+                "Defauts resultant de l'utilisation anormale"
             ],
             limitations=[
-                "Réparation ou remplacement sans frais",
-                "À défaut, réduction du prix ou résolution du contrat"
+                "Reparation ou remplacement sans frais",
+                "A defaut, reduction du prix ou resolution du contrat"
             ]
         )
 
@@ -478,41 +245,58 @@ class WarrantyService:
             proof_of_purchase_id=proof_of_purchase_id
         )
 
-    def check_warranty_status(
+    def get_warranty(self, warranty_id: str) -> Optional[Warranty]:
+        """Recupere une garantie par ID."""
+        return self.warranty_repo.get_by_id(warranty_id)
+
+    def get_warranty_by_number(self, warranty_number: str) -> Optional[Warranty]:
+        """Recupere une garantie par numero."""
+        return self.warranty_repo.get_by_number(warranty_number)
+
+    def list_warranties(
         self,
-        warranty_id: str
-    ) -> Dict[str, Any]:
-        """Vérifie le statut d'une garantie."""
-        warranty = self._warranties.get(warranty_id)
+        filters: WarrantyFilters = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[Warranty], int]:
+        """Liste les garanties avec filtres."""
+        return self.warranty_repo.list(filters=filters, page=page, page_size=page_size)
+
+    def check_warranty_status(self, warranty_id: str) -> Dict[str, Any]:
+        """Verifie le statut d'une garantie."""
+        warranty = self.warranty_repo.get_by_id(warranty_id)
         if not warranty:
-            raise ValueError(f"Garantie {warranty_id} non trouvée")
+            raise ValueError(f"Garantie {warranty_id} non trouvee")
 
         today = date.today()
-        is_active = warranty.is_active()
-        days_remaining = warranty.days_remaining()
+        is_active = (
+            warranty.status == WarrantyStatus.ACTIVE and
+            warranty.start_date <= today <= warranty.end_date
+        )
+        days_remaining = max(0, (warranty.end_date - today).days) if is_active else 0
 
-        # Vérifier si des claims sont en cours
-        active_claims = [
-            c for c in self._claims.values()
-            if c.warranty_id == warranty_id
-            and c.status not in [ClaimStatus.CLOSED, ClaimStatus.REJECTED]
-        ]
+        # Compter les claims en cours
+        claims = self.claim_repo.get_by_warranty(warranty_id)
+        active_claims = len([
+            c for c in claims
+            if c.status not in [ClaimStatus.CLOSED, ClaimStatus.REJECTED]
+        ])
 
         return {
-            "warranty_id": warranty_id,
+            "warranty_id": str(warranty.id),
             "warranty_number": warranty.warranty_number,
-            "status": warranty.status.value,
+            "status": warranty.status.value if hasattr(warranty.status, 'value') else warranty.status,
             "is_active": is_active,
             "start_date": warranty.start_date.isoformat(),
             "end_date": warranty.end_date.isoformat(),
             "days_remaining": days_remaining,
-            "claims_count": warranty.claims_count,
-            "active_claims": len(active_claims),
+            "claims_count": warranty.claims_count or 0,
+            "active_claims": active_claims,
             "product": {
-                "name": warranty.product.name,
-                "serial_number": warranty.product.serial_number
+                "name": warranty.product_name,
+                "serial_number": warranty.serial_number
             },
-            "customer": warranty.customer.name
+            "customer": warranty.customer_name
         }
 
     def extend_warranty(
@@ -522,45 +306,41 @@ class WarrantyService:
         extension_type: str = "standard",
         price: Decimal = Decimal("0")
     ) -> WarrantyExtension:
-        """Étend une garantie existante."""
-        warranty = self._warranties.get(warranty_id)
+        """Etend une garantie existante."""
+        warranty = self.warranty_repo.get_by_id(warranty_id)
         if not warranty:
-            raise ValueError(f"Garantie {warranty_id} non trouvée")
+            raise ValueError(f"Garantie {warranty_id} non trouvee")
 
         if warranty.status != WarrantyStatus.ACTIVE:
-            raise ValueError("Seules les garanties actives peuvent être étendues")
+            raise ValueError("Seules les garanties actives peuvent etre etendues")
 
         # Calculer la nouvelle date de fin
         new_end_date = warranty.end_date + timedelta(days=additional_months * 30)
 
-        extension = WarrantyExtension(
-            id=str(uuid.uuid4()),
-            warranty_id=warranty_id,
-            extension_type=extension_type,
-            additional_months=additional_months,
-            new_end_date=new_end_date,
-            price=price
-        )
+        extension_data = {
+            "warranty_id": warranty_id,
+            "extension_type": extension_type,
+            "additional_months": additional_months,
+            "new_end_date": new_end_date,
+            "price": price
+        }
+        extension = self.extension_repo.create(extension_data)
 
-        # Mettre à jour la garantie
-        warranty.end_date = new_end_date
-        warranty.duration_months += additional_months
+        # Mettre a jour la garantie
+        self.warranty_repo.update(warranty, {
+            "end_date": new_end_date,
+            "duration_months": warranty.duration_months + additional_months
+        })
 
-        self._extensions[extension.id] = extension
         return extension
 
     def expire_warranties(self) -> List[Warranty]:
-        """Expire les garanties dépassées."""
-        expired = []
-        today = date.today()
+        """Expire les garanties depassees."""
+        return self.warranty_repo.expire_warranties()
 
-        for warranty in self._warranties.values():
-            if warranty.status == WarrantyStatus.ACTIVE:
-                if warranty.end_date < today:
-                    warranty.status = WarrantyStatus.EXPIRED
-                    expired.append(warranty)
-
-        return expired
+    def get_expiring_warranties(self, days: int = 30) -> List[Warranty]:
+        """Liste les garanties expirant bientot."""
+        return self.warranty_repo.get_expiring(days)
 
     # ========================================================================
     # DEMANDES DE GARANTIE
@@ -572,44 +352,57 @@ class WarrantyService:
         defect_type: DefectType,
         defect_description: str,
         occurrence_date: Optional[date] = None,
-        documents: Optional[List[ClaimDocument]] = None,
         submitted_by: str = ""
     ) -> WarrantyClaim:
         """Soumet une demande de garantie."""
-        warranty = self._warranties.get(warranty_id)
+        warranty = self.warranty_repo.get_by_id(warranty_id)
         if not warranty:
-            raise ValueError(f"Garantie {warranty_id} non trouvée")
+            raise ValueError(f"Garantie {warranty_id} non trouvee")
 
-        # Vérifier que la garantie est active
-        if not warranty.is_active():
+        # Verifier que la garantie est active
+        today = date.today()
+        is_active = (
+            warranty.status == WarrantyStatus.ACTIVE and
+            warranty.start_date <= today <= warranty.end_date
+        )
+        if not is_active:
             raise ValueError(
-                f"Garantie non active (statut: {warranty.status.value}, "
+                f"Garantie non active (statut: {warranty.status}, "
                 f"fin: {warranty.end_date})"
             )
 
-        # Vérifier les limites
-        if warranty.terms and warranty.terms.max_claims:
-            if warranty.claims_count >= warranty.terms.max_claims:
-                raise ValueError("Nombre maximum de réclamations atteint")
+        # Verifier les limites
+        if warranty.terms and warranty.terms.get("max_claims"):
+            if (warranty.claims_count or 0) >= warranty.terms["max_claims"]:
+                raise ValueError("Nombre maximum de reclamations atteint")
 
-        self._claim_counter += 1
-        claim_number = f"SAV-{date.today().year}-{self._claim_counter:06d}"
+        claim_data = {
+            "warranty_id": warranty_id,
+            "defect_type": defect_type,
+            "defect_description": defect_description,
+            "occurrence_date": occurrence_date or date.today(),
+        }
+        claim = self.claim_repo.create(claim_data, created_by=submitted_by)
 
-        claim = WarrantyClaim(
-            id=str(uuid.uuid4()),
-            tenant_id=self.tenant_id,
-            claim_number=claim_number,
-            warranty_id=warranty_id,
-            defect_type=defect_type,
-            defect_description=defect_description,
-            occurrence_date=occurrence_date or date.today(),
-            documents=documents or []
-        )
-
-        self._claims[claim.id] = claim
-        warranty.claims_count += 1
+        # Incrementer le compteur
+        self.warranty_repo.update(warranty, {
+            "claims_count": (warranty.claims_count or 0) + 1
+        })
 
         return claim
+
+    def get_claim(self, claim_id: str) -> Optional[WarrantyClaim]:
+        """Recupere une demande par ID."""
+        return self.claim_repo.get_by_id(claim_id)
+
+    def list_claims(
+        self,
+        filters: ClaimFilters = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[WarrantyClaim], int]:
+        """Liste les demandes avec filtres."""
+        return self.claim_repo.list(filters=filters, page=page, page_size=page_size)
 
     def review_claim(
         self,
@@ -620,23 +413,20 @@ class WarrantyService:
         notes: Optional[str] = None
     ) -> WarrantyClaim:
         """Examine une demande de garantie."""
-        claim = self._claims.get(claim_id)
+        claim = self.claim_repo.get_by_id(claim_id)
         if not claim:
-            raise ValueError(f"Demande {claim_id} non trouvée")
+            raise ValueError(f"Demande {claim_id} non trouvee")
 
-        claim.reviewed_at = datetime.now()
-        claim.assigned_to = reviewed_by
+        update_data = {
+            "reviewed_at": datetime.utcnow(),
+            "assigned_to": reviewed_by,
+            "status": ClaimStatus.APPROVED if approved else ClaimStatus.REJECTED
+        }
 
-        if approved:
-            claim.status = ClaimStatus.APPROVED
-        else:
-            claim.status = ClaimStatus.REJECTED
-            claim.rejection_reason = rejection_reason
+        if not approved and rejection_reason:
+            update_data["rejection_reason"] = rejection_reason
 
-        if notes:
-            claim.internal_notes.append(f"[{datetime.now()}] {reviewed_by}: {notes}")
-
-        return claim
+        return self.claim_repo.update(claim, update_data, updated_by=reviewed_by)
 
     def start_repair(
         self,
@@ -645,24 +435,24 @@ class WarrantyService:
         technician_name: Optional[str] = None,
         diagnosis: Optional[str] = None
     ) -> WarrantyClaim:
-        """Démarre la réparation."""
-        claim = self._claims.get(claim_id)
+        """Demarre la reparation."""
+        claim = self.claim_repo.get_by_id(claim_id)
         if not claim:
-            raise ValueError(f"Demande {claim_id} non trouvée")
+            raise ValueError(f"Demande {claim_id} non trouvee")
 
         if claim.status != ClaimStatus.APPROVED:
-            raise ValueError("La demande doit être approuvée")
+            raise ValueError("La demande doit etre approuvee")
 
-        claim.status = ClaimStatus.IN_REPAIR
-        claim.repair = RepairDetail(
-            repair_center=repair_center,
-            technician_name=technician_name,
-            received_date=date.today(),
-            start_date=date.today(),
-            diagnosis=diagnosis
-        )
+        update_data = {
+            "status": ClaimStatus.IN_REPAIR,
+            "repair_center": repair_center,
+            "technician_name": technician_name,
+            "diagnosis": diagnosis,
+            "repair_received_date": date.today(),
+            "repair_start_date": date.today(),
+        }
 
-        return claim
+        return self.claim_repo.update(claim, update_data)
 
     def complete_repair(
         self,
@@ -672,26 +462,25 @@ class WarrantyService:
         labor_cost: Decimal = Decimal("0"),
         parts_cost: Decimal = Decimal("0")
     ) -> WarrantyClaim:
-        """Termine la réparation."""
-        claim = self._claims.get(claim_id)
+        """Termine la reparation."""
+        claim = self.claim_repo.get_by_id(claim_id)
         if not claim:
-            raise ValueError(f"Demande {claim_id} non trouvée")
+            raise ValueError(f"Demande {claim_id} non trouvee")
 
-        if not claim.repair:
-            raise ValueError("Pas de réparation en cours")
+        total_cost = labor_cost + parts_cost
 
-        claim.repair.completion_date = date.today()
-        claim.repair.work_performed = work_performed
-        claim.repair.parts_replaced = parts_replaced or []
-        claim.repair.labor_cost = labor_cost
-        claim.repair.parts_cost = parts_cost
-        claim.repair.total_cost = labor_cost + parts_cost
+        update_data = {
+            "status": ClaimStatus.REPAIRED,
+            "resolution": ClaimResolution.REPAIR,
+            "repair_completion_date": date.today(),
+            "work_performed": work_performed,
+            "parts_replaced": parts_replaced or [],
+            "labor_cost": labor_cost,
+            "parts_cost": parts_cost,
+            "claim_cost": total_cost,
+        }
 
-        claim.status = ClaimStatus.REPAIRED
-        claim.resolution = ClaimResolution.REPAIR
-        claim.claim_cost = claim.repair.total_cost
-
-        return claim
+        return self.claim_repo.update(claim, update_data)
 
     def process_replacement(
         self,
@@ -702,21 +491,20 @@ class WarrantyService:
         replacement_cost: Decimal = Decimal("0")
     ) -> WarrantyClaim:
         """Traite un remplacement."""
-        claim = self._claims.get(claim_id)
+        claim = self.claim_repo.get_by_id(claim_id)
         if not claim:
-            raise ValueError(f"Demande {claim_id} non trouvée")
+            raise ValueError(f"Demande {claim_id} non trouvee")
 
-        claim.replacement_product_id = replacement_product_id
-        claim.replacement_serial_number = replacement_serial_number
-        claim.status = ClaimStatus.REPLACED
-        claim.resolution = (
-            ClaimResolution.REPLACEMENT_EQUIVALENT if is_equivalent
-            else ClaimResolution.REPLACEMENT_SAME
-        )
-        claim.resolution_date = datetime.now()
-        claim.claim_cost = replacement_cost
+        update_data = {
+            "status": ClaimStatus.REPLACED,
+            "resolution": ClaimResolution.REPLACEMENT_EQUIVALENT if is_equivalent else ClaimResolution.REPLACEMENT_SAME,
+            "resolution_date": datetime.utcnow(),
+            "replacement_product_id": replacement_product_id,
+            "replacement_serial_number": replacement_serial_number,
+            "claim_cost": replacement_cost,
+        }
 
-        return claim
+        return self.claim_repo.update(claim, update_data)
 
     def process_refund(
         self,
@@ -726,33 +514,36 @@ class WarrantyService:
         refund_reason: Optional[str] = None
     ) -> WarrantyClaim:
         """Traite un remboursement."""
-        claim = self._claims.get(claim_id)
+        claim = self.claim_repo.get_by_id(claim_id)
         if not claim:
-            raise ValueError(f"Demande {claim_id} non trouvée")
+            raise ValueError(f"Demande {claim_id} non trouvee")
 
-        warranty = self._warranties.get(claim.warranty_id)
+        warranty = self.warranty_repo.get_by_id(str(claim.warranty_id))
         if not warranty:
-            raise ValueError("Garantie non trouvée")
+            raise ValueError("Garantie non trouvee")
 
-        # Vérifier le montant max
-        if warranty.terms and warranty.terms.max_claim_amount:
-            if refund_amount > warranty.terms.max_claim_amount:
+        # Verifier le montant max
+        if warranty.terms and warranty.terms.get("max_claim_amount"):
+            if refund_amount > Decimal(str(warranty.terms["max_claim_amount"])):
                 raise ValueError(
-                    f"Montant dépasse le maximum autorisé: "
-                    f"{warranty.terms.max_claim_amount}"
+                    f"Montant depasse le maximum autorise: "
+                    f"{warranty.terms['max_claim_amount']}"
                 )
 
-        claim.refund_amount = refund_amount
-        claim.refund_reason = refund_reason
-        claim.status = ClaimStatus.REFUNDED
-        claim.resolution = (
-            ClaimResolution.REFUND_FULL if is_full_refund
-            else ClaimResolution.REFUND_PARTIAL
-        )
-        claim.resolution_date = datetime.now()
-        claim.claim_cost = refund_amount
+        update_data = {
+            "status": ClaimStatus.REFUNDED,
+            "resolution": ClaimResolution.REFUND_FULL if is_full_refund else ClaimResolution.REFUND_PARTIAL,
+            "resolution_date": datetime.utcnow(),
+            "refund_amount": refund_amount,
+            "refund_reason": refund_reason,
+            "claim_cost": refund_amount,
+        }
+        claim = self.claim_repo.update(claim, update_data)
 
-        warranty.total_claimed_amount += refund_amount
+        # Mettre a jour le total reclame
+        self.warranty_repo.update(warranty, {
+            "total_claimed_amount": (warranty.total_claimed_amount or Decimal("0")) + refund_amount
+        })
 
         return claim
 
@@ -761,100 +552,88 @@ class WarrantyService:
         claim_id: str,
         resolution_description: Optional[str] = None
     ) -> WarrantyClaim:
-        """Clôture une demande."""
-        claim = self._claims.get(claim_id)
+        """Cloture une demande."""
+        claim = self.claim_repo.get_by_id(claim_id)
         if not claim:
-            raise ValueError(f"Demande {claim_id} non trouvée")
+            raise ValueError(f"Demande {claim_id} non trouvee")
 
-        claim.status = ClaimStatus.CLOSED
-        claim.closed_at = datetime.now()
-        claim.resolution_description = resolution_description
+        update_data = {
+            "status": ClaimStatus.CLOSED,
+            "closed_at": datetime.utcnow(),
+            "resolution_description": resolution_description,
+        }
 
-        return claim
+        return self.claim_repo.update(claim, update_data)
 
     # ========================================================================
     # PROVISIONS COMPTABLES
     # ========================================================================
 
-    def calculate_provisions(
-        self,
-        period: str  # YYYY-MM
-    ) -> WarrantyProvision:
+    def calculate_provisions(self, period: str) -> WarrantyProvision:
         """Calcule les provisions pour garantie."""
-        # Obtenir la provision précédente
+        # Obtenir la provision precedente
         previous_period = self._get_previous_period(period)
-        previous_provision = self._provisions.get(
-            f"{self.tenant_id}_{previous_period}"
-        )
+        previous_provision = self.provision_repo.get_by_period(previous_period)
         opening_balance = (
             previous_provision.closing_balance if previous_provision
             else Decimal("0")
         )
 
-        # Calculer les nouvelles provisions
-        # Méthode: % du CA * taux de sinistralité historique
-        active_warranties = [
-            w for w in self._warranties.values()
-            if w.status == WarrantyStatus.ACTIVE
-        ]
+        # Garanties actives
+        active_warranties, _ = self.warranty_repo.list(page_size=10000)
+        active_count = len([w for w in active_warranties if w.status == WarrantyStatus.ACTIVE])
 
-        # Calculer le taux de sinistralité
-        total_warranties = len(self._warranties)
-        total_claims = len(self._claims)
+        # Calculer le taux de sinistralite
+        all_warranties, total_warranties = self.warranty_repo.list(page_size=10000)
+        all_claims, total_claims = self.claim_repo.list(page_size=10000)
+
         claim_rate = (
-            total_claims / total_warranties if total_warranties > 0
-            else Decimal("0.05")  # 5% par défaut
+            Decimal(str(total_claims)) / Decimal(str(total_warranties))
+            if total_warranties > 0 else Decimal("0.05")
         )
 
-        # Coût moyen des réclamations
-        claim_costs = [
-            c.claim_cost for c in self._claims.values()
-            if c.claim_cost > 0
-        ]
+        # Cout moyen des reclamations
+        claim_costs = [c.claim_cost for c in all_claims if c.claim_cost and c.claim_cost > 0]
         avg_claim_cost = (
             sum(claim_costs) / len(claim_costs) if claim_costs
-            else Decimal("50")  # 50€ par défaut
+            else Decimal("50")
         )
 
-        # Provision = nombre garanties actives * taux sinistralité * coût moyen
+        # Provision = nombre garanties actives * taux sinistralite * cout moyen
         provisions_added = (
-            Decimal(str(len(active_warranties))) *
-            Decimal(str(claim_rate)) *
-            avg_claim_cost
+            Decimal(str(active_count)) * claim_rate * avg_claim_cost
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        # Réclamations du mois
+        # Reclamations du mois
         year, month = period.split("-")
         claims_this_month = [
-            c for c in self._claims.values()
-            if c.closed_at and c.closed_at.year == int(year)
-            and c.closed_at.month == int(month)
+            c for c in all_claims
+            if c.closed_at and c.closed_at.year == int(year) and c.closed_at.month == int(month)
         ]
-        claims_charged = sum(c.claim_cost for c in claims_this_month)
+        claims_charged = sum(c.claim_cost or Decimal("0") for c in claims_this_month)
 
         # Calcul du solde
-        closing_balance = (
-            opening_balance + provisions_added - claims_charged
-        )
+        closing_balance = opening_balance + provisions_added - claims_charged
 
-        provision = WarrantyProvision(
-            id=str(uuid.uuid4()),
-            tenant_id=self.tenant_id,
-            period=period,
-            opening_balance=opening_balance,
-            provisions_added=provisions_added,
-            claims_charged=claims_charged,
-            closing_balance=closing_balance,
-            warranties_active=len(active_warranties),
-            claims_count=len(claims_this_month),
-            average_claim_cost=avg_claim_cost
-        )
+        provision_data = {
+            "period": period,
+            "opening_balance": opening_balance,
+            "provisions_added": provisions_added,
+            "claims_charged": claims_charged,
+            "closing_balance": closing_balance,
+            "warranties_active": active_count,
+            "claims_count": len(claims_this_month),
+            "average_claim_cost": avg_claim_cost,
+        }
 
-        self._provisions[f"{self.tenant_id}_{period}"] = provision
-        return provision
+        # Verifier si existe deja
+        existing = self.provision_repo.get_by_period(period)
+        if existing:
+            return self.provision_repo.update(existing, provision_data)
+        return self.provision_repo.create(provision_data)
 
     def _get_previous_period(self, period: str) -> str:
-        """Retourne la période précédente."""
+        """Retourne la periode precedente."""
         year, month = period.split("-")
         year = int(year)
         month = int(month)
@@ -867,7 +646,7 @@ class WarrantyService:
         self,
         provision: WarrantyProvision
     ) -> List[Dict[str, Any]]:
-        """Génère les écritures comptables pour les provisions."""
+        """Genere les ecritures comptables pour les provisions."""
         entries = []
 
         # Dotation aux provisions
@@ -908,8 +687,8 @@ class WarrantyService:
 
     def get_warranty_statistics(self) -> Dict[str, Any]:
         """Statistiques sur les garanties."""
-        warranties = list(self._warranties.values())
-        claims = list(self._claims.values())
+        warranties, total_warranties = self.warranty_repo.list(page_size=10000)
+        claims, total_claims = self.claim_repo.list(page_size=10000)
 
         active = len([w for w in warranties if w.status == WarrantyStatus.ACTIVE])
         expired = len([w for w in warranties if w.status == WarrantyStatus.EXPIRED])
@@ -921,21 +700,21 @@ class WarrantyService:
                 w for w in warranties if w.warranty_type == wtype
             ])
 
-        # Claims
+        # Claims par statut
         claims_by_status = {}
         for status in ClaimStatus:
             claims_by_status[status.value] = len([
                 c for c in claims if c.status == status
             ])
 
-        # Coûts
-        total_claim_cost = sum(c.claim_cost for c in claims)
+        # Couts
+        total_claim_cost = sum(c.claim_cost or Decimal("0") for c in claims)
         avg_claim_cost = (
             total_claim_cost / len(claims) if claims
             else Decimal("0")
         )
 
-        # Taux de résolution
+        # Taux de resolution
         resolved = len([
             c for c in claims
             if c.status in [
@@ -946,31 +725,19 @@ class WarrantyService:
         resolution_rate = (resolved / len(claims) * 100) if claims else 0
 
         return {
-            "total_warranties": len(warranties),
+            "total_warranties": total_warranties,
             "active_warranties": active,
             "expired_warranties": expired,
             "by_type": by_type,
-            "total_claims": len(claims),
+            "total_claims": total_claims,
             "claims_by_status": claims_by_status,
             "total_claim_cost": float(total_claim_cost),
             "average_claim_cost": float(avg_claim_cost),
             "resolution_rate": round(resolution_rate, 1),
             "claim_rate": round(
-                len(claims) / len(warranties) * 100 if warranties else 0, 1
+                total_claims / total_warranties * 100 if total_warranties else 0, 1
             )
         }
-
-    def get_expiring_warranties(
-        self,
-        days: int = 30
-    ) -> List[Warranty]:
-        """Liste les garanties expirant bientôt."""
-        cutoff = date.today() + timedelta(days=days)
-        return [
-            w for w in self._warranties.values()
-            if w.status == WarrantyStatus.ACTIVE
-            and w.end_date <= cutoff
-        ]
 
 
 # ============================================================================
@@ -978,11 +745,13 @@ class WarrantyService:
 # ============================================================================
 
 def create_warranty_service(
+    db: Session,
     tenant_id: str,
     default_warranty_months: int = 24
 ) -> WarrantyService:
-    """Crée un service de gestion des garanties."""
+    """Cree un service de gestion des garanties."""
     return WarrantyService(
+        db=db,
         tenant_id=tenant_id,
         default_warranty_months=default_warranty_months
     )
