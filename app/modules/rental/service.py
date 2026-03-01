@@ -13,251 +13,44 @@ Gestion de la location:
 """
 from __future__ import annotations
 
-
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date
 from decimal import Decimal
-from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
-from uuid import uuid4
+
+from sqlalchemy.orm import Session
+
+from .repository import (
+    PricingRuleRepository,
+    RentalItemRepository,
+    ContractRepository,
+    ContractLineRepository,
+    InspectionRepository,
+    ReservationRepository,
+    ExtensionRepository,
+    RentalStatsRepository,
+)
+from .models import (
+    RentalItemType,
+    RentalItemStatus,
+    ContractStatus,
+    PricingType,
+    InspectionType,
+    InspectionCondition,
+    DepositStatus,
+    RentalItem,
+    RentalContract,
+    RentalContractLine,
+    Inspection,
+    Reservation,
+    Extension,
+    PricingRule,
+)
 
 
 # ============================================================================
-# ÉNUMÉRATIONS
+# DATA CLASSES (pour compatibilité API)
 # ============================================================================
-
-class RentalItemType(str, Enum):
-    """Type d'article locatif."""
-    EQUIPMENT = "equipment"
-    VEHICLE = "vehicle"
-    PROPERTY = "property"
-    TOOL = "tool"
-    FURNITURE = "furniture"
-    ELECTRONICS = "electronics"
-    OTHER = "other"
-
-
-class RentalItemStatus(str, Enum):
-    """Statut d'un article."""
-    AVAILABLE = "available"
-    RENTED = "rented"
-    RESERVED = "reserved"
-    MAINTENANCE = "maintenance"
-    OUT_OF_SERVICE = "out_of_service"
-
-
-class ContractStatus(str, Enum):
-    """Statut d'un contrat."""
-    DRAFT = "draft"
-    PENDING_APPROVAL = "pending_approval"
-    ACTIVE = "active"
-    EXTENDED = "extended"
-    ENDED = "ended"
-    CANCELLED = "cancelled"
-    DISPUTED = "disputed"
-
-
-class PricingType(str, Enum):
-    """Type de tarification."""
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    FIXED = "fixed"
-
-
-class InspectionType(str, Enum):
-    """Type d'inspection."""
-    CHECK_OUT = "check_out"
-    CHECK_IN = "check_in"
-    INTERIM = "interim"
-
-
-class InspectionCondition(str, Enum):
-    """État lors de l'inspection."""
-    EXCELLENT = "excellent"
-    GOOD = "good"
-    FAIR = "fair"
-    POOR = "poor"
-    DAMAGED = "damaged"
-
-
-class DepositStatus(str, Enum):
-    """Statut du dépôt."""
-    PENDING = "pending"
-    RECEIVED = "received"
-    PARTIALLY_REFUNDED = "partially_refunded"
-    FULLY_REFUNDED = "fully_refunded"
-    RETAINED = "retained"
-
-
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
-
-@dataclass
-class PricingRule:
-    """Règle de tarification."""
-    id: str
-    name: str
-    pricing_type: PricingType
-    base_price: Decimal
-    currency: str = "EUR"
-    min_duration: int = 1
-    max_duration: Optional[int] = None
-    discount_percent: Decimal = Decimal("0")
-    weekend_surcharge_percent: Decimal = Decimal("0")
-    holiday_surcharge_percent: Decimal = Decimal("0")
-    season_adjustments: Dict[str, Decimal] = field(default_factory=dict)
-    is_active: bool = True
-
-
-@dataclass
-class RentalItem:
-    """Un article locatif."""
-    id: str
-    tenant_id: str
-    name: str
-    description: str
-    item_type: RentalItemType
-    status: RentalItemStatus = RentalItemStatus.AVAILABLE
-    sku: Optional[str] = None
-    serial_number: Optional[str] = None
-    category_id: Optional[str] = None
-    location: Optional[str] = None
-    pricing_rule_id: Optional[str] = None
-    default_deposit: Decimal = Decimal("0")
-    replacement_value: Decimal = Decimal("0")
-    condition: InspectionCondition = InspectionCondition.GOOD
-    images: List[str] = field(default_factory=list)
-    specifications: Dict[str, Any] = field(default_factory=dict)
-    maintenance_interval_days: Optional[int] = None
-    last_maintenance_date: Optional[date] = None
-    total_rentals: int = 0
-    total_revenue: Decimal = Decimal("0")
-    notes: Optional[str] = None
-    is_active: bool = True
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class RentalContract:
-    """Un contrat de location."""
-    id: str
-    tenant_id: str
-    reference: str
-    customer_id: str
-    customer_name: str
-    status: ContractStatus = ContractStatus.DRAFT
-    items: List[Dict[str, Any]] = field(default_factory=list)
-    start_date: date = field(default_factory=date.today)
-    end_date: Optional[date] = None
-    actual_return_date: Optional[date] = None
-    pricing_type: PricingType = PricingType.DAILY
-    subtotal: Decimal = Decimal("0")
-    discount_amount: Decimal = Decimal("0")
-    tax_amount: Decimal = Decimal("0")
-    total_amount: Decimal = Decimal("0")
-    deposit_amount: Decimal = Decimal("0")
-    deposit_status: DepositStatus = DepositStatus.PENDING
-    deposit_received_date: Optional[date] = None
-    amount_paid: Decimal = Decimal("0")
-    balance_due: Decimal = Decimal("0")
-    currency: str = "EUR"
-    billing_frequency: str = "on_return"  # on_return, weekly, monthly
-    next_billing_date: Optional[date] = None
-    terms_accepted: bool = False
-    terms_accepted_at: Optional[datetime] = None
-    signed_at: Optional[datetime] = None
-    signed_by: Optional[str] = None
-    delivery_address: Optional[str] = None
-    delivery_date: Optional[datetime] = None
-    pickup_address: Optional[str] = None
-    pickup_date: Optional[datetime] = None
-    notes: Optional[str] = None
-    internal_notes: Optional[str] = None
-    created_by: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class ContractLine:
-    """Ligne de contrat."""
-    id: str
-    contract_id: str
-    item_id: str
-    item_name: str
-    quantity: int = 1
-    unit_price: Decimal = Decimal("0")
-    total_price: Decimal = Decimal("0")
-    deposit_per_unit: Decimal = Decimal("0")
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    actual_return_date: Optional[date] = None
-    condition_at_checkout: InspectionCondition = InspectionCondition.GOOD
-    condition_at_checkin: Optional[InspectionCondition] = None
-    damage_noted: Optional[str] = None
-    damage_charge: Decimal = Decimal("0")
-
-
-@dataclass
-class Inspection:
-    """État des lieux."""
-    id: str
-    tenant_id: str
-    contract_id: str
-    item_id: str
-    inspection_type: InspectionType
-    date: datetime = field(default_factory=datetime.now)
-    performed_by: Optional[str] = None
-    overall_condition: InspectionCondition = InspectionCondition.GOOD
-    mileage: Optional[int] = None
-    fuel_level: Optional[int] = None  # Pourcentage
-    cleanliness: str = "clean"  # clean, acceptable, dirty
-    photos: List[str] = field(default_factory=list)
-    checklist_items: List[Dict[str, Any]] = field(default_factory=list)
-    damages_found: List[Dict[str, Any]] = field(default_factory=list)
-    notes: Optional[str] = None
-    customer_signature: Optional[str] = None
-    customer_signed_at: Optional[datetime] = None
-
-
-@dataclass
-class Reservation:
-    """Une réservation."""
-    id: str
-    tenant_id: str
-    customer_id: str
-    customer_name: str
-    item_id: str
-    item_name: str
-    start_date: date
-    end_date: date
-    status: str = "pending"  # pending, confirmed, cancelled, converted
-    quoted_amount: Decimal = Decimal("0")
-    deposit_required: Decimal = Decimal("0")
-    contract_id: Optional[str] = None
-    notes: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
-
-
-@dataclass
-class Extension:
-    """Extension de location."""
-    id: str
-    contract_id: str
-    original_end_date: date
-    new_end_date: date
-    additional_days: int
-    additional_amount: Decimal
-    reason: Optional[str] = None
-    approved_by: Optional[str] = None
-    approved_at: Optional[datetime] = None
-    created_at: datetime = field(default_factory=datetime.now)
-
 
 @dataclass
 class AvailabilitySlot:
@@ -291,21 +84,21 @@ class RentalStats:
 # ============================================================================
 
 class RentalService:
-    """Service de gestion de location."""
+    """Service de gestion de location avec persistance SQLAlchemy."""
 
-    def __init__(self, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str):
+        self.db = db
         self.tenant_id = tenant_id
 
-        # Stockage en mémoire (simulation)
-        self._items: Dict[str, RentalItem] = {}
-        self._contracts: Dict[str, RentalContract] = {}
-        self._lines: Dict[str, List[ContractLine]] = {}
-        self._inspections: Dict[str, Inspection] = {}
-        self._reservations: Dict[str, Reservation] = {}
-        self._extensions: Dict[str, Extension] = {}
-        self._pricing_rules: Dict[str, PricingRule] = {}
-
-        self._contract_counter = 0
+        # Repositories
+        self.pricing_repo = PricingRuleRepository(db, tenant_id)
+        self.item_repo = RentalItemRepository(db, tenant_id)
+        self.contract_repo = ContractRepository(db, tenant_id)
+        self.line_repo = ContractLineRepository(db, tenant_id)
+        self.inspection_repo = InspectionRepository(db, tenant_id)
+        self.reservation_repo = ReservationRepository(db, tenant_id)
+        self.extension_repo = ExtensionRepository(db, tenant_id)
+        self.stats_repo = RentalStatsRepository(db, tenant_id)
 
     # -------------------------------------------------------------------------
     # Articles locatifs
@@ -319,39 +112,30 @@ class RentalService:
         **kwargs
     ) -> RentalItem:
         """Crée un article locatif."""
-        item_id = str(uuid4())
-
-        item = RentalItem(
-            id=item_id,
-            tenant_id=self.tenant_id,
+        return self.item_repo.create(
             name=name,
             description=description,
             item_type=item_type,
-            **kwargs
+            sku=kwargs.get("sku"),
+            serial_number=kwargs.get("serial_number"),
+            category_id=kwargs.get("category_id"),
+            location=kwargs.get("location"),
+            pricing_rule_id=kwargs.get("pricing_rule_id"),
+            default_deposit=kwargs.get("default_deposit", Decimal("0")),
+            replacement_value=kwargs.get("replacement_value", Decimal("0")),
+            images=kwargs.get("images"),
+            specifications=kwargs.get("specifications"),
+            maintenance_interval_days=kwargs.get("maintenance_interval_days"),
+            notes=kwargs.get("notes"),
         )
-
-        self._items[item_id] = item
-        return item
 
     def get_item(self, item_id: str) -> Optional[RentalItem]:
         """Récupère un article."""
-        item = self._items.get(item_id)
-        if item and item.tenant_id == self.tenant_id:
-            return item
-        return None
+        return self.item_repo.get_by_id(item_id)
 
     def update_item(self, item_id: str, **updates) -> Optional[RentalItem]:
         """Met à jour un article."""
-        item = self.get_item(item_id)
-        if not item:
-            return None
-
-        for key, value in updates.items():
-            if hasattr(item, key):
-                setattr(item, key, value)
-
-        item.updated_at = datetime.now()
-        return item
+        return self.item_repo.update(item_id, **updates)
 
     def list_items(
         self,
@@ -364,30 +148,14 @@ class RentalService:
         page_size: int = 20
     ) -> Tuple[List[RentalItem], int]:
         """Liste les articles."""
-        results = []
-
-        for item in self._items.values():
-            if item.tenant_id != self.tenant_id:
-                continue
-            if not item.is_active:
-                continue
-            if item_type and item.item_type != item_type:
-                continue
-            if status and item.status != status:
-                continue
-            if category_id and item.category_id != category_id:
-                continue
-            if available_only and item.status != RentalItemStatus.AVAILABLE:
-                continue
-            results.append(item)
-
-        results.sort(key=lambda x: x.name)
-
-        total = len(results)
-        start = (page - 1) * page_size
-        end = start + page_size
-
-        return results[start:end], total
+        return self.item_repo.list_all(
+            item_type=item_type,
+            status=status,
+            category_id=category_id,
+            available_only=available_only,
+            page=page,
+            page_size=page_size,
+        )
 
     def check_availability(
         self,
@@ -396,65 +164,17 @@ class RentalService:
         end_date: date
     ) -> List[AvailabilitySlot]:
         """Vérifie la disponibilité d'un article."""
-        item = self.get_item(item_id)
-        if not item:
-            return []
-
-        slots = []
-        current = start_date
-
-        # Récupérer les contrats existants
-        booked_dates = set()
-        for contract in self._contracts.values():
-            if contract.tenant_id != self.tenant_id:
-                continue
-            if contract.status not in [ContractStatus.ACTIVE, ContractStatus.EXTENDED]:
-                continue
-
-            lines = self._lines.get(contract.id, [])
-            for line in lines:
-                if line.item_id != item_id:
-                    continue
-                line_start = line.start_date or contract.start_date
-                line_end = line.actual_return_date or line.end_date or contract.end_date
-
-                if line_end:
-                    d = line_start
-                    while d <= line_end:
-                        booked_dates.add(d)
-                        d += timedelta(days=1)
-
-        # Vérifier aussi les réservations
-        for res in self._reservations.values():
-            if res.tenant_id != self.tenant_id:
-                continue
-            if res.item_id != item_id:
-                continue
-            if res.status not in ["pending", "confirmed"]:
-                continue
-
-            d = res.start_date
-            while d <= res.end_date:
-                booked_dates.add(d)
-                d += timedelta(days=1)
-
-        # Générer les créneaux
-        while current <= end_date:
-            is_available = current not in booked_dates and item.status != RentalItemStatus.OUT_OF_SERVICE
-
-            # Calculer le prix
-            price = self._calculate_daily_price(item, current)
-
-            slot = AvailabilitySlot(
-                date=current,
-                is_available=is_available,
-                price=price
+        raw_slots = self.item_repo.check_availability(item_id, start_date, end_date)
+        return [
+            AvailabilitySlot(
+                date=slot["date"],
+                is_available=slot["is_available"],
+                price=slot["price"],
+                reserved_by=slot.get("reserved_by"),
+                contract_id=slot.get("contract_id"),
             )
-            slots.append(slot)
-
-            current += timedelta(days=1)
-
-        return slots
+            for slot in raw_slots
+        ]
 
     # -------------------------------------------------------------------------
     # Contrats
@@ -470,74 +190,53 @@ class RentalService:
         **kwargs
     ) -> RentalContract:
         """Crée un contrat de location."""
-        contract_id = str(uuid4())
-        self._contract_counter += 1
-        reference = f"LOC-{datetime.now().strftime('%Y%m')}-{self._contract_counter:04d}"
-
-        contract = RentalContract(
-            id=contract_id,
-            tenant_id=self.tenant_id,
-            reference=reference,
+        # Créer le contrat
+        contract = self.contract_repo.create(
             customer_id=customer_id,
             customer_name=customer_name,
             start_date=start_date,
             end_date=end_date,
-            **kwargs
+            pricing_type=kwargs.get("pricing_type", PricingType.DAILY),
+            billing_frequency=kwargs.get("billing_frequency", "on_return"),
+            delivery_address=kwargs.get("delivery_address"),
+            delivery_date=kwargs.get("delivery_date"),
+            pickup_address=kwargs.get("pickup_address"),
+            pickup_date=kwargs.get("pickup_date"),
+            notes=kwargs.get("notes"),
+            created_by=kwargs.get("created_by"),
         )
 
         # Créer les lignes
-        lines = []
-        total = Decimal("0")
-        total_deposit = Decimal("0")
-
         for item_data in items:
-            item = self.get_item(item_data["item_id"])
+            item = self.item_repo.get_by_id(item_data["item_id"])
             if not item:
                 continue
 
             quantity = item_data.get("quantity", 1)
-            days = (end_date - start_date).days + 1
 
             # Calculer le prix
             unit_price = self._calculate_price(item, start_date, end_date)
-            line_total = unit_price * quantity
 
-            line = ContractLine(
-                id=str(uuid4()),
-                contract_id=contract_id,
-                item_id=item.id,
+            self.line_repo.create(
+                contract_id=str(contract.id),
+                item_id=str(item.id),
                 item_name=item.name,
                 quantity=quantity,
                 unit_price=unit_price,
-                total_price=line_total,
                 deposit_per_unit=item.default_deposit,
                 start_date=start_date,
-                end_date=end_date
+                end_date=end_date,
             )
 
-            lines.append(line)
-            total += line_total
-            total_deposit += item.default_deposit * quantity
+        # Recalculer les totaux
+        self.contract_repo.recalculate_totals(str(contract.id))
 
-        self._lines[contract_id] = lines
-
-        # Calculer les totaux
-        contract.subtotal = total
-        contract.total_amount = total  # Simplification
-        contract.deposit_amount = total_deposit
-        contract.balance_due = total + total_deposit
-        contract.items = [{"item_id": l.item_id, "item_name": l.item_name, "quantity": l.quantity} for l in lines]
-
-        self._contracts[contract_id] = contract
-
-        return contract
+        # Rafraîchir le contrat
+        return self.contract_repo.get_by_id(str(contract.id))
 
     def get_contract(self, contract_id: str) -> Optional[RentalContract]:
         """Récupère un contrat."""
-        contract = self._contracts.get(contract_id)
-        if contract and contract.tenant_id == self.tenant_id:
-            return contract
-        return None
+        return self.contract_repo.get_by_id(contract_id)
 
     def activate_contract(
         self,
@@ -545,33 +244,7 @@ class RentalService:
         deposit_received: bool = True
     ) -> Optional[RentalContract]:
         """Active un contrat."""
-        contract = self.get_contract(contract_id)
-        if not contract:
-            return None
-
-        if contract.status not in [ContractStatus.DRAFT, ContractStatus.PENDING_APPROVAL]:
-            return None
-
-        contract.status = ContractStatus.ACTIVE
-        contract.signed_at = datetime.now()
-
-        if deposit_received:
-            contract.deposit_status = DepositStatus.RECEIVED
-            contract.deposit_received_date = date.today()
-            contract.amount_paid = contract.deposit_amount
-            contract.balance_due = contract.total_amount
-
-        # Marquer les articles comme loués
-        lines = self._lines.get(contract_id, [])
-        for line in lines:
-            item = self.get_item(line.item_id)
-            if item:
-                item.status = RentalItemStatus.RENTED
-                item.total_rentals += 1
-
-        contract.updated_at = datetime.now()
-
-        return contract
+        return self.contract_repo.activate(contract_id, deposit_received)
 
     def end_contract(
         self,
@@ -579,40 +252,21 @@ class RentalService:
         return_date: Optional[date] = None
     ) -> Optional[RentalContract]:
         """Termine un contrat."""
-        contract = self.get_contract(contract_id)
-        if not contract:
-            return None
-
-        if contract.status not in [ContractStatus.ACTIVE, ContractStatus.EXTENDED]:
-            return None
-
-        contract.status = ContractStatus.ENDED
-        contract.actual_return_date = return_date or date.today()
-
-        # Libérer les articles
-        lines = self._lines.get(contract_id, [])
-        for line in lines:
-            line.actual_return_date = contract.actual_return_date
-            item = self.get_item(line.item_id)
-            if item:
-                item.status = RentalItemStatus.AVAILABLE
-                item.total_revenue += line.total_price
-
-        # Calculer les frais supplémentaires (retard, dommages)
-        self._calculate_final_charges(contract)
-
-        contract.updated_at = datetime.now()
-
+        contract = self.contract_repo.end_contract(contract_id, return_date)
+        if contract:
+            # Calculer les frais supplémentaires
+            self._calculate_final_charges(contract)
         return contract
 
     def extend_contract(
         self,
         contract_id: str,
         new_end_date: date,
-        reason: Optional[str] = None
+        reason: Optional[str] = None,
+        approved_by: Optional[str] = None
     ) -> Optional[Extension]:
         """Prolonge un contrat."""
-        contract = self.get_contract(contract_id)
+        contract = self.contract_repo.get_by_id(contract_id)
         if not contract:
             return None
 
@@ -622,42 +276,39 @@ class RentalService:
         if not contract.end_date or new_end_date <= contract.end_date:
             return None
 
+        # Calculer le coût supplémentaire
+        lines = self.line_repo.list_by_contract(contract_id)
+        additional_amount = Decimal("0")
         additional_days = (new_end_date - contract.end_date).days
 
-        # Calculer le coût supplémentaire
-        lines = self._lines.get(contract_id, [])
-        additional_amount = Decimal("0")
-
         for line in lines:
-            item = self.get_item(line.item_id)
+            item = self.item_repo.get_by_id(str(line.item_id))
             if item:
                 daily_rate = self._calculate_daily_price(item, new_end_date)
                 additional_amount += daily_rate * additional_days * line.quantity
 
-        extension_id = str(uuid4())
-        extension = Extension(
-            id=extension_id,
+        # Créer l'extension
+        extension = self.extension_repo.create(
             contract_id=contract_id,
             original_end_date=contract.end_date,
             new_end_date=new_end_date,
-            additional_days=additional_days,
             additional_amount=additional_amount,
-            reason=reason
+            reason=reason,
+            approved_by=approved_by,
         )
 
-        self._extensions[extension_id] = extension
-
         # Mettre à jour le contrat
-        contract.end_date = new_end_date
-        contract.status = ContractStatus.EXTENDED
-        contract.total_amount += additional_amount
-        contract.balance_due += additional_amount
+        self.contract_repo.update(
+            contract_id,
+            end_date=new_end_date,
+            status=ContractStatus.EXTENDED,
+            total_amount=contract.total_amount + additional_amount,
+            balance_due=contract.balance_due + additional_amount,
+        )
 
         # Mettre à jour les lignes
         for line in lines:
-            line.end_date = new_end_date
-
-        contract.updated_at = datetime.now()
+            self.line_repo.update(str(line.id), end_date=new_end_date)
 
         return extension
 
@@ -672,35 +323,21 @@ class RentalService:
         page_size: int = 20
     ) -> Tuple[List[RentalContract], int]:
         """Liste les contrats."""
-        results = []
+        return self.contract_repo.list_all(
+            status=status,
+            customer_id=customer_id,
+            from_date=from_date,
+            to_date=to_date,
+            page=page,
+            page_size=page_size,
+        )
 
-        for contract in self._contracts.values():
-            if contract.tenant_id != self.tenant_id:
-                continue
-            if status and contract.status != status:
-                continue
-            if customer_id and contract.customer_id != customer_id:
-                continue
-            if from_date and contract.start_date < from_date:
-                continue
-            if to_date and contract.start_date > to_date:
-                continue
-            results.append(contract)
-
-        results.sort(key=lambda x: x.created_at, reverse=True)
-
-        total = len(results)
-        start = (page - 1) * page_size
-        end = start + page_size
-
-        return results[start:end], total
-
-    def get_contract_lines(self, contract_id: str) -> List[ContractLine]:
+    def get_contract_lines(self, contract_id: str) -> List[RentalContractLine]:
         """Récupère les lignes d'un contrat."""
         contract = self.get_contract(contract_id)
         if not contract:
             return []
-        return self._lines.get(contract_id, [])
+        return self.line_repo.list_by_contract(contract_id)
 
     # -------------------------------------------------------------------------
     # Inspections
@@ -722,32 +359,32 @@ class RentalService:
         if not contract or not item:
             return None
 
-        inspection_id = str(uuid4())
-
-        inspection = Inspection(
-            id=inspection_id,
-            tenant_id=self.tenant_id,
+        inspection = self.inspection_repo.create(
             contract_id=contract_id,
             item_id=item_id,
             inspection_type=inspection_type,
             overall_condition=overall_condition,
             performed_by=performed_by,
-            **kwargs
+            mileage=kwargs.get("mileage"),
+            fuel_level=kwargs.get("fuel_level"),
+            cleanliness=kwargs.get("cleanliness", "clean"),
+            photos=kwargs.get("photos"),
+            checklist_items=kwargs.get("checklist_items"),
+            damages_found=kwargs.get("damages_found"),
+            notes=kwargs.get("notes"),
         )
 
-        self._inspections[inspection_id] = inspection
-
         # Mettre à jour la condition de l'article
-        item.condition = overall_condition
+        self.item_repo.update(item_id, condition=overall_condition)
 
         # Mettre à jour la ligne de contrat
-        lines = self._lines.get(contract_id, [])
+        lines = self.line_repo.list_by_contract(contract_id)
         for line in lines:
-            if line.item_id == item_id:
+            if str(line.item_id) == item_id:
                 if inspection_type == InspectionType.CHECK_OUT:
-                    line.condition_at_checkout = overall_condition
+                    self.line_repo.update(str(line.id), condition_at_checkout=overall_condition)
                 elif inspection_type == InspectionType.CHECK_IN:
-                    line.condition_at_checkin = overall_condition
+                    self.line_repo.update(str(line.id), condition_at_checkin=overall_condition)
 
         return inspection
 
@@ -757,19 +394,7 @@ class RentalService:
         item_id: Optional[str] = None
     ) -> List[Inspection]:
         """Liste les inspections d'un contrat."""
-        results = []
-
-        for insp in self._inspections.values():
-            if insp.tenant_id != self.tenant_id:
-                continue
-            if insp.contract_id != contract_id:
-                continue
-            if item_id and insp.item_id != item_id:
-                continue
-            results.append(insp)
-
-        results.sort(key=lambda x: x.date)
-        return results
+        return self.inspection_repo.list_by_contract(contract_id, item_id)
 
     # -------------------------------------------------------------------------
     # Réservations
@@ -790,18 +415,13 @@ class RentalService:
             return None
 
         # Vérifier disponibilité
-        slots = self.check_availability(item_id, start_date, end_date)
-        if not all(slot.is_available for slot in slots):
+        if not self.reservation_repo.check_availability(item_id, start_date, end_date):
             return None
-
-        res_id = str(uuid4())
 
         # Calculer le montant
         quoted_amount = self._calculate_price(item, start_date, end_date)
 
-        reservation = Reservation(
-            id=res_id,
-            tenant_id=self.tenant_id,
+        return self.reservation_repo.create(
             customer_id=customer_id,
             customer_name=customer_name,
             item_id=item_id,
@@ -810,36 +430,21 @@ class RentalService:
             end_date=end_date,
             quoted_amount=quoted_amount,
             deposit_required=item.default_deposit,
-            expires_at=datetime.now() + timedelta(hours=24),
-            **kwargs
+            notes=kwargs.get("notes"),
+            expires_at=datetime.utcnow() + timedelta(hours=24),
         )
-
-        self._reservations[res_id] = reservation
-
-        # Marquer l'article comme réservé
-        item.status = RentalItemStatus.RESERVED
-
-        return reservation
 
     def confirm_reservation(self, reservation_id: str) -> Optional[Reservation]:
         """Confirme une réservation."""
-        reservation = self._reservations.get(reservation_id)
-        if not reservation or reservation.tenant_id != self.tenant_id:
-            return None
-
-        reservation.status = "confirmed"
-        return reservation
+        return self.reservation_repo.confirm(reservation_id)
 
     def convert_reservation_to_contract(
         self,
         reservation_id: str
     ) -> Optional[RentalContract]:
         """Convertit une réservation en contrat."""
-        reservation = self._reservations.get(reservation_id)
-        if not reservation or reservation.tenant_id != self.tenant_id:
-            return None
-
-        if reservation.status != "confirmed":
+        reservation = self.reservation_repo.get_by_id(reservation_id)
+        if not reservation:
             return None
 
         # Créer le contrat
@@ -847,32 +452,22 @@ class RentalService:
             customer_id=reservation.customer_id,
             customer_name=reservation.customer_name,
             items=[{
-                "item_id": reservation.item_id,
+                "item_id": str(reservation.item_id),
                 "quantity": 1
             }],
             start_date=reservation.start_date,
             end_date=reservation.end_date
         )
 
-        reservation.status = "converted"
-        reservation.contract_id = contract.id
+        if contract:
+            # Marquer la réservation comme convertie
+            self.reservation_repo.convert_to_contract(reservation_id, str(contract.id))
 
         return contract
 
     def cancel_reservation(self, reservation_id: str) -> bool:
         """Annule une réservation."""
-        reservation = self._reservations.get(reservation_id)
-        if not reservation or reservation.tenant_id != self.tenant_id:
-            return False
-
-        reservation.status = "cancelled"
-
-        # Libérer l'article
-        item = self.get_item(reservation.item_id)
-        if item and item.status == RentalItemStatus.RESERVED:
-            item.status = RentalItemStatus.AVAILABLE
-
-        return True
+        return self.reservation_repo.cancel(reservation_id)
 
     def list_reservations(
         self,
@@ -883,23 +478,21 @@ class RentalService:
         from_date: Optional[date] = None
     ) -> List[Reservation]:
         """Liste les réservations."""
-        results = []
+        from .models import ReservationStatus
 
-        for res in self._reservations.values():
-            if res.tenant_id != self.tenant_id:
-                continue
-            if item_id and res.item_id != item_id:
-                continue
-            if customer_id and res.customer_id != customer_id:
-                continue
-            if status and res.status != status:
-                continue
-            if from_date and res.end_date < from_date:
-                continue
-            results.append(res)
+        status_enum = None
+        if status:
+            try:
+                status_enum = ReservationStatus(status)
+            except ValueError:
+                pass
 
-        results.sort(key=lambda x: x.start_date)
-        return results
+        return self.reservation_repo.list_all(
+            item_id=item_id,
+            customer_id=customer_id,
+            status=status_enum,
+            from_date=from_date,
+        )
 
     # -------------------------------------------------------------------------
     # Tarification
@@ -913,18 +506,18 @@ class RentalService:
         **kwargs
     ) -> PricingRule:
         """Crée une règle de tarification."""
-        rule_id = str(uuid4())
-
-        rule = PricingRule(
-            id=rule_id,
+        return self.pricing_repo.create(
             name=name,
             pricing_type=pricing_type,
             base_price=base_price,
-            **kwargs
+            currency=kwargs.get("currency", "EUR"),
+            min_duration=kwargs.get("min_duration", 1),
+            max_duration=kwargs.get("max_duration"),
+            discount_percent=kwargs.get("discount_percent", Decimal("0")),
+            weekend_surcharge_percent=kwargs.get("weekend_surcharge_percent", Decimal("0")),
+            holiday_surcharge_percent=kwargs.get("holiday_surcharge_percent", Decimal("0")),
+            season_adjustments=kwargs.get("season_adjustments"),
         )
-
-        self._pricing_rules[rule_id] = rule
-        return rule
 
     def _calculate_price(
         self,
@@ -933,10 +526,9 @@ class RentalService:
         end_date: date
     ) -> Decimal:
         """Calcule le prix total pour une période."""
-        days = (end_date - start_date).days + 1
         total = Decimal("0")
-
         current = start_date
+
         while current <= end_date:
             total += self._calculate_daily_price(item, current)
             current += timedelta(days=1)
@@ -946,7 +538,7 @@ class RentalService:
     def _calculate_daily_price(self, item: RentalItem, target_date: date) -> Decimal:
         """Calcule le prix journalier."""
         if item.pricing_rule_id:
-            rule = self._pricing_rules.get(item.pricing_rule_id)
+            rule = self.pricing_repo.get_by_id(str(item.pricing_rule_id))
             if rule:
                 price = rule.base_price
 
@@ -964,7 +556,7 @@ class RentalService:
         if not contract.actual_return_date or not contract.end_date:
             return
 
-        lines = self._lines.get(contract.id, [])
+        lines = self.line_repo.list_by_contract(str(contract.id))
 
         # Vérifier retard
         if contract.actual_return_date > contract.end_date:
@@ -972,20 +564,27 @@ class RentalService:
             late_fee = Decimal("0")
 
             for line in lines:
-                item = self.get_item(line.item_id)
+                item = self.item_repo.get_by_id(str(line.item_id))
                 if item:
                     daily_rate = self._calculate_daily_price(item, contract.actual_return_date)
                     # Pénalité: 150% du tarif normal
                     late_fee += daily_rate * Decimal("1.5") * late_days * line.quantity
 
-            contract.total_amount += late_fee
-            contract.balance_due += late_fee
+            if late_fee > 0:
+                self.contract_repo.update(
+                    str(contract.id),
+                    total_amount=contract.total_amount + late_fee,
+                    balance_due=contract.balance_due + late_fee,
+                )
 
         # Dommages
-        for line in lines:
-            if line.damage_charge > 0:
-                contract.total_amount += line.damage_charge
-                contract.balance_due += line.damage_charge
+        total_damage = sum(line.damage_charge or Decimal("0") for line in lines)
+        if total_damage > 0:
+            self.contract_repo.update(
+                str(contract.id),
+                total_amount=contract.total_amount + total_damage,
+                balance_due=contract.balance_due + total_damage,
+            )
 
     # -------------------------------------------------------------------------
     # Dépôts
@@ -997,22 +596,20 @@ class RentalService:
         amount: Decimal
     ) -> Optional[RentalContract]:
         """Enregistre un paiement de dépôt."""
-        contract = self.get_contract(contract_id)
+        contract = self.contract_repo.get_by_id(contract_id)
         if not contract:
             return None
 
-        contract.amount_paid += amount
-        contract.deposit_status = DepositStatus.RECEIVED
-        contract.deposit_received_date = date.today()
+        new_amount_paid = contract.amount_paid + amount
+        new_balance = contract.deposit_amount + contract.total_amount - new_amount_paid
 
-        if contract.amount_paid >= contract.deposit_amount + contract.total_amount:
-            contract.balance_due = Decimal("0")
-        else:
-            contract.balance_due = contract.deposit_amount + contract.total_amount - contract.amount_paid
-
-        contract.updated_at = datetime.now()
-
-        return contract
+        return self.contract_repo.update(
+            contract_id,
+            amount_paid=new_amount_paid,
+            deposit_status=DepositStatus.RECEIVED,
+            deposit_received_date=date.today(),
+            balance_due=max(Decimal("0"), new_balance),
+        )
 
     def refund_deposit(
         self,
@@ -1021,29 +618,7 @@ class RentalService:
         deductions: Optional[Dict[str, Decimal]] = None
     ) -> Optional[RentalContract]:
         """Rembourse le dépôt."""
-        contract = self.get_contract(contract_id)
-        if not contract:
-            return None
-
-        if contract.status != ContractStatus.ENDED:
-            return None
-
-        total_deductions = Decimal("0")
-        if deductions:
-            total_deductions = sum(deductions.values())
-
-        refund_amount = contract.deposit_amount - total_deductions
-
-        if refund_amount >= contract.deposit_amount:
-            contract.deposit_status = DepositStatus.FULLY_REFUNDED
-        elif refund_amount > 0:
-            contract.deposit_status = DepositStatus.PARTIALLY_REFUNDED
-        else:
-            contract.deposit_status = DepositStatus.RETAINED
-
-        contract.updated_at = datetime.now()
-
-        return contract
+        return self.contract_repo.refund_deposit(contract_id, amount, deductions)
 
     # -------------------------------------------------------------------------
     # Statistiques
@@ -1055,76 +630,28 @@ class RentalService:
         period_end: date
     ) -> RentalStats:
         """Calcule les statistiques de location."""
-        stats = RentalStats(
-            tenant_id=self.tenant_id,
-            period_start=period_start,
-            period_end=period_end
+        raw_stats = self.stats_repo.get_statistics(period_start, period_end)
+
+        return RentalStats(
+            tenant_id=raw_stats["tenant_id"],
+            period_start=raw_stats["period_start"],
+            period_end=raw_stats["period_end"],
+            total_items=raw_stats["total_items"],
+            items_rented=raw_stats["items_rented"],
+            utilization_rate=raw_stats["utilization_rate"],
+            total_contracts=raw_stats["total_contracts"],
+            active_contracts=raw_stats["active_contracts"],
+            total_revenue=raw_stats["total_revenue"],
+            total_deposits=raw_stats["total_deposits"],
+            avg_rental_duration_days=raw_stats["avg_rental_duration_days"],
+            top_rented_items=raw_stats["top_rented_items"],
         )
-
-        # Compter les articles
-        item_rental_counts = {}
-        for item in self._items.values():
-            if item.tenant_id != self.tenant_id:
-                continue
-            if not item.is_active:
-                continue
-            stats.total_items += 1
-            if item.status == RentalItemStatus.RENTED:
-                stats.items_rented += 1
-            item_rental_counts[item.id] = {"name": item.name, "count": 0, "revenue": Decimal("0")}
-
-        if stats.total_items > 0:
-            stats.utilization_rate = Decimal(stats.items_rented) / Decimal(stats.total_items) * 100
-
-        # Analyser les contrats
-        total_days = 0
-        contract_count = 0
-
-        for contract in self._contracts.values():
-            if contract.tenant_id != self.tenant_id:
-                continue
-            if contract.start_date < period_start or contract.start_date > period_end:
-                continue
-
-            stats.total_contracts += 1
-
-            if contract.status in [ContractStatus.ACTIVE, ContractStatus.EXTENDED]:
-                stats.active_contracts += 1
-
-            if contract.status == ContractStatus.ENDED:
-                stats.total_revenue += contract.total_amount
-                stats.total_deposits += contract.deposit_amount
-
-                if contract.end_date and contract.start_date:
-                    days = (contract.end_date - contract.start_date).days + 1
-                    total_days += days
-                    contract_count += 1
-
-                # Comptage par article
-                lines = self._lines.get(contract.id, [])
-                for line in lines:
-                    if line.item_id in item_rental_counts:
-                        item_rental_counts[line.item_id]["count"] += 1
-                        item_rental_counts[line.item_id]["revenue"] += line.total_price
-
-        if contract_count > 0:
-            stats.avg_rental_duration_days = Decimal(total_days) / Decimal(contract_count)
-
-        # Top articles
-        top_items = sorted(
-            [v for v in item_rental_counts.values() if v["count"] > 0],
-            key=lambda x: x["revenue"],
-            reverse=True
-        )[:5]
-        stats.top_rented_items = top_items
-
-        return stats
 
 
 # ============================================================================
 # FACTORY
 # ============================================================================
 
-def create_rental_service(tenant_id: str) -> RentalService:
+def create_rental_service(db: Session, tenant_id: str) -> RentalService:
     """Factory pour créer un service de location."""
-    return RentalService(tenant_id)
+    return RentalService(db, tenant_id)

@@ -13,78 +13,35 @@ Gestion avancée des fichiers et stockage:
 """
 from __future__ import annotations
 
-
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, BinaryIO
-from uuid import uuid4
+from typing import Any, Dict, List, Optional, Set, Tuple
+from uuid import UUID, uuid4
 import hashlib
 import mimetypes
-import os
+
+from sqlalchemy.orm import Session
+
+from .repository import (
+    StorageFileRepository,
+    FileVersionHistoryRepository,
+    ChunkedUploadRepository,
+    ChunkPartRepository,
+    StorageQuotaRepository,
+    BulkOperationRepository,
+)
+from .models import (
+    StorageBackend,
+    FileStatus,
+    UploadStatus,
+    AccessLevel,
+    ScanStatus,
+    CompressionType,
+)
 
 
 # ============================================================================
-# ÉNUMÉRATIONS
-# ============================================================================
-
-class StorageBackend(str, Enum):
-    """Backends de stockage supportés."""
-    LOCAL = "local"
-    S3 = "s3"
-    AZURE_BLOB = "azure_blob"
-    GCS = "gcs"
-    MINIO = "minio"
-
-
-class FileStatus(str, Enum):
-    """Statut d'un fichier."""
-    UPLOADING = "uploading"
-    PROCESSING = "processing"
-    ACTIVE = "active"
-    ARCHIVED = "archived"
-    DELETED = "deleted"
-    QUARANTINED = "quarantined"
-
-
-class UploadStatus(str, Enum):
-    """Statut d'un upload chunked."""
-    INITIATED = "initiated"
-    IN_PROGRESS = "in_progress"
-    COMPLETING = "completing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-
-
-class AccessLevel(str, Enum):
-    """Niveau d'accès aux fichiers."""
-    PRIVATE = "private"
-    INTERNAL = "internal"
-    PUBLIC = "public"
-
-
-class ScanStatus(str, Enum):
-    """Statut du scan antivirus."""
-    PENDING = "pending"
-    SCANNING = "scanning"
-    CLEAN = "clean"
-    INFECTED = "infected"
-    ERROR = "error"
-
-
-class CompressionType(str, Enum):
-    """Types de compression."""
-    NONE = "none"
-    GZIP = "gzip"
-    BZIP2 = "bzip2"
-    LZ4 = "lz4"
-    ZSTD = "zstd"
-
-
-# ============================================================================
-# DATA CLASSES
+# DATA CLASSES (Configuration)
 # ============================================================================
 
 @dataclass
@@ -115,139 +72,13 @@ class StorageConfig:
 
 
 @dataclass
-class FileMetadata:
-    """Métadonnées d'un fichier."""
-    id: str
-    tenant_id: str
-    filename: str
-    original_filename: str
-    extension: str
-    mime_type: str
-    size: int
-    compressed_size: Optional[int] = None
-    checksum_md5: str = ""
-    checksum_sha256: str = ""
-    storage_path: str = ""
-    storage_backend: StorageBackend = StorageBackend.LOCAL
-    status: FileStatus = FileStatus.ACTIVE
-    access_level: AccessLevel = AccessLevel.PRIVATE
-    version: int = 1
-    parent_version_id: Optional[str] = None
-    is_latest: bool = True
-    compression: CompressionType = CompressionType.NONE
-    deduplicated: bool = False
-    dedup_reference_id: Optional[str] = None
-    scan_status: ScanStatus = ScanStatus.PENDING
-    scan_result: Optional[str] = None
-    tags: Dict[str, str] = field(default_factory=dict)
-    custom_metadata: Dict[str, Any] = field(default_factory=dict)
-    entity_type: Optional[str] = None
-    entity_id: Optional[str] = None
-    uploaded_by: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-    accessed_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-
-
-@dataclass
-class ChunkedUpload:
-    """Upload en plusieurs parties."""
-    id: str
-    tenant_id: str
-    filename: str
-    total_size: int
-    chunk_size: int
-    total_chunks: int
-    uploaded_chunks: Set[int] = field(default_factory=set)
-    status: UploadStatus = UploadStatus.INITIATED
-    storage_backend: StorageBackend = StorageBackend.LOCAL
-    upload_key: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    initiated_by: Optional[str] = None
-    initiated_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
-    expires_at: datetime = field(default_factory=lambda: datetime.now() + timedelta(hours=24))
-
-
-@dataclass
-class ChunkInfo:
-    """Information sur un chunk."""
-    chunk_number: int
-    size: int
-    checksum: str
-    uploaded_at: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class StorageQuota:
-    """Quota de stockage par tenant."""
-    tenant_id: str
-    max_storage_bytes: int
-    max_files: int
-    used_storage_bytes: int = 0
-    file_count: int = 0
-    warning_threshold: float = 0.8
-    blocked: bool = False
-    updated_at: datetime = field(default_factory=datetime.now)
-
-    @property
-    def usage_percent(self) -> float:
-        if self.max_storage_bytes == 0:
-            return 0.0
-        return self.used_storage_bytes / self.max_storage_bytes
-
-    @property
-    def remaining_bytes(self) -> int:
-        return max(0, self.max_storage_bytes - self.used_storage_bytes)
-
-    @property
-    def is_warning(self) -> bool:
-        return self.usage_percent >= self.warning_threshold
-
-    @property
-    def is_exceeded(self) -> bool:
-        return self.used_storage_bytes >= self.max_storage_bytes
-
-
-@dataclass
 class SignedUrl:
     """URL signée pour accès temporaire."""
     url: str
     file_id: str
     method: str  # GET, PUT
     expires_at: datetime
-    created_at: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class FileVersion:
-    """Version d'un fichier."""
-    version_id: str
-    file_id: str
-    version_number: int
-    size: int
-    checksum: str
-    storage_path: str
-    created_by: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.now)
-    comment: Optional[str] = None
-
-
-@dataclass
-class BulkOperation:
-    """Opération en masse sur des fichiers."""
-    id: str
-    tenant_id: str
-    operation: str  # copy, move, delete, archive
-    file_ids: List[str] = field(default_factory=list)
-    target_path: Optional[str] = None
-    processed: int = 0
-    failed: int = 0
-    errors: List[Dict[str, str]] = field(default_factory=list)
-    status: str = "pending"
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    created_at: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass
@@ -263,7 +94,7 @@ class StorageStats:
     compression_savings: int = 0
     versions_count: int = 0
     quarantined_count: int = 0
-    calculated_at: datetime = field(default_factory=datetime.now)
+    calculated_at: datetime = field(default_factory=datetime.utcnow)
 
 
 # ============================================================================
@@ -271,23 +102,30 @@ class StorageStats:
 # ============================================================================
 
 class StorageService:
-    """Service de gestion du stockage de fichiers."""
+    """Service de gestion du stockage de fichiers avec persistance SQLAlchemy."""
 
-    def __init__(self, tenant_id: str, config: Optional[StorageConfig] = None):
+    def __init__(
+        self,
+        db: Session,
+        tenant_id: str,
+        config: Optional[StorageConfig] = None,
+        storage_backend: Optional[Any] = None
+    ):
+        self.db = db
         self.tenant_id = tenant_id
         self.config = config or StorageConfig(
             backend=StorageBackend.LOCAL,
             bucket_name="azalscore-files"
         )
+        self.storage_backend = storage_backend  # Backend réel (S3, local, etc.)
 
-        # Stockage en mémoire (simulation)
-        self._files: Dict[str, FileMetadata] = {}
-        self._uploads: Dict[str, ChunkedUpload] = {}
-        self._chunks: Dict[str, Dict[int, ChunkInfo]] = {}
-        self._quotas: Dict[str, StorageQuota] = {}
-        self._versions: Dict[str, List[FileVersion]] = {}
-        self._dedup_index: Dict[str, str] = {}  # checksum -> file_id
-        self._file_content: Dict[str, bytes] = {}  # Simulation stockage
+        # Repositories
+        self.file_repo = StorageFileRepository(db, tenant_id)
+        self.version_repo = FileVersionHistoryRepository(db, tenant_id)
+        self.upload_repo = ChunkedUploadRepository(db, tenant_id)
+        self.chunk_repo = ChunkPartRepository(db, tenant_id)
+        self.quota_repo = StorageQuotaRepository(db, tenant_id)
+        self.bulk_repo = BulkOperationRepository(db, tenant_id)
 
     # -------------------------------------------------------------------------
     # Upload simple
@@ -305,10 +143,10 @@ class StorageService:
         tags: Optional[Dict[str, str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         user_id: Optional[str] = None
-    ) -> Optional[FileMetadata]:
+    ) -> Optional[Any]:
         """Upload un fichier."""
         # Vérifier quota
-        quota = self._get_or_create_quota()
+        quota = self.quota_repo.get_or_create()
         if quota.blocked or quota.is_exceeded:
             return None
 
@@ -330,8 +168,9 @@ class StorageService:
         deduplicated = False
         dedup_ref_id = None
         if self.config.deduplication_enabled:
-            if checksum_sha256 in self._dedup_index:
-                dedup_ref_id = self._dedup_index[checksum_sha256]
+            existing = self.file_repo.get_by_checksum(checksum_sha256)
+            if existing:
+                dedup_ref_id = str(existing.id)
                 deduplicated = True
 
         # Compression
@@ -350,64 +189,66 @@ class StorageService:
             mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
         # Générer chemin de stockage
-        file_id = str(uuid4())
-        storage_path = self._generate_storage_path(file_id, filename)
+        file_id = uuid4()
+        storage_path = self._generate_storage_path(str(file_id), filename)
 
-        # Créer métadonnées
-        file_meta = FileMetadata(
-            id=file_id,
-            tenant_id=self.tenant_id,
-            filename=self._sanitize_filename(filename),
-            original_filename=filename,
-            extension=extension,
-            mime_type=mime_type,
-            size=file_size if not deduplicated else 0,
-            compressed_size=compressed_size,
-            checksum_md5=checksum_md5,
-            checksum_sha256=checksum_sha256,
-            storage_path=storage_path,
-            storage_backend=self.config.backend,
-            status=FileStatus.PROCESSING,
-            access_level=access_level,
-            compression=compression,
-            deduplicated=deduplicated,
-            dedup_reference_id=dedup_ref_id,
-            tags=tags or {},
-            custom_metadata=metadata or {},
-            entity_type=entity_type,
-            entity_id=entity_id,
-            uploaded_by=user_id
-        )
+        # Préparer données fichier
+        file_data = {
+            "id": file_id,
+            "filename": self._sanitize_filename(filename),
+            "original_filename": filename,
+            "extension": extension,
+            "mime_type": mime_type,
+            "size": file_size,
+            "compressed_size": compressed_size,
+            "checksum_md5": checksum_md5,
+            "checksum_sha256": checksum_sha256,
+            "storage_path": storage_path,
+            "storage_backend": self.config.backend,
+            "status": FileStatus.PROCESSING,
+            "access_level": access_level,
+            "compression": compression,
+            "deduplicated": deduplicated,
+            "dedup_reference_id": UUID(dedup_ref_id) if dedup_ref_id else None,
+            "tags": tags or {},
+            "custom_metadata": metadata or {},
+            "entity_type": entity_type,
+            "entity_id": UUID(entity_id) if entity_id else None,
+            "uploaded_by": user_id,
+        }
 
-        # Stocker le fichier (simulation)
+        # Stocker le fichier physiquement si non dédupliqué
         if not deduplicated:
-            self._file_content[file_id] = file_content
-            self._dedup_index[checksum_sha256] = file_id
+            self._store_content(str(file_id), file_content)
 
         # Scan antivirus (simulation)
+        scan_status = ScanStatus.PENDING
+        scan_result = None
         if self.config.antivirus_enabled:
-            scan_result = self._scan_file(file_content)
-            file_meta.scan_status = scan_result[0]
-            file_meta.scan_result = scan_result[1]
+            scan_status, scan_result = self._scan_file(file_content)
+            file_data["scan_status"] = scan_status
+            file_data["scan_result"] = scan_result
 
-            if file_meta.scan_status == ScanStatus.INFECTED:
-                file_meta.status = FileStatus.QUARANTINED
+            if scan_status == ScanStatus.INFECTED:
+                file_data["status"] = FileStatus.QUARANTINED
             else:
-                file_meta.status = FileStatus.ACTIVE
+                file_data["status"] = FileStatus.ACTIVE
         else:
-            file_meta.scan_status = ScanStatus.CLEAN
-            file_meta.status = FileStatus.ACTIVE
+            file_data["scan_status"] = ScanStatus.CLEAN
+            file_data["status"] = FileStatus.ACTIVE
 
-        self._files[file_id] = file_meta
+        # Créer en base
+        file_record = self.file_repo.create(file_data)
 
         # Mettre à jour quota
-        self._update_quota(file_size if not deduplicated else 0, 1)
+        if not deduplicated:
+            self.quota_repo.add_usage(file_size)
 
         # Versioning
         if self.config.versioning_enabled:
-            self._create_version(file_meta)
+            self._create_version(file_record, user_id)
 
-        return file_meta
+        return file_record
 
     # -------------------------------------------------------------------------
     # Upload chunked
@@ -420,14 +261,14 @@ class StorageService:
         chunk_size: int = 5 * 1024 * 1024,  # 5 MB par défaut
         metadata: Optional[Dict[str, Any]] = None,
         user_id: Optional[str] = None
-    ) -> Optional[ChunkedUpload]:
+    ) -> Optional[Any]:
         """Initie un upload en plusieurs parties."""
         # Vérifier quota
-        quota = self._get_or_create_quota()
+        quota = self.quota_repo.get_or_create()
         if quota.blocked:
             return None
 
-        if total_size + quota.used_storage_bytes > quota.max_storage_bytes:
+        if not self.quota_repo.check_quota(total_size):
             return None
 
         # Vérifier extension
@@ -438,33 +279,28 @@ class StorageService:
         # Calculer nombre de chunks
         total_chunks = (total_size + chunk_size - 1) // chunk_size
 
-        upload_id = str(uuid4())
-        upload = ChunkedUpload(
-            id=upload_id,
-            tenant_id=self.tenant_id,
-            filename=filename,
-            total_size=total_size,
-            chunk_size=chunk_size,
-            total_chunks=total_chunks,
-            storage_backend=self.config.backend,
-            metadata=metadata or {},
-            initiated_by=user_id
-        )
+        upload_data = {
+            "filename": filename,
+            "total_size": total_size,
+            "chunk_size": chunk_size,
+            "total_chunks": total_chunks,
+            "storage_backend": self.config.backend,
+            "metadata": metadata or {},
+            "initiated_by": user_id,
+            "expires_at": datetime.utcnow() + timedelta(hours=24),
+        }
 
-        self._uploads[upload_id] = upload
-        self._chunks[upload_id] = {}
-
-        return upload
+        return self.upload_repo.create(upload_data)
 
     def upload_chunk(
         self,
         upload_id: str,
         chunk_number: int,
         chunk_data: bytes
-    ) -> Optional[ChunkInfo]:
+    ) -> Optional[Any]:
         """Upload un chunk."""
-        upload = self._uploads.get(upload_id)
-        if not upload or upload.tenant_id != self.tenant_id:
+        upload = self.upload_repo.get_by_id(UUID(upload_id))
+        if not upload:
             return None
 
         if upload.status not in [UploadStatus.INITIATED, UploadStatus.IN_PROGRESS]:
@@ -482,23 +318,27 @@ class StorageService:
         if len(chunk_data) != expected_size:
             return None
 
-        # Stocker chunk
+        # Calculer checksum
         checksum = hashlib.md5(chunk_data).hexdigest()
-        chunk_info = ChunkInfo(
-            chunk_number=chunk_number,
-            size=len(chunk_data),
-            checksum=checksum
-        )
 
-        self._chunks[upload_id][chunk_number] = chunk_info
-        upload.uploaded_chunks.add(chunk_number)
-        upload.status = UploadStatus.IN_PROGRESS
+        # Créer chunk en base
+        chunk_data_record = {
+            "upload_id": upload.id,
+            "chunk_number": chunk_number,
+            "size": len(chunk_data),
+            "checksum": checksum,
+        }
+        chunk_record = self.chunk_repo.create(chunk_data_record)
 
-        # Stocker données (simulation)
+        # Stocker données du chunk
         chunk_key = f"{upload_id}_{chunk_number}"
-        self._file_content[chunk_key] = chunk_data
+        self._store_content(chunk_key, chunk_data)
 
-        return chunk_info
+        # Mettre à jour statut upload
+        if upload.status == UploadStatus.INITIATED:
+            self.upload_repo.update_status(upload, UploadStatus.IN_PROGRESS)
+
+        return chunk_record
 
     def complete_chunked_upload(
         self,
@@ -507,28 +347,31 @@ class StorageService:
         entity_type: Optional[str] = None,
         entity_id: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None
-    ) -> Optional[FileMetadata]:
+    ) -> Optional[Any]:
         """Complète un upload chunked."""
-        upload = self._uploads.get(upload_id)
-        if not upload or upload.tenant_id != self.tenant_id:
+        upload = self.upload_repo.get_by_id(UUID(upload_id))
+        if not upload:
             return None
 
         # Vérifier que tous les chunks sont uploadés
-        if len(upload.uploaded_chunks) != upload.total_chunks:
+        chunk_count = self.chunk_repo.count_chunks(upload.id)
+        if chunk_count != upload.total_chunks:
             return None
 
-        upload.status = UploadStatus.COMPLETING
+        self.upload_repo.update_status(upload, UploadStatus.COMPLETING)
 
-        # Assembler le fichier (simulation)
+        # Assembler le fichier
         full_content = b""
         for i in range(upload.total_chunks):
             chunk_key = f"{upload_id}_{i}"
-            full_content += self._file_content.get(chunk_key, b"")
-            # Nettoyer chunk
-            self._file_content.pop(chunk_key, None)
+            chunk_content = self._retrieve_content(chunk_key)
+            if chunk_content:
+                full_content += chunk_content
+                # Nettoyer chunk
+                self._delete_content(chunk_key)
 
         # Créer le fichier final
-        file_meta = self.upload_file(
+        file_record = self.upload_file(
             full_content,
             upload.filename,
             access_level=access_level,
@@ -539,27 +382,25 @@ class StorageService:
             user_id=upload.initiated_by
         )
 
-        if file_meta:
-            upload.status = UploadStatus.COMPLETED
-            upload.completed_at = datetime.now()
+        if file_record:
+            self.upload_repo.update_status(upload, UploadStatus.COMPLETED)
         else:
-            upload.status = UploadStatus.FAILED
+            self.upload_repo.update_status(upload, UploadStatus.FAILED)
 
-        return file_meta
+        return file_record
 
     def abort_chunked_upload(self, upload_id: str) -> bool:
         """Annule un upload chunked."""
-        upload = self._uploads.get(upload_id)
-        if not upload or upload.tenant_id != self.tenant_id:
+        upload = self.upload_repo.get_by_id(UUID(upload_id))
+        if not upload:
             return False
 
         # Nettoyer chunks
         for i in range(upload.total_chunks):
             chunk_key = f"{upload_id}_{i}"
-            self._file_content.pop(chunk_key, None)
+            self._delete_content(chunk_key)
 
-        upload.status = UploadStatus.CANCELLED
-        self._chunks.pop(upload_id, None)
+        self.upload_repo.update_status(upload, UploadStatus.CANCELLED)
 
         return True
 
@@ -567,35 +408,34 @@ class StorageService:
     # Récupération de fichiers
     # -------------------------------------------------------------------------
 
-    def get_file(self, file_id: str) -> Optional[FileMetadata]:
+    def get_file(self, file_id: str) -> Optional[Any]:
         """Récupère les métadonnées d'un fichier."""
-        file_meta = self._files.get(file_id)
-        if file_meta and file_meta.tenant_id == self.tenant_id:
-            file_meta.accessed_at = datetime.now()
-            return file_meta
-        return None
+        file_record = self.file_repo.get_by_id(UUID(file_id))
+        if file_record:
+            self.file_repo.record_access(file_record)
+        return file_record
 
-    def download_file(self, file_id: str) -> Optional[Tuple[bytes, FileMetadata]]:
+    def download_file(self, file_id: str) -> Optional[Tuple[bytes, Any]]:
         """Télécharge un fichier."""
-        file_meta = self.get_file(file_id)
-        if not file_meta:
+        file_record = self.get_file(file_id)
+        if not file_record:
             return None
 
-        if file_meta.status not in [FileStatus.ACTIVE, FileStatus.ARCHIVED]:
+        if file_record.status not in [FileStatus.ACTIVE, FileStatus.ARCHIVED]:
             return None
 
         # Récupérer contenu
-        content_id = file_meta.dedup_reference_id or file_id
-        content = self._file_content.get(content_id)
+        content_id = str(file_record.dedup_reference_id or file_record.id)
+        content = self._retrieve_content(content_id)
 
         if not content:
             return None
 
         # Décompresser si nécessaire
-        if file_meta.compression != CompressionType.NONE:
-            content = self._decompress(content, file_meta.compression)
+        if file_record.compression != CompressionType.NONE:
+            content = self._decompress(content, file_record.compression)
 
-        return content, file_meta
+        return content, file_record
 
     def generate_signed_url(
         self,
@@ -604,20 +444,20 @@ class StorageService:
         expires_in: Optional[int] = None
     ) -> Optional[SignedUrl]:
         """Génère une URL signée pour accès temporaire."""
-        file_meta = self.get_file(file_id)
-        if not file_meta:
+        file_record = self.get_file(file_id)
+        if not file_record:
             return None
 
         expires_in = expires_in or self.config.signed_url_expiry
-        expires_at = datetime.now() + timedelta(seconds=expires_in)
+        expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
 
-        # Générer URL (simulation)
+        # Générer URL (simulation ou délégation au backend)
         signature = hashlib.sha256(
             f"{file_id}:{method}:{expires_at.isoformat()}".encode()
         ).hexdigest()[:32]
 
-        base_url = self.config.cdn_url or f"https://storage.azalscore.com"
-        url = f"{base_url}/{file_meta.storage_path}?sig={signature}&exp={int(expires_at.timestamp())}"
+        base_url = self.config.cdn_url or "https://storage.azalscore.com"
+        url = f"{base_url}/{file_record.storage_path}?sig={signature}&exp={int(expires_at.timestamp())}"
 
         return SignedUrl(
             url=url,
@@ -636,70 +476,67 @@ class StorageService:
         tags: Optional[Dict[str, str]] = None,
         custom_metadata: Optional[Dict[str, Any]] = None,
         access_level: Optional[AccessLevel] = None
-    ) -> Optional[FileMetadata]:
+    ) -> Optional[Any]:
         """Met à jour les métadonnées d'un fichier."""
-        file_meta = self.get_file(file_id)
-        if not file_meta:
+        file_record = self.file_repo.get_by_id(UUID(file_id))
+        if not file_record:
             return None
 
+        update_data = {}
         if tags is not None:
-            file_meta.tags.update(tags)
+            current_tags = file_record.tags or {}
+            current_tags.update(tags)
+            update_data["tags"] = current_tags
 
         if custom_metadata is not None:
-            file_meta.custom_metadata.update(custom_metadata)
+            current_meta = file_record.custom_metadata or {}
+            current_meta.update(custom_metadata)
+            update_data["custom_metadata"] = current_meta
 
         if access_level is not None:
-            file_meta.access_level = access_level
+            update_data["access_level"] = access_level
 
-        file_meta.updated_at = datetime.now()
+        if update_data:
+            return self.file_repo.update(file_record, update_data)
 
-        return file_meta
+        return file_record
 
     def archive_file(self, file_id: str) -> bool:
         """Archive un fichier."""
-        file_meta = self.get_file(file_id)
-        if not file_meta or file_meta.status != FileStatus.ACTIVE:
+        file_record = self.file_repo.get_by_id(UUID(file_id))
+        if not file_record or file_record.status != FileStatus.ACTIVE:
             return False
 
-        file_meta.status = FileStatus.ARCHIVED
-        file_meta.updated_at = datetime.now()
-
+        self.file_repo.archive(file_record)
         return True
 
     def restore_file(self, file_id: str) -> bool:
         """Restaure un fichier archivé."""
-        file_meta = self.get_file(file_id)
-        if not file_meta or file_meta.status != FileStatus.ARCHIVED:
+        file_record = self.file_repo.get_by_id(UUID(file_id))
+        if not file_record or file_record.status != FileStatus.ARCHIVED:
             return False
 
-        file_meta.status = FileStatus.ACTIVE
-        file_meta.updated_at = datetime.now()
-
+        self.file_repo.update(file_record, {"status": FileStatus.ACTIVE})
         return True
 
     def delete_file(self, file_id: str, permanent: bool = False) -> bool:
         """Supprime un fichier."""
-        file_meta = self.get_file(file_id)
-        if not file_meta:
+        file_record = self.file_repo.get_by_id(UUID(file_id))
+        if not file_record:
             return False
 
         if permanent:
             # Suppression définitive
-            if not file_meta.deduplicated:
-                self._file_content.pop(file_id, None)
-                # Retirer de l'index de déduplication
-                if file_meta.checksum_sha256 in self._dedup_index:
-                    if self._dedup_index[file_meta.checksum_sha256] == file_id:
-                        del self._dedup_index[file_meta.checksum_sha256]
+            if not file_record.deduplicated:
+                self._delete_content(str(file_record.id))
 
             # Mettre à jour quota
-            self._update_quota(-file_meta.size, -1)
+            self.quota_repo.remove_usage(file_record.size)
 
-            del self._files[file_id]
+            self.file_repo.hard_delete(file_record)
         else:
             # Soft delete
-            file_meta.status = FileStatus.DELETED
-            file_meta.updated_at = datetime.now()
+            self.file_repo.soft_delete(file_record)
 
         return True
 
@@ -709,18 +546,13 @@ class StorageService:
         new_filename: Optional[str] = None,
         entity_type: Optional[str] = None,
         entity_id: Optional[str] = None
-    ) -> Optional[FileMetadata]:
+    ) -> Optional[Any]:
         """Copie un fichier."""
-        source = self.get_file(file_id)
-        if not source:
-            return None
-
-        # Récupérer contenu
         result = self.download_file(file_id)
         if not result:
             return None
 
-        content, _ = result
+        content, source = result
 
         return self.upload_file(
             content,
@@ -728,9 +560,9 @@ class StorageService:
             mime_type=source.mime_type,
             access_level=source.access_level,
             entity_type=entity_type or source.entity_type,
-            entity_id=entity_id or source.entity_id,
-            tags=source.tags.copy(),
-            metadata=source.custom_metadata.copy(),
+            entity_id=str(entity_id) if entity_id else (str(source.entity_id) if source.entity_id else None),
+            tags=dict(source.tags) if source.tags else None,
+            metadata=dict(source.custom_metadata) if source.custom_metadata else None,
             user_id=source.uploaded_by
         )
 
@@ -744,119 +576,122 @@ class StorageService:
         file_content: bytes,
         comment: Optional[str] = None,
         user_id: Optional[str] = None
-    ) -> Optional[FileMetadata]:
+    ) -> Optional[Any]:
         """Upload une nouvelle version d'un fichier."""
         if not self.config.versioning_enabled:
             return None
 
-        current = self.get_file(file_id)
+        current = self.file_repo.get_by_id(UUID(file_id))
         if not current:
             return None
 
         # Marquer version actuelle comme non-latest
-        current.is_latest = False
+        self.file_repo.update(current, {"is_latest": False})
 
-        # Calculer nouveau checksum
+        # Calculer checksums
+        checksum_md5 = hashlib.md5(file_content).hexdigest()
         checksum_sha256 = hashlib.sha256(file_content).hexdigest()
 
         # Créer nouvelle version
-        new_id = str(uuid4())
+        new_id = uuid4()
         new_version = current.version + 1
 
-        new_file = FileMetadata(
-            id=new_id,
-            tenant_id=self.tenant_id,
-            filename=current.filename,
-            original_filename=current.original_filename,
-            extension=current.extension,
-            mime_type=current.mime_type,
-            size=len(file_content),
-            checksum_md5=hashlib.md5(file_content).hexdigest(),
-            checksum_sha256=checksum_sha256,
-            storage_path=self._generate_storage_path(new_id, current.filename),
-            storage_backend=self.config.backend,
-            status=FileStatus.ACTIVE,
-            access_level=current.access_level,
-            version=new_version,
-            parent_version_id=file_id,
-            is_latest=True,
-            tags=current.tags.copy(),
-            custom_metadata=current.custom_metadata.copy(),
-            entity_type=current.entity_type,
-            entity_id=current.entity_id,
-            uploaded_by=user_id
-        )
+        file_data = {
+            "id": new_id,
+            "filename": current.filename,
+            "original_filename": current.original_filename,
+            "extension": current.extension,
+            "mime_type": current.mime_type,
+            "size": len(file_content),
+            "checksum_md5": checksum_md5,
+            "checksum_sha256": checksum_sha256,
+            "storage_path": self._generate_storage_path(str(new_id), current.filename),
+            "storage_backend": self.config.backend,
+            "status": FileStatus.ACTIVE,
+            "access_level": current.access_level,
+            "version": new_version,
+            "parent_version_id": current.id,
+            "is_latest": True,
+            "tags": dict(current.tags) if current.tags else {},
+            "custom_metadata": dict(current.custom_metadata) if current.custom_metadata else {},
+            "entity_type": current.entity_type,
+            "entity_id": current.entity_id,
+            "uploaded_by": user_id,
+        }
 
-        # Stocker
-        self._file_content[new_id] = file_content
-        self._files[new_id] = new_file
+        # Stocker contenu
+        self._store_content(str(new_id), file_content)
+
+        # Créer en base
+        new_file = self.file_repo.create(file_data)
 
         # Créer entrée version
-        version_entry = FileVersion(
-            version_id=new_id,
-            file_id=file_id,
-            version_number=new_version,
-            size=len(file_content),
-            checksum=checksum_sha256,
-            storage_path=new_file.storage_path,
-            created_by=user_id,
-            comment=comment
-        )
-
-        if file_id not in self._versions:
-            self._versions[file_id] = []
-        self._versions[file_id].append(version_entry)
+        version_data = {
+            "file_id": current.id,
+            "version_number": new_version,
+            "size": len(file_content),
+            "checksum": checksum_sha256,
+            "storage_path": new_file.storage_path,
+            "created_by": user_id,
+            "comment": comment,
+        }
+        self.version_repo.create(version_data)
 
         # Limiter versions
-        self._cleanup_old_versions(file_id)
+        self._cleanup_old_versions(str(current.id))
 
         # Mettre à jour quota
-        self._update_quota(len(file_content), 1)
+        self.quota_repo.add_usage(len(file_content))
 
         return new_file
 
-    def get_versions(self, file_id: str) -> List[FileVersion]:
+    def get_versions(self, file_id: str) -> List[Any]:
         """Liste les versions d'un fichier."""
-        file_meta = self.get_file(file_id)
-        if not file_meta:
+        file_record = self.file_repo.get_by_id(UUID(file_id))
+        if not file_record:
             return []
 
         # Trouver l'ID racine
-        root_id = file_id
+        root_id = file_record.id
         while True:
-            root_meta = self._files.get(root_id)
-            if not root_meta or not root_meta.parent_version_id:
+            root_record = self.file_repo.get_by_id(root_id)
+            if not root_record or not root_record.parent_version_id:
                 break
-            root_id = root_meta.parent_version_id
+            root_id = root_record.parent_version_id
 
-        return self._versions.get(root_id, [])
+        return self.version_repo.get_by_file(root_id)
 
-    def restore_version(self, version_id: str, user_id: Optional[str] = None) -> Optional[FileMetadata]:
+    def restore_version(self, version_id: str, user_id: Optional[str] = None) -> Optional[Any]:
         """Restaure une version spécifique."""
-        version_file = self._files.get(version_id)
-        if not version_file or version_file.tenant_id != self.tenant_id:
+        version_file = self.file_repo.get_by_id(UUID(version_id))
+        if not version_file:
             return None
 
         # Télécharger le contenu de cette version
-        content = self._file_content.get(version_id)
+        content = self._retrieve_content(str(version_file.id))
         if not content:
             return None
 
-        # Trouver le fichier le plus récent
+        # Trouver le fichier le plus récent (is_latest=True)
+        # Suivre la chaîne des versions
         latest = version_file
-        while True:
-            found_newer = False
-            for f in self._files.values():
-                if f.parent_version_id == latest.id:
-                    latest = f
-                    found_newer = True
-                    break
-            if not found_newer:
+        all_files, _ = self.file_repo.list(
+            entity_type=version_file.entity_type,
+            entity_id=version_file.entity_id,
+            page_size=1000
+        )
+        for f in all_files:
+            if f.is_latest and (
+                f.id == version_file.id or
+                f.parent_version_id == version_file.id or
+                version_file.parent_version_id == f.parent_version_id
+            ):
+                latest = f
                 break
 
         # Upload comme nouvelle version
         return self.upload_new_version(
-            latest.id,
+            str(latest.id),
             content,
             comment=f"Restored from version {version_file.version}",
             user_id=user_id
@@ -878,51 +713,16 @@ class StorageService:
         only_latest: bool = True,
         page: int = 1,
         page_size: int = 50
-    ) -> Tuple[List[FileMetadata], int]:
+    ) -> Tuple[List[Any], int]:
         """Liste les fichiers avec filtres."""
-        results = []
-
-        for file_meta in self._files.values():
-            if file_meta.tenant_id != self.tenant_id:
-                continue
-
-            if only_latest and not file_meta.is_latest:
-                continue
-
-            if entity_type and file_meta.entity_type != entity_type:
-                continue
-
-            if entity_id and file_meta.entity_id != entity_id:
-                continue
-
-            if status and file_meta.status != status:
-                continue
-
-            if access_level and file_meta.access_level != access_level:
-                continue
-
-            if extension and file_meta.extension.lower() != extension.lower():
-                continue
-
-            if tags:
-                match = True
-                for k, v in tags.items():
-                    if file_meta.tags.get(k) != v:
-                        match = False
-                        break
-                if not match:
-                    continue
-
-            results.append(file_meta)
-
-        # Trier par date création décroissante
-        results.sort(key=lambda x: x.created_at, reverse=True)
-
-        total = len(results)
-        start = (page - 1) * page_size
-        end = start + page_size
-
-        return results[start:end], total
+        return self.file_repo.list(
+            entity_type=entity_type,
+            entity_id=UUID(entity_id) if entity_id else None,
+            status=status,
+            search=None,
+            page=page,
+            page_size=page_size
+        )
 
     def search_files(
         self,
@@ -931,65 +731,44 @@ class StorageService:
         entity_type: Optional[str] = None,
         page: int = 1,
         page_size: int = 50
-    ) -> Tuple[List[FileMetadata], int]:
+    ) -> Tuple[List[Any], int]:
         """Recherche de fichiers par nom."""
-        query_lower = query.lower()
-        results = []
-
-        for file_meta in self._files.values():
-            if file_meta.tenant_id != self.tenant_id:
-                continue
-
-            if not file_meta.is_latest:
-                continue
-
-            if file_meta.status == FileStatus.DELETED:
-                continue
-
-            if entity_type and file_meta.entity_type != entity_type:
-                continue
-
-            # Recherche dans nom et tags
-            if (query_lower in file_meta.filename.lower() or
-                query_lower in file_meta.original_filename.lower() or
-                any(query_lower in v.lower() for v in file_meta.tags.values())):
-                results.append(file_meta)
-
-        results.sort(key=lambda x: x.created_at, reverse=True)
-
-        total = len(results)
-        start = (page - 1) * page_size
-        end = start + page_size
-
-        return results[start:end], total
+        return self.file_repo.list(
+            entity_type=entity_type,
+            search=query,
+            page=page,
+            page_size=page_size
+        )
 
     # -------------------------------------------------------------------------
     # Quotas
     # -------------------------------------------------------------------------
 
-    def get_quota(self) -> StorageQuota:
+    def get_quota(self) -> Any:
         """Récupère le quota du tenant."""
-        return self._get_or_create_quota()
+        return self.quota_repo.get_or_create()
 
     def set_quota(
         self,
         max_storage_bytes: Optional[int] = None,
         max_files: Optional[int] = None,
         warning_threshold: Optional[float] = None
-    ) -> StorageQuota:
+    ) -> Any:
         """Configure le quota du tenant."""
-        quota = self._get_or_create_quota()
+        quota = self.quota_repo.get_or_create()
 
+        update_data = {}
         if max_storage_bytes is not None:
-            quota.max_storage_bytes = max_storage_bytes
+            update_data["max_storage_bytes"] = max_storage_bytes
 
         if max_files is not None:
-            quota.max_files = max_files
+            update_data["max_files"] = max_files
 
         if warning_threshold is not None:
-            quota.warning_threshold = warning_threshold
+            update_data["warning_threshold"] = warning_threshold
 
-        quota.updated_at = datetime.now()
+        if update_data:
+            return self.quota_repo.update(quota, update_data)
 
         return quota
 
@@ -1001,60 +780,55 @@ class StorageService:
         self,
         file_ids: List[str],
         permanent: bool = False
-    ) -> BulkOperation:
+    ) -> Any:
         """Suppression en masse."""
-        operation = BulkOperation(
-            id=str(uuid4()),
-            tenant_id=self.tenant_id,
-            operation="delete",
-            file_ids=file_ids,
-            started_at=datetime.now()
-        )
+        operation = self.bulk_repo.create({
+            "operation": "delete",
+            "file_ids": file_ids,
+            "started_at": datetime.utcnow(),
+        })
+
+        processed = 0
+        failed = 0
+        errors = []
 
         for file_id in file_ids:
             try:
                 if self.delete_file(file_id, permanent):
-                    operation.processed += 1
+                    processed += 1
                 else:
-                    operation.failed += 1
-                    operation.errors.append({
-                        "file_id": file_id,
-                        "error": "File not found or access denied"
-                    })
+                    failed += 1
+                    errors.append(f"{file_id}: File not found or access denied")
             except Exception as e:
-                operation.failed += 1
-                operation.errors.append({
-                    "file_id": file_id,
-                    "error": str(e)
-                })
+                failed += 1
+                errors.append(f"{file_id}: {str(e)}")
 
-        operation.status = "completed"
-        operation.completed_at = datetime.now()
+        self.bulk_repo.update_progress(operation, processed, failed, errors)
+        self.bulk_repo.complete(operation)
 
         return operation
 
-    def bulk_archive(self, file_ids: List[str]) -> BulkOperation:
+    def bulk_archive(self, file_ids: List[str]) -> Any:
         """Archivage en masse."""
-        operation = BulkOperation(
-            id=str(uuid4()),
-            tenant_id=self.tenant_id,
-            operation="archive",
-            file_ids=file_ids,
-            started_at=datetime.now()
-        )
+        operation = self.bulk_repo.create({
+            "operation": "archive",
+            "file_ids": file_ids,
+            "started_at": datetime.utcnow(),
+        })
+
+        processed = 0
+        failed = 0
+        errors = []
 
         for file_id in file_ids:
             if self.archive_file(file_id):
-                operation.processed += 1
+                processed += 1
             else:
-                operation.failed += 1
-                operation.errors.append({
-                    "file_id": file_id,
-                    "error": "Failed to archive"
-                })
+                failed += 1
+                errors.append(f"{file_id}: Failed to archive")
 
-        operation.status = "completed"
-        operation.completed_at = datetime.now()
+        self.bulk_repo.update_progress(operation, processed, failed, errors)
+        self.bulk_repo.complete(operation)
 
         return operation
 
@@ -1062,28 +836,27 @@ class StorageService:
         self,
         file_ids: List[str],
         tags: Dict[str, str]
-    ) -> BulkOperation:
+    ) -> Any:
         """Mise à jour de tags en masse."""
-        operation = BulkOperation(
-            id=str(uuid4()),
-            tenant_id=self.tenant_id,
-            operation="update_tags",
-            file_ids=file_ids,
-            started_at=datetime.now()
-        )
+        operation = self.bulk_repo.create({
+            "operation": "update_tags",
+            "file_ids": file_ids,
+            "started_at": datetime.utcnow(),
+        })
+
+        processed = 0
+        failed = 0
+        errors = []
 
         for file_id in file_ids:
             if self.update_metadata(file_id, tags=tags):
-                operation.processed += 1
+                processed += 1
             else:
-                operation.failed += 1
-                operation.errors.append({
-                    "file_id": file_id,
-                    "error": "File not found"
-                })
+                failed += 1
+                errors.append(f"{file_id}: File not found")
 
-        operation.status = "completed"
-        operation.completed_at = datetime.now()
+        self.bulk_repo.update_progress(operation, processed, failed, errors)
+        self.bulk_repo.complete(operation)
 
         return operation
 
@@ -1099,39 +872,39 @@ class StorageService:
             total_size=0
         )
 
-        for file_meta in self._files.values():
-            if file_meta.tenant_id != self.tenant_id:
-                continue
+        # Récupérer tous les fichiers
+        files, total = self.file_repo.list(page_size=10000)
 
-            if not file_meta.is_latest:
+        for file_record in files:
+            if not file_record.is_latest:
                 stats.versions_count += 1
                 continue
 
             stats.total_files += 1
-            stats.total_size += file_meta.size
+            stats.total_size += file_record.size
 
             # Par extension
-            ext = file_meta.extension.lower()
+            ext = file_record.extension.lower() if file_record.extension else ""
             stats.by_extension[ext] = stats.by_extension.get(ext, 0) + 1
 
             # Par statut
-            status = file_meta.status.value
+            status = file_record.status.value if file_record.status else "unknown"
             stats.by_status[status] = stats.by_status.get(status, 0) + 1
 
             # Par niveau d'accès
-            access = file_meta.access_level.value
+            access = file_record.access_level.value if file_record.access_level else "private"
             stats.by_access_level[access] = stats.by_access_level.get(access, 0) + 1
 
             # Déduplication
-            if file_meta.deduplicated:
-                stats.dedup_savings += file_meta.size
+            if file_record.deduplicated:
+                stats.dedup_savings += file_record.size
 
             # Compression
-            if file_meta.compressed_size:
-                stats.compression_savings += file_meta.size - file_meta.compressed_size
+            if file_record.compressed_size:
+                stats.compression_savings += file_record.size - file_record.compressed_size
 
             # Quarantaine
-            if file_meta.status == FileStatus.QUARANTINED:
+            if file_record.status == FileStatus.QUARANTINED:
                 stats.quarantined_count += 1
 
         return stats
@@ -1140,32 +913,14 @@ class StorageService:
     # Méthodes privées
     # -------------------------------------------------------------------------
 
-    def _get_or_create_quota(self) -> StorageQuota:
-        """Récupère ou crée le quota du tenant."""
-        if self.tenant_id not in self._quotas:
-            self._quotas[self.tenant_id] = StorageQuota(
-                tenant_id=self.tenant_id,
-                max_storage_bytes=10 * 1024 * 1024 * 1024,  # 10 GB
-                max_files=10000
-            )
-        return self._quotas[self.tenant_id]
-
-    def _update_quota(self, size_delta: int, count_delta: int):
-        """Met à jour le quota."""
-        quota = self._get_or_create_quota()
-        quota.used_storage_bytes += size_delta
-        quota.file_count += count_delta
-        quota.updated_at = datetime.now()
-
     def _generate_storage_path(self, file_id: str, filename: str) -> str:
         """Génère le chemin de stockage."""
-        date_prefix = datetime.now().strftime("%Y/%m/%d")
+        date_prefix = datetime.utcnow().strftime("%Y/%m/%d")
         safe_name = self._sanitize_filename(filename)
         return f"{self.tenant_id}/{date_prefix}/{file_id}/{safe_name}"
 
     def _sanitize_filename(self, filename: str) -> str:
         """Nettoie un nom de fichier."""
-        # Retirer caractères dangereux
         dangerous = ['/', '\\', '..', '\x00', ':', '*', '?', '"', '<', '>', '|']
         safe = filename
         for char in dangerous:
@@ -1180,7 +935,6 @@ class StorageService:
 
     def _compress(self, data: bytes) -> Tuple[Optional[bytes], CompressionType]:
         """Compresse les données."""
-        # Simulation - en production, utiliser zlib, lz4, etc.
         import zlib
 
         if self.config.compression_type == CompressionType.GZIP:
@@ -1202,44 +956,53 @@ class StorageService:
     def _scan_file(self, content: bytes) -> Tuple[ScanStatus, Optional[str]]:
         """Scanne un fichier pour virus (simulation)."""
         # En production, intégrer ClamAV ou autre
-        # Ici on simule un scan toujours clean
         return ScanStatus.CLEAN, None
 
-    def _create_version(self, file_meta: FileMetadata):
+    def _create_version(self, file_record: Any, user_id: Optional[str] = None):
         """Crée une entrée de version."""
-        version = FileVersion(
-            version_id=file_meta.id,
-            file_id=file_meta.id,
-            version_number=file_meta.version,
-            size=file_meta.size,
-            checksum=file_meta.checksum_sha256,
-            storage_path=file_meta.storage_path,
-            created_by=file_meta.uploaded_by
-        )
-
-        if file_meta.id not in self._versions:
-            self._versions[file_meta.id] = []
-        self._versions[file_meta.id].append(version)
+        version_data = {
+            "file_id": file_record.id,
+            "version_number": file_record.version if hasattr(file_record, 'version') else 1,
+            "size": file_record.size,
+            "checksum": file_record.checksum_sha256,
+            "storage_path": file_record.storage_path,
+            "created_by": user_id,
+        }
+        self.version_repo.create(version_data)
 
     def _cleanup_old_versions(self, root_file_id: str):
         """Nettoie les anciennes versions."""
-        if root_file_id not in self._versions:
-            return
+        versions = self.version_repo.get_by_file(UUID(root_file_id))
 
-        versions = self._versions[root_file_id]
         if len(versions) <= self.config.max_versions:
             return
 
-        # Trier par numéro de version
+        # Trier par numéro de version (déjà triées en desc par le repo)
         versions.sort(key=lambda v: v.version_number)
 
         # Supprimer les plus anciennes
         to_remove = versions[:-self.config.max_versions]
         for v in to_remove:
-            if v.version_id in self._files:
-                self.delete_file(v.version_id, permanent=True)
+            # Supprimer le fichier associé
+            self.delete_file(str(v.version_id) if hasattr(v, 'version_id') else str(v.id), permanent=True)
 
-        self._versions[root_file_id] = versions[-self.config.max_versions:]
+    def _store_content(self, file_id: str, content: bytes):
+        """Stocke le contenu du fichier (délégation au backend)."""
+        if self.storage_backend:
+            self.storage_backend.store(file_id, content)
+        # En simulation, le contenu n'est pas persisté en mémoire
+
+    def _retrieve_content(self, file_id: str) -> Optional[bytes]:
+        """Récupère le contenu du fichier (délégation au backend)."""
+        if self.storage_backend:
+            return self.storage_backend.retrieve(file_id)
+        # En simulation, retourner None (nécessite un vrai backend)
+        return None
+
+    def _delete_content(self, file_id: str):
+        """Supprime le contenu du fichier (délégation au backend)."""
+        if self.storage_backend:
+            self.storage_backend.delete(file_id)
 
 
 # ============================================================================
@@ -1247,8 +1010,10 @@ class StorageService:
 # ============================================================================
 
 def create_storage_service(
+    db: Session,
     tenant_id: str,
-    config: Optional[StorageConfig] = None
+    config: Optional[StorageConfig] = None,
+    storage_backend: Optional[Any] = None
 ) -> StorageService:
     """Factory pour créer un service de stockage."""
-    return StorageService(tenant_id, config)
+    return StorageService(db, tenant_id, config, storage_backend)
